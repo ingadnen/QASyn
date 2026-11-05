@@ -1,0 +1,130 @@
+// =============================================================================
+// QASyn — schéma de données local (SQLite via Prisma)
+// -----------------------------------------------------------------------------
+// Les statuts / enums sont stockés en String pour rester portables sur SQLite.
+// Les valeurs autorisées sont typées dans lib/types.ts et validées par zod
+// (lib/validation.ts) à chaque entrée d'API.
+// Pour passer sur PostgreSQL : provider = "postgresql" + DATABASE_URL adapté.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Organisation créée sur /onboard/organisation.
+model Organisation {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  /// "Your name" saisi par la personne qui crée l'organisation
+  ownerName      String
+  website        String?
+  addWebsiteToKb Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  onboarding   Onboarding?
+  integrations Integration[]
+  testRuns     TestRun[]
+}
+
+/// État du tunnel d'onboarding en 7 étapes (une ligne par organisation).
+model Onboarding {
+  id             String       @id @default(cuid())
+  organisationId String       @unique
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  /// Étape la plus avancée débloquée (1 → 7)
+  currentStep    Int       @default(1)
+  /// Étape 1 — description libre (max 2500 caractères)
+  appDescription String?
+  /// Étape 2 — TEAM_ENV | LOCALHOST
+  reachType      String?
+  environmentUrl String?
+  /// Étape 2 (localhost) — MACOS | LINUX | WINDOWS
+  selectedOs     String?
+  localPort      Int?
+  tunnelToken    String?
+  /// Étape 5 — PR_IMPACT | BUG_REPRO | REGRESSIONS | PROD_SIGNALS
+  focus          String?
+  /// Étape 6 — e-mails séparés par "\n"
+  teamInvites    String?
+  /// Étape 7 — date de lancement
+  completedAt    DateTime?
+  updatedAt      DateTime  @updatedAt
+}
+
+/// Connexion à un outil tiers (étapes 3 et 4).
+model Integration {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  /// GITHUB | GITLAB | JIRA | LINEAR | SLACK
+  provider    String
+  /// CONNECTED | INDEXING | FAILED
+  status      String
+  /// Ex. "acme/storefront", "ACME", "#qa-alerts"
+  detail      String?
+  connectedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([organisationId, provider])
+}
+
+/// Exécution d'analyse / de tests pour une release (alimente le tableau de bord).
+model TestRun {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  release Int
+  version String
+  title   String
+  branch  String?
+  prNumber Int?
+  /// SUCCESS | FAILED
+  status  String
+
+  // --- Métriques du "Release Quality Report" ---------------------------------
+  /// Score de qualité /100
+  qualityScore        Int
+  /// Couverture changement → tests, en %
+  coverage            Float
+  /// Coût de défaut évité estimé, en USD
+  costAvoided         Float
+  codeChanges         Int
+  impactedTests       Int
+  regressionsCaught   Int
+  anomaliesReproduced Int
+  testsAdded          Int
+  testsTotal          Int
+  testsPassed         Int
+  durationMs          Int
+
+  createdAt DateTime @default(now())
+
+  logs LogLine[]
+
+  @@index([organisationId, createdAt])
+}
+
+/// Ligne du terminal AQE ("ship watch --all") rattachée à une exécution.
+model LogLine {
+  id        String   @id @default(cuid())
+  testRunId String
+  testRun   TestRun  @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+
+  timestamp DateTime
+  /// stdout | stderr
+  stream    String
+  /// DEPLOY | TEST | PR | BUG | RCA | FIX | INFO | WARN | FAIL
+  tag       String
+  message   String
+
+  @@index([testRunId, timestamp])
+}

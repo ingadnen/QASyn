@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/*
+ * Design system QASyn — tokens relevés sur les pages publiques (inspection craft-anything / HTML) :
+ *  - site principal : indigo #3D2EE0 / #5B4EE8, encre #15151c, muted #6f7280, line #e8e8ef, navy #121226,
+ *    Inter + Instrument Serif (accents italiques), rayons 10px / pill.
+ *  - Ship : papier #f7f5f3, carte #eeeae6, ligne #d6d0c8, encre #262626, accent #f24100,
+ *    serif "Caslon" + Public Sans, terminal #0e1218 / #191e26.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: var(--font-instrument), Georgia, serif;
+  --font-caslon: var(--font-libre-caslon), Georgia, serif;
+  --font-public: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #15151c;
+  --color-muted: #6f7280;
+  --color-line: #e8e8ef;
+
+  --color-navy-950: #0b0b18;
+  --color-navy-900: #121226;
+  --color-navy-800: #1a1a35;
+  --color-navy-700: #25254a;
+  --color-navy-600: #34346a;
+
+  --color-brand-50: #f1f0fe;
+  --color-brand-100: #e4e1fd;
+  --color-brand-200: #cbc6fb;
+  --color-brand-300: #a9a1f7;
+  --color-brand-400: #756af2;
+  --color-brand-500: #5b4ee8;
+  --color-brand-600: #3d2ee0;
+  --color-brand-700: #3324c0;
+  --color-brand-800: #2a1e9b;
+  --color-brand-900: #231a7a;
+
+  /* Ship (papier chaud + accent braise) */
+  --color-paper: #f7f5f3;
+  --color-paper-card: #eeeae6;
+  --color-paper-line: #d6d0c8;
+  --color-paper-ink: #262626;
+  --color-paper-muted: #696762;
+  --color-ember-500: #f24100;
+  --color-ember-600: #bd4105;
+
+  /* Terminal */
+  --color-term-950: #0e1218;
+  --color-term-900: #15202c;
+  --color-term-800: #191e26;
+  --color-term-text: #9ca8ba;
+  --color-term-dim: #758297;
+  --color-term-mint: #86dda8;
+
+  --radius-card: 10px;
+
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.25s ease-out both;
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-blink: blink 1s steps(2, start) infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes blink {
+    to { visibility: hidden; }
+  }
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  ::selection {
+    background-color: var(--color-brand-200);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}
