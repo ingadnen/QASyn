@@ -25,6 +25,12 @@ export async function startCrawl(db: Db, actor: Actor, targetUrl: string): Promi
       logs: JSON.stringify(buildCrawlLogs(targetUrl)),
     },
   });
+  // Auto-create the associated requirement (REQ-00X <date>_crawl)
+  const count = await db.requirement.count({ where: { organisationId: actor.org.id } });
+  const code = `REQ-${String(count + 1).padStart(3, "0")}`;
+  await db.requirement
+    .create({ data: { organisationId: actor.org.id, code, title: `${new Date().toISOString().slice(0, 10)}_crawl — ${hostFromUrl(targetUrl)}`, source: "doc", coverageStatus: "uncovered" } })
+    .catch(() => undefined);
   await spendCredits(db, actor.org.id, CREDIT_COSTS.crawl);
   await audit(db, actor, "crawl.started", hostFromUrl(targetUrl));
   return crawl;
@@ -39,19 +45,19 @@ export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
     (await db.testCase.findMany({ where: { organisationId: actor.org.id }, select: { title: true } })).map((t) => t.title),
   );
   const fresh = flows.filter((f) => !existing.has(f.name));
-  if (fresh.length > 0) {
-    await db.testCase.createMany({
-      data: fresh.map((flow) => ({
-        organisationId: actor.org.id,
-        title: flow.name,
-        module: flow.module,
-        criticality: flow.criticality,
-        status: "draft",
-        stepsCount: flow.steps,
-        source: "crawl",
-      })),
-    });
-  }
+    if (fresh.length > 0) {
+      await db.testCase.createMany({
+        data: fresh.map((flow) => ({
+          organisationId: actor.org.id,
+          title: flow.name,
+          module: flow.module,
+          criticality: flow.criticality,
+          status: "draft",
+          stepsCount: flow.steps,
+          source: "crawl",
+        })),
+      });
+    }
 
   const logs = [
     ...buildCrawlLogs(crawl.targetUrl).slice(0, -1),

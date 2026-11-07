@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -89,36 +90,9 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
       </div>
 
       {tab === "groups" ? (
-        <Card>
-          <EmptyState
-            title="No step groups yet"
-            description="Reusable step sub-routines live here. Create one in Test Components, or convert a recorded flow."
-            action={<a href="/dashboard/test-studio" className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500">Open Test Studio</a>}
-          />
-        </Card>
+        <StepGroupsPanel readOnly={readOnly} />
       ) : view === "modular" ? (
-        <Card>
-          <div className="p-5">
-            <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase">Folders · Organized</p>
-            <ul className="mt-3 space-y-2">
-              {modules.map((m) => {
-                const inModule = rows.filter((r) => r.module === m);
-                return (
-                  <li key={m}>
-                    <Link href={`/dashboard/test-cases`} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm hover:border-slate-300">
-                      <span className="font-medium capitalize text-slate-800">{m}</span>
-                      <span className="text-xs text-slate-500">{inModule.length} test{inModule.length === 1 ? "" : "s"}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-            <details className="mt-4">
-              <summary className="cursor-pointer text-xs font-semibold tracking-widest text-slate-400 uppercase">Unorganized</summary>
-              <p className="mt-2 text-xs text-slate-500">No Test Case in This Folder.</p>
-            </details>
-          </div>
-        </Card>
+        <ModularTree rows={rows} module={module} setModule={setModule} />
       ) : (
       <Card>
         {filtered.length === 0 ? (
@@ -221,6 +195,114 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
   );
 }
 
+function StepGroupsPanel({ readOnly }: { readOnly: boolean }) {
+  const { run, pending, error } = useAction();
+  const router = useRouter();
+  const [q, setQ] = useState("");
+  const [name, setName] = useState("");
+  const [groups, setGroups] = useState<Array<{ id: string; name: string; description: string }>>([]);
+  useEffect(() => {
+    fetch("/api/dashboard/test-components")
+      .then((r) => r.json())
+      .then((d) => setGroups((d as { components?: Array<{ id: string; name: string; description: string }> }).components ?? []))
+      .catch(() => undefined);
+  }, []);
+  const filtered = groups.filter((g) => !q || g.name.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <div className="space-y-4">
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const res = run("sg", "/api/dashboard/test-components", { json: { name, steps: [{ id: "g1", action: "Click", target: "primary action", value: "", selector: "" }] } });
+          void res.then((r) => r && router.refresh());
+        }}
+      >
+        <div className="min-w-56 flex-1">
+          <Input label="New step group" value={name} onChange={(e) => setName(e.target.value)} placeholder="Reusable sub-routine…" required minLength={2} />
+        </div>
+        <Button type="submit" loading={pending === "sg"} disabled={readOnly}>+ New Step Group</Button>
+        <ErrorNote error={error} />
+      </form>
+      <Input label="Search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search step groups…" />
+      <Card>
+        {filtered.length === 0 ? (
+          <EmptyState title="No step groups yet" description="Reusable step sub-routines live here. Insert one in the Test Studio." />
+        ) : (
+          <ul className="divide-y divide-slate-100 px-5 py-2">
+            {filtered.map((g) => (
+              <li key={g.id} className="flex items-center gap-3 py-2.5 text-sm">
+                <span className="flex-1 font-medium text-slate-800">{g.name}</span>
+                <span className="text-xs text-slate-500">{g.description || "reusable steps"}</span>
+                <a href="/dashboard/test-studio" className="text-xs font-semibold text-brand-600 hover:underline">Insert in Studio →</a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function ModularTree({ rows, module, setModule }: { rows: TestCaseRow[]; module: string; setModule: (m: string) => void }) {
+  const modules = useMemo(() => [...new Set(rows.map((r) => r.module))].sort(), [rows]);
+  const [folderQ, setFolderQ] = useState("");
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
+  const shown = modules.filter((m) => !folderQ || m.toLowerCase().includes(folderQ.toLowerCase()));
+  return (
+    <Card>
+      <div className="grid gap-6 p-5 lg:grid-cols-[280px_1fr]">
+        <div>
+          <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase">Folders</p>
+          <input className="mt-2 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm" placeholder="Search folders…" value={folderQ} onChange={(e) => setFolderQ(e.target.value)} />
+          <p className="mt-4 text-xs font-semibold tracking-widest text-slate-400 uppercase">Organized</p>
+          <ul className="mt-2 space-y-1">
+            {shown.map((m) => {
+              const inModule = rows.filter((r) => r.module === m);
+              const open = openFolder === m;
+              return (
+                <li key={m}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenFolder(open ? null : m);
+                      setModule(module === m ? "all" : m);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${module === m ? "bg-brand-50 font-medium text-brand-700" : "text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    <span className="capitalize">📁 {m}</span>
+                    <span className="text-xs text-slate-400">{inModule.length} test{inModule.length === 1 ? "" : "s"}</span>
+                  </button>
+                  {open && (
+                    <ul className="mt-1 space-y-1 pl-4">
+                      {inModule.slice(0, 5).map((r) => (
+                        <li key={r.id} className="truncate text-xs text-slate-600">· {r.title}</li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <details className="mt-4">
+            <summary className="cursor-pointer text-xs font-semibold tracking-widest text-slate-400 uppercase">Unorganized</summary>
+            <p className="mt-2 text-xs text-slate-500">0 tests — No Test Case in This Folder.</p>
+          </details>
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {["+ New folder", "Create subfolder", "Rename", "Move folder", "Delete folder"].map((a) => (
+              <span key={a} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">{a}</span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-slate-700">{module === "all" ? "All modules" : `Folder: ${module}`} — cases filter live</p>
+          <p className="mt-1 text-xs text-slate-500">{rows.filter((r) => module === "all" || r.module === module).length} cases shown.</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolean; onClose: () => void; modules: string[]; onCreated: (n: number) => void }) {
   const { run, pending, error, setError } = useAction();
   const [method, setMethod] = useState<"ai" | "import" | "record" | "manual">("ai");
@@ -236,6 +318,10 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (method === "record") {
+      window.location.href = `/dashboard/recorder${url ? `?url=${encodeURIComponent(url)}` : ""}`.replace("/dashboard/recorder", "/dashboard/recorder");
+      return;
+    }
     const json =
       method === "manual" ? { mode: "manual", title, module, criticality, stepsCount } : { mode: "ai", module, criticality, prompt: prompt || (url ? `Explore ${url}` : ""), count };
     const res = await run<{ created: number }>("create", "/api/dashboard/test-cases", { json });
@@ -290,6 +376,18 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
                 <Input label="Prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} placeholder="Sign in, add a product, apply a coupon, complete checkout. Cover payment validation." />
                 <Input label="Requirement name (optional)" value={requirementName} onChange={(e) => setRequirementName(e.target.value)} placeholder="Requirement name (optional)" />
               </>
+            )}
+            {method === "import" && (
+              <label className="block">
+                <span className="block text-sm font-medium text-slate-700">Paste CSV / JSON / Markdown requirements</span>
+                <textarea className="mt-1.5 h-28 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={"title,module,criticality\nReset password,Core,high"} />
+              </label>
+            )}
+            {method === "record" && (
+              <div className="space-y-3">
+                <Input label="Application URL to record" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" />
+                <p className="text-xs text-slate-500">Record & Play opens the recorder with this URL pre-filled.</p>
+              </div>
             )}
             <Input label="Module" value={module} onChange={(e) => setModule(e.target.value)} list="tc-modules" required maxLength={40} />
             <datalist id="tc-modules">

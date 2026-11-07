@@ -56,7 +56,7 @@ interface LogLine {
 const inputCls =
   "h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100";
 
-export function StudioClient({ testCaseId, initialSteps, readOnly }: { testCaseId: string; initialSteps: StudioStep[]; readOnly: boolean }) {
+export function StudioClient({ testCaseId, initialSteps, readOnly, cases }: { testCaseId: string; initialSteps: StudioStep[]; readOnly: boolean; cases?: Array<{ id: string; title: string }> }) {
   const { run, pending, error } = useAction();
   const router = useRouter();
   const [steps, setSteps] = useState<StudioStep[]>(initialSteps.length ? initialSteps : [{ id: "s1", action: "Navigate", target: "https://example.com", value: "", selector: "" }]);
@@ -136,9 +136,10 @@ export function StudioClient({ testCaseId, initialSteps, readOnly }: { testCaseI
                   <button
                     type="button"
                     className="text-xs font-medium text-brand-600 hover:underline"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       const next = new Set(detailOpen);
-                      if (next.has(selected)) next.delete(selected); else next.add(selected);
+                      if (next.has(i)) next.delete(i); else next.add(i);
                       setDetailOpen(next);
                     }}
                   >
@@ -183,6 +184,17 @@ export function StudioClient({ testCaseId, initialSteps, readOnly }: { testCaseI
           )}
           <Button onClick={() => void runSteps()} loading={pending === "run"} loadingText="Running…" disabled={readOnly || steps.length === 0}>
             ▶ Run Test
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={readOnly}
+            onClick={async () => {
+              const res = await run<{ created: number }>("ai", "/api/dashboard/test-cases", { json: { mode: "ai", module: "Core", criticality: "medium", prompt: `Extend: ${steps[steps.length - 1]?.target ?? "test"}`, count: 1 } });
+              if (res) router.refresh();
+            }}
+            loading={pending === "ai"}
+          >
+            ✨ AI Custom Prompt
           </Button>
         </div>
         {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

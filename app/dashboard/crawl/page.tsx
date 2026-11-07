@@ -24,7 +24,7 @@ export default async function CrawlPage() {
             {crawls.map((c) => (
               <li key={c.id} className="px-5 py-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="font-medium text-slate-800">{c.targetUrl}</span>
+                  <Link href={`/dashboard/crawl/${c.id}`} className="font-medium text-brand-700 hover:underline">{c.targetUrl}</Link>
                   <StatusPill value={c.status} />
                   <span className="text-xs text-slate-500">{c.pagesVisited} pages · {c.flowsMapped} flows · {timeAgo(c.startedAt)}</span>
                   <span className="ml-auto flex gap-2">

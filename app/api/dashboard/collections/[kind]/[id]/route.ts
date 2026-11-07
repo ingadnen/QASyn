@@ -15,7 +15,7 @@ async function findItem(kind: "suites" | "test-plans", id: string, organisationI
     : prisma.testPlan.findFirst({ where: { id, organisationId } });
 }
 
-/** PATCH /api/dashboard/collections/[kind]/[id] { action: "run" } — runs the collection's test cases. */
+/** PATCH /api/dashboard/collections/[kind]/[id] { action: "run" | "link" } — runs or re-links the collection's test cases. */
 export async function PATCH(request: Request, { params }: Params) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
@@ -23,11 +23,23 @@ export async function PATCH(request: Request, { params }: Params) {
   const { kind, id } = await params;
   if (!isCollectionKind(kind)) return jsonError("Unknown collection.", 404);
 
-  const parsed = collectionActionSchema.safeParse(await readJson(request));
-  if (!parsed.success) return validationError(parsed.error);
-
   const item = await findItem(kind, id, ctx.org.id);
   if (!item) return jsonError("Not found.", 404);
+
+  const body = (await readJson(request)) as { action?: string; testCaseIds?: string[] };
+  if (body?.action === "link" && Array.isArray(body.testCaseIds)) {
+    const cases = await prisma.testCase.findMany({
+      where: { organisationId: ctx.org.id, id: { in: body.testCaseIds } },
+      select: { id: true },
+    });
+    const data = { testCasesCount: cases.length, testCases: { set: cases.map((c) => ({ id: c.id })) } };
+    const updated = kind === "suites" ? await prisma.testSuite.update({ where: { id: item.id }, data }) : await prisma.testPlan.update({ where: { id: item.id }, data });
+    await audit(prisma, ctx, kind === "suites" ? "suite.linked" : "test_plan.linked", `${item.name} · ${cases.length} cases`);
+    return NextResponse.json({ item: updated });
+  }
+
+  const parsed = collectionActionSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
   const testCases = await prisma.testCase.findMany({
     where: { organisationId: ctx.org.id, ...(item.module ? { module: item.module } : {}) },
     take: 100,
