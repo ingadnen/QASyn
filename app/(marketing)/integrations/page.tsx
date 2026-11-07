@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { IntegrationsCatalog, type CatalogWorkspace } from "@/components/marketing/IntegrationsCatalog";
-import { DEMO_ORG_SLUG } from "@/lib/dashboard";
+import { DEMO_ORG_SLUG } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { loadOnboardingState } from "@/lib/onboarding-state";
-import { getCurrentOrgId } from "@/lib/session";
+import { resolveOrgContext } from "@/lib/tenant";
 import type { IntegrationStatus, Provider } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Integrations" };
@@ -12,14 +12,15 @@ export const dynamic = "force-dynamic";
 
 /** État des intégrations lu en base : organisation de session, sinon démo "acme". */
 async function getWorkspace(): Promise<CatalogWorkspace> {
-  const organisationId = await getCurrentOrgId();
+  const ctx = await resolveOrgContext();
 
-  if (organisationId) {
-    const state = await loadOnboardingState(organisationId);
+  if (ctx && !ctx.readOnly) {
+    const state = await loadOnboardingState(ctx.org.id);
     if (state) {
       const statuses: CatalogWorkspace["statuses"] = {};
       for (const i of state.integrations) statuses[i.provider] = i.status;
-      const href = (step: 3 | 4) => (state.completed || state.currentStep >= step ? `/onboarding/${step}` : "/onboarding");
+      const href = (step: 3 | 4) =>
+        state.completed ? "/dashboard/integrations" : state.currentStep >= step ? `/onboarding/${step}` : "/onboarding";
       return { source: "session", orgName: state.organisation.name, statuses, connectHref: { 3: href(3), 4: href(4) } };
     }
   }
@@ -34,7 +35,7 @@ async function getWorkspace(): Promise<CatalogWorkspace> {
     source: demo ? "demo" : "none",
     orgName: demo?.name ?? null,
     statuses,
-    connectHref: { 3: "/onboard/organisation", 4: "/onboard/organisation" },
+    connectHref: { 3: "/signup", 4: "/signup" },
   };
 }
 
@@ -62,7 +63,7 @@ export default async function IntegrationsPage() {
             {workspace.source === "demo" && (
               <>
                 Showing demo workspace <strong className="text-ink">{workspace.orgName}</strong> ·{" "}
-                <Link href="/onboard/organisation" className="font-semibold text-brand-600 hover:underline">
+                <Link href="/signup" className="font-semibold text-brand-600 hover:underline">
                   create yours
                 </Link>
               </>

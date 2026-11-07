@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { resolveDashboardOrg } from "@/lib/dashboard";
+import { resolveOrgContext } from "@/lib/tenant";
 import { CUSTOMER_WORDMARKS, KEY_METRICS, TESTIMONIALS } from "@/lib/marketing";
 import { formatUsdCompact } from "@/lib/utils";
 
@@ -33,15 +33,18 @@ const LOOP = [
 
 async function getHeroReport() {
   try {
-    const ctx = await resolveDashboardOrg();
-    if (!ctx) return null;
+    // Session org if it already has runs, otherwise the shared Acme demo (isMockDemo).
+    const ctx = await resolveOrgContext();
+    const ownRuns = ctx ? await prisma.testRun.count({ where: { organisationId: ctx.org.id } }) : 0;
+    const org = ctx && ownRuns > 0 ? ctx.org : await prisma.organisation.findFirst({ where: { isMockDemo: true } });
+    if (!org) return null;
     const [latest, previous] = await prisma.testRun.findMany({
-      where: { organisationId: ctx.org.id },
+      where: { organisationId: org.id },
       orderBy: { createdAt: "desc" },
       take: 2,
     });
     if (!latest) return null;
-    return { org: ctx.org.name, latest, delta: previous ? latest.qualityScore - previous.qualityScore : 0 };
+    return { org: org.name, latest, delta: previous ? latest.qualityScore - previous.qualityScore : 0 };
   } catch {
     return null; // base non migrée : la vitrine reste affichable
   }
@@ -75,16 +78,16 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/onboard/organisation"
+                href="/signup"
                 className="rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700"
               >
                 Start free — onboard in 5 min
               </Link>
               <Link
-                href="/dashboard/overview"
+                href="/login"
                 className="rounded-full border border-line bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:border-brand-300 hover:text-brand-700"
               >
-                View live dashboard →
+                Explore the Acme demo →
               </Link>
             </div>
             <p className="mt-6 text-xs text-muted">No credit card · 3,000 free credits · Works with localhost</p>
@@ -270,7 +273,7 @@ export default async function HomePage() {
             Create an organisation, connect a repository, and watch Ship run its first analysis.
           </p>
           <div className="relative mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/onboard/organisation" className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+            <Link href="/signup" className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">
               Start free
             </Link>
             <Link href="/integrations" className="rounded-full px-6 py-3 text-sm font-semibold text-white ring-1 ring-white/40 hover:bg-white/10">

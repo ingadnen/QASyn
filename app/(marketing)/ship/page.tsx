@@ -59,7 +59,7 @@ export default function ShipPage() {
             regression tests — from a single command.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/onboard/organisation" className="rounded-full bg-ember-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-ember-600">
+            <Link href="/signup" className="rounded-full bg-ember-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-ember-600">
               Start free
             </Link>
             <a href="#pricing" className="rounded-full border border-paper-ink px-6 py-3 text-sm font-semibold text-paper-ink transition hover:bg-paper-ink hover:text-white">

@@ -1,39 +1,37 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { OnboardingStep } from "@/components/sections/onboarding/OnboardingStep";
+import { Step1Building } from "@/components/onboarding/Step1Building";
+import { Step2Context } from "@/components/onboarding/Step2Context";
+import { Step3Code, Step4Tools } from "@/components/onboarding/StepIntegrations";
+import { Step5Focus } from "@/components/onboarding/Step5Focus";
+import { Step6Team } from "@/components/onboarding/Step6Team";
+import { Step7Trial } from "@/components/onboarding/Step7Trial";
+import { requireOwnOrganisation } from "@/lib/auth";
 import { STEPS, TOTAL_STEPS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { getCurrentOrgId } from "@/lib/session";
 
-type PageProps = { params: Promise<{ step: string }> };
+export const dynamic = "force-dynamic";
 
-function parseStep(raw: string): number | null {
-  const n = Number(raw);
-  return Number.isInteger(n) && n >= 1 && n <= TOTAL_STEPS ? n : null;
+type Props = { params: Promise<{ step: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const n = Number((await params).step);
+  const meta = STEPS[n - 1];
+  return { title: meta ? `Step ${n} · ${meta.label}` : "Onboarding" };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const step = parseStep((await params).step);
-  return { title: step ? `${STEPS[step - 1].label} · Onboarding` : "Onboarding" };
-}
+const COMPONENTS = [Step1Building, Step2Context, Step3Code, Step4Tools, Step5Focus, Step6Team, Step7Trial];
 
-/**
- * Cible D — /onboarding/[step] (1 → 7)
- * Garde d'accès : impossible de sauter à une étape non débloquée (currentStep en base).
- */
-export default async function OnboardingStepPage({ params }: PageProps) {
-  const step = parseStep((await params).step);
-  if (!step) notFound();
+export default async function OnboardingStepPage({ params }: Props) {
+  const raw = (await params).step;
+  const step = Number(raw);
+  if (!/^\d$/.test(raw) || step < 1 || step > TOTAL_STEPS) notFound();
 
-  const organisationId = await getCurrentOrgId();
-  const onboarding = organisationId
-    ? await prisma.onboarding.findUnique({
-        where: { organisationId },
-        select: { currentStep: true, completedAt: true },
-      })
-    : null;
-  if (!onboarding) redirect("/onboard/organisation");
-  if (!onboarding.completedAt && step > onboarding.currentStep) redirect(`/onboarding/${onboarding.currentStep}`);
+  const { org } = await requireOwnOrganisation();
+  const onboarding = await prisma.onboarding.findUnique({ where: { organisationId: org.id }, select: { currentStep: true } });
+  const current = onboarding?.currentStep ?? 1;
+  if (step > current) redirect(`/onboarding/${current}`);
 
-  return <OnboardingStep step={step} />;
+  const Step = COMPONENTS[step - 1];
+  return <Step />;
 }

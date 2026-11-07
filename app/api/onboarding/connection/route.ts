@@ -1,40 +1,34 @@
 import { NextResponse } from "next/server";
-import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { getCurrentOrgId } from "@/lib/session";
+import { prisma } from "@/lib/db";
+import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
+import { guardOwnOrg } from "@/lib/tenant";
 import { delay, hostOf, normalizeWebsite } from "@/lib/utils";
 import { connectionCheckSchema } from "@/lib/validation";
 
 /**
- * POST /api/onboarding/connection — "Checking connection…"
- * Vérification SIMULÉE : aucune requête sortante n'est émise vers l'URL fournie
- * (évite toute SSRF). Seul le format est validé.
+ * POST /api/onboarding/connection — SIMULATED reachability check.
+ * The server never contacts the URL (SSRF-safe): it only validates its shape
+ * and, for localhost, checks that the tunnel agent has enrolled.
  */
 export async function POST(request: Request) {
-  if (!(await getCurrentOrgId())) return jsonError("No organisation in session.", 401);
+  const guard = await guardOwnOrg();
+  if (!guard.ok) return guard.response;
 
   const parsed = connectionCheckSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
+  await delay(MOCK_LATENCY_MS + 400);
 
-  await delay(MOCK_LATENCY_MS);
-
-  if (parsed.data.reachType === "TEAM_ENV") {
+  if (parsed.data.reachMode === "staging") {
     const url = normalizeWebsite(parsed.data.environmentUrl);
-    const host = hostOf(url);
-    if (!url || !host) return jsonError("Enter a valid URL, e.g. https://staging.example.com", 400);
-    return NextResponse.json({
-      ok: true,
-      target: host,
-      latencyMs: 40 + ((host.length * 37) % 120),
-      message: `Reachable · ${host}`,
-      simulated: true,
-    });
+    if (!url) return NextResponse.json({ ok: false, message: "Enter a valid URL, e.g. https://staging.example.com" });
+    const host = hostOf(url) ?? url;
+    const latencyMs = 80 + (host.length * 37) % 220;
+    return NextResponse.json({ ok: true, message: `Reached ${host} · HTTP 200 · ${latencyMs} ms`, url });
   }
 
-  return NextResponse.json({
-    ok: true,
-    target: `localhost:${parsed.data.localPort}`,
-    latencyMs: 12,
-    message: `Tunnel connected · localhost:${parsed.data.localPort}`,
-    simulated: true,
-  });
+  const onboarding = await prisma.onboarding.findUnique({ where: { organisationId: guard.ctx.org.id } });
+  if (!onboarding?.tunnelEnrolled) {
+    return NextResponse.json({ ok: false, message: "Waiting for a route — run the tunnel command on your machine." });
+  }
+  return NextResponse.json({ ok: true, message: `Route open to localhost:${parsed.data.localPort} through the tunnel.` });
 }

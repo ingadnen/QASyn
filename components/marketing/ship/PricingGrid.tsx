@@ -85,7 +85,7 @@ export function PricingGrid() {
                 ))}
               </ul>
               <Link
-                href="/onboard/organisation"
+                href="/signup"
                 className={cn(
                   "mt-6 rounded-full px-4 py-2.5 text-center text-sm font-semibold transition",
                   highlighted ? "bg-ember-500 text-white hover:bg-ember-600" : "bg-paper-ink text-white hover:bg-black",

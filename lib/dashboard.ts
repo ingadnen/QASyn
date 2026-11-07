@@ -1,38 +1,6 @@
-import type { LogLine, Organisation, TestRun } from "@prisma/client";
+import type { LogLine, TestRun } from "@prisma/client";
 import { prisma } from "./db";
-import { getCurrentOrgId } from "./session";
-import type { LogDTO, LogStream, LogTag, RunDTO, RunStatus } from "./types";
-
-export const DEMO_ORG_SLUG = "acme";
-
-export interface DashboardContext {
-  org: Organisation;
-  /** true si on affiche l'organisation de démonstration (seed) */
-  isDemo: boolean;
-  /** Organisation de la session dont l'onboarding n'est pas terminé */
-  pendingOrg: Organisation | null;
-}
-
-/**
- * Détermine l'organisation à afficher : celle de la session si elle a des runs,
- * sinon l'organisation de démonstration "acme" (seed).
- */
-export async function resolveDashboardOrg(): Promise<DashboardContext | null> {
-  const organisationId = await getCurrentOrgId();
-  let pendingOrg: Organisation | null = null;
-
-  if (organisationId) {
-    const org = await prisma.organisation.findUnique({ where: { id: organisationId } });
-    if (org) {
-      const runs = await prisma.testRun.count({ where: { organisationId: org.id } });
-      if (runs > 0) return { org, isDemo: false, pendingOrg: null };
-      pendingOrg = org;
-    }
-  }
-
-  const demo = await prisma.organisation.findUnique({ where: { slug: DEMO_ORG_SLUG } });
-  return demo ? { org: demo, isDemo: true, pendingOrg } : null;
-}
+import type { CrawlLogLine, IntegrationStatus, LogDTO, LogStream, LogTag, Provider, RunDTO, RunStatus } from "./types";
 
 export function serializeRun(run: TestRun): RunDTO {
   return {
@@ -46,14 +14,9 @@ export function serializeRun(run: TestRun): RunDTO {
     qualityScore: run.qualityScore,
     coverage: run.coverage,
     costAvoided: run.costAvoided,
-    codeChanges: run.codeChanges,
-    impactedTests: run.impactedTests,
     regressionsCaught: run.regressionsCaught,
-    anomaliesReproduced: run.anomaliesReproduced,
-    testsAdded: run.testsAdded,
     testsTotal: run.testsTotal,
     testsPassed: run.testsPassed,
-    durationMs: run.durationMs,
     createdAt: run.createdAt.toISOString(),
   };
 }
@@ -68,44 +31,83 @@ export function serializeLog(line: LogLine): LogDTO {
   };
 }
 
-/** Toutes les données du tableau de bord, lues depuis SQLite. */
+export function parseCrawlLogs(json: string): CrawlLogLine[] {
+  try {
+    const value = JSON.parse(json) as unknown;
+    return Array.isArray(value) ? (value as CrawlLogLine[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export const BUG_SAVING_USD = 1250;
+export const REGRESSION_SAVING_USD = 2400;
+
+export interface ModuleCoverage {
+  name: string;
+  total: number;
+  passing: number;
+  failing: number;
+  coverage: number;
+}
+
+function coverageRows(rows: Array<{ key: string; status: string; count: number }>): ModuleCoverage[] {
+  const map = new Map<string, ModuleCoverage>();
+  for (const r of rows) {
+    const m = map.get(r.key) ?? { name: r.key, total: 0, passing: 0, failing: 0, coverage: 0 };
+    m.total += r.count;
+    if (r.status === "passing") m.passing += r.count;
+    if (r.status === "failing") m.failing += r.count;
+    map.set(r.key, m);
+  }
+  return [...map.values()]
+    .map((m) => ({ ...m, coverage: m.total ? Math.round((m.passing / m.total) * 100) : 0 }))
+    .sort((a, b) => b.total - a.total);
+}
+
+/** Every Overview metric for ONE organisation (always scoped by organisationId). */
 export async function getOverview(organisationId: string) {
-  const [runs, totals] = await Promise.all([
-    prisma.testRun.findMany({ where: { organisationId }, orderBy: { createdAt: "asc" } }),
-    prisma.testRun.aggregate({
-      where: { organisationId },
-      _count: { _all: true },
-      _avg: { coverage: true, qualityScore: true },
-      _sum: {
-        costAvoided: true,
-        regressionsCaught: true,
-        anomaliesReproduced: true,
-        testsAdded: true,
-        testsTotal: true,
-        testsPassed: true,
-      },
-    }),
-  ]);
+  const where = { organisationId };
+  const [byModule, byCriticality, bugs, reproduced, runsAgg, prs, prRegressions, integrations, crawl, recents, latestRun] =
+    await Promise.all([
+      prisma.testCase.groupBy({ by: ["module", "status"], where, _count: { _all: true } }),
+      prisma.testCase.groupBy({ by: ["criticality", "status"], where, _count: { _all: true } }),
+      prisma.bugReport.count({ where }),
+      prisma.bugReport.count({ where: { ...where, status: "reproduced" } }),
+      prisma.testRun.aggregate({ where, _sum: { costAvoided: true, regressionsCaught: true } }),
+      prisma.pullRequestCheck.count({ where }),
+      prisma.pullRequestCheck.aggregate({ where: { ...where, status: "regression_caught" }, _sum: { regressions: true } }),
+      prisma.integration.findMany({ where, orderBy: { connectedAt: "asc" } }),
+      prisma.crawlSession.findFirst({ where, orderBy: { startedAt: "desc" } }),
+      prisma.systemAuditLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 8 }),
+      prisma.testRun.findFirst({ where, orderBy: { createdAt: "desc" }, include: { logs: { orderBy: { timestamp: "asc" } } } }),
+    ]);
 
-  const latest = runs.at(-1) ?? null;
-  const logs = latest
-    ? await prisma.logLine.findMany({ where: { testRunId: latest.id }, orderBy: { timestamp: "asc" } })
-    : [];
+  const modules = coverageRows(byModule.map((r) => ({ key: r.module, status: r.status, count: r._count._all })));
+  const criticality = coverageRows(byCriticality.map((r) => ({ key: r.criticality, status: r.status, count: r._count._all })));
+  const tests = modules.reduce(
+    (acc, m) => ({ total: acc.total + m.total, passing: acc.passing + m.passing, failing: acc.failing + m.failing }),
+    { total: 0, passing: 0, failing: 0 },
+  );
+  const regressions = (runsAgg._sum.regressionsCaught ?? 0) + (prRegressions._sum.regressions ?? 0);
+  const saved =
+    (runsAgg._sum.costAvoided ?? 0) + reproduced * BUG_SAVING_USD + (prRegressions._sum.regressions ?? 0) * REGRESSION_SAVING_USD;
 
-  const testsTotal = totals._sum.testsTotal ?? 0;
   return {
-    runs: runs.map(serializeRun),
-    latestLogs: logs.map(serializeLog),
-    totals: {
-      runs: totals._count._all,
-      failedRuns: runs.filter((r) => r.status === "FAILED").length,
-      avgCoverage: totals._avg.coverage ?? 0,
-      avgQualityScore: totals._avg.qualityScore ?? 0,
-      costAvoided: totals._sum.costAvoided ?? 0,
-      regressionsCaught: totals._sum.regressionsCaught ?? 0,
-      anomaliesReproduced: totals._sum.anomaliesReproduced ?? 0,
-      testsAdded: totals._sum.testsAdded ?? 0,
-      passRate: testsTotal > 0 ? ((totals._sum.testsPassed ?? 0) / testsTotal) * 100 : 0,
-    },
+    tests,
+    bugs: { total: bugs, reproduced },
+    saved,
+    hoursSaved: Math.round(saved / 95),
+    regressions,
+    prsChecked: prs,
+    leadTimeHours: prs > 0 ? Math.max(0.6, 6.5 - Math.min(prs, 20) * 0.25) : null,
+    integrations: integrations.map((i) => ({ provider: i.provider as Provider, status: i.status as IntegrationStatus, detail: i.detail })),
+    modules,
+    criticality,
+    crawl,
+    recents: recents.map((r) => ({ id: r.id, actorEmail: r.actorEmail, action: r.action, target: r.target, createdAt: r.createdAt.toISOString() })),
+    latestRun: latestRun ? { run: serializeRun(latestRun), logs: latestRun.logs.map(serializeLog) } : null,
   };
 }
+
+export type Overview = Awaited<ReturnType<typeof getOverview>>;

@@ -1,77 +1,63 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { resolveDashboardOrg } from "@/lib/dashboard";
 import { answer, type FinqaContext } from "@/lib/finqa";
 import { readJson, validationError } from "@/lib/http";
-import { getCurrentOrgId } from "@/lib/session";
-import type { OsKey } from "@/lib/types";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { jsonError } from "@/lib/http";
+import { resolveOrgContext } from "@/lib/tenant";
 import { delay, maskToken } from "@/lib/utils";
 
-const bodySchema = z.object({
-  message: z.string().trim().min(1, "Message is required.").max(500, "Message is too long (500 characters max)."),
-});
+const bodySchema = z.object({ message: z.string().trim().min(1, "Type a question.").max(500) });
 
-/** Contexte lu en base : dernier run de l'org affichée + tunnel de l'org de session. */
+/** Context for the assistant: the displayed org (own or demo), else the Acme demo. Tokens are always masked. */
 async function loadContext(): Promise<FinqaContext> {
-  const [dashboard, organisationId] = await Promise.all([resolveDashboardOrg(), getCurrentOrgId()]);
+  const ctx = await resolveOrgContext();
+  const org = ctx?.org ?? (await prisma.organisation.findFirst({ where: { isMockDemo: true } }));
+  if (!org) return { orgName: null, isDemo: true, latest: null, totals: null, tunnel: null };
 
-  let latest: FinqaContext["latest"] = null;
-  let totals: FinqaContext["totals"] = null;
-  if (dashboard) {
-    const [runs, agg] = await Promise.all([
-      prisma.testRun.findMany({ where: { organisationId: dashboard.org.id }, orderBy: { createdAt: "desc" }, take: 2 }),
-      prisma.testRun.aggregate({
-        where: { organisationId: dashboard.org.id },
-        _count: { _all: true },
-        _sum: { costAvoided: true },
-        _avg: { coverage: true },
-      }),
-    ]);
-    const [last, previous] = runs;
-    if (last) {
-      latest = {
-        release: last.release,
-        version: last.version,
-        title: last.title,
-        prNumber: last.prNumber,
-        qualityScore: last.qualityScore,
-        delta: previous ? last.qualityScore - previous.qualityScore : 0,
-        coverage: last.coverage,
-        costAvoided: last.costAvoided,
-        regressionsCaught: last.regressionsCaught,
-        testsPassed: last.testsPassed,
-        testsTotal: last.testsTotal,
-      };
-      totals = { runs: agg._count._all, costAvoided: agg._sum.costAvoided ?? 0, avgCoverage: agg._avg.coverage ?? 0 };
-    }
-  }
+  const runs = await prisma.testRun.findMany({ where: { organisationId: org.id }, orderBy: { createdAt: "desc" }, take: 50 });
+  const [latest, previous] = runs;
+  const onboarding = ctx && !ctx.readOnly ? await prisma.onboarding.findUnique({ where: { organisationId: org.id } }) : null;
 
-  // Le tunnel n'est exposé que pour l'organisation de la session (jamais celle d'un autre utilisateur), jeton masqué.
-  let tunnel: FinqaContext["tunnel"] = null;
-  if (organisationId) {
-    const onboarding = await prisma.onboarding.findUnique({ where: { organisationId } });
-    if (onboarding) {
-      tunnel = {
-        os: (onboarding.selectedOs as OsKey | null) ?? null,
-        port: onboarding.localPort ?? 3000,
-        maskedToken: onboarding.tunnelToken ? maskToken(onboarding.tunnelToken) : null,
-      };
-    }
-  }
-
-  return { orgName: dashboard?.org.name ?? null, isDemo: dashboard?.isDemo ?? true, latest, totals, tunnel };
+  return {
+    orgName: org.name,
+    isDemo: org.isMockDemo,
+    latest: latest
+      ? {
+          release: latest.release,
+          version: latest.version,
+          title: latest.title,
+          prNumber: latest.prNumber,
+          qualityScore: latest.qualityScore,
+          delta: previous ? latest.qualityScore - previous.qualityScore : 0,
+          coverage: latest.coverage,
+          costAvoided: latest.costAvoided,
+          regressionsCaught: latest.regressionsCaught,
+          testsPassed: latest.testsPassed,
+          testsTotal: latest.testsTotal,
+        }
+      : null,
+    totals: runs.length
+      ? {
+          runs: runs.length,
+          costAvoided: runs.reduce((s, r) => s + r.costAvoided, 0),
+          avgCoverage: runs.reduce((s, r) => s + r.coverage, 0) / runs.length,
+        }
+      : null,
+    tunnel: onboarding
+      ? { os: null, port: onboarding.localPort ?? 3000, maskedToken: onboarding.tunnelToken ? maskToken(onboarding.tunnelToken) : null }
+      : null,
+  };
 }
 
-/** POST /api/finqa — réponse simulée de l'assistant (latence réaliste 700–1200 ms). */
+/** POST /api/finqa { message } — simulated assistant (no external LLM call). */
 export async function POST(request: Request) {
+  if (!rateLimit(`finqa:${clientKey(request)}`, 30, 60_000)) return jsonError("Too many questions. Try again in a minute.", 429);
   const parsed = bodySchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
 
-  const started = Date.now();
-  const reply = answer(parsed.data.message, await loadContext());
-  const target = 700 + Math.min(parsed.data.message.length * 6, 300) + Math.floor(Math.random() * 200);
-  await delay(Math.max(0, target - (Date.now() - started)));
-
-  return NextResponse.json({ reply });
+  const context = await loadContext();
+  await delay(700 + Math.floor(Math.random() * 500));
+  return NextResponse.json({ reply: answer(parsed.data.message, context) });
 }

@@ -106,11 +106,19 @@ API routes (all validate input with zod; mutating routes add an 800 ms latency):
   - delete the temp files afterwards.
 - Record conclusions as findings or in this file, so you never have to analyse again.
 
-## Status (end of turn 3)
+## Status (SaaS multi-org — final)
 
-Done: DB + API + onboarding 1–7 + dashboard + marketing showcase (`/`, `/ship`, `/integrations`) + FinQA + `prisma.config.ts`. tsc and build pass, and the HTTP smoke test is OK.
+Done: full multi-tenant SaaS. Auth (`/login`, `/signup`, `/signup/verify`), strict tenant isolation (every table scoped by `organisationId`, demo read-only), onboarding 1–7, and **all 20+ dashboard routes** listed below. `npx tsc --noEmit` and `npx next build` pass with zero errors.
+
+- **Demo org Acme** (only org with rich data): `demo@acme.dev` / `AcmeDemo2026!`, slug `acme`, Release #284, 48 test cases (Core/Billing/Settings/Checkout), 5 reproduced bugs, PR #482, crawls, requirements, suites, plans, knowledge base, audits, API tokens.
+- **New orgs** start empty (0 test cases/bugs/PRs, $0 saved) and get an automatic `CrawlSession` (status `running`) on their website/environment URL with dynamic `CRAWL` logs. No demo data is ever injected into a user org.
+
+Prisma tables (all `organisationId`-scoped): `User`, `Session`, `Organisation` (website, logoUrl, addToKnowledgeBase, trialStartsAt/EndsAt, trialCredits=3000, plan trial|free|starter|pro|enterprise, isMockDemo), `Onboarding` (appDescription, reachMode, environmentUrl, localPort, tunnelToken, tunnelEnrolled, appLoginType/Username/Password, painPoints, userRole, testingMaturity, focusPriority, invitedEmails, completedAt), `Integration`, `TestRun`, `LogLine`, `TestCase`, `TestSuite`, `TestPlan`, `BugReport`, `PullRequestCheck`, `CrawlSession`, `Requirement`, `KnowledgeItem`, `EnvironmentConfig`, `ApiToken`, `SystemAuditLog`, `Upload`.
+
+Dashboard routes: `/dashboard/overview`, `/dashboard/pull-requests`, `/dashboard/crawl`, `/dashboard/code-analysis`, `/dashboard/requirements`, `/dashboard/test-cases`, `/dashboard/plans/suites`, `/dashboard/plans/test-plans`, `/dashboard/environments`, `/dashboard/uploads`, `/dashboard/knowledge-base`, `/dashboard/team`, `/dashboard/tunnels`, `/dashboard/integrations`, `/dashboard/billing`, `/dashboard/mcp`, `/dashboard/settings/organization`, `/dashboard/settings/audits`, `/dashboard/settings/analysis`, `/dashboard/settings/bug-reproduction`, `/dashboard/settings/api-tokens`.
+
+Shared client forms for the new pages live in `components/dashboard/pages/Forms.tsx` (+ `LinkTests.tsx`). Pages are server components reading Prisma directly via `requireOrgContext()`; mutations go through the existing `/api/dashboard/*` routes (PATCH for run/link, DELETE with slug confirm for org reset).
 
 Possible next steps:
 - E2E tests (Playwright);
-- a settings page;
 - a real Bitbucket provider (add `BITBUCKET` to `PROVIDERS` + `PROVIDER_META` + the catalogue).

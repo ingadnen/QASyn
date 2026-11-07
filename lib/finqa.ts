@@ -116,7 +116,7 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
           `Change-to-test coverage is ${r.coverage}% on release #${r.release}${avg !== null ? `, with a ${avg}% average over the last ${ctx.totals!.runs} runs` : ""}. Impacted flows without tests get new regression cases automatically.`,
           `La couverture change-to-test est de ${r.coverage} % sur la release #${r.release}${avg !== null ? `, avec une moyenne de ${avg} % sur les ${ctx.totals!.runs} derniers runs` : ""}. Les parcours impactés sans test reçoivent automatiquement de nouveaux cas de régression.`,
         ),
-        links: [{ label: t(lang, "See the runs", "Voir les runs"), href: "/dashboard/overview#runs" }],
+        links: [{ label: t(lang, "See the runs", "Voir les runs"), href: "/dashboard/pull-requests" }],
       };
     }
     case "cost": {
@@ -139,11 +139,11 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
         intent,
         text: t(
           lang,
-          `To test localhost, open onboarding step 2, choose “Localhost”, pick your OS tab and run the command below. The tunnel only opens an outbound connection authenticated by your tnl_ token${ctx.tunnel?.maskedToken ? " (masked here — reveal it in step 2)" : ""}. Then click “Check connection”.`,
-          `Pour tester localhost, ouvrez l'étape 2 de l'onboarding, choisissez « Localhost », sélectionnez l'onglet de votre OS et lancez la commande ci-dessous. Le tunnel n'ouvre qu'une connexion sortante authentifiée par votre jeton tnl_${ctx.tunnel?.maskedToken ? " (masqué ici — affichez-le à l'étape 2)" : ""}. Cliquez ensuite sur « Check connection ».`,
+          `To test localhost, open Tunnels in the dashboard (or onboarding step 1), choose “Localhost, right now”, pick your OS tab and run the command below. The tunnel only opens an outbound connection authenticated by your tnl_ token${ctx.tunnel?.maskedToken ? " (masked here — reveal it on the Tunnels page)" : ""}. Then click “Check connection”.`,
+          `Pour tester localhost, ouvrez Tunnels dans le dashboard (ou l'étape 1 de l'onboarding), choisissez « Localhost, right now », sélectionnez l'onglet de votre OS et lancez la commande ci-dessous. Le tunnel n'ouvre qu'une connexion sortante authentifiée par votre jeton tnl_${ctx.tunnel?.maskedToken ? " (masqué ici — affichez-le sur la page Tunnels)" : ""}. Cliquez ensuite sur « Check connection ».`,
         ),
         code: buildTunnelCommand(os, token, port),
-        links: [{ label: t(lang, "Open step 2", "Ouvrir l'étape 2"), href: "/onboarding/2" }],
+        links: [{ label: t(lang, "Open Tunnels", "Ouvrir Tunnels"), href: "/dashboard/tunnels" }],
       };
     }
     case "pricing":
@@ -174,7 +174,7 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
           "Happy to connect you with the team! The fastest way to see QASyn on your own app is to create an organisation — a quality engineer will review your first run.",
           "Avec plaisir ! Le plus rapide pour voir QASyn sur votre application est de créer une organisation — un ingénieur qualité passera en revue votre premier run.",
         ),
-        links: [{ label: t(lang, "Book a demo", "Réserver une démo"), href: "/onboard/organisation" }],
+        links: [{ label: t(lang, "Book a demo", "Réserver une démo"), href: "/signup" }],
       };
     case "onboard":
       return {
@@ -184,7 +184,7 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
           "Onboarding takes 7 short steps: describe your app, choose how Ship reaches it (team env or localhost), connect code, connect a tracker, pick a focus, invite your team and launch.",
           "L'onboarding tient en 7 étapes : décrire l'app, choisir comment Ship l'atteint (environnement d'équipe ou localhost), connecter le code, le tracker, choisir une priorité, inviter l'équipe et lancer.",
         ),
-        links: [{ label: t(lang, "Start free", "Commencer"), href: "/onboard/organisation" }],
+        links: [{ label: t(lang, "Start free", "Commencer"), href: "/signup" }],
       };
     case "greeting":
       return {
@@ -203,7 +203,7 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
           "I'm not sure about that one yet. I can answer questions on release quality, coverage, cost avoided, pricing, integrations and the localhost tunnel — or connect you with the team.",
           "Je n'ai pas encore la réponse. Je peux répondre sur la qualité des releases, la couverture, le coût évité, les tarifs, les intégrations et le tunnel localhost — ou vous mettre en relation avec l'équipe.",
         ),
-        links: [{ label: t(lang, "Contact the team", "Contacter l'équipe"), href: "/onboard/organisation" }],
+        links: [{ label: t(lang, "Contact the team", "Contacter l'équipe"), href: "/signup" }],
       };
   }
 }

@@ -1,19 +1,30 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
-import type { Focus, IntegrationStatus, OnboardingState, OsKey, Provider, ReachType } from "./types";
-
-/** Durée simulée de l'indexation d'un dépôt (INDEXING → CONNECTED). */
-export const INDEXING_DURATION_MS = 8000;
+import type {
+  AppLoginType, CrawlStatus, Focus, IntegrationStatus, OnboardingRole, OnboardingState, PainPoint, Provider, ReachMode,
+  TestingMaturity,
+} from "./types";
 
 const include = {
   onboarding: true,
   integrations: { orderBy: { connectedAt: "asc" } },
+  crawlSessions: { orderBy: { startedAt: "desc" }, take: 1 },
 } satisfies Prisma.OrganisationInclude;
 
 type OrganisationWithOnboarding = Prisma.OrganisationGetPayload<{ include: typeof include }>;
 
+function parseList<T extends string>(json: string): T[] {
+  try {
+    const value = JSON.parse(json) as unknown;
+    return Array.isArray(value) ? (value.filter((v) => typeof v === "string") as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function toOnboardingState(org: OrganisationWithOnboarding): OnboardingState {
   const ob = org.onboarding;
+  const crawl = org.crawlSessions[0];
   return {
     organisation: {
       id: org.id,
@@ -21,45 +32,43 @@ export function toOnboardingState(org: OrganisationWithOnboarding): OnboardingSt
       slug: org.slug,
       ownerName: org.ownerName,
       website: org.website ?? "",
-      addWebsiteToKb: org.addWebsiteToKb,
+      addToKnowledgeBase: org.addToKnowledgeBase,
+      logoUrl: org.logoUrl,
     },
     currentStep: ob?.currentStep ?? 1,
     appDescription: ob?.appDescription ?? "",
-    reachType: (ob?.reachType as ReachType | null) ?? null,
+    reachMode: (ob?.reachMode as ReachMode | null) ?? null,
     environmentUrl: ob?.environmentUrl ?? "",
-    selectedOs: (ob?.selectedOs as OsKey | null) ?? null,
     localPort: ob?.localPort ?? 3000,
     tunnelToken: ob?.tunnelToken ?? null,
-    focus: (ob?.focus as Focus | null) ?? null,
-    teamInvites: ob?.teamInvites ? ob.teamInvites.split("\n").filter(Boolean) : [],
+    tunnelEnrolled: ob?.tunnelEnrolled ?? false,
+    appLoginType: (ob?.appLoginType as AppLoginType | null) ?? null,
+    appLoginUsername: ob?.appLoginUsername ?? "",
+    hasAppLoginPassword: Boolean(ob?.appLoginPassword),
+    painPoints: parseList<PainPoint>(ob?.painPoints ?? "[]"),
+    userRole: (ob?.userRole as OnboardingRole | null) ?? null,
+    testingMaturity: (ob?.testingMaturity as TestingMaturity | null) ?? null,
+    focusPriority: (ob?.focusPriority as Focus | null) ?? null,
+    invitedEmails: ob?.invitedEmails ? ob.invitedEmails.split("\n").filter(Boolean) : [],
     integrations: org.integrations.map((i) => ({
       provider: i.provider as Provider,
       status: i.status as IntegrationStatus,
       detail: i.detail,
     })),
     completed: Boolean(ob?.completedAt),
+    crawl: crawl
+      ? { id: crawl.id, targetUrl: crawl.targetUrl, status: crawl.status as CrawlStatus, startedAt: crawl.startedAt.toISOString() }
+      : null,
+    trialEndsAt: org.trialEndsAt.toISOString(),
   };
 }
 
-/**
- * Charge l'état d'onboarding (SELECT) et fait progresser les indexations
- * terminées (UPDATE INDEXING → CONNECTED après INDEXING_DURATION_MS).
- */
+/** Loads the onboarding state of an organisation and settles finished indexing jobs. */
 export async function loadOnboardingState(organisationId: string): Promise<OnboardingState | null> {
+  await prisma.integration.updateMany({
+    where: { organisationId, status: "INDEXING", updatedAt: { lte: new Date(Date.now() - 8000) } },
+    data: { status: "CONNECTED" },
+  });
   const org = await prisma.organisation.findUnique({ where: { id: organisationId }, include });
-  if (!org) return null;
-
-  const now = Date.now();
-  const finished = org.integrations.filter(
-    (i) => i.status === "INDEXING" && now - i.updatedAt.getTime() >= INDEXING_DURATION_MS,
-  );
-  if (finished.length > 0) {
-    await prisma.integration.updateMany({
-      where: { id: { in: finished.map((i) => i.id) } },
-      data: { status: "CONNECTED" },
-    });
-    for (const integration of finished) integration.status = "CONNECTED";
-  }
-
-  return toOnboardingState(org);
+  return org ? toOnboardingState(org) : null;
 }

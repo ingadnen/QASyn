@@ -1,122 +1,194 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AQETerminal } from "@/components/sections/dashboard/AQETerminal";
-import { CostSavingsChart, QualityTrendChart } from "@/components/sections/dashboard/Charts";
-import { ReleaseQualityCard } from "@/components/sections/dashboard/ReleaseQualityCard";
-import { RunsTable } from "@/components/sections/dashboard/RunsTable";
-import { StatCards } from "@/components/sections/dashboard/StatCards";
-import { Badge } from "@/components/ui/Badge";
-import { getOverview, resolveDashboardOrg } from "@/lib/dashboard";
-import { capitalize } from "@/lib/utils";
+import { CoverageTabs, CrawlBanner, FinishCard, OverviewTerminal, SlackBanner } from "@/components/dashboard/overview/OverviewWidgets";
+import { Card, PageHeader, StatusPill } from "@/components/dashboard/ui";
+import { hostFromUrl } from "@/lib/crawl";
+import { getOverview, parseCrawlLogs } from "@/lib/dashboard";
+import { prisma } from "@/lib/db";
+import { crawlLiveStats } from "@/lib/engine";
+import { timeAgo, usd } from "@/lib/format";
+import { readSettings, requireOrgContext } from "@/lib/tenant";
+import type { CrawlLogLine, CrawlStatus } from "@/lib/types";
+import { firstName } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Overview" };
 export const dynamic = "force-dynamic";
 
-/**
- * Cible E — /dashboard/overview
- * Server Component : statistiques, graphiques, journal des runs et logs AQE
- * lus directement depuis SQLite (TestRun + LogLine).
- */
-export default async function OverviewPage() {
-  const dashboard = await resolveDashboardOrg();
-
-  if (!dashboard) {
-    return (
-      <EmptyState
-        title="No data yet"
-        body="Seed the local database with `npm run db:seed`, or create an organisation and finish onboarding."
-      />
-    );
-  }
-
-  const { org, isDemo, pendingOrg } = dashboard;
-  const { runs, latestLogs, totals } = await getOverview(org.id);
-  const latest = runs.at(-1);
-
-  if (!latest) {
-    return <EmptyState title="No releases analysed yet" body="Finish onboarding to launch Ship's first analysis." />;
-  }
-
-  const previous = runs.at(-2) ?? null;
-  const project = isDemo ? "acme / storefront" : `${org.slug} / app`;
-
+function Kpi({ label, value, hint, accent }: { label: string; value: string; hint: string; accent: string }) {
   return (
-    <div className="px-6 py-8 lg:px-10">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{capitalize(org.name)} workspace</h1>
-            {isDemo && <Badge tone="brand">Demo data</Badge>}
-          </div>
-          <p className="mt-1 text-sm text-slate-500">
-            {totals.runs} releases · {totals.failedRuns} blocked · {totals.passRate.toFixed(1)}% test pass rate ·{" "}
-            {totals.anomaliesReproduced} production anomalies reproduced
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge tone="success" dot pulse>
-            Ship watching
-          </Badge>
-          <Link
-            href="/onboard/organisation"
-            className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-500"
-          >
-            New organisation
-          </Link>
-        </div>
-      </header>
-
-      {pendingOrg && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-5 py-4 text-sm">
-          <p className="text-brand-800">
-            <span className="font-semibold">{capitalize(pendingOrg.name)}</span> isn&apos;t set up yet — you&apos;re
-            viewing demo data.
-          </p>
-          <Link href="/onboarding" className="font-medium text-brand-700 hover:underline">
-            Resume onboarding →
-          </Link>
-        </div>
-      )}
-
-      <div className="mt-8 space-y-6">
-        <StatCards latest={latest} previous={previous} totals={totals} />
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="space-y-6">
-            <QualityTrendChart runs={runs} />
-            <CostSavingsChart runs={runs} total={totals.costAvoided} />
-          </div>
-          <ReleaseQualityCard latest={latest} previous={previous} first={runs[0]} />
-        </div>
-
-        <AQETerminal
-          project={project}
-          runs={[...runs].reverse().map(({ id, release, version, status }) => ({ id, release, version, status }))}
-          initialRunId={latest.id}
-          initialLogs={latestLogs}
-        />
-
-        <RunsTable runs={runs} />
-      </div>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="flex items-center gap-2 text-xs font-medium text-slate-500">
+        <span className={`size-2 rounded-full ${accent}`} />
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   );
 }
 
-function EmptyState({ title, body }: { title: string; body: string }) {
+export default async function OverviewPage() {
+  const ctx = await requireOrgContext();
+  const orgId = ctx.org.id;
+  const [data, members] = await Promise.all([getOverview(orgId), prisma.user.count({ where: { organisationId: orgId } })]);
+  const settings = readSettings(ctx.org);
+  const dismissed = new Set(settings.dismissed ?? []);
+
+  const crawl = data.crawl;
+  const liveStats = crawl ? crawlLiveStats(crawl) : null;
+  const crawlDto = crawl
+    ? {
+        id: crawl.id,
+        targetUrl: crawl.targetUrl,
+        status: crawl.status as CrawlStatus,
+        startedAt: crawl.startedAt.toISOString(),
+        logs: parseCrawlLogs(crawl.logs),
+      }
+    : null;
+
+  const runLines: CrawlLogLine[] = data.latestRun
+    ? data.latestRun.logs.map((l, i) => ({ offsetMs: i * 400, tag: l.tag, message: l.message }))
+    : [];
+  const runLabel = data.latestRun ? `Release #${data.latestRun.run.release} · v${data.latestRun.run.version}` : null;
+
+  const connected = new Set(data.integrations.filter((i) => i.status === "CONNECTED").map((i) => i.provider));
+  const showSlack = !dismissed.has("slack") && !settings.slackChannelCreated;
+  const showBugTracker = !dismissed.has("bugTracker") && !connected.has("JIRA") && !connected.has("LINEAR");
+  const showInvite = !dismissed.has("invite") && members <= 1;
+  const passRate = data.tests.total ? Math.round((data.tests.passing / data.tests.total) * 100) : 0;
+  const credits = ctx.org.trialCredits - ctx.org.creditsUsed;
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-        <p className="mt-2 text-sm text-slate-500">{body}</p>
-        <div className="mt-6 flex justify-center gap-3 text-sm">
-          <Link href="/onboarding" className="rounded-lg bg-brand-600 px-4 py-2 font-medium text-white hover:bg-brand-500">
-            Continue onboarding
-          </Link>
-          <Link href="/onboard/organisation" className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50">
-            New organisation
-          </Link>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        kicker={ctx.org.isMockDemo ? "DEMO WORKSPACE" : "OVERVIEW"}
+        title={`Welcome back, ${firstName(ctx.user.name)}`}
+        description={`Quality signals for ${ctx.org.name}, updated from every crawl, pull request and test run.`}
+        actions={
+          <>
+            <Link href="/dashboard/pull-requests" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+              Check a PR
+            </Link>
+            <Link href="/dashboard/test-cases?new=1" className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500">
+              + New Test Cases
+            </Link>
+          </>
+        }
+      />
+
+      <OverviewTerminal crawl={crawlDto} runLines={crawl?.status === "running" ? [] : runLines} runLabel={crawl?.status === "running" ? null : runLabel} />
+
+      {showSlack && <SlackBanner orgName={ctx.org.name} readOnly={ctx.readOnly} />}
+
+      {crawl?.status === "running" && liveStats && (
+        <CrawlBanner crawlId={crawl.id} host={hostFromUrl(crawl.targetUrl)} pages={liveStats.pagesVisited} flows={liveStats.flowsMapped} readOnly={ctx.readOnly} />
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Kpi label="Test cases" value={String(data.tests.total)} hint={data.tests.total ? `${passRate}% passing · ${data.tests.failing} failing` : "Generated by crawls and AI"} accent="bg-brand-500" />
+        <Kpi label="Bugs reproduced" value={String(data.bugs.reproduced)} hint={`${data.bugs.total} bug reports in total`} accent="bg-amber-500" />
+        <Kpi label="Regressions caught" value={String(data.regressions)} hint="Before they reached production" accent="bg-red-500" />
+        <Kpi label="Cost avoided" value={usd(data.saved)} hint={`≈ ${data.hoursSaved} engineering hours saved`} accent="bg-emerald-500" />
       </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="p-4">
+          <p className="text-xs font-medium text-slate-500">Pull requests checked</p>
+          <p className="mt-1 text-xl font-semibold text-slate-900">{data.prsChecked}</p>
+          <Link href="/dashboard/pull-requests" className="mt-2 inline-block text-xs font-medium text-brand-600 hover:underline">
+            View pull requests →
+          </Link>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-medium text-slate-500">PR lead time</p>
+          <p className="mt-1 text-xl font-semibold text-slate-900">{data.leadTimeHours === null ? "—" : `${data.leadTimeHours.toFixed(1)} h`}</p>
+          <p className="mt-2 text-xs text-slate-500">From opened to verified, across checked PRs</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-medium text-slate-500">Credits remaining</p>
+          <p className="mt-1 text-xl font-semibold text-slate-900">
+            {credits.toLocaleString("en-US")} <span className="text-sm font-normal text-slate-400">/ {ctx.org.trialCredits.toLocaleString("en-US")}</span>
+          </p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-brand-500" style={{ width: `${ctx.org.trialCredits ? (credits / ctx.org.trialCredits) * 100 : 0}%` }} />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <CoverageTabs modules={data.modules} criticality={data.criticality} />
+        </div>
+        <Card title="Recents" actions={<Link href="/dashboard/settings/audits" className="text-xs font-medium text-brand-600 hover:underline">All activity</Link>}>
+          {data.recents.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-slate-500">No activity yet.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {data.recents.map((r) => (
+                <li key={r.id} className="px-5 py-2.5">
+                  <p className="flex items-center justify-between gap-2 text-sm">
+                    <span className="truncate font-medium text-slate-800">{r.action}</span>
+                    <span suppressHydrationWarning className="shrink-0 text-xs text-slate-400">{timeAgo(r.createdAt)}</span>
+                  </p>
+                  <p className="truncate text-xs text-slate-500">
+                    {r.target} · {r.actorEmail}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      {(showBugTracker || showInvite || !crawl) && (
+        <section>
+          <p className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-slate-500">FINISH SETTING UP</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            {!crawl && (
+              <div className="flex flex-col rounded-xl border border-dashed border-slate-300 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-900">Crawl your app</p>
+                <p className="mt-1 flex-1 text-xs text-slate-500">Map pages and flows to generate your first test cases.</p>
+                <Link href="/dashboard/crawl" className="mt-3 w-fit rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500">
+                  Start a crawl
+                </Link>
+              </div>
+            )}
+            {showBugTracker && (
+              <FinishCard
+                card="bugTracker"
+                title="Connect your bug tracker"
+                description="Jira or Linear issues are reproduced automatically with video, network logs and root cause."
+                href="/dashboard/integrations"
+                cta="Connect"
+                readOnly={ctx.readOnly}
+              />
+            )}
+            {showInvite && (
+              <FinishCard
+                card="invite"
+                title="Invite your team"
+                description="Share PR verdicts, bug reproductions and coverage with engineers and QA."
+                href="/dashboard/team"
+                cta="Invite teammates"
+                readOnly={ctx.readOnly}
+              />
+            )}
+          </div>
+        </section>
+      )}
+
+      {data.integrations.length > 0 && (
+        <Card title="Integrations">
+          <ul className="flex flex-wrap gap-2 px-5 py-4">
+            {data.integrations.map((i) => (
+              <li key={i.provider} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm">
+                <span className="font-medium capitalize text-slate-800">{i.provider.toLowerCase()}</span>
+                <StatusPill value={i.status} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
     </div>
   );
 }

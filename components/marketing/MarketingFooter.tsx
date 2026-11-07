@@ -8,21 +8,21 @@ const COLUMNS = [
       { href: "/ship", label: "Ship — AI QA engineer" },
       { href: "/ship#pricing", label: "Pricing" },
       { href: "/integrations", label: "Integrations" },
-      { href: "/dashboard/overview", label: "Live dashboard" },
+      { href: "/dashboard/overview", label: "Dashboard" },
     ],
   },
   {
     title: "Get started",
     links: [
-      { href: "/onboard/organisation", label: "Create organisation" },
-      { href: "/onboarding/2", label: "Localhost tunnel" },
-      { href: "/onboarding/3", label: "Connect code" },
+      { href: "/signup", label: "Create an account" },
+      { href: "/login", label: "Log in (demo inside)" },
+      { href: "/onboarding", label: "Resume onboarding" },
     ],
   },
   {
     title: "Prototype",
     links: [
-      { href: "/api/onboarding/context", label: "Workspace API" },
+      { href: "/dashboard/tunnels", label: "Localhost tunnel" },
       { href: "/dashboard/overview#terminal", label: "AQE Terminal" },
     ],
   },
@@ -37,7 +37,7 @@ export function MarketingFooter() {
           <p className="mt-4 max-w-xs text-sm leading-relaxed">
             Autonomous quality engineering for web apps, APIs and AI agents. Local prototype — all data is simulated.
           </p>
-          <form className="mt-6 flex max-w-xs gap-2" action="/onboard/organisation">
+          <form className="mt-6 flex max-w-xs gap-2" action="/signup">
             <label htmlFor="footer-email" className="sr-only">
               Work email
             </label>

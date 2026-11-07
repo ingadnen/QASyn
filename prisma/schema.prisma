@@ -1,10 +1,9 @@
 // =============================================================================
-// QASyn — schéma de données local (SQLite via Prisma)
+// QASyn — multi-tenant SaaS schema (SQLite via Prisma)
 // -----------------------------------------------------------------------------
-// Les statuts / enums sont stockés en String pour rester portables sur SQLite.
-// Les valeurs autorisées sont typées dans lib/types.ts et validées par zod
-// (lib/validation.ts) à chaque entrée d'API.
-// Pour passer sur PostgreSQL : provider = "postgresql" + DATABASE_URL adapté.
+// Enums are stored as String (SQLite). Allowed values are typed in lib/types.ts
+// and validated with zod (lib/validation.ts) at every API boundary.
+// Every functional table is scoped by organisationId (strict tenant isolation).
 // =============================================================================
 
 generator client {
@@ -16,86 +15,140 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Organisation créée sur /onboard/organisation.
+/// A person. passwordHash is null for invited teammates who have not signed up yet.
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  passwordHash    String?
+  name            String
+  /// Engineer | QA | Eng manager | Founder | Admin
+  role            String        @default("Admin")
+  avatarInitials  String
+  /// active | invited
+  status          String        @default("active")
+  emailVerifiedAt DateTime?
+  verifyCodeHash  String?
+  verifyExpiresAt DateTime?
+  verifyAttempts  Int           @default(0)
+  organisationId  String?
+  organisation    Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+
+  sessions Session[]
+
+  @@index([organisationId])
+}
+
+/// Server-side session. The cookie holds a random token, only its SHA-256 is stored.
+model Session {
+  id                   String   @id @default(cuid())
+  tokenHash            String   @unique
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Organisation currently displayed (own organisation or the read-only demo)
+  activeOrganisationId String?
+  expiresAt            DateTime
+  createdAt            DateTime @default(now())
+
+  @@index([userId])
+}
+
 model Organisation {
-  id             String   @id @default(cuid())
-  name           String
-  slug           String   @unique
-  /// "Your name" saisi par la personne qui crée l'organisation
-  ownerName      String
-  website        String?
-  addWebsiteToKb Boolean  @default(true)
-  createdAt      DateTime @default(now())
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String   @unique
+  ownerName          String
+  website            String?
+  /// data:image/(png|jpeg|webp);base64,… (≤ 300 KB)
+  logoUrl            String?
+  addToKnowledgeBase Boolean  @default(true)
+  trialStartsAt      DateTime @default(now())
+  trialEndsAt        DateTime
+  trialCredits       Int      @default(3000)
+  creditsUsed        Int      @default(0)
+  /// trial | free | starter | pro | enterprise
+  plan               String   @default("trial")
+  /// Simulated payment method label, e.g. "Visa •••• 4242" (never a card number)
+  paymentMethod      String?
+  isMockDemo         Boolean  @default(false)
+  /// JSON: analysis / bug reproduction settings, dismissed cards…
+  settingsJson       String   @default("{}")
+  createdAt          DateTime @default(now())
 
-  onboarding   Onboarding?
-  integrations Integration[]
-  testRuns     TestRun[]
+  users         User[]
+  onboarding    Onboarding?
+  integrations  Integration[]
+  testRuns      TestRun[]
+  testCases     TestCase[]
+  testSuites    TestSuite[]
+  testPlans     TestPlan[]
+  bugReports    BugReport[]
+  pullRequests  PullRequestCheck[]
+  crawlSessions CrawlSession[]
+  requirements  Requirement[]
+  knowledge     KnowledgeItem[]
+  environments  EnvironmentConfig[]
+  apiTokens     ApiToken[]
+  auditLogs     SystemAuditLog[]
+  uploads       Upload[]
 }
 
-/// État du tunnel d'onboarding en 7 étapes (une ligne par organisation).
 model Onboarding {
-  id             String       @id @default(cuid())
-  organisationId String       @unique
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-
-  /// Étape la plus avancée débloquée (1 → 7)
-  currentStep    Int       @default(1)
-  /// Étape 1 — description libre (max 2500 caractères)
-  appDescription String?
-  /// Étape 2 — TEAM_ENV | LOCALHOST
-  reachType      String?
-  environmentUrl String?
-  /// Étape 2 (localhost) — MACOS | LINUX | WINDOWS
-  selectedOs     String?
-  localPort      Int?
-  tunnelToken    String?
-  /// Étape 5 — PR_IMPACT | BUG_REPRO | REGRESSIONS | PROD_SIGNALS
-  focus          String?
-  /// Étape 6 — e-mails séparés par "\n"
-  teamInvites    String?
-  /// Étape 7 — date de lancement
-  completedAt    DateTime?
-  updatedAt      DateTime  @updatedAt
+  id               String       @id @default(cuid())
+  organisationId   String       @unique
+  organisation     Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  currentStep      Int          @default(1)
+  appDescription   String?
+  /// staging | localhost
+  reachMode        String?
+  environmentUrl   String?
+  localPort        Int?
+  tunnelToken      String?
+  tunnelEnrolled   Boolean      @default(false)
+  /// none | signup_test_account | credentials
+  appLoginType     String?
+  appLoginUsername String?
+  /// AES-256-GCM encrypted (lib/crypto.ts), never sent back to the browser
+  appLoginPassword String?
+  /// JSON array of pain points
+  painPoints       String       @default("[]")
+  userRole         String?
+  testingMaturity  String?
+  focusPriority    String?
+  /// e-mails joined by "\n"
+  invitedEmails    String       @default("")
+  completedAt      DateTime?
+  updatedAt        DateTime     @updatedAt
 }
 
-/// Connexion à un outil tiers (étapes 3 et 4).
 model Integration {
   id             String       @id @default(cuid())
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-
   /// GITHUB | GITLAB | JIRA | LINEAR | SLACK
-  provider    String
+  provider       String
   /// CONNECTED | INDEXING | FAILED
-  status      String
-  /// Ex. "acme/storefront", "ACME", "#qa-alerts"
-  detail      String?
-  connectedAt DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status         String
+  detail         String?
+  connectedAt    DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@unique([organisationId, provider])
 }
 
-/// Exécution d'analyse / de tests pour une release (alimente le tableau de bord).
 model TestRun {
-  id             String       @id @default(cuid())
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-
-  release Int
-  version String
-  title   String
-  branch  String?
-  prNumber Int?
+  id                  String       @id @default(cuid())
+  organisationId      String
+  organisation        Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  release             Int
+  version             String
+  title               String
+  branch              String?
+  prNumber            Int?
   /// SUCCESS | FAILED
-  status  String
-
-  // --- Métriques du "Release Quality Report" ---------------------------------
-  /// Score de qualité /100
+  status              String
   qualityScore        Int
-  /// Couverture changement → tests, en %
   coverage            Float
-  /// Coût de défaut évité estimé, en USD
   costAvoided         Float
   codeChanges         Int
   impactedTests       Int
@@ -105,26 +158,222 @@ model TestRun {
   testsTotal          Int
   testsPassed         Int
   durationMs          Int
-
-  createdAt DateTime @default(now())
-
-  logs LogLine[]
+  createdAt           DateTime     @default(now())
+  logs                LogLine[]
 
   @@index([organisationId, createdAt])
 }
 
-/// Ligne du terminal AQE ("ship watch --all") rattachée à une exécution.
 model LogLine {
   id        String   @id @default(cuid())
   testRunId String
   testRun   TestRun  @relation(fields: [testRunId], references: [id], onDelete: Cascade)
-
   timestamp DateTime
-  /// stdout | stderr
   stream    String
-  /// DEPLOY | TEST | PR | BUG | RCA | FIX | INFO | WARN | FAIL
   tag       String
   message   String
 
   @@index([testRunId, timestamp])
+}
+
+model TestCase {
+  id             String        @id @default(cuid())
+  organisationId String
+  organisation   Organisation  @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  title          String
+  module         String
+  /// critical | high | medium | low
+  criticality    String
+  /// passing | failing | draft | flaky
+  status         String        @default("draft")
+  stepsCount     Int           @default(1)
+  /// manual | ai | crawl
+  source         String        @default("manual")
+  lastRunAt      DateTime?
+  createdAt      DateTime      @default(now())
+  requirements   Requirement[]
+
+  @@index([organisationId, module])
+}
+
+model TestSuite {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  /// manual | on_pr | nightly | weekly
+  schedule       String       @default("manual")
+  /// Module filter ("" = all modules)
+  module         String       @default("")
+  testCasesCount Int          @default(0)
+  passRate       Float        @default(0)
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+model TestPlan {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  schedule       String       @default("manual")
+  module         String       @default("")
+  environment    String?
+  testCasesCount Int          @default(0)
+  passRate       Float        @default(0)
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+model BugReport {
+  id                String       @id @default(cuid())
+  organisationId    String
+  organisation      Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  title             String
+  /// critical | high | medium | low
+  severity          String
+  /// reproduced | open | fixed
+  status            String
+  /// Steps joined by "\n"
+  reproductionSteps String
+  videoUrl          String?
+  rootCause         String?
+  environment       String?
+  /// jira | linear | test_run | manual
+  source            String       @default("manual")
+  externalKey       String?
+  createdAt         DateTime     @default(now())
+
+  @@index([organisationId, createdAt])
+}
+
+model PullRequestCheck {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  prNumber       Int
+  title          String
+  branch         String
+  author         String
+  /// passed_baseline | regression_caught | running
+  status         String
+  /// low | medium | high
+  riskLevel      String
+  filesChanged   Int
+  testsRun       Int          @default(0)
+  regressions    Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  @@unique([organisationId, prNumber])
+}
+
+model CrawlSession {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  targetUrl      String
+  /// running | completed | failed
+  status         String
+  pagesVisited   Int          @default(0)
+  flowsMapped    Int          @default(0)
+  startedAt      DateTime     @default(now())
+  completedAt    DateTime?
+  /// JSON array of { offsetMs, tag, message }
+  logs           String       @default("[]")
+
+  @@index([organisationId, startedAt])
+}
+
+model Requirement {
+  id               String       @id @default(cuid())
+  organisationId   String
+  organisation     Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  code             String
+  title            String
+  /// manual | jira | linear | doc | import
+  source           String       @default("manual")
+  /// covered | partial | uncovered
+  coverageStatus   String       @default("uncovered")
+  linkedTestsCount Int          @default(0)
+  createdAt        DateTime     @default(now())
+  testCases        TestCase[]
+
+  @@unique([organisationId, code])
+}
+
+model KnowledgeItem {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  title          String
+  /// website | doc | openapi | upload
+  type           String
+  urlOrPath      String
+  /// indexed | indexing
+  status         String
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organisationId])
+}
+
+model EnvironmentConfig {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  baseUrl        String
+  /// none | basic | bearer | form
+  authType       String       @default("none")
+  /// JSON object of KEY → value
+  variablesJson  String       @default("{}")
+  isDefault      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+model ApiToken {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  tokenPrefix    String
+  tokenHash      String       @unique
+  lastUsedAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+model SystemAuditLog {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  actorEmail     String
+  action         String
+  target         String
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId, createdAt])
+}
+
+/// Uploaded artefact metadata (file contents are not stored by this prototype).
+model Upload {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  fileName       String
+  /// apk | ipa | har | postman | video | other
+  kind           String
+  sizeBytes      Int
+  uploadedBy     String
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
 }

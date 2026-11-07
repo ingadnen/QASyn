@@ -4,18 +4,26 @@ import { createContext, useCallback, useContext, useMemo, useReducer } from "rea
 import type { OnboardingState, OrganisationDraft } from "@/lib/types";
 
 export const EMPTY_ONBOARDING_STATE: OnboardingState = {
-  organisation: { id: null, name: "", slug: "", ownerName: "", website: "", addWebsiteToKb: true },
+  organisation: { id: null, name: "", slug: "", ownerName: "", website: "", addToKnowledgeBase: true, logoUrl: null },
   currentStep: 1,
   appDescription: "",
-  reachType: null,
+  reachMode: null,
   environmentUrl: "",
-  selectedOs: null,
   localPort: 3000,
   tunnelToken: null,
-  focus: null,
-  teamInvites: [],
+  tunnelEnrolled: false,
+  appLoginType: null,
+  appLoginUsername: "",
+  hasAppLoginPassword: false,
+  painPoints: [],
+  userRole: null,
+  testingMaturity: null,
+  focusPriority: null,
+  invitedEmails: [],
   integrations: [],
   completed: false,
+  crawl: null,
+  trialEndsAt: null,
 };
 
 type Action =
@@ -36,19 +44,14 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
 
 interface OnboardingContextValue {
   state: OnboardingState;
-  /** Remplace tout l'état (ex. réponse serveur après sauvegarde) */
   replace: (state: OnboardingState) => void;
-  /** Mise à jour locale (saisie en cours, non sauvegardée) */
   patch: (patch: Partial<OnboardingState>) => void;
   patchOrganisation: (patch: Partial<OrganisationDraft>) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
-/**
- * État global de l'onboarding : alimente en temps réel l'aperçu
- * "{Organisation} workspace" du volet droit.
- */
+/** Onboarding state: feeds the live "{Org} workspace" preview of the right panel. */
 export function OnboardingProvider({
   initialState = EMPTY_ONBOARDING_STATE,
   children,
@@ -57,19 +60,10 @@ export function OnboardingProvider({
   children: React.ReactNode;
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
-
   const replace = useCallback((next: OnboardingState) => dispatch({ type: "replace", state: next }), []);
   const patch = useCallback((p: Partial<OnboardingState>) => dispatch({ type: "patch", patch: p }), []);
-  const patchOrganisation = useCallback(
-    (p: Partial<OrganisationDraft>) => dispatch({ type: "patchOrganisation", patch: p }),
-    [],
-  );
-
-  const value = useMemo(
-    () => ({ state, replace, patch, patchOrganisation }),
-    [state, replace, patch, patchOrganisation],
-  );
-
+  const patchOrganisation = useCallback((p: Partial<OrganisationDraft>) => dispatch({ type: "patchOrganisation", patch: p }), []);
+  const value = useMemo(() => ({ state, replace, patch, patchOrganisation }), [state, replace, patch, patchOrganisation]);
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;
 }
 

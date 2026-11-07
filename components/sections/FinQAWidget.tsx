@@ -15,6 +15,8 @@ interface Message {
   error?: boolean;
 }
 
+export const OPEN_CHAT_EVENT = "qasyn:open-chat";
+
 const SUGGESTIONS = [
   "What's the quality score of release #284?",
   "How much test coverage do we have?",
@@ -41,6 +43,13 @@ export function FinQAWidget() {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  // The dashboard sidebar "Live chat" button opens the widget through a window event.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_CHAT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -154,7 +163,7 @@ export function FinQAWidget() {
             {!asking && !userHasAsked && (
               <div className="flex flex-col items-end gap-2 pt-1">
                 <Link
-                  href="/onboard/organisation"
+                  href="/signup"
                   className="rounded-full border border-brand-200 bg-white px-3.5 py-2 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
                 >
                   Book a demo or contact us

@@ -1,102 +1,164 @@
-import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { TOTAL_STEPS } from "@/lib/constants";
+import { encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { initialsOf } from "@/lib/auth";
+import { startCrawl } from "@/lib/engine";
+import { buildCrawlLogs } from "@/lib/crawl";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { loadOnboardingState } from "@/lib/onboarding-state";
-import { createDemoRuns } from "@/lib/runs";
-import { getCurrentOrgId } from "@/lib/session";
-import { generateTunnelToken } from "@/lib/tokens";
+import { audit, guardOwnOrg, type OrgContext } from "@/lib/tenant";
 import { delay, normalizeWebsite } from "@/lib/utils";
 import { stepPayloadSchema } from "@/lib/validation";
 
-const NO_SESSION = "No organisation in session. Create one first.";
-
-/** GET /api/onboarding — état complet de l'onboarding de l'organisation courante. */
+/** GET /api/onboarding — onboarding state of the user's own organisation. */
 export async function GET() {
-  const organisationId = await getCurrentOrgId();
-  if (!organisationId) return jsonError(NO_SESSION, 401);
-
-  const state = await loadOnboardingState(organisationId);
-  if (!state) return jsonError("Organisation not found.", 404);
-
+  const guard = await guardOwnOrg();
+  if (!guard.ok) return guard.response;
+  const state = await loadOnboardingState(guard.ctx.org.id);
   return NextResponse.json({ state }, { headers: { "Cache-Control": "no-store" } });
 }
 
+/** Points the running crawl at the app endpoint (or starts one). No outbound request is made. */
+async function crawlTarget(ctx: OrgContext, targetUrl: string) {
+  const running = await prisma.crawlSession.findFirst({ where: { organisationId: ctx.org.id, status: "running" } });
+  if (running) {
+    if (running.targetUrl !== targetUrl) {
+      await prisma.crawlSession.update({
+        where: { id: running.id },
+        data: { targetUrl, startedAt: new Date(), logs: JSON.stringify(buildCrawlLogs(targetUrl)) },
+      });
+    }
+    return;
+  }
+  const completed = await prisma.crawlSession.findFirst({ where: { organisationId: ctx.org.id, targetUrl, status: "completed" } });
+  if (!completed) await startCrawl(prisma, ctx, targetUrl);
+}
+
 /**
- * PATCH /api/onboarding — enregistre une étape ("Continue") :
- * UPDATE Onboarding + avance currentStep. À l'étape 7, INSERT de l'historique
- * de runs (TestRun + LogLine) qui alimente le tableau de bord.
+ * PATCH /api/onboarding — saves one step and advances `currentStep`.
+ * Returns { state, next }. Skipping ahead of `currentStep` is rejected (409).
  */
 export async function PATCH(request: Request) {
-  const organisationId = await getCurrentOrgId();
-  if (!organisationId) return jsonError(NO_SESSION, 401);
+  const guard = await guardOwnOrg();
+  if (!guard.ok) return guard.response;
+  const { ctx } = guard;
 
   const parsed = stepPayloadSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   const payload = parsed.data;
 
-  await delay(MOCK_LATENCY_MS);
-
-  const onboarding = await prisma.onboarding.findUnique({
-    where: { organisationId },
-    include: { organisation: { select: { slug: true } } },
-  });
+  const onboarding = await prisma.onboarding.findUnique({ where: { organisationId: ctx.org.id } });
   if (!onboarding) return jsonError("Onboarding not found.", 404);
+  if (onboarding.completedAt) return jsonError("Onboarding is already complete.", 409, { next: "/dashboard/overview" });
   if (payload.step > onboarding.currentStep) {
-    return jsonError(`Complete step ${onboarding.currentStep} first.`, 409);
+    return jsonError("Complete the previous steps first.", 409, { next: `/onboarding/${onboarding.currentStep}` });
   }
 
-  let data: Prisma.OnboardingUpdateInput = {};
+  await delay(MOCK_LATENCY_MS);
+  const nextStep = Math.min(TOTAL_STEPS, Math.max(onboarding.currentStep, payload.step + 1));
+
   switch (payload.step) {
-    case 1:
-      data = { appDescription: payload.appDescription };
-      break;
-    case 2: {
-      if (payload.reachType === "TEAM_ENV") {
-        const environmentUrl = normalizeWebsite(payload.environmentUrl ?? "");
-        if (!environmentUrl) return jsonError("Enter the URL of your staging or QA environment.", 400);
-        data = { reachType: "TEAM_ENV", environmentUrl };
+    case 1: {
+      let environmentUrl: string | null = null;
+      let localPort: number | null = onboarding.localPort;
+      let target: string;
+      if (payload.reachMode === "staging") {
+        environmentUrl = normalizeWebsite(payload.environmentUrl ?? "");
+        if (!environmentUrl) return jsonError("Enter a valid app endpoint, e.g. https://staging.example.com", 400);
+        target = environmentUrl;
       } else {
-        if (!payload.selectedOs) return jsonError("Choose your operating system.", 400);
-        data = {
-          reachType: "LOCALHOST",
-          selectedOs: payload.selectedOs,
-          localPort: payload.localPort ?? 3000,
-          tunnelToken: onboarding.tunnelToken ?? generateTunnelToken(),
-        };
+        if (!onboarding.tunnelEnrolled) return jsonError("Waiting for the tunnel to enrol. Run the command first.", 400);
+        localPort = payload.localPort ?? onboarding.localPort ?? 3000;
+        target = `http://localhost:${localPort}`;
       }
+
+      const username = payload.appLoginType === "credentials" ? payload.appLoginUsername?.trim() ?? "" : "";
+      if (payload.appLoginType === "credentials" && !username) return jsonError("Enter the username QASyn should log in with.", 400);
+      const password =
+        payload.appLoginType !== "credentials"
+          ? null
+          : payload.appLoginPassword
+            ? encryptSecret(payload.appLoginPassword)
+            : onboarding.appLoginPassword;
+
+      await prisma.onboarding.update({
+        where: { id: onboarding.id },
+        data: {
+          appDescription: payload.appDescription,
+          reachMode: payload.reachMode,
+          environmentUrl,
+          localPort,
+          appLoginType: payload.appLoginType,
+          appLoginUsername: username || null,
+          appLoginPassword: password,
+          currentStep: nextStep,
+        },
+      });
+      await crawlTarget(ctx, target);
       break;
     }
+    case 2:
+      await prisma.onboarding.update({
+        where: { id: onboarding.id },
+        data: payload.skip
+          ? { currentStep: nextStep }
+          : {
+              painPoints: JSON.stringify(payload.painPoints),
+              userRole: payload.userRole ?? null,
+              testingMaturity: payload.testingMaturity ?? null,
+              currentStep: nextStep,
+            },
+      });
+      if (!payload.skip && payload.userRole) {
+        await prisma.user.update({ where: { id: ctx.user.id }, data: { role: payload.userRole === "Founder" ? "Admin" : payload.userRole } });
+      }
+      break;
     case 3:
     case 4:
-      // Les intégrations sont enregistrées par /api/onboarding/integrations/[provider]
+      await prisma.onboarding.update({ where: { id: onboarding.id }, data: { currentStep: nextStep } });
       break;
     case 5:
-      data = { focus: payload.focus };
+      await prisma.onboarding.update({
+        where: { id: onboarding.id },
+        data: payload.skip ? { currentStep: nextStep } : { focusPriority: payload.focusPriority ?? null, currentStep: nextStep },
+      });
       break;
-    case 6:
-      data = { teamInvites: [...new Set(payload.teamInvites)].join("\n") || null };
+    case 6: {
+      const emails = payload.skip ? [] : [...new Set(payload.invitedEmails)].filter((e) => e !== ctx.user.email);
+      await prisma.$transaction(async (tx) => {
+        for (const email of emails) {
+          const existing = await tx.user.findUnique({ where: { email } });
+          if (existing) continue; // never attach someone who already has an account elsewhere
+          await tx.user.create({
+            data: {
+              email,
+              name: email.split("@")[0],
+              avatarInitials: initialsOf("", email),
+              role: "Engineer",
+              status: "invited",
+              organisationId: ctx.org.id,
+            },
+          });
+          await audit(tx, ctx, "member.invited", email);
+        }
+        await tx.onboarding.update({
+          where: { id: onboarding.id },
+          data: {
+            invitedEmails: payload.skip ? onboarding.invitedEmails : emails.join("\n"),
+            currentStep: nextStep,
+          },
+        });
+      });
       break;
+    }
     case 7:
-      data = { completedAt: onboarding.completedAt ?? new Date() };
+      await prisma.onboarding.update({ where: { id: onboarding.id }, data: { completedAt: new Date(), currentStep: TOTAL_STEPS } });
+      await audit(prisma, ctx, "onboarding.completed", ctx.org.slug);
       break;
   }
 
-  const currentStep = Math.min(TOTAL_STEPS, Math.max(onboarding.currentStep, payload.step + 1));
-
-  await prisma.$transaction(async (tx) => {
-    await tx.onboarding.update({ where: { id: onboarding.id }, data: { ...data, currentStep } });
-
-    if (payload.step === TOTAL_STEPS) {
-      const existingRuns = await tx.testRun.count({ where: { organisationId } });
-      if (existingRuns === 0) {
-        await createDemoRuns(tx, organisationId, `${onboarding.organisation.slug} / app`);
-      }
-    }
-  });
-
-  const state = await loadOnboardingState(organisationId);
-  const next = payload.step < TOTAL_STEPS ? `/onboarding/${payload.step + 1}` : "/dashboard/overview";
+  const state = await loadOnboardingState(ctx.org.id);
+  const next = payload.step >= TOTAL_STEPS ? "/dashboard/overview" : `/onboarding/${payload.step + 1}`;
   return NextResponse.json({ state, next });
 }

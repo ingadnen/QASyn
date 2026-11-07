@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
+import { requireOwnOrganisation } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getCurrentOrgId } from "@/lib/session";
 
-/** /onboarding → reprend à l'étape débloquée la plus avancée. */
+export const dynamic = "force-dynamic";
+
 export default async function OnboardingIndex() {
-  const organisationId = await getCurrentOrgId();
-  const onboarding = organisationId
-    ? await prisma.onboarding.findUnique({ where: { organisationId }, select: { currentStep: true } })
-    : null;
-  redirect(onboarding ? `/onboarding/${onboarding.currentStep}` : "/onboard/organisation");
+  const { org } = await requireOwnOrganisation();
+  const onboarding = await prisma.onboarding.findUnique({ where: { organisationId: org.id }, select: { currentStep: true } });
+  redirect(`/onboarding/${onboarding?.currentStep ?? 1}`);
 }

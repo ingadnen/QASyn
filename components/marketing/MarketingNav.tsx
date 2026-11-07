@@ -39,11 +39,11 @@ export function MarketingNav() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link href="/dashboard/overview" className="px-3 py-1.5 text-sm font-medium text-ink hover:text-brand-600">
+          <Link href="/login" className="px-3 py-1.5 text-sm font-medium text-ink hover:text-brand-600">
             Log in
           </Link>
           <Link
-            href="/onboard/organisation"
+            href="/signup"
             className="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/30 transition hover:bg-brand-700"
           >
             Start free
@@ -71,8 +71,11 @@ export function MarketingNav() {
               {item.label}
             </Link>
           ))}
+          <Link href="/login" className="mt-2 block rounded-lg px-2 py-2.5 text-sm font-medium text-ink">
+            Log in
+          </Link>
           <Link
-            href="/onboard/organisation"
+            href="/signup"
             className="mt-2 block rounded-full bg-brand-600 px-4 py-2.5 text-center text-sm font-semibold text-white"
           >
             Start free
