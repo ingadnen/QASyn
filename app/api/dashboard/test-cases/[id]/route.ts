@@ -30,6 +30,29 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json(result);
   }
 
+  if (input.action === "variables") {
+    const updated = await prisma.testCase.update({ where: { id: tc.id }, data: { variablesJson: JSON.stringify(input.variables) } });
+    await audit(prisma, ctx, "test_case.variables", `${tc.title} · ${Object.keys(input.variables).length} vars`);
+    return NextResponse.json({ testCase: updated });
+  }
+
+  if (input.action === "prerequisites") {
+    const prereqs = await prisma.testCase.findMany({
+      where: { organisationId: ctx.org.id, id: { in: input.testCaseIds }, NOT: { id: tc.id } },
+      select: { id: true },
+    });
+    let variables: Record<string, unknown> = {};
+    try {
+      variables = JSON.parse(tc.variablesJson || "{}");
+    } catch {
+      variables = {};
+    }
+    variables._prerequisites = prereqs.map((p) => p.id);
+    const updated = await prisma.testCase.update({ where: { id: tc.id }, data: { variablesJson: JSON.stringify(variables) } });
+    await audit(prisma, ctx, "test_case.prerequisites", `${tc.title} · ${prereqs.length} prerequisites`);
+    return NextResponse.json({ testCase: updated, prerequisites: prereqs.map((p) => p.id) });
+  }
+
   if (input.action === "steps") {
     const updated = await prisma.testCase.update({
       where: { id: tc.id },

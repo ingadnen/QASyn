@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAction } from "@/components/dashboard/ui";
+import { InsertGroupIntoSteps } from "@/components/dashboard/pages/InsertGroupIntoSteps";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +64,11 @@ export function StudioClient({ testCaseId, initialSteps, readOnly, cases }: { te
   const [log, setLog] = useState<LogLine[] | null>(null);
   const [selected, setSelected] = useState(0);
   const [detailOpen, setDetailOpen] = useState<Set<number>>(new Set());
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
+  const [variables, setVariables] = useState<Record<string, string>>({});
+  const [varKey, setVarKey] = useState("");
+  const [varValue, setVarValue] = useState("");
   const [template, setTemplate] = useState<string>(ACTION_TEMPLATES[0]);
 
   function update(i: number, patch: Partial<StudioStep>) {
@@ -162,6 +168,20 @@ export function StudioClient({ testCaseId, initialSteps, readOnly, cases }: { te
               <select aria-label="Add step from template" value={template} onChange={(e) => setTemplate(e.target.value)} className="h-9 max-w-72 rounded-lg border border-slate-200 px-2 text-sm">
                 {ACTION_TEMPLATES.map((t) => <option key={t}>{t}</option>)}
               </select>
+              <InsertGroupIntoSteps
+                steps={steps}
+                readOnly={readOnly}
+                onInsert={(groupSteps) =>
+                  setSteps([
+                    ...steps,
+                    ...groupSteps.map((s, i) => ({
+                      ...s,
+                      id: s.id || `grp-${Date.now()}-${i}`,
+                      action: (s.action || "Click") as StudioStep["action"],
+                    })),
+                  ])
+                }
+              />
               <Button
                 variant="secondary"
                 onClick={() =>
@@ -188,14 +208,45 @@ export function StudioClient({ testCaseId, initialSteps, readOnly, cases }: { te
           <Button
             variant="secondary"
             disabled={readOnly}
-            onClick={async () => {
-              const res = await run<{ created: number }>("ai", "/api/dashboard/test-cases", { json: { mode: "ai", module: "Core", criticality: "medium", prompt: `Extend: ${steps[steps.length - 1]?.target ?? "test"}`, count: 1 } });
-              if (res) router.refresh();
-            }}
+            onClick={() => setAiOpen((v) => !v)}
             loading={pending === "ai"}
           >
             ✨ AI Custom Prompt
           </Button>
+          {aiOpen && (
+            <div className="w-full rounded-xl border border-brand-200 bg-brand-50 p-3">
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Describe the steps to add (e.g. “verify the welcome banner and click onboarding”)</span>
+                <input className={cn(inputCls, "mt-1")} value={aiPrompt} disabled={readOnly} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Verify the welcome banner, click Get started…" />
+              </label>
+              <div className="mt-2 flex gap-2">
+                <Button
+                  size="sm"
+                  disabled={readOnly || !aiPrompt.trim()}
+                  onClick={async () => {
+                    const parts = aiPrompt.split(/[.,]/).map((p) => p.trim()).filter(Boolean).slice(0, 4);
+                    const generated: StudioStep[] = parts.map((p, i) => ({
+                      id: `ai-${Date.now()}-${i}`,
+                      action: /verify|check/i.test(p) ? "Verify Element" : /enter|type/i.test(p) ? "Enter Text" : "Click",
+                      target: p,
+                      value: "",
+                      selector: "",
+                    }));
+                    if (generated.length === 0) return;
+                    const next = [...steps, ...generated];
+                    setSteps(next);
+                    await run("save", `/api/dashboard/test-cases/${testCaseId}`, { method: "PATCH", json: { action: "steps", steps: next } });
+                    setAiOpen(false);
+                    setAiPrompt("");
+                    router.refresh();
+                  }}
+                >
+                  Generate & add {aiPrompt ? `${aiPrompt.split(/[.,]/).filter(Boolean).length} steps` : "steps"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setAiOpen(false)}>Cancel</Button>
+              </div>
+            </div>
+          )}
         </div>
         {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         {log && (
@@ -205,7 +256,8 @@ export function StudioClient({ testCaseId, initialSteps, readOnly, cases }: { te
         )}
       </div>
 
-      <aside className="h-fit rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <aside className="h-fit space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">Step inspector</h2>
         {current ? (
           <div className="mt-3 space-y-3">
@@ -234,6 +286,39 @@ export function StudioClient({ testCaseId, initialSteps, readOnly, cases }: { te
         ) : (
           <p className="mt-2 text-sm text-slate-500">Select a step.</p>
         )}
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900">Test Case Variables</h2>
+          <p className="mt-1 text-xs text-slate-500">Use <code>{"*|var|*"}</code> in steps.</p>
+          <ul className="mt-2 space-y-1">
+            {Object.entries(variables).map(([k, v]) => (
+              <li key={k} className="flex items-center gap-2 text-xs">
+                <code className="rounded bg-slate-100 px-1.5 py-0.5">{k}</code>
+                <span className="flex-1 truncate text-slate-600">{v}</span>
+                <button type="button" className="text-slate-400 hover:text-red-600" disabled={readOnly} onClick={() => setVariables(Object.fromEntries(Object.entries(variables).filter(([key]) => key !== k)))}>✕</button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
+            <input className={cn(inputCls, "h-9")} placeholder="key (url, email…)" value={varKey} disabled={readOnly} onChange={(e) => setVarKey(e.target.value)} />
+            <input className={cn(inputCls, "h-9")} placeholder="value" value={varValue} disabled={readOnly} onChange={(e) => setVarValue(e.target.value)} />
+            <Button
+              size="sm"
+              disabled={readOnly || !varKey}
+              onClick={async () => {
+                const next = { ...variables, [varKey]: varValue };
+                setVariables(next);
+                setVarKey("");
+                setVarValue("");
+                await run("vars", `/api/dashboard/test-cases/${testCaseId}`, { method: "PATCH", json: { action: "variables", variables: next } });
+              }}
+            >
+              Add
+            </Button>
+          </div>
+          {pending === "vars" && <p className="mt-1 text-xs text-slate-400">Saving…</p>}
+        </div>
       </aside>
     </div>
   );

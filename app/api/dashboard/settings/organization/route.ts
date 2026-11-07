@@ -15,7 +15,14 @@ export async function PATCH(request: Request) {
 
   const parsed = updateOrganisationSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
-  const { name, website, logoUrl, addToKnowledgeBase } = parsed.data;
+  const { name, website, logoUrl, addToKnowledgeBase, permissions } = parsed.data;
+
+  if (permissions) {
+    const { writeSettings } = await import("@/lib/tenant");
+    const settings = await writeSettings(prisma, ctx.org, { permissions: permissions as unknown as Record<string, Record<string, boolean>> });
+    await audit(prisma, ctx, "organisation.permissions", `permissions updated`);
+    return NextResponse.json({ organisation: { id: ctx.org.id, permissions: settings.permissions } });
+  }
 
   await delay(MOCK_LATENCY_MS / 2);
   const org = await prisma.organisation.update({

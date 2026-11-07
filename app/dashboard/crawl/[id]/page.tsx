@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CrawlDetailTabs } from "@/components/dashboard/pages/CrawlDetailTabs";
 import { Card, PageHeader, StatusPill, ActionButton } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
@@ -43,28 +44,7 @@ export default async function CrawlDetailPage({ params }: { params: Promise<{ id
 
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-1">
-            {["Test Cases", "Questionnaire", "Requirement Data", "History", "Metadata", "Gaps"].map((t, i) => (
-              <span key={t} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${i === 0 ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600"}`}>{t}</span>
-            ))}
-          </div>
-          <Card title={`Generated Test Cases (${cases.length})`}>
-            {cases.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-slate-500">No test cases generated yet.</p>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {cases.map((c) => (
-                  <li key={c.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5 text-sm">
-                    <Link href={`/dashboard/test-studio/${c.id}`} className="flex-1 font-medium text-brand-700 hover:underline">{c.title}</Link>
-                    <span className="text-xs text-slate-500">{c.module} · {c.status}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-          <Card title="Gaps — uncovered flows">
-            <p className="px-5 py-4 text-sm text-slate-600">Uncovered flows appear here after the first crawl completes (provisional).</p>
-          </Card>
+          <CrawlDetailTabs cases={cases.map((c) => ({ id: c.id, title: c.title, module: c.module, status: c.status }))} logs={crawl.logs} running={running} crawlId={crawl.id} readOnly={ctx.readOnly} />
         </div>
 
         <aside className="h-fit rounded-xl border border-slate-200 bg-slate-900 text-white shadow-sm">

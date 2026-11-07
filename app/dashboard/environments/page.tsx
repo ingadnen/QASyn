@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { EnvironmentCreate } from "@/components/dashboard/pages/Forms";
+import { AuthProfileForm } from "@/components/dashboard/pages/AuthProfileForm";
+import { DataProfileForm } from "@/components/dashboard/pages/StudioClients";
 import { EnvVariablesForm } from "@/components/dashboard/pages/EnvVariablesClient";
 import { Card, EmptyState, PageHeader, ActionButton, StatusPill } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
@@ -39,7 +41,7 @@ export default async function EnvironmentsPage({ searchParams }: { searchParams:
         ))}
       </nav>
 
-      {(tab === "environment" || tab === "environments" || true) && (
+      {tab === "environments" && (
         <>
           <Card title="New environment"><div className="px-5 py-4"><EnvironmentCreate readOnly={ctx.readOnly} /></div></Card>
           <Card title={`${envs.length} environments (Grid / List · Import · Export)`}>
@@ -67,37 +69,51 @@ export default async function EnvironmentsPage({ searchParams }: { searchParams:
       )}
 
       {tab === "profiles" && (
-        <Card title="Test Data Profiles">
-          {profiles.length === 0 ? <EmptyState title="No profiles" description="Create one in Data profiles." /> : (
-            <ul className="divide-y divide-slate-100 px-5 py-2">
-              {profiles.map((p) => <li key={p.id} className="py-2 text-sm"><strong>{p.name}</strong> <span className="text-xs text-slate-500">{p.sourceType}</span></li>)}
-            </ul>
-          )}
-        </Card>
+        <>
+          <Card title="New profile (CSV import)"><div className="px-5 py-4"><DataProfileForm readOnly={ctx.readOnly} /></div></Card>
+          <Card title="Test Data Profiles">
+            {profiles.length === 0 ? <EmptyState title="No profiles" description="Create one above." /> : (
+              <ul className="divide-y divide-slate-100 px-5 py-2">
+                {profiles.map((p) => <li key={p.id} className="py-2 text-sm"><strong>{p.name}</strong> <span className="text-xs text-slate-500">{p.sourceType}</span></li>)}
+              </ul>
+            )}
+          </Card>
+        </>
       )}
 
       {tab === "global" && (
-        <Card title="Global Data (global_variables)">
-          {variables.length === 0 ? <EmptyState title="No global variables" description="Add variables per environment above." /> : (
-            <ul className="divide-y divide-slate-100 px-5 py-2">
-              {variables.map((v) => (
-                <li key={v.id} className="flex items-center gap-3 py-2 text-sm">
-                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{v.key}</code>
-                  <span className="flex-1 truncate text-slate-600">{v.isSecret ? maskSecret(v.value) : v.value}</span>
-                  <span className="text-xs text-slate-400">{v.environment.name}{v.isSecret ? " · secret" : ""}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <>
+          <Card title="New global variable">
+            <div className="px-5 py-4">
+              {envs[0] ? <EnvVariablesForm environmentId={envs[0].id} readOnly={ctx.readOnly} /> : <p className="text-sm text-slate-500">Create an environment first.</p>}
+            </div>
+          </Card>
+          <Card title="Global Data (global_variables)">
+            {variables.length === 0 ? <EmptyState title="No global variables" description="Add variables above." /> : (
+              <ul className="divide-y divide-slate-100 px-5 py-2">
+                {variables.map((v) => (
+                  <li key={v.id} className="flex items-center gap-3 py-2 text-sm">
+                    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{v.key}</code>
+                    <span className="flex-1 truncate text-slate-600">{v.isSecret ? maskSecret(v.value) : v.value}</span>
+                    <span className="text-xs text-slate-400">{v.environment.name}{v.isSecret ? " · secret" : ""}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </>
       )}
 
       {tab === "auth" && (
         <Card title="Auth Profiles">
-          <div className="grid gap-3 px-5 py-4 sm:grid-cols-3">
-            {["Auth profiles (bearer/basic)", "Proxy profiles", "Viewports"].map((label) => (
-              <div key={label} className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">{label}<p className="mt-1 text-xs text-slate-400">Managed per environment; secrets masked.</p></div>
-            ))}
+          <div className="space-y-3 px-5 py-4">
+            <p className="text-sm text-slate-600">Authentication, proxy and viewport profiles per environment (persisted in organisation settings, secrets masked).</p>
+            <AuthProfileForm readOnly={ctx.readOnly} environmentId={envs[0]?.id ?? ""} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">Auth profiles (bearer/basic)</div>
+              <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">Proxy profiles (/proxy_profiles)</div>
+              <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">Viewports (/viewports)</div>
+            </div>
           </div>
         </Card>
       )}

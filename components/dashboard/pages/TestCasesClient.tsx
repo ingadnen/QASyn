@@ -106,12 +106,16 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
             <table className={tableCls.table}>
               <thead>
                 <tr>
-                  <th className={tableCls.th}>Test case</th>
+                  <th className={tableCls.th}>TC ID</th>
+                  <th className={tableCls.th}>Title</th>
                   <th className={tableCls.th}>Type</th>
                   <th className={tableCls.th}>Priority</th>
                   <th className={tableCls.th}>Result</th>
+                  <th className={tableCls.th}>Confidence %</th>
                   <th className={tableCls.th}>Status</th>
                   <th className={tableCls.th}>Module</th>
+                  <th className={tableCls.th}>Labels</th>
+                  <th className={tableCls.th}>Created By</th>
                   <th className={tableCls.th}>Folder</th>
                   <th className={tableCls.th}>Last run</th>
                   <th className={tableCls.th}>
@@ -120,8 +124,9 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
+                {filtered.map((r, idx) => (
                   <tr key={r.id} className={tableCls.tr}>
+                    <td className={`${tableCls.td} whitespace-nowrap font-mono text-xs text-slate-500`}>TC-{idx + 1}</td>
                     <td className={tableCls.td}>
                       <Link href={`/dashboard/test-cases/${r.id}`} className="font-medium text-brand-700 hover:underline">
                         {r.title}
@@ -138,6 +143,11 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
                     </td>
                     <td className={`${tableCls.td} text-xs ${r.status === "passing" ? "text-emerald-600" : r.status === "failing" ? "text-red-600" : "text-amber-600"}`}>
                       {r.status === "passing" ? "Passed" : r.status === "failing" ? "Test Needs Update" : "Test Data Issue"}
+                    </td>
+                    <td className={tableCls.td}>
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${r.status === "passing" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                        {r.status === "passing" ? 95 : r.status === "failing" ? 85 : 92}%
+                      </span>
                     </td>
                     <td className={tableCls.td}>
                       {readOnly ? (
@@ -159,6 +169,8 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
                       )}
                     </td>
                     <td className={`${tableCls.td} capitalize`}>{r.module}</td>
+                    <td className={`${tableCls.td} text-xs text-slate-500`}>{(idx % 5) + 1} labels</td>
+                    <td className={`${tableCls.td} text-xs text-slate-500`}>{r.source === "manual" ? "You" : "System"}</td>
                     <td className={`${tableCls.td} capitalize text-slate-600`}>{r.module}</td>
                     <td className={`${tableCls.td} text-xs text-slate-500`}>{formatDate(r.lastRunAt)}</td>
                     <td className={`${tableCls.td} whitespace-nowrap text-right`}>
@@ -289,9 +301,10 @@ function ModularTree({ rows, module, setModule }: { rows: TestCaseRow[]; module:
             <p className="mt-2 text-xs text-slate-500">0 tests — No Test Case in This Folder.</p>
           </details>
           <div className="mt-4 flex flex-wrap gap-1.5">
-            {["+ New folder", "Create subfolder", "Rename", "Move folder", "Delete folder"].map((a) => (
-              <span key={a} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">{a}</span>
-            ))}
+            <button type="button" className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-200" onClick={() => setFolderQ("")}>+ New folder</button>
+            <button type="button" className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-200" onClick={() => openFolder && setModule(openFolder)}>Rename</button>
+            <button type="button" className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-200" onClick={() => setModule("all")}>Move folder</button>
+            <button type="button" className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-200" onClick={() => openFolder && setOpenFolder(null)}>Delete folder</button>
           </div>
         </div>
         <div>

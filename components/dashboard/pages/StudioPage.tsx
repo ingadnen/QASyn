@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { requireOrgContext } from "@/lib/tenant";
 import { StudioHeaderButtons } from "@/components/dashboard/pages/StudioHeaderButtons";
 import { StudioTabs } from "@/components/dashboard/pages/StudioTabs";
+import { RestoreVersion } from "@/components/dashboard/pages/RestoreVersion";
 
 export const metadata: Metadata = { title: "Test Studio" };
 export const dynamic = "force-dynamic";
@@ -51,7 +52,7 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
         actions={
           <>
             <StatusPill value={tc.status} />
-            <StudioHeaderButtons tc={{ id: tc.id, title: tc.title, criticality: tc.criticality }} readOnly={ctx.readOnly} />
+            <StudioHeaderButtons tc={{ id: tc.id, title: tc.title, criticality: tc.criticality }} cases={allCases} readOnly={ctx.readOnly} />
             <Link href="/dashboard/test-cases" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">← All test cases</Link>
           </>
         }
@@ -80,9 +81,9 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
         versionHistory={
           <Card title="Version History">
             <ol className="space-y-2 px-5 py-4 text-sm text-slate-700">
-              <li><strong>v3</strong> Step updated — current</li>
-              <li><strong>v2</strong> AI Auto-healed selector</li>
-              <li><strong>v1</strong> Baseline <button type="button" className="ml-2 text-xs font-semibold text-brand-600 hover:underline">Restore version</button></li>
+              <li><strong>v3</strong> Step updated — current <span className="text-xs text-slate-400">(current steps are live)</span></li>
+              <li><strong>v2</strong> AI Auto-healed selector <RestoreVersion tcId={tc.id} /></li>
+              <li><strong>v1</strong> Baseline <RestoreVersion tcId={tc.id} /></li>
             </ol>
           </Card>
         }

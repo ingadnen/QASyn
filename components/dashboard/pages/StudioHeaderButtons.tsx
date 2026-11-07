@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAction } from "@/components/dashboard/ui";
 import { Button } from "@/components/ui/Button";
 
-export function StudioHeaderButtons({ tc, readOnly }: { tc: { id: string; title: string; criticality: string }; readOnly: boolean }) {
+export function StudioHeaderButtons({ tc, cases, readOnly }: { tc: { id: string; title: string; criticality: string }; cases: Array<{ id: string; title: string }>; readOnly: boolean }) {
   const { run, pending, error } = useAction();
   const router = useRouter();
   const [criticality, setCriticality] = useState(tc.criticality);
@@ -21,7 +21,7 @@ export function StudioHeaderButtons({ tc, readOnly }: { tc: { id: string; title:
   }
   async function addPrereq() {
     if (!prereq) return;
-    const res = await run("pre", `/api/dashboard/test-cases/${prereq}`, { method: "PATCH", json: { action: "edit", title: tc.title } });
+    const res = await run("pre", `/api/dashboard/test-cases/${tc.id}`, { method: "PATCH", json: { action: "prerequisites", testCaseIds: [prereq] } });
     if (res) router.refresh();
   }
 
@@ -42,7 +42,12 @@ export function StudioHeaderButtons({ tc, readOnly }: { tc: { id: string; title:
         <option value="high">High</option>
         <option value="critical">Critical</option>
       </select>
-      <input aria-label="Prerequisite TC id" className="h-9 w-36 rounded-lg border border-slate-200 px-2 text-sm" placeholder="Prerequisite TC-…" value={prereq} disabled={readOnly} onChange={(e) => setPrereq(e.target.value)} />
+      <select aria-label="Prerequisite TC" className="h-9 w-48 rounded-lg border border-slate-200 px-2 text-sm" value={prereq} disabled={readOnly} onChange={(e) => setPrereq(e.target.value)}>
+        <option value="">+ Add Prerequisite…</option>
+        {cases.filter((c) => c.id !== tc.id).map((c) => (
+          <option key={c.id} value={c.id}>{c.title}</option>
+        ))}
+      </select>
       <Button size="sm" variant="secondary" onClick={() => void addPrereq()} disabled={readOnly || !prereq}>+ Add Prerequisite</Button>
       <Button size="sm" variant="secondary" onClick={() => void autofix()} loading={pending === "fix"} disabled={readOnly}>Auto-fix rerun</Button>
       <Button size="sm" onClick={() => void runTest()} loading={pending === "run"} loadingText="Running…" disabled={readOnly}>▶ Run</Button>

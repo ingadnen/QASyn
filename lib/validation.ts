@@ -71,6 +71,7 @@ export const updateOrganisationSchema = z.object({
   website: optionalWebsite,
   logoUrl: logoField,
   addToKnowledgeBase: z.boolean().optional(),
+  permissions: z.record(z.string().max(60), z.record(z.string().max(40), z.boolean())).optional(),
 });
 
 // ---------- Onboarding ----------
@@ -142,6 +143,8 @@ export const createTestCaseSchema = z.discriminatedUnion("mode", [
 
 export const updateTestCaseSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("run") }),
+  z.object({ action: z.literal("prerequisites"), testCaseIds: z.array(z.string().max(60)).max(50) }),
+  z.object({ action: z.literal("variables"), variables: z.record(z.string().max(60), z.string().max(500)).default({}) }),
   z.object({ action: z.literal("set"), status: z.enum(TEST_STATUSES) }),
   z.object({
     action: z.literal("edit"),

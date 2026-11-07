@@ -96,6 +96,8 @@ export interface OrgSettings {
   slackChannelCreated?: boolean;
   /** Learning progress: moduleId → { status, updatedAt } */
   learning?: Record<string, { status: string; updatedAt: string }>;
+  /** RBAC permission matrix (permission → role → allowed) */
+  permissions?: Record<string, Record<string, boolean>>;
 }
 
 export function readSettings(org: Pick<Organisation, "settingsJson">): OrgSettings {

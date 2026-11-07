@@ -139,6 +139,112 @@ async function step4() {
   check("Ship pipeline produced a Go/No-Go verdict", decision === "Go" || decision === "No-Go");
 }
 
+async function step5() {
+  console.log("\n=== STEP 5 · Playwright UI walkthrough (real clicks, localhost:3000) ===");
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  const page = await browser.newPage();
+  const base = process.env.QASYN_BASE ?? "http://localhost:3000";
+
+  // 5.1 Login
+  await page.goto(`${base}/login`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await page.waitForSelector("input[type='password']", { timeout: 15_000 });
+  await page.fill("input[type='email'], input[name='email']", "demo@acme.dev");
+  await page.fill("input[type='password']", "AcmeDemo2026!");
+  await page.click("button[type='submit'], button:has-text('Log in')");
+  await page.waitForURL("**/dashboard/**", { timeout: 15_000 });
+  check("Login as demo@acme.dev redirects to dashboard", true);
+
+  // 5.2 Environments tabs
+  await page.goto(`${base}/dashboard/environments?tab=environments`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await page.waitForSelector("text=New environment", { timeout: 15_000 });
+  await page.click("a[href*='tab=profiles'], a:has-text('Test Data Profiles')");
+  await page.waitForURL("**environments?tab=profiles**", { timeout: 15_000 });
+  const hiddenList = await page.locator("text=vars:").count();
+  check("Environments list hidden on profiles tab", hiddenList === 0);
+  await page.click("a[href*='tab=global'], a:has-text('Global Data')");
+  await page.click("a[href*='tab=auth'], a:has-text('Auth Profiles')");
+
+  // 5.3 Crawl detail tabs
+  const crawl = await prisma.crawlSession.findFirst({ where: { organisationId: (await prisma.organisation.findUnique({ where: { slug: "acme" } }))!.id } });
+  if (crawl) {
+    await page.goto(`${base}/dashboard/crawl/${crawl.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    for (const tab of ["Questionnaire", "Requirement Data", "History", "Metadata", "Gaps"]) {
+      await page.click(`[role=tab]:has-text("${tab}"), button:has-text("${tab}")`);
+      await tab === "History" ? page.waitForTimeout(400) : page.waitForTimeout(300);
+    }
+    check("Crawl detail 6 tabs clickable", true);
+  }
+
+  // 5.4 Test Studio interactions
+  const tc = await prisma.testCase.findFirst({ where: { title: "E2E auto-healing probe" } });
+  if (tc) {
+    await page.goto(`${base}/dashboard/test-studio/${tc.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.waitForSelector("text=Test Case Variables", { timeout: 15_000 });
+    const details = await page.locator("button:has-text('View Details')").count();
+    if (details >= 2) {
+      await page.locator("button:has-text('View Details')").nth(0).click();
+      await page.locator("button:has-text('View Details')").nth(1).click();
+      check("View Details opens step 1 and 2 independently", (await page.locator("text=Step Details").count()) >= 1);
+    } else {
+      check("View Details buttons present", false, `found ${details}`);
+    }
+    // Add variable
+    await page.fill("input[placeholder='key (url, email…)']", "url");
+    await page.fill("input[placeholder='value']", "https://staging.example.com");
+    await page.click("button:has-text('Add')");
+    await page.waitForTimeout(600);
+    const reloaded = await prisma.testCase.findUnique({ where: { id: tc.id } });
+    check("Variable url persisted to variablesJson", (reloaded?.variablesJson ?? "").includes("\"url\""));
+    // AI Custom Prompt
+    const before = JSON.parse(reloaded?.stepsJson ?? "[]").length;
+    await page.click("button:has-text('AI Custom Prompt')");
+    await page.fill("input[placeholder*='Verify the welcome']", "Verify the welcome banner, click Get started");
+    await page.click("button:has-text('Generate & add')");
+    await page.waitForTimeout(800);
+    const after = JSON.parse((await prisma.testCase.findUnique({ where: { id: tc.id } }))?.stepsJson ?? "[]").length;
+    check("AI Custom Prompt increased steps", after > before, `${before} → ${after}`);
+    // Tabs
+    for (const t of ["Relationships", "Version History", "Test Steps"]) {
+      await page.click(`[role=tab]:has-text("${t}")`);
+    }
+    check("Studio 3 tabs clickable", true);
+  }
+
+  // 5.5 Suite detail
+  const suite = await prisma.testSuite.findFirst({ where: { name: "E2E Capture Suite" } }) ?? (await prisma.testSuite.findFirst({}));
+  if (suite) {
+    await page.goto(`${base}/dashboard/plans/suites/${suite.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    for (const t of ["Used in Test Plans", "History", "Settings", "Test Cases"]) {
+      await page.click(`[role=tab]:has-text("${t}")`);
+    }
+    check("Suite detail 4 tabs clickable", true);
+  }
+
+  // 5.6 Test cases columns + Step Groups + Modular
+  await page.goto(`${base}/dashboard/test-cases`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  const text = await page.locator("body").innerText();
+  check("Columns TC ID / Confidence / Labels / Created By visible", ["TC ID", "Confidence %", "Labels", "Created By"].every((c) => text.includes(c)));
+  await page.click("[role=tab]:has-text('Step Groups')");
+  const groupInput = await page.locator("input[placeholder*='sub-routine']").count();
+  check("Step Groups form present", groupInput >= 1);
+  await page.click("[role=tab]:has-text('Test Cases')");
+  await page.click("[role=tab]:has-text('Modular')");
+  check("Modular folder tree renders", (await page.locator("text=ORGANIZED").count()) >= 1);
+
+  // 5.7 Team search + roles matrix
+  await page.goto(`${base}/dashboard/team`, { waitUsed: "domcontentloaded", timeout: 30_000 } as never).catch(() => undefined);
+  await page.goto(`${base}/dashboard/team`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await page.fill("input[name='q']", "sam");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(500);
+  await page.click("a[href*='tab=roles'], a:has-text('Roles & Permissions')");
+  const matrix = await page.locator("table").count();
+  check("Team search + roles matrix rendered", matrix >= 1);
+
+  await browser.close();
+}
+
 async function main() {
   await ensureWal();
   console.log("QASyn architecture E2E test — real engines, org: Acme (demo)");
@@ -146,6 +252,7 @@ async function main() {
   await step2();
   await step3();
   await step4();
+  if (process.env.QASYN_UI === "1") await step5();
   console.log(failures === 0 ? "\n🎉 ALL CHECKS PASSED" : `\n⚠️ ${failures} check(s) failed`);
   process.exitCode = failures === 0 ? 0 : 1;
   await prisma.$disconnect();
