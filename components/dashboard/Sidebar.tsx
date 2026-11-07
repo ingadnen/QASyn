@@ -23,6 +23,15 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: "/dashboard/pull-requests", label: "Pull requests", icon: "M6 3v12M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9v3a3 3 0 0 1-3 3H9" },
       { href: "/dashboard/crawl", label: "Crawl", icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" },
       { href: "/dashboard/code-analysis", label: "Code analysis", icon: "M8 6l-6 6 6 6M16 6l6 6-6 6" },
+      { href: "/dashboard/web-testing", label: "Web testing", icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18", badge: "New" },
+      { href: "/dashboard/recorder", label: "Recorder", icon: "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 3v3M12 18v3M3 12h3M18 12h3", badge: "New" },
+      { href: "/dashboard/mobile-testing", label: "Mobile testing", icon: "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 18h.01" },
+      { href: "/dashboard/api-testing", label: "API testing", icon: "M8 6l-6 6 6 6M16 6l6 6-6 6", badge: "New" },
+      { href: "/dashboard/ship", label: "Ship", icon: "M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.3 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8L12 2z", badge: "AI" },
+      { href: "/dashboard/agent-testing", label: "Agent testing", icon: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM9 9H7M17 9h-2M12 8V5M9 5H7M17 5h-2M9 19H7M17 19h-2", badge: "New" },
+      { href: "/dashboard/agent-suites", label: "Agent suites", icon: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v4M12 18v4M2 12h4M18 12h4" },
+      { href: "/dashboard/context", label: "Context graph", icon: "M6 3h12v4H6zM6 17h12v4H6zM12 7v6M4 21h4M16 21h4" },
+      { href: "/dashboard/api-chains", label: "API chains", icon: "M8 6l-6 6 6 6M16 6l6 6-6 6", badge: "New" },
     ],
   },
   {
@@ -40,8 +49,45 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     ],
   },
   {
+    title: "TESTING STUDIO",
+    items: [
+      { href: "/dashboard/test-studio", label: "Test Studio", icon: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z", badge: "New" },
+      { href: "/dashboard/visual-testing", label: "Visual testing", icon: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" },
+      { href: "/dashboard/data-profiles", label: "Data profiles", icon: "M4 6h16M4 12h16M4 18h10" },
+      { href: "/dashboard/exploratory", label: "Exploratory", icon: "M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M18.4 5.6l-2.2 2.2M7.8 16.2l-2.2 2.2" },
+    ],
+  },
+  {
+    title: "ENTERPRISE",
+    items: [
+      { href: "/dashboard/salesforce", label: "Salesforce", icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3a13 13 0 0 1 0 18M12 3a13 13 0 0 0 0 18" },
+      { href: "/dashboard/sap", label: "SAP", icon: "M4 7h16M4 12h16M4 17h16" },
+      { href: "/dashboard/voice-testing", label: "Voice testing", icon: "M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3" },
+      { href: "/dashboard/red-team", label: "Red team", icon: "M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z" },
+    ],
+  },
+  {
+    title: "INFRASTRUCTURE",
+    items: [
+      { href: "/dashboard/environments", label: "Environments", icon: "M4 7h16M4 12h16M4 17h16M7 7v10" },
+      { href: "/dashboard/schedules", label: "Schedules", icon: "M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" },
+      { href: "/dashboard/settings/ci-cd", label: "CI/CD", icon: "M12 2v6m0 8v6M2 12h6m8 0h6M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" },
+      { href: "/dashboard/settings/webhooks", label: "Webhooks", icon: "M4 17l6-6-6-6M12 19h8" },
+    ],
+  },
+  {
+    title: "ANALYTICS",
+    items: [
+      { href: "/dashboard/reports", label: "Reports", icon: "M4 20V10M12 20V4M20 20v-7" },
+      { href: "/dashboard/performance", label: "Performance", icon: "M13 2L4 14h7l-1 8 9-12h-7l1-8z" },
+      { href: "/dashboard/accessibility", label: "Accessibility", icon: "M12 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM4 8.5c5 1 11 .5 16 0M12 8v5l-3 7M12 13l3 7" },
+    ],
+  },
+  {
     title: "WORK",
     items: [
+      { href: "/dashboard/export", label: "Code export", icon: "M16 18l6-6-6-6M8 6l-6 6 6 6", badge: "New" },
+      { href: "/dashboard/projects", label: "Projects", icon: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" },
       { href: "/dashboard/tunnels", label: "Tunnels", icon: "M4 17l6-6-6-6M12 19h8", badge: "New" },
       { href: "/dashboard/integrations", label: "Integrations", icon: "M14 3h7v7M10 14L21 3M21 14v7H3V3h7" },
       { href: "/dashboard/billing", label: "Billing", icon: "M3 7h18v10H3zM3 11h18" },
@@ -56,6 +102,9 @@ const SETTINGS: NavItem[] = [
   { href: "/dashboard/settings/analysis", label: "Analysis", icon: "" },
   { href: "/dashboard/settings/bug-reproduction", label: "Bug reproduction", icon: "" },
   { href: "/dashboard/settings/api-tokens", label: "API tokens", icon: "" },
+  { href: "/dashboard/settings/notifications", label: "Notifications", icon: "" },
+  { href: "/dashboard/settings/webhooks", label: "Webhooks", icon: "" },
+  { href: "/dashboard/settings/ci-cd", label: "CI/CD", icon: "" },
 ];
 
 function Icon({ d }: { d: string }) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CrawlTerminal } from "@/components/terminal/CrawlTerminal";
 import { Button } from "@/components/ui/Button";
 import type { ModuleCoverage } from "@/lib/dashboard";
@@ -20,11 +20,27 @@ export function OverviewTerminal({
   runLabel: string | null;
 }) {
   const [open, setOpen] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
   const live = crawl?.status === "running";
   const startedMin = crawl ? Math.max(1, Math.round((Date.now() - new Date(crawl.startedAt).getTime()) / 60000)) : 0;
   const host = crawl ? crawl.targetUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
 
+  useEffect(() => {
+    const msg = sessionStorage.getItem("qasyn_crawl_notice");
+    if (msg) {
+      setNotice(msg);
+      sessionStorage.removeItem("qasyn_crawl_notice");
+    }
+  }, []);
+
   return (
+    <>
+      {notice && (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+          ✓ {notice}
+          <button type="button" className="ml-auto text-emerald-500" onClick={() => setNotice(null)} aria-label="Dismiss">✕</button>
+        </div>
+      )}
     <section id="terminal" className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <header className="flex items-center justify-between gap-3 px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2 text-sm">
@@ -67,6 +83,7 @@ export function OverviewTerminal({
         </div>
       )}
     </section>
+    </>
   );
 }
 

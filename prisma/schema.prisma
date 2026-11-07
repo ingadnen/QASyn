@@ -82,6 +82,32 @@ model Organisation {
   testCases     TestCase[]
   testSuites    TestSuite[]
   testPlans     TestPlan[]
+  mobileApps    MobileApp[]
+  mobileTests   MobileTest[]
+  apiTests      ApiTest[]
+  shipWorkflows ShipWorkflow[]
+  prAnalyses    PrAnalysis[]
+  agentTests    AgentTest[]
+  contextSources ContextSource[]
+  graphNodes    ContextGraphNode[]
+  graphEdges    ContextGraphEdge[]
+  apiChains     ApiTestChain[]
+  agentSuites   AgentTestSuite[]
+  projects      Project[]
+  schedules     Schedule[]
+  planExecutions TestPlanExecution[]
+  dataProfiles  DataProfile[]
+  visualBaselines VisualBaseline[]
+  webhooks      Webhook[]
+  notificationRules NotificationRule[]
+  components    TestComponent[]
+  exploratorySessions ExploratorySession[]
+  personas      Persona[]
+  redTeamSuites RedTeamSuite[]
+  emailInboxes  EmailTestInbox[]
+  securityScans SecurityScan[]
+  riskAnalyses  RiskAnalysis[]
+  gridNodes     InfrastructureGridNode[]
   bugReports    BugReport[]
   pullRequests  PullRequestCheck[]
   crawlSessions CrawlSession[]
@@ -158,6 +184,14 @@ model TestRun {
   testsTotal          Int
   testsPassed         Int
   durationMs          Int
+  /// JSON execution logs (step-by-step evidence trail)
+  logsJson            String       @default("[]")
+  /// JSON evidence: Base64 screenshots, trace dumps, console logs
+  evidenceJson        String       @default("[]")
+  planId              String?
+  projectId           String?
+  project             Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  passRate            Float        @default(0)
   createdAt           DateTime     @default(now())
   logs                LogLine[]
 
@@ -189,11 +223,26 @@ model TestCase {
   stepsCount     Int           @default(1)
   /// JSON array of NLP steps for the Test Case Studio: [{ id, action, target, value, selector }]
   stepsJson      String        @default("[]")
+  /// JSON array of step-level assertions
+  assertionsJson String        @default("[]")
+  /// JSON object of step variables
+  variablesJson  String        @default("{}")
+  /// Linked production suite (optional)
+  suiteId        String?
+  suite          TestSuite?    @relation("SuiteCases", fields: [suiteId], references: [id], onDelete: SetNull)
+  /// Data-driven testing profile (optional)
+  dataProfileId  String?
+  dataProfile    DataProfile?  @relation(fields: [dataProfileId], references: [id], onDelete: SetNull)
+  /// Multi-project workspace (optional)
+  projectId      String?
+  project        Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   /// manual | ai | crawl
   source         String        @default("manual")
   lastRunAt      DateTime?
   createdAt      DateTime      @default(now())
   requirements   Requirement[]
+  testSuites     TestSuite[]
+  testPlans      TestPlan[]
 
   @@index([organisationId, module])
 }
@@ -212,6 +261,10 @@ model TestSuite {
   passRate       Float        @default(0)
   lastRunAt      DateTime?
   createdAt      DateTime     @default(now())
+  testCases      TestCase[]
+  primaryCases   TestCase[]   @relation("SuiteCases")
+  projectId      String?
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([organisationId])
 }
@@ -224,9 +277,135 @@ model TestPlan {
   description    String?
   schedule       String       @default("manual")
   module         String       @default("")
+  /// Production | Staging | QA | Localhost
   environment    String?
+  /// JSON array of browsers: Chromium | Firefox | WebKit
+  browsersJson   String       @default("[\"Chromium\"]")
   testCasesCount Int          @default(0)
   passRate       Float        @default(0)
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+  testCases      TestCase[]
+  projectId      String?
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([organisationId])
+}
+
+/// Uploaded mobile build (APK / IPA). fileUrl is a simulated storage reference.
+model MobileApp {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// iOS | Android
+  platform       String
+  version        String
+  fileUrl        String
+  sizeBytes      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  tests          MobileTest[]
+
+  @@index([organisationId])
+}
+
+model MobileTest {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  appId          String?
+  app            MobileApp?   @relation(fields: [appId], references: [id], onDelete: SetNull)
+  name           String
+  /// e.g. "iOS 17 · iPhone 15", "Android 14 · Pixel 8"
+  device         String
+  /// Cloud device selector (iOS 14+, Android API 21+)
+  deviceSelector String       @default("")
+  /// JSON array of gestures: [{ id, gesture: Tap|Swipe|Scroll|Enter Text, target, value }]
+  gesturesJson   String       @default("[]")
+  /// idle | running | passed | failed
+  status         String       @default("idle")
+  /// JSON array of execution log lines
+  logsJson       String       @default("[]")
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// API test: ordered request chain with assertions and variable extraction (API chaining).
+model ApiTest {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  /// JSON array of request steps: [{ id, method, url, headers, body, assertions, extractionRules }]
+  requestsJson   String       @default("[]")
+  /// idle | running | passed | failed
+  status         String       @default("idle")
+  /// JSON array of execution results (status, payloads, assertion outcomes)
+  resultsJson    String       @default("[]")
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Autonomous Ship workflow run (crawl → generate → execute → report).
+model ShipWorkflow {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// idle | running | passed | failed
+  status         String       @default("idle")
+  /// Go | No-Go | Pending
+  decision       String       @default("Pending")
+  /// JSON array of autonomous pipeline stages with evidence
+  stagesJson     String       @default("[]")
+  decisionReason String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// PR impact analysis: files changed → regression scope → Go/No-Go.
+model PrAnalysis {
+  id                 String       @id @default(cuid())
+  organisationId     String
+  organisation       Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  prNumber           Int
+  branch             String
+  title              String
+  /// JSON array of changed file paths
+  filesChangedJson   String       @default("[]")
+  /// JSON array of selected test case ids (regression scope)
+  scopeJson          String       @default("[]")
+  /// low | medium | high
+  riskLevel          String
+  /// Go | No-Go | Pending
+  decision           String       @default("Pending")
+  /// JSON impact assessment text
+  impactAssessment   String       @default("{}")
+  createdAt          DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// AI agent evaluation: guardrails, hallucination checks, tool-call validation.
+model AgentTest {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// guardrail | hallucination | toolcall
+  kind           String
+  /// JSON: model response / tool calls to evaluate
+  inputJson      String       @default("{}")
+  /// JSON: evaluation results (findings, scores)
+  resultsJson    String       @default("[]")
+  /// idle | passed | failed
+  status         String       @default("idle")
   lastRunAt      DateTime?
   createdAt      DateTime     @default(now())
 
@@ -279,6 +458,8 @@ model CrawlSession {
   id             String       @id @default(cuid())
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  projectId      String?
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   targetUrl      String
   /// running | completed | failed
   status         String
@@ -336,6 +517,7 @@ model EnvironmentConfig {
   variablesJson  String       @default("{}")
   isDefault      Boolean      @default(false)
   createdAt      DateTime     @default(now())
+  variables      EnvironmentVariable[]
 
   @@index([organisationId])
 }
@@ -378,4 +560,443 @@ model Upload {
   createdAt      DateTime     @default(now())
 
   @@index([organisationId])
+}
+
+/// Context ingestion: Jira stories, Swagger docs, Figma layouts, raw URLs, video logs.
+model ContextSource {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  /// JIRA_STORY | SWAGGER_DOC | FIGMA_LAYOUT | RAW_URL | VIDEO_LOG
+  type           String
+  sourceUrl      String
+  /// JSON metadata: commit hashes, Jira tickets, raw text, scraped data
+  metadataJson   String       @default("{}")
+  /// Extracted plain text used for retrieval
+  extractedText  String       @default("")
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Knowledge-graph node derived from a ContextSource.
+model ContextGraphNode {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  entityName     String
+  /// requirement | flow | screen | api | bug | pr
+  entityType     String
+  propertiesJson String       @default("{}")
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Knowledge-graph edge between two nodes.
+model ContextGraphEdge {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  sourceId       String
+  targetId       String
+  /// covers | implements | blocks | related_to
+  relationType   String
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// API test chain (alias of ApiTest with isolated execution results).
+model ApiTestChain {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  requestsJson   String       @default("[]")
+  resultsJson    String       @default("[]")
+  status         String       @default("idle")
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// AI agent evaluation suite: endpoint, guardrail watchlists, knowledge base.
+model AgentTestSuite {
+  id                 String       @id @default(cuid())
+  organisationId     String
+  organisation       Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name               String
+  /// e.g. Agentforce | LangChain | Bedrock endpoint URL
+  agentEndpoint      String
+  /// JSON array of guardrail pattern descriptors
+  guardrailsJson     String       @default("[]")
+  /// JSON array of knowledge base references (ContextSource ids)
+  knowledgeBaseJson  String       @default("[]")
+  lastVerdict        String?
+  createdAt          DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Multi-project workspace within an organisation.
+model Project {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String       @default("")
+  /// web | mobile | api
+  type           String       @default("web")
+  baseUrl        String?
+  configJson     String       @default("{}")
+  archived       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  testCases      TestCase[]
+  testSuites     TestSuite[]
+  testPlans      TestPlan[]
+  crawlSessions  CrawlSession[]
+  testRuns       TestRun[]
+
+  @@index([organisationId])
+}
+
+/// Cron schedule for a test plan.
+model Schedule {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  testPlanId     String
+  name           String
+  cronExpression String
+  timezone       String       @default("UTC")
+  enabled        Boolean      @default(true)
+  lastFiredAt    DateTime?
+  nextFireAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Execution record of a scheduled / manual / CI triggered plan.
+model TestPlanExecution {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  testPlanId     String
+  /// PENDING | RUNNING | PASSED | FAILED
+  status         String
+  /// manual | schedule | ci
+  triggeredBy    String       @default("manual")
+  startedAt      DateTime     @default(now())
+  finishedAt     DateTime?
+  resultsJson    String       @default("{}")
+
+  @@index([organisationId])
+}
+
+/// Per-environment variable (secrets are masked in UI/logs).
+model EnvironmentVariable {
+  id            String            @id @default(cuid())
+  environmentId String
+  environment   EnvironmentConfig @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  key           String
+  value         String
+  isSecret      Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+
+  @@unique([environmentId, key])
+}
+
+/// Data-driven testing: rows of key-value pairs (manual, csv or excel).
+model DataProfile {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// manual | csv | excel
+  sourceType     String       @default("manual")
+  columnsJson    String       @default("[]")
+  rowsJson       String       @default("[]")
+  createdAt      DateTime     @default(now())
+  testCases      TestCase[]
+
+  @@index([organisationId])
+}
+
+/// Approved visual baseline screenshot.
+model VisualBaseline {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  testCaseId     String
+  stepIndex      Int
+  screenshotB64  String       @default("")
+  pixelHash      String       @default("")
+  /// approved | pending | rejected
+  status         String       @default("approved")
+  createdAt      DateTime     @default(now())
+  diffs          VisualDiff[]
+
+  @@index([organisationId])
+}
+
+/// Visual regression diff against a baseline.
+model VisualDiff {
+  id               String         @id @default(cuid())
+  baselineId       String
+  baseline         VisualBaseline @relation(fields: [baselineId], references: [id], onDelete: Cascade)
+  testRunId        String
+  diffImageB64     String         @default("")
+  mismatchPercent  Float          @default(0)
+  /// pending | approved | rejected
+  status           String         @default("pending")
+  createdAt        DateTime       @default(now())
+}
+
+/// Outbound webhook (test results delivery).
+model Webhook {
+  id              String       @id @default(cuid())
+  organisationId  String
+  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name            String
+  url             String
+  secret          String?
+  events          String       @default("[]")
+  active          Boolean      @default(true)
+  lastDeliveredAt DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Notification rule (slack / teams / email).
+model NotificationRule {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  channel        String
+  events         String       @default("[]")
+  configJson     String       @default("{}")
+  enabled        Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Reusable step group (Test Studio components).
+model TestComponent {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  stepsJson      String       @default("[]")
+  description    String       @default("")
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Exploratory testing session (capture → convert to test case).
+model ExploratorySession {
+  id                String       @id @default(cuid())
+  organisationId    String
+  organisation      Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  userId            String
+  startedAt         DateTime     @default(now())
+  endedAt           DateTime?
+  actionsJson       String       @default("[]")
+  notesJson         String       @default("[]")
+  convertedCaseId   String?
+  /// active | completed | converted
+  status            String       @default("active")
+
+  @@index([organisationId])
+}
+
+/// User persona for agent stress-testing.
+model Persona {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// frustrated | confused | impatient | multilingual | adversarial
+  temperament    String
+  language       String       @default("en")
+  behaviorRules  String       @default("[]")
+  promptTemplate String       @default("")
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Red team adversarial suite (OWASP LLM Top 10).
+model RedTeamSuite {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  attacksJson    String       @default("[]")
+  resultsJson    String       @default("[]")
+  score          Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Web Vitals / performance measurement.
+model PerformanceMetric {
+  id         String   @id @default(cuid())
+  testRunId  String
+  /// LCP | FCP | CLS | TTFB | TTI
+  metric     String
+  value      Float
+  threshold  Float?
+  passed     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([testRunId])
+}
+
+// --- MARKETING & CMS CONTENT (global, not tenant-scoped) ---
+
+model BlogPost {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  summary        String
+  contentHtml    String
+  coverImage     String?
+  authorName     String
+  authorRole     String
+  authorAvatar   String?
+  tags           String
+  readTimeMin    Int      @default(5)
+  publishedAt    DateTime @default(now())
+  featured       Boolean  @default(false)
+}
+
+model CaseStudy {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  companyName    String
+  industry       String
+  logoUrl        String?
+  heroQuote      String
+  challenge      String
+  solution       String
+  resultsJson    String
+  fullStory      String
+  featured       Boolean  @default(false)
+  publishedAt    DateTime @default(now())
+}
+
+model GlossaryTerm {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  term           String
+  category       String
+  shortDef       String
+  detailedDef    String
+  relatedTerms   String
+}
+
+model Course {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  level          String
+  durationHours  Int
+  description    String
+  syllabusJson   String
+  badgeName      String
+}
+
+model Certification {
+  id             String   @id @default(cuid())
+  courseId       String
+  candidateName  String
+  candidateEmail String
+  certCode       String   @unique
+  score          Int
+  issuedAt       DateTime @default(now())
+}
+
+model LeadCapture {
+  id             String   @id @default(cuid())
+  email          String
+  source         String
+  metadataJson   String?
+  createdAt      DateTime @default(now())
+}
+
+// --- DASHBOARD EXPANSIONS (tenant-scoped) ---
+
+model EmailTestInbox {
+  id             String   @id @default(cuid())
+  organisationId String
+  emailAddress   String   @unique
+  label          String
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  messages       EmailTestMessage[]
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model EmailTestMessage {
+  id             String   @id @default(cuid())
+  inboxId        String
+  from           String
+  to             String
+  subject        String
+  bodyText       String
+  bodyHtml       String
+  extractedOtp   String?
+  extractedLinks String
+  receivedAt     DateTime @default(now())
+  inbox          EmailTestInbox @relation(fields: [inboxId], references: [id], onDelete: Cascade)
+}
+
+model SecurityScan {
+  id             String   @id @default(cuid())
+  organisationId String
+  targetUrl      String
+  scanType       String
+  status         String
+  highCount      Int      @default(0)
+  mediumCount    Int      @default(0)
+  lowCount       Int      @default(0)
+  findingsJson   String
+  startedAt      DateTime @default(now())
+  completedAt    DateTime?
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model RiskAnalysis {
+  id             String   @id @default(cuid())
+  organisationId String
+  branchName     String
+  prNumber       Int?
+  riskScore      Int
+  riskLevel      String
+  factorsJson    String
+  suggestedTests String
+  analyzedAt     DateTime @default(now())
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model InfrastructureGridNode {
+  id             String   @id @default(cuid())
+  organisationId String
+  browserName    String
+  platform       String
+  version        String
+  status         String
+  currentRunId   String?
+  concurrencyCap Int      @default(5)
+  activeWorkers  Int      @default(0)
+  lastHeartbeat  DateTime @default(now())
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 }

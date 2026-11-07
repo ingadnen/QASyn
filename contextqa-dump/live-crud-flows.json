@@ -1,0 +1,79 @@
+{
+  "source": "https://gmailad.contextqa.com (authenticated sidebar navigation, live DOM capture)",
+  "capturedAt": "2026-11-07",
+  "overview": {
+    "kpis": ["Test cases 31 · 20 passing / 11 failing", "Bugs 0 reproduced", "Time & cost saved $0 est.", "Regressions caught 0"],
+    "modules": ["Account Creation 71%", "Account Recovery 87% (9 of 16 failing)", "Language Localization 85%", "Legal and Support 81%", "Session Navigation 72%"],
+    "recents": "5 E2E test cases (baseline · 10-15 steps · passing/failing · 2d)"
+  },
+  "testCases": {
+    "route": "/td/1/cases/filter/2",
+    "tabs": ["Test Cases", "Step Groups"],
+    "views": ["List", "Modular"],
+    "tableColumns": ["TC ID", "Type", "Priority", "Result", "Confidence %", "Status", "Module", "Labels", "Created By", "Folder", "Created At", "Updated At", "Last Run", "Action"],
+    "sampleRow": {
+      "id": "TC-32",
+      "title": "End-to-End Navigation from Sign-In to Account Recovery with UI Language Switching",
+      "type": "language / Browser",
+      "priority": "Medium",
+      "result": "Test Data Issue",
+      "confidence": "95%",
+      "status": "In Review",
+      "module": "Account Recovery",
+      "labels": 5,
+      "createdBy": "System",
+      "folder": "Account Recovery"
+    },
+    "createModal": {
+      "title": "Create Test Case",
+      " subtitle": "Choose the method that fits your workflow. You can always switch later.",
+      "step": "Step 1 of 2",
+      "methods": [
+        { "id": "ai", "name": "AI Assistance", "blurb": "Describe your feature and let AI generate comprehensive test cases instantly." },
+        { "id": "import", "name": "Import Files", "blurb": "Upload requirements docs or test spreadsheets to extract and generate test cases." },
+        { "id": "record", "name": "Record & Play", "blurb": "Record browser interactions and automatically convert them into reusable test steps." },
+        { "id": "manual", "name": "Create manually", "blurb": "Define steps and expected results by hand." }
+      ],
+      "aiStep2Fields": [
+        { "name": "targetUrl", "placeholder": "https://app.example.com/login" },
+        { "name": "prompt", "placeholder": "e.g. Sign in, add a product to the bag, apply a coupon and complete checkout. Cover the validation on the payment step." },
+        { "name": "requirementName", "placeholder": "Requirement name (optional)" },
+        { "name": "extraContext", "placeholder": "e.g. Use the seeded admin account. The rewards banner is behind a feature flag and can be ignored." }
+      ]
+    }
+  },
+  "crawl": {
+    "route": "/td/1/crawls?size=10",
+    "tableColumns": ["Name", "Format", "Type", "Test Plan", "Status", "Test Cases", "Created by", "Created Date", "Action"],
+    "sampleRow": {
+      "name": "2026-11-05 01:26:23_Onboarding Crawl",
+      "format": "Auto Crawl",
+      "type": "language / Crawl",
+      "testPlan": "2026-11-05 01:26:23_Onboarding Crawl Test Plan",
+      "status": "Completed",
+      "testCases": "31 Linked"
+    },
+    "createModal": {
+      "title": "New Crawl",
+      "fields": [
+        { "name": "platform", "options": ["Web Application", "Mobile", "API"] },
+        { "name": "publishMode", "options": ["Require approval", "Auto publish"], "note": "\"Require Approval\" keeps tests in a draft state until manually reviewed." },
+        { "name": "testCaseTypes", "options": ["All Types", "Positive / Happy Path", "Negative", "Edge Cases", "Field Level Validation", "Boundary Value", "Functional", "End to End"] },
+        { "name": "createTestSuite", "type": "boolean" },
+        { "name": "createTestPlan", "type": "boolean", "note": "Switch to Auto Publish to add generated tests to a suite or plan." },
+        { "name": "prerequisites", "optional": true },
+        { "name": "targetUrl", "hint": "What should the crawl explore?" },
+        { "name": "requirementName", "optional": true, "hint": "Leave blank to name it after the date and time the crawl started." },
+        { "name": "additionalContext", "optional": true },
+        { "buttons": ["Cancel", "Start Crawl"] }
+      ]
+    }
+  },
+  "team": {
+    "route": "/settings/team-access",
+    "tabs": ["Users", "Roles & Permissions"],
+    "columns": ["NAME", "EMAIL", "ROLES", "VERIFIED", "ADMIN"],
+    "actions": ["Invite user"],
+    "sampleUser": { "name": "Adnen Rebhi", "email": "rbhadnen4@gmail.com" }
+  }
+}

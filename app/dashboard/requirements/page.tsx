@@ -16,6 +16,13 @@ export default async function RequirementsPage() {
     <div className="space-y-6">
       <PageHeader kicker="PLATFORM" title="Requirements" description="Product requirements and their traceability to test cases." />
       <Card title="Add or import"><div className="px-5 py-4"><RequirementCreate readOnly={ctx.readOnly} /></div></Card>
+      <Card title="Auto-generate from sources">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+          <p className="flex-1 text-sm text-slate-600">Parse documents, Jira stories and Figma frames into testable criteria, then generate NLP test cases. Ingest a source first in Context graph.</p>
+          <a href="/dashboard/context" className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500">Open Context graph</a>
+          <a href="/dashboard/requirements" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">View traceability matrix (linked tests below)</a>
+        </div>
+      </Card>
       <Card title={`${reqs.length} requirements`}>
         {reqs.length === 0 ? <EmptyState title="No requirements" description="Add one manually or bulk-import it." /> : (
           <ul className="divide-y divide-slate-100">

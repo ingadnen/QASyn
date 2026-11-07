@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LearningCard } from "@/components/dashboard/pages/LearningCard";
+import { LearningBrowser } from "@/components/dashboard/pages/LearningBrowser";
 import { Card, PageHeader } from "@/components/dashboard/ui";
-import { LEARNING_SECTIONS, learningStats } from "@/lib/learning";
+import { learningStats } from "@/lib/learning";
 import { readSettings, requireOrgContext, trialDaysLeft } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Learning" };
@@ -13,7 +13,7 @@ export default async function DashboardLearningPage() {
   const progress = readSettings(ctx.org).learning ?? {};
   const stats = learningStats(progress);
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         kicker="LEARNING HUB"
         title="Learning"
@@ -35,16 +35,7 @@ export default async function DashboardLearningPage() {
           </div>
         </div>
       </Card>
-      {LEARNING_SECTIONS.map((section) => (
-        <section key={section.name}>
-          <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-900 uppercase">{section.name}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {section.modules.map((mod) => (
-              <LearningCard key={mod.id} mod={mod} status={progress[mod.id]?.status} readOnly={ctx.readOnly} />
-            ))}
-          </div>
-        </section>
-      ))}
+      <LearningBrowser progress={progress} readOnly={ctx.readOnly} />
     </div>
   );
 }

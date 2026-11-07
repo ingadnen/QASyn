@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, ensureWal } from "@/lib/db";
 import { runTestCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi } from "@/lib/tenant";
@@ -12,6 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, { params }: Params) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
+  void ensureWal();
   const { ctx } = guard;
   const { id } = await params;
 

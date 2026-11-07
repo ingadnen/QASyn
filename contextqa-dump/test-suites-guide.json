@@ -1,0 +1,22 @@
+{
+  "source": "https://gmailad.contextqa.com/td/1/suites (guided tour bubble)",
+  "capturedAt": "2026-11-07",
+  "note": "The tour bubble choice was already consumed in the live session; structure from screenshot: 'Test Suites, new and improved' + Explore! button (step 1 of 6). QASyn implements a 6-step guided tour with equivalent steps.",
+  "steps": [
+    "Test Suites, new and improved — suites group journeys (Explore!)",
+    "Create a suite — pick cases by tag/module, parallel vs sequential",
+    "Latest result — Not Executed / Passed / Failed per suite",
+    "Folders — organize by module (Unorganised default)",
+    "Run on demand — physical Playwright execution with healing",
+    "Automate — nightly schedule and CI quality gate"
+  ],
+  "crawlRun": {
+    "action": "Start Crawl with https://example.com + prompt 'Explore user login...'",
+    "result": {
+      "toast": "Crawl started",
+      "modalState": "The crawl is running. You can close this dialog. It continues in the background, and the requirement fills in as the crawl completes.",
+      "row": "REQ-2 2026-11-07 04:07_crawl — progress_activity Crawling — View live crawl / Done",
+      "liveView": "/td/1/uploaded-files/2/details — Requirements Details (In Progress, Uploaded file, Crawl/Web/REQ-002/owner/date), 'I am still crawling this activity. Test cases land in the table below as each one is generated.', tabs Test Cases/Questionnaire/Requirement Data/History (Coming soon)/Metadata/Gaps (Coming soon), Live crawl panel: lock example.com READ-ONLY, timer, Activity / Drafts 0, 'Joined live. Earlier activity is on the crawl details page.'"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { LEARNING_MODULES } from "@/lib/learning";
 import { audit, guardApi, readSettings, writeSettings } from "@/lib/tenant";
@@ -16,6 +16,7 @@ const IDS = new Set(LEARNING_MODULES.map((m) => m.id));
 export async function GET() {
   const guard = await guardApi();
   if (!guard.ok) return guard.response;
+  void ensureWal();
   return NextResponse.json({ progress: readSettings(guard.ctx.org).learning ?? {} });
 }
 
@@ -23,6 +24,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
+  void ensureWal();
   const parsed = schema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   if (!IDS.has(parsed.data.moduleId)) return jsonError("Unknown module.", 404);

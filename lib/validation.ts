@@ -155,7 +155,7 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
       .array(
         z.object({
           id: z.string().max(40),
-          action: z.enum(["Navigate", "Click", "Enter Text", "Verify Element", "API Call", "AI Assertion"]),
+          action: z.enum(["Navigate", "Click", "Enter Text", "Verify Element", "API Call", "AI Assertion", "OCR/Document Validation", "KYC Check", "Salesforce Workflow Steps"]),
           target: z.string().trim().max(200),
           value: z.string().trim().max(500).default(""),
           selector: z.string().trim().max(200).default(""),
@@ -261,4 +261,67 @@ export const dismissSchema = z.object({ card: z.enum(["slack", "bugTracker", "in
 
 export const mcpTestSchema = z.object({
   tool: z.enum(["list_test_cases", "get_quality_summary", "list_bugs", "list_pull_requests"]),
+});
+
+// ---------- Web / Mobile / API / Ship engines ----------
+export const testPlanRunSchema = z.object({ planId: z.string().min(1, "planId required.").max(60) });
+
+export const mobileUploadSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  platform: z.enum(["iOS", "Android"]),
+  version: z.string().trim().min(1).max(40),
+  fileName: z.string().trim().min(1).max(160).regex(/^[^\\/:*?"<>|]+$/, "Invalid file name."),
+  sizeBytes: z.number().int().min(0).max(2_000_000_000).default(0),
+});
+
+export const gestureSchema = z.object({
+  id: z.string().max(40),
+  gesture: z.enum(["Tap", "Swipe", "Scroll", "Enter Text", "Pinch", "Rotate", "Biometric"]),
+  target: z.string().trim().max(200),
+  value: z.string().trim().max(500).default(""),
+});
+
+export const mobileTestSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  appId: z.string().max(60).optional(),
+  device: z.string().trim().min(2).max(80),
+  gestures: z.array(gestureSchema).max(50).default([]),
+});
+
+export const mobileRunSchema = z.object({ testId: z.string().min(1).max(60) });
+
+export const apiAssertionSchema = z.object({
+  kind: z.enum(["status", "schema", "value"]),
+  path: z.string().trim().max(200),
+  expected: z.string().trim().max(500),
+});
+export const apiExtractionSchema = z.object({
+  variable: z.string().trim().regex(/^[A-Za-z_][A-Za-z0-9_]{0,40}$/, "Invalid variable name."),
+  path: z.string().trim().max(200),
+});
+export const apiRequestStepSchema = z.object({
+  id: z.string().max(40),
+  method: z.enum(["GET", "POST", "PUT", "DELETE"]),
+  url: z.string().trim().min(1).max(2000),
+  headers: z.record(z.string().max(100), z.string().max(1000)).default({}),
+  body: z.string().max(5000).default(""),
+  assertions: z.array(apiAssertionSchema).max(20).default([]),
+  extractionRules: z.array(apiExtractionSchema).max(10).default([]),
+});
+export const apiTestSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(300).optional(),
+  requests: z.array(apiRequestStepSchema).max(20).default([]),
+});
+export const apiExecuteSchema = z.object({ testId: z.string().min(1).max(60) });
+
+export const prImpactSchema = z.object({
+  prNumber: z.number().int().min(1).max(999_999),
+  branch: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(3).max(160),
+  files: z.array(z.string().trim().min(1).max(300)).max(500).default([]),
+});
+export const bugReproSchema = z.object({
+  title: z.string().trim().min(3).max(160),
+  description: z.string().trim().min(3).max(5000),
 });

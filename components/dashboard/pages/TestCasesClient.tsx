@@ -26,6 +26,8 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
   const [module, setModule] = useState("all");
   const [status, setStatus] = useState<"all" | TestStatus>("all");
   const [modalOpen, setModalOpen] = useState(openNew && !readOnly);
+  const [tab, setTab] = useState<"cases" | "groups">("cases");
+  const [view, setView] = useState<"list" | "modular">("list");
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,6 +67,59 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
       <ErrorNote error={error} />
       {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Tabs
+          label="Library"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "cases", label: "Test Cases" },
+            { value: "groups", label: "Step Groups" },
+          ]}
+        />
+        <Tabs
+          label="View"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "list", label: "List" },
+            { value: "modular", label: "Modular" },
+          ]}
+        />
+      </div>
+
+      {tab === "groups" ? (
+        <Card>
+          <EmptyState
+            title="No step groups yet"
+            description="Reusable step sub-routines live here. Create one in Test Components, or convert a recorded flow."
+            action={<a href="/dashboard/test-studio" className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500">Open Test Studio</a>}
+          />
+        </Card>
+      ) : view === "modular" ? (
+        <Card>
+          <div className="p-5">
+            <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase">Folders · Organized</p>
+            <ul className="mt-3 space-y-2">
+              {modules.map((m) => {
+                const inModule = rows.filter((r) => r.module === m);
+                return (
+                  <li key={m}>
+                    <Link href={`/dashboard/test-cases`} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm hover:border-slate-300">
+                      <span className="font-medium capitalize text-slate-800">{m}</span>
+                      <span className="text-xs text-slate-500">{inModule.length} test{inModule.length === 1 ? "" : "s"}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <details className="mt-4">
+              <summary className="cursor-pointer text-xs font-semibold tracking-widest text-slate-400 uppercase">Unorganized</summary>
+              <p className="mt-2 text-xs text-slate-500">No Test Case in This Folder.</p>
+            </details>
+          </div>
+        </Card>
+      ) : (
       <Card>
         {filtered.length === 0 ? (
           <EmptyState
@@ -78,9 +133,12 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
               <thead>
                 <tr>
                   <th className={tableCls.th}>Test case</th>
-                  <th className={tableCls.th}>Module</th>
-                  <th className={tableCls.th}>Criticality</th>
+                  <th className={tableCls.th}>Type</th>
+                  <th className={tableCls.th}>Priority</th>
+                  <th className={tableCls.th}>Result</th>
                   <th className={tableCls.th}>Status</th>
+                  <th className={tableCls.th}>Module</th>
+                  <th className={tableCls.th}>Folder</th>
                   <th className={tableCls.th}>Last run</th>
                   <th className={tableCls.th}>
                     <span className="sr-only">Actions</span>
@@ -98,9 +156,14 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
                         {r.stepsCount} steps · {r.source}
                       </p>
                     </td>
-                    <td className={`${tableCls.td} capitalize`}>{r.module}</td>
+                    <td className={tableCls.td}>
+                      <span className="text-xs text-slate-500">language · Browser</span>
+                    </td>
                     <td className={tableCls.td}>
                       <StatusPill value={r.criticality} />
+                    </td>
+                    <td className={`${tableCls.td} text-xs ${r.status === "passing" ? "text-emerald-600" : r.status === "failing" ? "text-red-600" : "text-amber-600"}`}>
+                      {r.status === "passing" ? "Passed" : r.status === "failing" ? "Test Needs Update" : "Test Data Issue"}
                     </td>
                     <td className={tableCls.td}>
                       {readOnly ? (
@@ -121,6 +184,8 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
                         </select>
                       )}
                     </td>
+                    <td className={`${tableCls.td} capitalize`}>{r.module}</td>
+                    <td className={`${tableCls.td} capitalize text-slate-600`}>{r.module}</td>
                     <td className={`${tableCls.td} text-xs text-slate-500`}>{formatDate(r.lastRunAt)}</td>
                     <td className={`${tableCls.td} whitespace-nowrap text-right`}>
                       <Button
@@ -149,6 +214,7 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
           </div>
         )}
       </Card>
+      )}
 
       <NewTestCasesModal open={modalOpen} onClose={() => setModalOpen(false)} modules={modules} onCreated={(n) => setNotice(`${n} test case${n === 1 ? "" : "s"} created`)} />
     </div>
@@ -157,18 +223,21 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
 
 function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolean; onClose: () => void; modules: string[]; onCreated: (n: number) => void }) {
   const { run, pending, error, setError } = useAction();
-  const [mode, setMode] = useState<"ai" | "manual">("ai");
+  const [method, setMethod] = useState<"ai" | "import" | "record" | "manual">("ai");
+  const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [module, setModule] = useState(modules[0] ?? "Core");
   const [criticality, setCriticality] = useState<Criticality>("medium");
   const [stepsCount, setSteps] = useState(3);
   const [prompt, setPrompt] = useState("");
+  const [url, setUrl] = useState("");
+  const [requirementName, setRequirementName] = useState("");
   const [count, setCount] = useState(3);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const json =
-      mode === "manual" ? { mode, title, module, criticality, stepsCount } : { mode, module, criticality, prompt, count };
+      method === "manual" ? { mode: "manual", title, module, criticality, stepsCount } : { mode: "ai", module, criticality, prompt: prompt || (url ? `Explore ${url}` : ""), count };
     const res = await run<{ created: number }>("create", "/api/dashboard/test-cases", { json });
     if (res) {
       onCreated(res.created);
@@ -178,41 +247,65 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
     }
   }
 
+  const METHODS = [
+    { id: "ai", name: "AI Assistance", blurb: "Describe your feature and let AI generate comprehensive test cases instantly." },
+    { id: "import", name: "Import Files", blurb: "Upload requirements docs or test spreadsheets to extract and generate test cases." },
+    { id: "record", name: "Record & Play", blurb: "Record browser interactions and automatically convert them into reusable test steps." },
+    { id: "manual", name: "Create manually", blurb: "Define steps and expected results by hand." },
+  ] as const;
+
   return (
     <Modal
       open={open}
       onClose={() => {
         setError(null);
+        setStep(1);
         onClose();
       }}
-      title="New test cases"
+      title="Create Test Case"
     >
       <form onSubmit={submit} className="space-y-4">
-        <Tabs
-          label="Creation mode"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "ai", label: "Generate with AI" },
-            { value: "manual", label: "Write manually" },
-          ]}
-        />
-        <Input label="Module" value={module} onChange={(e) => setModule(e.target.value)} list="tc-modules" required maxLength={40} />
-        <datalist id="tc-modules">
-          {modules.map((m) => (
-            <option key={m} value={m} />
-          ))}
-        </datalist>
-        <Select label="Criticality" value={criticality} onChange={setCriticality} options={CRITICALITIES} />
-        {mode === "manual" ? (
-          <>
-            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required minLength={3} maxLength={160} placeholder="User can reset their password" />
-            <Input label="Steps" type="number" min={1} max={50} value={stepsCount} onChange={(e) => setSteps(Number(e.target.value) || 1)} />
-          </>
+        <p className="text-sm text-slate-500">Choose the method that fits your workflow. You can always switch later.</p>
+        <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase">Step {step} of 2</p>
+        {step === 1 ? (
+          <div className="grid gap-2">
+            {METHODS.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMethod(m.id)}
+                aria-pressed={method === m.id}
+                className={`rounded-xl border p-3 text-left transition ${method === m.id ? "border-brand-500 bg-brand-50 ring-4 ring-brand-100" : "border-slate-200 hover:border-slate-300"}`}
+              >
+                <span className="text-sm font-semibold text-slate-900">{m.name}</span>
+                <span className="mt-0.5 block text-xs text-slate-500">{m.blurb}</span>
+              </button>
+            ))}
+          </div>
         ) : (
           <>
-            <Input label="Focus (optional)" value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} placeholder="e.g. edge cases for EU customers" />
-            <Input label="How many" type="number" min={1} max={4} value={count} onChange={(e) => setCount(Math.min(4, Math.max(1, Number(e.target.value) || 1)))} hint="Costs 10 credits per generation." />
+            {method === "ai" && (
+              <>
+                <Input label="Target URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" />
+                <Input label="Prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} placeholder="Sign in, add a product, apply a coupon, complete checkout. Cover payment validation." />
+                <Input label="Requirement name (optional)" value={requirementName} onChange={(e) => setRequirementName(e.target.value)} placeholder="Requirement name (optional)" />
+              </>
+            )}
+            <Input label="Module" value={module} onChange={(e) => setModule(e.target.value)} list="tc-modules" required maxLength={40} />
+            <datalist id="tc-modules">
+              {modules.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+            <Select label="Priority (criticality)" value={criticality} onChange={setCriticality} options={CRITICALITIES} />
+            {method === "manual" ? (
+              <>
+                <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required minLength={3} maxLength={160} placeholder="User can reset their password" />
+                <Input label="Steps" type="number" min={1} max={50} value={stepsCount} onChange={(e) => setSteps(Number(e.target.value) || 1)} />
+              </>
+            ) : (
+              <Input label="How many" type="number" min={1} max={4} value={count} onChange={(e) => setCount(Math.min(4, Math.max(1, Number(e.target.value) || 1)))} hint="Costs 10 credits per generation." />
+            )}
           </>
         )}
         <ErrorNote error={error} />
@@ -220,9 +313,18 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" loading={pending === "create"} loadingText={mode === "ai" ? "Generating…" : "Creating…"}>
-            {mode === "ai" ? "Generate" : "Create test case"}
-          </Button>
+          {step === 1 ? (
+            <Button onClick={() => setStep(2)}>
+              Get started →
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={() => setStep(1)}>Back</Button>
+              <Button type="submit" loading={pending === "create"} loadingText="Generating…">
+                Create
+              </Button>
+            </>
+          )}
         </div>
       </form>
     </Modal>

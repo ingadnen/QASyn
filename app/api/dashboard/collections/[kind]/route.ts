@@ -36,6 +36,8 @@ export async function POST(request: Request, { params }: Params) {
   const testCasesCount = await prisma.testCase.count({ where: { organisationId: ctx.org.id, ...(module ? { module } : {}) } });
   await delay(MOCK_LATENCY_MS / 2);
   const base = { organisationId: ctx.org.id, name, description: description || null, schedule, module, testCasesCount };
+  const payload = { ...base, testType: "BROWSER", folderId: 0 };
+  void payload;
   const item =
     kind === "suites"
       ? await prisma.testSuite.create({ data: base })

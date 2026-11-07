@@ -101,11 +101,29 @@ export const LEARNING_SECTIONS: LearningSection[] = [
     ],
   },
   {
+    name: "Ship by ContextQA",
+    modules: [
+      m("ship-setup", "Set up a Ship Workspace", "Ship by ContextQA", "tutorial", 12, "Connect a repository, pick a baseline and enable PR impact analysis.", "/dashboard/integrations", "Open integrations"),
+      m("ship-dashboard", "Read the Ship Dashboard and Evidence", "Ship by ContextQA", "guide", 10, "Quality score, coverage, regressions and cost avoided per release.", "/dashboard/overview", "Open overview"),
+      m("ship-workflows", "Run Ship Workflows", "Ship by ContextQA", "tutorial", 14, "Autonomous pipeline: crawl, generate, execute, report — no human steps.", "/dashboard/crawl", "Start a crawl"),
+      m("ship-integrations", "Connect Ship Integrations and MCP", "Ship by ContextQA", "guide", 10, "GitHub, GitLab, Jira, Linear, Slack and the MCP server.", "/dashboard/mcp", "Open MCP"),
+      m("ship-security", "Operate Ship Safely", "Ship by ContextQA", "guide", 8, "Audit logs, API tokens, roles and usage controls.", "/dashboard/settings/audits", "Open audits"),
+    ],
+  },
+  {
     name: "Administration",
     modules: [
       m("adm-team", "Team & Access", "Administration", "guide", 6, "Invite teammates and assign roles per organisation.", "/dashboard/team", "Open team"),
       m("adm-audits", "System Audits", "Administration", "guide", 6, "Full audit log of every member action.", "/dashboard/settings/audits", "Open audits"),
       m("adm-billing", "Billing & Usage", "Administration", "guide", 6, "Trial credits, plans and payment methods.", "/dashboard/billing", "Open billing"),
+    ],
+  },
+  {
+    name: "Reference & Planning",
+    modules: [
+      m("ref-roles", "Browse by Role", "Reference & Planning", "guide", 8, "Learning paths for Engineers, QA, Eng managers and Founders.", "/dashboard/learning", "Open learning"),
+      m("ref-business", "Business Use Cases", "Reference & Planning", "guide", 12, "Requirements to release, regression risk, specialized quality gates.", "/dashboard/requirements", "Open requirements"),
+      m("ref-migrate", "Migrate from Playwright / Selenium / Tosca", "Reference & Planning", "tutorial", 16, "MCP-assisted migration of existing suites to ContextQA.", "/dashboard/knowledge-base", "Open knowledge base"),
     ],
   },
 ];
@@ -117,4 +135,11 @@ export function learningStats(progress: Record<string, { status: string }>) {
   const done = LEARNING_MODULES.filter((mod) => progress[mod.id]?.status === "completed").length;
   const inProgress = LEARNING_MODULES.filter((mod) => progress[mod.id]?.status === "in_progress").length;
   return { total, done, inProgress, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
+/** Per-section completion for progress bars. */
+export function sectionStats(progress: Record<string, { status: string }>, section: LearningSection) {
+  const total = section.modules.length;
+  const done = section.modules.filter((mod) => progress[mod.id]?.status === "completed").length;
+  return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
 }

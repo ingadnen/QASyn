@@ -8,13 +8,41 @@ import { cn } from "@/lib/utils";
 
 export interface StudioStep {
   id: string;
-  action: "Navigate" | "Click" | "Enter Text" | "Verify Element" | "API Call" | "AI Assertion";
+  action: "Navigate" | "Click" | "Enter Text" | "Verify Element" | "API Call" | "AI Assertion" | "OCR/Document Validation" | "KYC Check" | "Salesforce Workflow Steps";
   target: string;
   value: string;
   selector: string;
 }
 
-const ACTIONS: StudioStep["action"][] = ["Navigate", "Click", "Enter Text", "Verify Element", "API Call", "AI Assertion"];
+const ACTIONS: StudioStep["action"][] = ["Navigate", "Click", "Enter Text", "Verify Element", "API Call", "AI Assertion", "OCR/Document Validation", "KYC Check", "Salesforce Workflow Steps"];
+
+/** Selenium-IDE style action catalogue (from live picker). */
+const ACTION_TEMPLATES = [
+  "Click on {target}",
+  "Double click on {target}",
+  "Check the checkbox {target}",
+  "Uncheck the checkbox {target}",
+  "Check the radio button {target}",
+  "Verify that the URL contains {value}",
+  "Press Enter/Return Key",
+  "Press Esc Key",
+  "Press Tab Key",
+  "Press {value} Key",
+  "Wait for {value} seconds",
+  "Wait until {target} is visible",
+  "Wait until the page title changes to {value}",
+  "Store the title of current page in a variable {value}",
+  "Store cookie named {value} in variable",
+  "Delete all cookies from the current session",
+  "Verify that an Alert is displayed",
+  "Click OK button in the alert",
+  "Select option by value {value} in the list {target}",
+  "Select option by index {value} in the list {target}",
+  "Scroll {target} into view",
+  "Click on the Back button in the browser",
+  "Take full page screenshot with URL",
+  "Custom step: {target}",
+] as const;
 
 interface LogLine {
   step: number;
@@ -34,6 +62,8 @@ export function StudioClient({ testCaseId, initialSteps, readOnly }: { testCaseI
   const [steps, setSteps] = useState<StudioStep[]>(initialSteps.length ? initialSteps : [{ id: "s1", action: "Navigate", target: "https://example.com", value: "", selector: "" }]);
   const [log, setLog] = useState<LogLine[] | null>(null);
   const [selected, setSelected] = useState(0);
+  const [detailOpen, setDetailOpen] = useState<Set<number>>(new Set());
+  const [template, setTemplate] = useState<string>(ACTION_TEMPLATES[0]);
 
   function update(i: number, patch: Partial<StudioStep>) {
     setSteps((s) => s.map((x, j) => (j === i ? { ...x, ...patch } : x)));
@@ -43,6 +73,16 @@ export function StudioClient({ testCaseId, initialSteps, readOnly }: { testCaseI
   }
   function removeStep(i: number) {
     setSteps((s) => s.filter((_, j) => j !== i));
+  }
+  function moveStep(i: number, dir: -1 | 1) {
+    setSteps((s) => {
+      const j = i + dir;
+      if (j < 0 || j >= s.length) return s;
+      const next = [...s];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+    setSelected((s) => Math.max(0, Math.min(steps.length - 1, s + dir)));
   }
   async function save() {
     const res = await run("save", `/api/dashboard/test-cases/${testCaseId}`, { method: "PATCH", json: { action: "steps", steps } });
@@ -82,20 +122,62 @@ export function StudioClient({ testCaseId, initialSteps, readOnly }: { testCaseI
                     </span>
                   )}
                   {!readOnly && (
-                    <button type="button" aria-label="Remove step" className="rounded p-1 text-slate-400 hover:text-red-600" onClick={(e) => { e.stopPropagation(); removeStep(i); }}>
-                      ✕
-                    </button>
+                    <span className="flex items-center gap-0.5">
+                      <button type="button" aria-label="Move up" className="rounded p-1 text-slate-400 hover:text-slate-700" onClick={(e) => { e.stopPropagation(); moveStep(i, -1); }}>↑</button>
+                      <button type="button" aria-label="Move down" className="rounded p-1 text-slate-400 hover:text-slate-700" onClick={(e) => { e.stopPropagation(); moveStep(i, 1); }}>↓</button>
+                      <button type="button" aria-label="Remove step" className="rounded p-1 text-slate-400 hover:text-red-600" onClick={(e) => { e.stopPropagation(); removeStep(i); }}>
+                        ✕
+                      </button>
+                    </span>
                   )}
                 </div>
                 {line && <p className="mt-1 pl-8 text-xs text-slate-500">{line.message}</p>}
+                <div className="mt-1 pl-8">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-brand-600 hover:underline"
+                    onClick={() => {
+                      const next = new Set(detailOpen);
+                      if (next.has(selected)) next.delete(selected); else next.add(selected);
+                      setDetailOpen(next);
+                    }}
+                  >
+                    View Details
+                  </button>
+                  {detailOpen.has(i) && (
+                    <div className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
+                      <p><strong>{s.action} step details</strong>: {s.action === "Navigate" ? `Navigate to ${s.target}` : s.action === "Verify Element" ? `Verify that the target "${s.target}" is visible` : s.action === "Click" ? `Click on ${s.target}` : `${s.action} on ${s.target}`}</p>
+                      <p className="mt-1">Selector: <code>{s.selector || "css:body"}</code> · Value: <code>{s.value || "—"}</code></p>
+                    </div>
+                  )}
+                </div>
               </li>
             );
           })}
         </ol>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!readOnly && (
             <>
-              <Button variant="secondary" onClick={addStep}>+ Add step</Button>
+              <select aria-label="Add step from template" value={template} onChange={(e) => setTemplate(e.target.value)} className="h-9 max-w-72 rounded-lg border border-slate-200 px-2 text-sm">
+                {ACTION_TEMPLATES.map((t) => <option key={t}>{t}</option>)}
+              </select>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  setSteps((s) => [
+                    ...s,
+                    {
+                      id: `s${Date.now()}`,
+                      action: template.startsWith("Navigate") || template.startsWith("Visit") ? "Navigate" : template.startsWith("Verify") || template.startsWith("Wait") ? "Verify Element" : template.includes("Enter") || template.includes("Store") ? "Enter Text" : template.includes("Select") ? "Click" : "Click",
+                      target: template.replace(/\{(target|value)\}/g, "label").replace("{target}", "label"),
+                      value: "",
+                      selector: "",
+                    },
+                  ])
+                }
+              >
+                + Add Step
+              </Button>
               <Button variant="secondary" onClick={() => void save()} loading={pending === "save"} loadingText="Saving…">Save steps</Button>
             </>
           )}

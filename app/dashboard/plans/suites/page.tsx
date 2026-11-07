@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { CollectionCreate } from "@/components/dashboard/pages/Forms";
+import { GuidedTour } from "@/components/dashboard/pages/GuidedTour";
 import { Card, EmptyState, PageHeader, ActionButton } from "@/components/dashboard/ui";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
 import { requireOrgContext } from "@/lib/tenant";
@@ -14,6 +16,7 @@ export default async function SuitesPage() {
   return (
     <div className="space-y-6">
       <PageHeader kicker="PLATFORM" title="Test suites" description="Reusable groups of test cases, runnable on demand or on a schedule." />
+      <GuidedTour />
       <Card title="New suite"><div className="px-5 py-4"><CollectionCreate kind="suites" readOnly={ctx.readOnly} /></div></Card>
       <Card title={`${suites.length} suites`}>
         {suites.length === 0 ? <EmptyState title="No suites" description="Create your first suite above." /> : (
@@ -21,8 +24,8 @@ export default async function SuitesPage() {
             {suites.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-slate-800">{s.name}</p>
-                  <p className="text-xs text-slate-500">{s.description ?? "—"} · {s.schedule}{s.module ? ` · ${s.module}` : ""} · {s.testCasesCount} cases · {Math.round(s.passRate)}% pass{s.lastRunAt ? ` · last run ${timeAgo(s.lastRunAt)}` : ""}</p>
+                  <Link href={`/dashboard/plans/suites/${s.id}`} className="font-medium text-brand-700 hover:underline">{s.name}</Link>
+                  <p className="text-xs text-slate-500">{s.description ?? "—"} · {s.schedule}{s.module ? ` · ${s.module}` : ""} · {s.testCasesCount} cases · {Math.round(s.passRate)}% pass{s.lastRunAt ? ` · last run ${timeAgo(s.lastRunAt)}` : " · Not executed"}</p>
                 </div>
                 <ActionButton url={`/api/dashboard/collections/suites/${s.id}`} method="PATCH" json={{ action: "run" }} disabled={ctx.readOnly}>Run</ActionButton>
                 <ActionButton url={`/api/dashboard/collections/suites/${s.id}`} method="DELETE" variant="danger" disabled={ctx.readOnly} confirmText="Delete this suite?">Delete</ActionButton>

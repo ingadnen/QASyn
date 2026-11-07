@@ -23,25 +23,87 @@ const inputCls =
 
 export function CrawlForm({ defaultUrl, readOnly }: { defaultUrl: string; readOnly: boolean }) {
   const { run, pending, error } = useAction();
+  const router = useRouter();
   const [url, setUrl] = useState(defaultUrl);
+  const [platform, setPlatform] = useState<"Web Application" | "Mobile" | "API">("Web Application");
+  const [publishMode, setPublishMode] = useState<"Require approval" | "Auto publish">("Require approval");
+  const [types, setTypes] = useState<Set<string>>(new Set(["Positive / Happy Path", "Negative", "Edge Cases"]));
+  const [prerequisites, setPrerequisites] = useState("");
+  const TYPE_OPTIONS = ["Positive / Happy Path", "Negative", "Edge Cases", "Field Level Validation", "Boundary Value", "Functional", "End to End"];
+  const [configOpen, setConfigOpen] = useState(false);
   return (
-    <form
-      className="flex flex-wrap items-end gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void run("c", "/api/dashboard/crawl", { json: { targetUrl: url || undefined } });
-      }}
-    >
-      <div className="min-w-64 flex-1">
-        <Field label="Target URL">
-          <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://staging.example.com" disabled={readOnly} />
-        </Field>
-      </div>
-      <Button type="submit" loading={pending === "c"} loadingText="Starting…" disabled={readOnly}>
-        Start New Crawl
-      </Button>
+    <div className="space-y-3">
+      <button type="button" onClick={() => setConfigOpen((v) => !v)} aria-expanded={configOpen} className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-700">
+        <span>⚙ {configOpen ? "Hide Configuration Options" : "Show Configuration Options"}</span>
+        <span>{configOpen ? "▾" : "▸"}</span>
+      </button>
+      {configOpen && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Select Target Platform">
+            <select className={inputCls} value={platform} disabled={readOnly} onChange={(e) => setPlatform(e.target.value as typeof platform)}>
+              <option>Web Application</option>
+              <option>Mobile</option>
+              <option>API</option>
+            </select>
+          </Field>
+          <Field label="Publish Mode">
+            <select className={inputCls} value={publishMode} disabled={readOnly} onChange={(e) => setPublishMode(e.target.value as typeof publishMode)}>
+              <option>Require approval</option>
+              <option>Auto publish</option>
+            </select>
+          </Field>
+          <div className="sm:col-span-2">
+            <p className="text-xs font-medium text-slate-600">Test case types</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {TYPE_OPTIONS.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={readOnly}
+                  aria-pressed={types.has(t)}
+                  onClick={() => {
+                    const next = new Set(types);
+                    if (next.has(t)) next.delete(t); else next.add(t);
+                    setTypes(next);
+                  }}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${types.has(t) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                >
+                  {types.has(t) ? "✓ " : ""}{t}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-slate-500">Choose the types of test cases AI should generate. If not selected, AI will automatically determine the test cases type for you.</p>
+          </div>
+        </div>
+      )}
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const res = run<{ crawl: { id: string } }>("c", "/api/dashboard/crawl", { json: { targetUrl: url || undefined, platform, publishMode, testTypes: [...types], prerequisites } });
+          void res.then((r) => {
+            // Live behaviour (mirrors ContextQA): toast + redirect to the AQE live feed.
+            sessionStorage.setItem("qasyn_crawl_notice", r ? `Crawl started — crawling ${url || defaultUrl}` : "");
+            router.push("/dashboard/overview");
+          });
+        }}
+      >
+        <div className="min-w-64 flex-1">
+          <Field label="Target URL — What should the crawl explore?">
+            <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" disabled={readOnly} />
+          </Field>
+        </div>
+        <Button type="submit" loading={pending === "c"} loadingText="Starting…" disabled={readOnly}>
+          Start Crawl
+        </Button>
+      </form>
+      <label className="block">
+        <span className="text-xs font-medium text-slate-600">Prerequisites (optional) — existing test cases</span>
+        <input className={cn(inputCls, "mt-1")} value={prerequisites} disabled={readOnly} onChange={(e) => setPrerequisites(e.target.value)} placeholder="Select Prerequisites (e.g. TC-3, TC-4)" />
+      </label>
+      {publishMode === "Require approval" && <p className="text-xs text-slate-500">“Require Approval” keeps tests in a draft state until manually reviewed.</p>}
       {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
-    </form>
+    </div>
   );
 }
 

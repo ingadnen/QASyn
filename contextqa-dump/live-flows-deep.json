@@ -1,0 +1,60 @@
+{
+  "source": "https://gmailad.contextqa.com (authenticated, sidebar client-side navigation, single tab)",
+  "capturedAt": "2026-11-07",
+  "routes": ["/td/1/cases/filter/2", "/td/1/crawls?size=10", "/settings/team-access"],
+  "newCrawlModal": {
+    "title": "New Crawl",
+    "header": "Robot QA icon + title + close",
+    "accordion": "Show Configuration Options (collapsed by default)",
+    "platform": ["Web Application", "Mobile", "API"],
+    "publishMode": ["Require approval", "Auto publish"],
+    "publishNote": "\"Require Approval\" keeps tests in a draft state until manually reviewed.",
+    "testCaseTypes": ["All Types", "Positive / Happy Path", "Negative", "Edge Cases", "Field Level Validation", "Boundary Value", "Functional", "End to End"],
+    "suitePlanToggles": "Create Test Suite / Create Test Plan (only effective with Auto Publish)",
+    "prerequisites": {
+      "badge": "Optional",
+      "selector": "Select Prerequisites",
+      "options": "Existing test cases (TC-3, TC-4, TC-6, TC-7, TC-8, TC-9, TC-10, TC-11, TC-13 ...) shown as selectable rows"
+    },
+    "targetUrl": { "placeholder": "https://app.example.com/login", "info": true },
+    "explore": {
+      "placeholder": "e.g. Sign in, add a product to the bag, apply a coupon and complete checkout. Cover the validation on the payment step.",
+      "examplePrompts": ["Login using the credentials email: admin@demo.com and password: admin123, then c...", "Log in using the credentials: email admin@demo.com and password admin123, then c..."]
+    },
+    "requirementName": "Optional — leave blank to name it after the date and time the crawl started.",
+    "additionalContext": "Optional.",
+    "footer": ["Cancel (outline)", "Start Crawl (indigo, robot icon)"]
+  },
+  "testCases": {
+    "columns": ["TC ID", "Type", "Priority", "Result", "Confidence %", "Status", "Module", "Labels", "Created By", "Folder", "Created At", "Updated At", "Last Run", "Action"],
+    "tabs": ["Test Cases", "Step Groups"],
+    "views": ["List", "Modular"],
+    "toolbar": ["Search by ID or Title", "Filter", "settings", "refresh", "New Test Case"],
+    "rowClick": "Does not navigate directly (opens in-place detail); opens Test Studio on demand"
+  },
+  "team": {
+    "columns": ["NAME", "EMAIL", "ROLES", "VERIFIED", "ADMIN"],
+    "tabs": ["Users", "Roles & Permissions"],
+    "actions": ["Invite user", "Search users"]
+  },
+  "stepGroups": {
+    "route": "/td/1/step_groups/filter/4",
+    "tabs": ["Test Cases", "Step Groups"],
+    "toolbar": ["Search by ID or Title", "All Step Groups", "Filter", "settings", "refresh", "New Step Group", "List / Modular"],
+    "emptyState": "No data available",
+    "modularView": "Folder tree: Folders search, ORGANIZED (Account Creation 2, Account Recovery 19, Language Localization 1, User Sign-In 9), Unorganized (inbox, 0), Organized 4 folders (expand/collapse), New folder",
+    "folderActions": ["Create subfolder", "Rename", "Move folder", "Delete folder"]
+  },
+  "suites": {
+    "route": "/td/1/suites",
+    "columns": ["Suite Name", "Platform", "Test Cases", "Latest Result", "Created Date", "Modified", "Folder", "Action"],
+    "rows": ["TS-1 Default Test Suite (0, Failed)", "TS-2 2026-11-05_Onboarding Crawl Test Suite (31, Failed)", "TS-3 User Sign-In (9)", "TS-4 Account Recovery (19)", "TS-5 Language Localization (1)", "TS-6 Account Creation (2)"],
+    "folder": "Unorganised"
+  },
+  "environments": {
+    "route": "/td/1/environment-data-management/environments",
+    "types": ["Environments", "Test Data Profiles", "Global Data", "Auth Profiles"],
+    "toolbar": ["Grid/List", "Import", "Export", "New environment"],
+    "row": { "name": "default_environment", "badge": "DEFAULT", "updated": "2026-11-04", "vars": 1, "dbs": 0, "profiles": 0 }
+  }
+}
