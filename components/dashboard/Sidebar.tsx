@@ -35,6 +35,7 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: "/dashboard/environments", label: "Environments", icon: "M4 7h16M4 12h16M4 17h16M7 7v10" },
       { href: "/dashboard/uploads", label: "Uploads", icon: "M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" },
       { href: "/dashboard/knowledge-base", label: "Knowledge base", icon: "M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2V5zM6 19h12" },
+      { href: "/dashboard/learning", label: "Learning", icon: "M12 6c-2-1.5-4.5-2-8-2v14c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2V4c-3.5 0-6 .5-8 2zM12 6v14", badge: "New" },
       { href: "/dashboard/team", label: "Team", icon: "M16 11a4 4 0 1 0-8 0M3 21a9 9 0 0 1 18 0" },
     ],
   },

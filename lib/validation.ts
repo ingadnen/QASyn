@@ -149,6 +149,21 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
     module: moduleName.optional(),
     criticality: z.enum(CRITICALITIES).optional(),
   }),
+  z.object({
+    action: z.literal("steps"),
+    steps: z
+      .array(
+        z.object({
+          id: z.string().max(40),
+          action: z.enum(["Navigate", "Click", "Enter Text", "Verify Element", "API Call", "AI Assertion"]),
+          target: z.string().trim().max(200),
+          value: z.string().trim().max(500).default(""),
+          selector: z.string().trim().max(200).default(""),
+        }),
+      )
+      .max(50),
+  }),
+  z.object({ action: z.literal("run_steps") }),
 ]);
 
 export const runBatchSchema = z.object({ module: z.string().max(40).optional() });

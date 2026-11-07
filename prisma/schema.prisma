@@ -187,6 +187,8 @@ model TestCase {
   /// passing | failing | draft | flaky
   status         String        @default("draft")
   stepsCount     Int           @default(1)
+  /// JSON array of NLP steps for the Test Case Studio: [{ id, action, target, value, selector }]
+  stepsJson      String        @default("[]")
   /// manual | ai | crawl
   source         String        @default("manual")
   lastRunAt      DateTime?

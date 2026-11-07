@@ -5,7 +5,7 @@ import { audit, guardApi, writeSettings } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { analysisSettingsSchema } from "@/lib/validation";
 
-export async function PUT(request: Request) {
+async function handle(request: Request) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
@@ -16,3 +16,7 @@ export async function PUT(request: Request) {
   await audit(prisma, ctx, "settings.analysis_updated", `threshold ${parsed.data.severityThreshold} · min coverage ${parsed.data.minCoverage}%`);
   return NextResponse.json({ analysis: settings.analysis });
 }
+
+export const PUT = handle;
+export const PATCH = handle;
+export const POST = handle;

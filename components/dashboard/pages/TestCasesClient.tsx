@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -90,7 +91,9 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
                 {filtered.map((r) => (
                   <tr key={r.id} className={tableCls.tr}>
                     <td className={tableCls.td}>
-                      <p className="font-medium text-slate-900">{r.title}</p>
+                      <Link href={`/dashboard/test-cases/${r.id}`} className="font-medium text-brand-700 hover:underline">
+                        {r.title}
+                      </Link>
                       <p className="text-xs text-slate-400">
                         {r.stepsCount} steps · {r.source}
                       </p>

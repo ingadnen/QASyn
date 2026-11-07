@@ -346,7 +346,7 @@ export function AnalysisForm({ initial, readOnly }: { initial: { severityThresho
   const { run, pending, error } = useAction();
   const [v, setV] = useState(initial);
   return (
-    <form className="space-y-1" onSubmit={(e) => { e.preventDefault(); void run("a", "/api/dashboard/settings/analysis", { json: v }); }}>
+    <form className="space-y-1" onSubmit={(e) => { e.preventDefault(); void run("a", "/api/dashboard/settings/analysis", { method: "PATCH", json: v }); }}>
       <Select label="Severity threshold" value={v.severityThreshold as "critical" | "high" | "medium" | "low"} onChange={(s) => setV({ ...v, severityThreshold: s })} options={["critical", "high", "medium", "low"]} />
       <Toggle label="Block on regression" checked={v.blockOnRegression} onChange={(b) => setV({ ...v, blockOnRegression: b })} />
       <Toggle label="Auto-healing" checked={v.autoHealing} onChange={(b) => setV({ ...v, autoHealing: b })} />
@@ -365,7 +365,7 @@ export function BugReproForm({ initial, readOnly }: { initial: { autoReproduce: 
     setV({ ...v, sources: v.sources.includes(s) ? v.sources.filter((x) => x !== s) : [...v.sources, s] });
   }
   return (
-    <form className="space-y-1" onSubmit={(e) => { e.preventDefault(); void run("b", "/api/dashboard/settings/bug-reproduction", { json: v }); }}>
+    <form className="space-y-1" onSubmit={(e) => { e.preventDefault(); void run("b", "/api/dashboard/settings/bug-reproduction", { method: "PATCH", json: v }); }}>
       <Toggle label="Auto-reproduce bugs" checked={v.autoReproduce} onChange={(b) => setV({ ...v, autoReproduce: b })} />
       <div className="flex gap-4 py-2">
         {(["jira", "linear", "slack"] as const).map((s) => (

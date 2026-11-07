@@ -29,6 +29,38 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json(result);
   }
 
+  if (input.action === "steps") {
+    const updated = await prisma.testCase.update({
+      where: { id: tc.id },
+      data: { stepsJson: JSON.stringify(input.steps), stepsCount: Math.max(1, input.steps.length) },
+    });
+    await audit(prisma, ctx, "test_case.steps_updated", `${updated.title} · ${input.steps.length} steps`);
+    return NextResponse.json({ testCase: updated });
+  }
+
+  if (input.action === "run_steps") {
+    let steps: Array<{ id: string; action: string; target: string; value: string; selector: string }> = [];
+    try {
+      steps = JSON.parse(tc.stepsJson || "[]");
+    } catch {
+      steps = [];
+    }
+    if (steps.length === 0) return jsonError("Add at least one step before running.", 400);
+    await delay(MOCK_LATENCY_MS * 2);
+    // Simulated step-by-step execution with AI auto-healing on the first flaky step.
+    const log = steps.map((s, i) => ({
+      step: i + 1,
+      action: s.action,
+      target: s.target,
+      status: i === 0 ? "passed" : "passed",
+      healed: i === 1 && s.action === "Click",
+      message: i === 1 && s.action === "Click" ? `Selector "${s.selector || s.target}" changed — AI auto-healing found the new target.` : `OK`,
+    }));
+    const result = await prisma.$transaction((tx) => runTestCases(tx, ctx, [tc]));
+    await audit(prisma, ctx, "test_case.run_steps", `${tc.title} · ${log.length} steps · ${result.failed ? "failing" : "passing"}`);
+    return NextResponse.json({ result, log });
+  }
+
   await delay(MOCK_LATENCY_MS / 2);
   const data =
     input.action === "set"

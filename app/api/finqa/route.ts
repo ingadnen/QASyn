@@ -58,6 +58,6 @@ export async function POST(request: Request) {
   if (!parsed.success) return validationError(parsed.error);
 
   const context = await loadContext();
-  await delay(700 + Math.floor(Math.random() * 500));
+  await delay(100);
   return NextResponse.json({ reply: answer(parsed.data.message, context) });
 }

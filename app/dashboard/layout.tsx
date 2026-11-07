@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard/Sidebar";
 import { FinQAWidget } from "@/components/sections/FinQAWidget";
 import { initialsOf } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ensureWal, prisma } from "@/lib/db";
 import { settlePending } from "@/lib/engine";
 import { requireOrgContext, trialDaysLeft } from "@/lib/tenant";
 
@@ -18,6 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     if (onboarding && !onboarding.completedAt) redirect(`/onboarding/${onboarding.currentStep}`);
   }
   await settlePending(ctx.org.id);
+  void ensureWal();
 
   return (
     <div className="min-h-screen bg-slate-50">

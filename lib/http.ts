@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import type { ZodError } from "zod";
 
-/** Latence artificielle des routes simulées (permet de voir les états de chargement). */
-export const MOCK_LATENCY_MS = 800;
+/** Latence artificielle des routes simulées (0 = aucune attente, réponses instantanées). */
+export const MOCK_LATENCY_MS = 0;
 
 export function jsonError(message: string, status: number, extra?: Record<string, unknown>) {
   return NextResponse.json({ error: message, ...extra }, { status });

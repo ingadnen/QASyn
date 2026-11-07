@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CrawlForm } from "@/components/dashboard/pages/Forms";
 import { Card, EmptyState, PageHeader, StatusPill, ActionButton } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
@@ -27,6 +28,11 @@ export default async function CrawlPage() {
                   <StatusPill value={c.status} />
                   <span className="text-xs text-slate-500">{c.pagesVisited} pages · {c.flowsMapped} flows · {timeAgo(c.startedAt)}</span>
                   <span className="ml-auto flex gap-2">
+                    {c.status === "completed" && (
+                      <Link href="/dashboard/test-cases?new=1" className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500">
+                        Convert flow → Test Case
+                      </Link>
+                    )}
                     {c.status === "running" && <ActionButton url={`/api/dashboard/crawl/${c.id}`} json={{ action: "complete" }} disabled={ctx.readOnly}>Complete now</ActionButton>}
                     {c.status === "running" && <ActionButton url={`/api/dashboard/crawl/${c.id}`} json={{ action: "cancel" }} variant="danger" disabled={ctx.readOnly}>Cancel</ActionButton>}
                   </span>

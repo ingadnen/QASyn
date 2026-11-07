@@ -5,7 +5,7 @@ import { audit, guardApi, writeSettings } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { bugReproSettingsSchema } from "@/lib/validation";
 
-export async function PUT(request: Request) {
+async function handle(request: Request) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
@@ -16,3 +16,7 @@ export async function PUT(request: Request) {
   await audit(prisma, ctx, "settings.bug_reproduction_updated", parsed.data.autoReproduce ? "auto-reproduce on" : "auto-reproduce off");
   return NextResponse.json({ bugReproduction: settings.bugReproduction });
 }
+
+export const PUT = handle;
+export const PATCH = handle;
+export const POST = handle;

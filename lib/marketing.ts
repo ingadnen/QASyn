@@ -7,6 +7,7 @@ export const MARKETING_NAV = [
   { href: "/", label: "Home" },
   { href: "/ship", label: "Ship" },
   { href: "/integrations", label: "Integrations" },
+  { href: "/learning", label: "Learning" },
   { href: "/dashboard/overview", label: "Dashboard" },
 ] as const;
 

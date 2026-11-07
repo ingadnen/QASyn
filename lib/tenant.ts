@@ -94,6 +94,8 @@ export interface OrgSettings {
   bugReproduction?: { autoReproduce: boolean; sources: string[]; captureVideo: boolean; captureNetwork: boolean; captureConsole: boolean; maxAttempts: number };
   codeAnalysisAt?: string;
   slackChannelCreated?: boolean;
+  /** Learning progress: moduleId → { status, updatedAt } */
+  learning?: Record<string, { status: string; updatedAt: string }>;
 }
 
 export function readSettings(org: Pick<Organisation, "settingsJson">): OrgSettings {
