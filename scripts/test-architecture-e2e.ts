@@ -146,14 +146,40 @@ async function step5() {
   const page = await browser.newPage();
   const base = process.env.QASYN_BASE ?? "http://localhost:3000";
 
+  // Ensure a writable test account (own org) for mutation-heavy UI checks.
+  const { hashPassword } = await import("../lib/crypto");
+  const { prisma: db } = await import("../lib/db");
+  const email = `e2e-${Date.now()}@qasyn.dev`;
+  const user = await db.user.create({
+    data: { email, passwordHash: await hashPassword("E2ePass2026!"), name: "E2E Tester", role: "Admin", avatarInitials: "ET", emailVerifiedAt: new Date() },
+  });
+  const org = await db.organisation.create({
+    data: {
+      name: "E2E Org",
+      slug: `e2e-${Date.now()}`,
+      ownerName: "E2E Tester",
+      website: "https://example.com",
+      trialEndsAt: new Date(Date.now() + 15 * 86_400_000),
+      onboarding: { create: { currentStep: 7, completedAt: new Date() } },
+    },
+  });
+  await db.user.update({ where: { id: user.id }, data: { organisationId: org.id, emailVerifiedAt: new Date() } });
+  const tc = await db.testCase.create({
+    data: { organisationId: org.id, title: "E2E Studio probe", module: "Core", criticality: "high", status: "draft", stepsCount: 3, source: "ai", stepsJson: JSON.stringify([
+      { id: "s1", action: "Navigate", target: "https://example.com", value: "", selector: "" },
+      { id: "s2", action: "Click", target: "Learn more", value: "", selector: "" },
+      { id: "s3", action: "Verify Element", target: "Example", value: "", selector: "" },
+    ]) },
+  });
+
   // 5.1 Login
   await page.goto(`${base}/login`, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await page.waitForSelector("input[type='password']", { timeout: 15_000 });
-  await page.fill("input[type='email'], input[name='email']", "demo@acme.dev");
-  await page.fill("input[type='password']", "AcmeDemo2026!");
+  await page.fill("input[type='email'], input[name='email']", email);
+  await page.fill("input[type='password']", "E2ePass2026!");
   await page.click("button[type='submit'], button:has-text('Log in')");
   await page.waitForURL("**/dashboard/**", { timeout: 15_000 });
-  check("Login as demo@acme.dev redirects to dashboard", true);
+  check(`Login as ${email} redirects to dashboard`, true);
 
   // 5.2 Environments tabs
   await page.goto(`${base}/dashboard/environments?tab=environments`, { waitUntil: "domcontentloaded", timeout: 30_000 });
@@ -166,7 +192,9 @@ async function step5() {
   await page.click("a[href*='tab=auth'], a:has-text('Auth Profiles')");
 
   // 5.3 Crawl detail tabs
-  const crawl = await prisma.crawlSession.findFirst({ where: { organisationId: (await prisma.organisation.findUnique({ where: { slug: "acme" } }))!.id } });
+  const testOrg = await db.organisation.findUnique({ where: { id: org.id } });
+  void testOrg;
+  const crawl = await db.crawlSession.create({ data: { organisationId: org.id, targetUrl: "https://example.com", status: "running", pagesVisited: 2, flowsMapped: 1 } });
   if (crawl) {
     await page.goto(`${base}/dashboard/crawl/${crawl.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
     for (const tab of ["Questionnaire", "Requirement Data", "History", "Metadata", "Gaps"]) {
@@ -177,9 +205,9 @@ async function step5() {
   }
 
   // 5.4 Test Studio interactions
-  const tc = await prisma.testCase.findFirst({ where: { title: "E2E auto-healing probe" } });
-  if (tc) {
-    await page.goto(`${base}/dashboard/test-studio/${tc.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  const probe = await db.testCase.findFirst({ where: { id: tc.id } });
+  if (probe) {
+    await page.goto(`${base}/dashboard/test-studio/${probe.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
     await page.waitForSelector("text=Test Case Variables", { timeout: 15_000 });
     const details = await page.locator("button:has-text('View Details')").count();
     if (details >= 2) {
@@ -192,9 +220,9 @@ async function step5() {
     // Add variable
     await page.fill("input[placeholder='key (url, email…)']", "url");
     await page.fill("input[placeholder='value']", "https://staging.example.com");
-    await page.click("button:has-text('Add')");
+    await page.locator("div:has(> input[placeholder='value']) >> button:has-text('Add')").first().click();
     await page.waitForTimeout(600);
-    const reloaded = await prisma.testCase.findUnique({ where: { id: tc.id } });
+    const reloaded = await db.testCase.findUnique({ where: { id: probe.id } });
     check("Variable url persisted to variablesJson", (reloaded?.variablesJson ?? "").includes("\"url\""));
     // AI Custom Prompt
     const before = JSON.parse(reloaded?.stepsJson ?? "[]").length;
@@ -202,7 +230,7 @@ async function step5() {
     await page.fill("input[placeholder*='Verify the welcome']", "Verify the welcome banner, click Get started");
     await page.click("button:has-text('Generate & add')");
     await page.waitForTimeout(800);
-    const after = JSON.parse((await prisma.testCase.findUnique({ where: { id: tc.id } }))?.stepsJson ?? "[]").length;
+    const after = JSON.parse((await db.testCase.findUnique({ where: { id: probe.id } }))?.stepsJson ?? "[]").length;
     check("AI Custom Prompt increased steps", after > before, `${before} → ${after}`);
     // Tabs
     for (const t of ["Relationships", "Version History", "Test Steps"]) {
@@ -212,7 +240,7 @@ async function step5() {
   }
 
   // 5.5 Suite detail
-  const suite = await prisma.testSuite.findFirst({ where: { name: "E2E Capture Suite" } }) ?? (await prisma.testSuite.findFirst({}));
+  const suite = (await db.testSuite.findFirst({ where: { organisationId: org.id } })) ?? (await db.testSuite.create({ data: { organisationId: org.id, name: "E2E Suite", testCases: { connect: [{ id: tc.id }] } } }));
   if (suite) {
     await page.goto(`${base}/dashboard/plans/suites/${suite.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
     for (const t of ["Used in Test Plans", "History", "Settings", "Test Cases"]) {
@@ -223,8 +251,8 @@ async function step5() {
 
   // 5.6 Test cases columns + Step Groups + Modular
   await page.goto(`${base}/dashboard/test-cases`, { waitUntil: "domcontentloaded", timeout: 30_000 });
-  const text = await page.locator("body").innerText();
-  check("Columns TC ID / Confidence / Labels / Created By visible", ["TC ID", "Confidence %", "Labels", "Created By"].every((c) => text.includes(c)));
+  const headers = (await page.locator("th").allInnerTexts()).map((h) => h.toLowerCase());
+  check("Columns TC ID / Confidence / Labels / Created By visible", ["tc id", "confidence %", "labels", "created by"].every((c) => headers.some((h) => h.includes(c))));
   await page.click("[role=tab]:has-text('Step Groups')");
   const groupInput = await page.locator("input[placeholder*='sub-routine']").count();
   check("Step Groups form present", groupInput >= 1);
@@ -233,7 +261,6 @@ async function step5() {
   check("Modular folder tree renders", (await page.locator("text=ORGANIZED").count()) >= 1);
 
   // 5.7 Team search + roles matrix
-  await page.goto(`${base}/dashboard/team`, { waitUsed: "domcontentloaded", timeout: 30_000 } as never).catch(() => undefined);
   await page.goto(`${base}/dashboard/team`, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await page.fill("input[name='q']", "sam");
   await page.keyboard.press("Enter");
