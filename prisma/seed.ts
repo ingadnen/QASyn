@@ -12,6 +12,25 @@ import { createDemoRuns } from "../lib/runs";
 
 const prisma = new PrismaClient();
 
+/** SQLite hardening: WAL mode + tolerant synchronous, retried once on transient I/O errors. */
+async function harden() {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await prisma.$queryRawUnsafe("PRAGMA journal_mode = WAL;");
+      await prisma.$queryRawUnsafe("PRAGMA synchronous = NORMAL;");
+      await prisma.$queryRawUnsafe("PRAGMA busy_timeout = 5000;");
+      return;
+    } catch (e) {
+      if (attempt === 2) throw e;
+      await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+    }
+  }
+}
+
+async function main() {
+  await harden();
+  await prisma.blogPost.deleteMany();
+
 const DEMO_SLUG = "acme";
 const DEMO_EMAIL = "demo@acme.dev";
 const DEMO_PASSWORD = "AcmeDemo2026!";
@@ -81,8 +100,7 @@ const TEST_CASES: Record<string, Array<[string, Crit, Status, number]>> = {
   ],
 };
 
-async function main() {
-  await prisma.blogPost.deleteMany();
+  // (main continues — see harden() call above)
   await prisma.caseStudy.deleteMany();
   await prisma.glossaryTerm.deleteMany();
   await prisma.course.deleteMany();

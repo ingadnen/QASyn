@@ -1,15 +1,25 @@
-import type { Metadata } from "next";
+import type { MetadataRoute } from "next";
 
-export const metadata: Metadata = { title: "Sitemap" };
+export const dynamic = "force-dynamic";
 
-export default async function Sitemap() {
-  const { prisma } = await import("@/lib/db");
-  const [posts, studies, terms] = await Promise.all([
-    prisma.blogPost.findMany({ select: { slug: true } }),
-    prisma.caseStudy.findMany({ select: { slug: true } }),
-    prisma.glossaryTerm.findMany({ select: { slug: true } }),
-  ]);
+export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://qasyn.local";
+  let posts: Array<{ slug: string }> = [];
+  let studies: Array<{ slug: string }> = [];
+  let terms: Array<{ slug: string }> = [];
+  try {
+    const { prisma } = await import("@/lib/db");
+    [posts, studies, terms] = await Promise.all([
+      prisma.blogPost.findMany({ select: { slug: true } }),
+      prisma.caseStudy.findMany({ select: { slug: true } }),
+      prisma.glossaryTerm.findMany({ select: { slug: true } }),
+    ]);
+  } catch {
+    // SQLite unavailable/locked during build — serve static paths only.
+    posts = [];
+    studies = [];
+    terms = [];
+  }
   const staticPaths = [
     "", "/ship", "/integrations", "/learning", "/signup", "/login",
     "/platform", "/platform/at-a-glance", "/platform/enterprise-apps-testing", "/platform/ai-agents-testing",
@@ -29,7 +39,7 @@ export default async function Sitemap() {
   const dynamicPaths = [
     ...posts.map((p) => `/blog/${p.slug}`),
     ...studies.map((s) => `/case-study/${s.slug}`),
-    ...terms.map((t) => `/glossary`),
+    ...terms.map(() => `/glossary`),
   ];
   return [...staticPaths, ...dynamicPaths].map((p) => ({
     url: `${base}${p}`,

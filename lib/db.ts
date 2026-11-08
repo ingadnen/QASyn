@@ -23,7 +23,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 export async function ensureWal() {
   try {
     await prisma.$queryRawUnsafe("PRAGMA journal_mode = WAL;");
-    await prisma.$executeRawUnsafe("PRAGMA synchronous = NORMAL;");
+    await prisma.$queryRawUnsafe("PRAGMA synchronous = NORMAL;");
   } catch {
     /* ignore */
   }

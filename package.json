@@ -10,7 +10,7 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset --force",
+    "db:reset": "node scripts/db-reset.mjs",
     "db:studio": "prisma studio",
     "inspect:contextqa": "tsx scripts/inspect-contextqa.ts",
     "test:e2e": "tsx scripts/test-architecture-e2e.ts"
