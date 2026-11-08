@@ -272,6 +272,49 @@ async function step5() {
   await browser.close();
 }
 
+async function step6() {
+  console.log("\n=== STEP 6 · Inter-page data flow (crawl → requirement → cases → overview) ===");
+  const { hashPassword } = await import("../lib/crypto");
+  const { prisma: db } = await import("../lib/db");
+  const email = `flow-${Date.now()}@qasyn.dev`;
+  const user = await db.user.create({
+    data: { email, passwordHash: await hashPassword("FlowPass2026!"), name: "Flow Tester", role: "Admin", avatarInitials: "FT", emailVerifiedAt: new Date() },
+  });
+  const org = await db.organisation.create({
+    data: {
+      name: "Flow Org",
+      slug: `flow-${Date.now()}`,
+      ownerName: "Flow Tester",
+      website: "https://example.com",
+      trialEndsAt: new Date(Date.now() + 15 * 86_400_000),
+      onboarding: { create: { currentStep: 7, completedAt: new Date() } },
+    },
+  });
+  await db.user.update({ where: { id: user.id }, data: { organisationId: org.id } });
+  const { startCrawl, completeCrawl } = await import("../lib/engine");
+  const actor = { org, user };
+  const crawl = await startCrawl(db, actor, "https://example.com", { platform: "Web Application", publishMode: "Auto publish", testTypes: ["Positive / Happy Path"], prerequisites: [] });
+  const reqId = (await db.crawlSession.findUnique({ where: { id: crawl.id } }))?.requirementId;
+  check("Crawl auto-created its Requirement", !!reqId, reqId ?? "");
+  const completed = await completeCrawl(db, actor, crawl);
+  const cases = await db.testCase.count({ where: { organisationId: org.id, source: "crawl" } });
+  check("Completion generated crawl test cases", cases > 0, `${cases} cases`);
+  const suite = await db.testSuite.count({ where: { organisationId: org.id } });
+  const plan = await db.testPlan.count({ where: { organisationId: org.id } });
+  check("Auto Publish created suite + plan", suite >= 1 && plan >= 1, `suite=${suite} plan=${plan}`);
+  // Run one case → TestRun + LogLine + recalc
+  const { runTestCases } = await import("../lib/engine");
+  const one = await db.testCase.findFirst({ where: { organisationId: org.id } });
+  if (one) {
+    const res = await runTestCases(db, actor, [one]);
+    const run = await db.testRun.findFirst({ where: { organisationId: org.id }, orderBy: { createdAt: "desc" }, include: { logs: true } });
+    check("Run created TestRun + LogLine trail", !!run && run.logs.length >= 1, `passed=${res.passed} failed=${res.failed}`);
+    const state = await db.testCase.findUnique({ where: { id: one.id } });
+    check("Case status updated by run", ["passing", "failing", "flaky"].includes(state?.status ?? ""), state?.status ?? "");
+  }
+  console.log(`  flow org ${org.slug}: requirement=${reqId} cases=${cases} suite=${suite} plan=${plan}`);
+}
+
 async function main() {
   await ensureWal();
   console.log("QASyn architecture E2E test — real engines, org: Acme (demo)");
@@ -280,6 +323,7 @@ async function main() {
   await step3();
   await step4();
   if (process.env.QASYN_UI === "1") await step5();
+  if (process.env.QASYN_FLOW === "1") await step6();
   console.log(failures === 0 ? "\n🎉 ALL CHECKS PASSED" : `\n⚠️ ${failures} check(s) failed`);
   process.exitCode = failures === 0 ? 0 : 1;
   await prisma.$disconnect();

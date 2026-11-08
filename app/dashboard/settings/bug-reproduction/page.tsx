@@ -11,9 +11,15 @@ export default async function BugReproSettingsPage() {
   const ctx = await requireOrgContext();
   const initial = readSettings(ctx.org).bugReproduction ?? { autoReproduce: true, sources: ["jira", "linear"], captureVideo: true, captureNetwork: true, captureConsole: true, maxAttempts: 3 };
   const bugs = await prisma.bugReport.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" }, take: 20 });
+  const tracker = await prisma.integration.findFirst({ where: { organisationId: ctx.org.id, provider: { in: ["JIRA", "LINEAR"] }, status: "CONNECTED" } });
   return (
     <div className="space-y-6">
       <PageHeader kicker="SETTINGS" title="Bug reproduction" description="Automatic reproduction from Jira/Linear with video and network traces." />
+      {!tracker && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Connect Jira or Linear in <a href="/dashboard/integrations" className="font-semibold underline">Integrations</a> to auto-reproduce new tickets.
+        </p>
+      )}
       <Card title="Reproduction"><div className="px-5 py-4"><BugReproForm initial={initial} readOnly={ctx.readOnly} /></div></Card>
       <Card title="Recent bug reports">
         <ul className="divide-y divide-slate-100 px-5 py-2">

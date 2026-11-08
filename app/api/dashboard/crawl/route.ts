@@ -36,6 +36,11 @@ export async function POST(request: Request) {
   if (running) return jsonError("A crawl is already running. Complete it first.", 409, { crawlId: running.id });
 
   await delay(MOCK_LATENCY_MS);
-  const crawl = await startCrawl(prisma, ctx, targetUrl);
+  const crawl = await startCrawl(prisma, ctx, targetUrl, {
+    platform: parsed.data.platform,
+    publishMode: parsed.data.publishMode,
+    testTypes: parsed.data.testTypes,
+    prerequisites: parsed.data.prerequisites,
+  });
   return NextResponse.json({ crawl: { id: crawl.id, status: crawl.status } }, { status: 201 });
 }

@@ -28,6 +28,11 @@ export default async function PullRequestsPage() {
         description="Every pull request gets an impact analysis, targeted regression tests and a verdict before merge."
         actions={<SimulatePrButton readOnly={ctx.readOnly} nextNumber={nextNumber} hasRepo={Boolean(repo)} />}
       />
+      {!repo && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Connect GitHub or GitLab in <a href="/dashboard/integrations" className="font-semibold underline">Integrations</a> to receive PR checks automatically on every push. Simulations remain available.
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="p-4">
           <p className="text-xs text-slate-500">Checked</p>

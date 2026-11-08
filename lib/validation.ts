@@ -171,7 +171,13 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
 
 export const runBatchSchema = z.object({ module: z.string().max(40).optional() });
 
-export const startCrawlSchema = z.object({ targetUrl: z.string().max(300).optional() });
+export const startCrawlSchema = z.object({
+  targetUrl: z.string().max(300).optional(),
+  platform: z.string().max(40).optional(),
+  publishMode: z.string().max(40).optional(),
+  testTypes: z.array(z.string().max(60)).max(20).optional(),
+  prerequisites: z.array(z.string().max(60)).max(20).optional(),
+});
 export const crawlActionSchema = z.object({ action: z.enum(["complete", "cancel"]) });
 export const collectionActionSchema = z.object({ action: z.literal("run") });
 export const environmentUpdateSchema = z.object({ action: z.literal("default") });

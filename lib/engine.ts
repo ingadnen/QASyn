@@ -14,7 +14,7 @@ type Actor = Pick<OrgContext, "org" | "user">;
 
 const PENDING_MS = 6000;
 
-export async function startCrawl(db: Db, actor: Actor, targetUrl: string): Promise<CrawlSession> {
+export async function startCrawl(db: Db, actor: Actor, targetUrl: string, opts?: { platform?: string; publishMode?: string; testTypes?: string[]; prerequisites?: string[] }): Promise<CrawlSession> {
   const running = await db.crawlSession.findFirst({ where: { organisationId: actor.org.id, status: "running" } });
   if (running) return running;
   const crawl = await db.crawlSession.create({
@@ -23,14 +23,20 @@ export async function startCrawl(db: Db, actor: Actor, targetUrl: string): Promi
       targetUrl,
       status: "running",
       logs: JSON.stringify(buildCrawlLogs(targetUrl)),
+      publishMode: opts?.publishMode ?? "Require approval",
+      testTypesJson: JSON.stringify(opts?.testTypes ?? []),
+      prerequisitesJson: JSON.stringify(opts?.prerequisites ?? []),
     },
   });
   // Auto-create the associated requirement (REQ-00X <date>_crawl)
   const count = await db.requirement.count({ where: { organisationId: actor.org.id } });
   const code = `REQ-${String(count + 1).padStart(3, "0")}`;
-  await db.requirement
+  const requirement = await db.requirement
     .create({ data: { organisationId: actor.org.id, code, title: `${new Date().toISOString().slice(0, 10)}_crawl — ${hostFromUrl(targetUrl)}`, source: "doc", coverageStatus: "uncovered" } })
-    .catch(() => undefined);
+    .catch(() => null);
+  if (requirement) {
+    await db.crawlSession.update({ where: { id: crawl.id }, data: { requirementId: requirement.id } });
+  }
   await spendCredits(db, actor.org.id, CREDIT_COSTS.crawl);
   await audit(db, actor, "crawl.started", hostFromUrl(targetUrl));
   return crawl;
@@ -74,6 +80,18 @@ export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
       data: { organisationId: actor.org.id, title: `${host} (crawl)`, type: "website", urlOrPath: crawl.targetUrl, status: "indexed" },
     });
   }
+  // Auto Publish: create TestSuite + TestPlan so generated cases are immediately runnable.
+  if (crawl.publishMode === "Auto publish" && fresh.length > 0) {
+    const created = await db.testCase.findMany({ where: { organisationId: actor.org.id, title: { in: fresh.map((c) => c.name) } } });
+    const suite = await db.testSuite.create({
+      data: { organisationId: actor.org.id, name: `${host} crawl suite`, description: `Generated from crawl ${crawl.targetUrl}`, testCasesCount: fresh.length, passRate: 0 },
+    });
+    const plan = await db.testPlan.create({
+      data: { organisationId: actor.org.id, name: `${host} crawl plan`, environment: "Staging", testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
+    });
+    await audit(db, actor, "crawl.suite_created", `${suite.name} · ${fresh.length} cases`);
+    await audit(db, actor, "crawl.plan_created", plan.name);
+  }
   await audit(db, actor, "crawl.completed", `${host} · ${fresh.length} test cases`);
   return { created: fresh.length };
 }
@@ -94,11 +112,12 @@ const ROOT_CAUSES = [
   "locale-dependent date parsing in invoices",
 ];
 
-/** Runs test cases (simulated): updates status/lastRunAt and files reproduced bugs for failures. */
+/** Runs test cases (simulated): updates status/lastRunAt, creates a TestRun+LogLine trail, files reproduced bugs, recalculates suite/plan pass rates. */
 export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) {
   let passed = 0;
   let failed = 0;
   const now = new Date();
+  const logLines: Array<{ timestamp: Date; stream: string; tag: string; message: string }> = [];
   for (const tc of testCases) {
     const roll = Math.random();
     const failRate = tc.status === "flaky" ? 0.35 : tc.criticality === "low" ? 0.08 : 0.14;
@@ -106,6 +125,7 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
     if (status === "failing") failed++;
     else passed++;
     await db.testCase.update({ where: { id: tc.id }, data: { status, lastRunAt: now } });
+    logLines.push({ timestamp: now, stream: status === "failing" ? "stderr" : "stdout", tag: status === "failing" ? "FAIL" : "TEST", message: `${tc.title} → ${status}` });
 
     if (status === "failing" && tc.status !== "failing") {
       await db.bugReport.create({
@@ -126,6 +146,45 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
         },
       });
     }
+  }
+  // Executable trail: a real TestRun row with per-case LogLine entries.
+  const total = testCases.length;
+  const passRate = total ? Math.round((passed / total) * 100) : 0;
+  const runRows = await db.testRun.findMany({ where: { organisationId: actor.org.id }, orderBy: { createdAt: "desc" }, take: 1 });
+  const release = (runRows[0]?.release ?? 284) + 1;
+  await db.testRun.create({
+    data: {
+      organisationId: actor.org.id,
+      release,
+      version: `2.${release % 10}.0`,
+      title: `Manual run — ${total} cases`,
+      status: failed > 0 ? "FAILED" : "SUCCESS",
+      qualityScore: passRate,
+      coverage: passRate,
+      costAvoided: total * 12,
+      codeChanges: 0,
+      impactedTests: total,
+      regressionsCaught: failed,
+      anomaliesReproduced: failed,
+      testsAdded: 0,
+      testsTotal: total,
+      testsPassed: passed,
+      durationMs: logLines.length * 120,
+      logsJson: JSON.stringify(logLines),
+      passRate,
+      logs: { create: logLines },
+    },
+  });
+  // Recalculate pass rates for suites/plans containing these cases.
+  for (const suite of await db.testSuite.findMany({ where: { organisationId: actor.org.id, testCases: { some: { id: { in: testCases.map((t) => t.id) } } } } })) {
+    const cases = await db.testCase.findMany({ where: { organisationId: actor.org.id, testSuites: { some: { id: suite.id } } } });
+    const passing = cases.filter((c) => c.status === "passing").length;
+    await db.testSuite.update({ where: { id: suite.id }, data: { testCasesCount: cases.length, passRate: cases.length ? Math.round((passing / cases.length) * 100) : 0, lastRunAt: now } });
+  }
+  for (const plan of await db.testPlan.findMany({ where: { organisationId: actor.org.id, testCases: { some: { id: { in: testCases.map((t) => t.id) } } } } })) {
+    const cases = await db.testCase.findMany({ where: { organisationId: actor.org.id, testPlans: { some: { id: plan.id } } } });
+    const passing = cases.filter((c) => c.status === "passing").length;
+    await db.testPlan.update({ where: { id: plan.id }, data: { testCasesCount: cases.length, passRate: cases.length ? Math.round((passing / cases.length) * 100) : 0, lastRunAt: now } });
   }
   await spendCredits(db, actor.org.id, CREDIT_COSTS.testRun * testCases.length);
   return { passed, failed, total: testCases.length };

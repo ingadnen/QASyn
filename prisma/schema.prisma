@@ -469,6 +469,14 @@ model CrawlSession {
   completedAt    DateTime?
   /// JSON array of { offsetMs, tag, message }
   logs           String       @default("[]")
+  /// Require approval | Auto publish
+  publishMode    String       @default("Require approval")
+  /// JSON array of selected test case types
+  testTypesJson  String       @default("[]")
+  /// JSON array of prerequisite test case ids
+  prerequisitesJson String    @default("[]")
+  /// Requirement auto-created for this crawl
+  requirementId  String?
 
   @@index([organisationId, startedAt])
 }
