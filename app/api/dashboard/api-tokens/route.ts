@@ -23,8 +23,16 @@ export async function POST(request: Request) {
   await delay(MOCK_LATENCY_MS / 2);
   const { token, prefix, hash } = generateApiToken();
   const record = await prisma.apiToken.create({
-    data: { organisationId: ctx.org.id, name: parsed.data.name, tokenPrefix: prefix, tokenHash: hash },
-    select: { id: true, name: true, tokenPrefix: true, createdAt: true },
+    data: {
+      organisationId: ctx.org.id,
+      name: parsed.data.name,
+      tokenPrefix: prefix,
+      tokenHash: hash,
+      scopesJson: JSON.stringify(parsed.data.scopes),
+      expiresAt: parsed.data.expiresInDays == null ? null : new Date(Date.now() + parsed.data.expiresInDays * 86_400_000),
+      ipAllowlistJson: JSON.stringify(parsed.data.ipAllowlist),
+    },
+    select: { id: true, name: true, tokenPrefix: true, scopesJson: true, expiresAt: true, createdAt: true },
   });
   await audit(prisma, ctx, "api_token.created", `${record.name} (${prefix}…)`);
   return NextResponse.json({ token, apiToken: record }, { status: 201, headers: { "Cache-Control": "no-store" } });

@@ -32,9 +32,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         ownOrgName={ctx.ownOrg?.name ?? null}
         user={{ name: ctx.user.name, email: ctx.user.email, initials: ctx.user.avatarInitials || initialsOf(ctx.user.name, ctx.user.email) }}
       />
-      <div className="lg:pl-64">
+      <div className="lg:pl-[60px]">
         {ctx.readOnly && (
-          <div className="flex flex-wrap items-center justify-center gap-2 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900 ring-1 ring-amber-200">
+          <div className="flex flex-wrap items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-[11px] text-amber-900">
             <span>
               You&apos;re viewing the <strong>{ctx.org.name}</strong> demo workspace (mock data, read-only).
             </span>
@@ -47,7 +47,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             )}
           </div>
         )}
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="min-h-[calc(100vh-40px)] bg-[#f7f8fa] px-6 py-5 lg:px-8">{children}</main>
       </div>
       <FinQAWidget />
     </div>

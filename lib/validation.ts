@@ -28,7 +28,7 @@ const optionalWebsite = z
     if (!value || !value.trim()) return null;
     const normalized = normalizeWebsite(value);
     if (!normalized) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Enter a valid website, e.g. https://example.com" });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Enter a valid website, e.g. https://your-domain.com" });
       return z.NEVER;
     }
     return normalized;
@@ -151,6 +151,11 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
     title: title.optional(),
     module: moduleName.optional(),
     criticality: z.enum(CRITICALITIES).optional(),
+    description: z.string().max(4000).optional(),
+    labels: z.array(z.string().trim().max(40)).max(20).optional(),
+    environment: z.string().trim().max(80).optional(),
+    version: z.string().trim().max(20).optional(),
+    platform: z.enum(["web", "mobile", "api"]).optional(),
   }),
   z.object({
     action: z.literal("steps"),
@@ -166,7 +171,7 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
       )
       .max(50),
   }),
-  z.object({ action: z.literal("run_steps") }),
+  z.object({ action: z.literal("run_steps"), autoFix: z.boolean().optional() }),
 ]);
 
 export const runBatchSchema = z.object({ module: z.string().max(40).optional() });
@@ -185,6 +190,16 @@ export const startCrawlSchema = z.object({
 });
 export const crawlActionSchema = z.object({ action: z.enum(["complete", "cancel"]) });
 export const collectionActionSchema = z.object({ action: z.literal("run") });
+
+export const collectionUpdateSchema = z.object({
+  action: z.literal("update"),
+  name: z.string().trim().min(2).max(120).optional(),
+  description: z.string().max(2000).optional(),
+  module: z.string().max(80).optional(),
+  platform: z.enum(["Web", "Mobile", "API"]).optional(),
+  labels: z.array(z.string().trim().max(40)).max(20).optional(),
+  prerequisites: z.array(z.string().max(60)).max(50).optional(),
+});
 export const environmentUpdateSchema = z.object({ action: z.literal("default") });
 
 export const createPrSchema = z.object({
@@ -206,10 +221,17 @@ export const linkTestsSchema = z.object({ testCaseIds: z.array(z.string().max(40
 
 export const collectionSchema = z.object({
   name: z.string().trim().min(2).max(80),
-  description: z.string().trim().max(300).optional(),
+  description: z.string().trim().max(2000).optional(),
   schedule: z.enum(SCHEDULES).default("manual"),
-  module: z.string().trim().max(40).default(""),
+  module: z.string().trim().max(80).default(""),
   environment: z.string().trim().max(60).optional(),
+  platform: z.enum(["Web", "Mobile", "API"]).optional(),
+  labels: z.array(z.string().trim().max(40)).max(20).optional(),
+  prerequisites: z.array(z.string().max(60)).max(50).optional(),
+  testCaseIds: z.array(z.string().max(60)).max(300).optional(),
+  suiteIds: z.array(z.string().max(60)).max(100).optional(),
+  browsers: z.array(z.string().max(40)).max(10).optional(),
+  settings: z.record(z.string().max(80), z.unknown()).optional(),
 });
 
 export const environmentSchema = z.object({
@@ -234,7 +256,13 @@ export const knowledgeSchema = z.object({
   urlOrPath: z.string().trim().min(1).max(300),
 });
 
-export const inviteSchema = z.object({ email: emailField, role: z.enum(USER_ROLES).default("Engineer") });
+export const inviteSchema = z.object({
+  email: emailField,
+  role: z.enum(USER_ROLES).default("Engineer"),
+  name: z.string().trim().min(1).max(80).optional(),
+  phone: z.string().trim().max(30).optional(),
+  roles: z.array(z.enum(USER_ROLES)).min(1).max(5).optional(),
+});
 export const updateMemberSchema = z.object({ role: z.enum(USER_ROLES) });
 
 export const tunnelActionSchema = z.object({
@@ -252,7 +280,65 @@ export const billingSchema = z.discriminatedUnion("action", [
   }),
 ]);
 
-export const apiTokenSchema = z.object({ name: z.string().trim().min(2).max(60) });
+export const apiTokenSchema = z.object({
+  name: z.string().trim().min(2).max(255),
+  scopes: z.array(z.string().trim().min(1).max(40)).min(1, "Pick at least one scope.").max(20),
+  /** null = never expires */
+  expiresInDays: z.number().int().min(1).max(180).nullable().default(30),
+  ipAllowlist: z.array(z.string().trim().min(1).max(80)).max(20).default([]),
+});
+
+export const organizationPreferencesSchema = z.object({
+  defaultBrowser: z.enum(["Chromium", "Chrome", "Firefox", "Safari", "Edge"]),
+  testcaseTimeout: z.number().int().min(1).max(1440),
+  crawlTimeout: z.number().int().min(1).max(1440),
+  retryFailedSteps: z.number().int().min(0).max(10),
+  waitTimeoutLocators: z.number().int().min(1).max(300),
+  autoWaitDuration: z.number().int().min(0).max(600),
+  captureStepScreenshots: z.boolean(),
+  videoRecording: z.boolean(),
+  autonomousCrawl: z.boolean(),
+  autoApproveAutoHeal: z.boolean(),
+  organizeByModule: z.boolean(),
+  showScrollbars: z.boolean(),
+  clickPressHold: z.boolean(),
+  viewport: z.enum(["desktop", "laptop", "tablet", "mobile"]),
+  resolution: z.string().max(60),
+  autoFix: z.boolean(),
+  autoFixRerunCount: z.number().int().min(0).max(10),
+  timeZone: z.string().max(80),
+  defaultAiAction: z.enum(["Only action", "Create step", "Create dynamic step", "Create Partial steps"]),
+  aiSmartness: z.enum(["Expert (Recommended)", "Fast", "Strict"]),
+  knowledgeBaseId: z.string().max(60),
+  useAiMetadata: z.boolean(),
+  mockApi: z.boolean(),
+  weeklyReportRecipients: z.array(z.string().max(120)).max(50),
+});
+
+export const analysisCodeSettingsSchema = z.object({
+  baseBranches: z.string().max(300),
+  maxFiles: z.number().int().min(1).max(5000),
+  pathScope: z.string().max(4000),
+  runMode: z.enum(["never", "after_merge", "before_merge"]),
+  environmentId: z.string().max(60),
+  postPrComment: z.boolean(),
+  postStatusCheck: z.boolean(),
+  suppressPaths: z.string().max(4000),
+});
+
+export const bugReproductionSettingsSchema = z.object({
+  environmentId: z.string().max(60),
+  dataProfileId: z.string().max(60),
+  triggerMode: z.enum(["label", "every"]),
+  triggerLabels: z.array(z.string().max(80)).max(30),
+  triggerOnCreated: z.boolean(),
+  triggerOnLabeled: z.boolean(),
+  triggerOnEdited: z.boolean(),
+  triggerOnComment: z.boolean(),
+  maxPerTicket: z.number().int().min(1).max(100).nullable(),
+  maxPerDay: z.number().int().min(1).max(1000).nullable(),
+  revalidate: z.boolean(),
+});
 
 export const analysisSettingsSchema = z.object({
   severityThreshold: z.enum(CRITICALITIES),

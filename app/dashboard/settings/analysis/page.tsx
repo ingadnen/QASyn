@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
-import { AnalysisForm } from "@/components/dashboard/pages/Forms";
-import { Card, PageHeader } from "@/components/dashboard/ui";
-import { readSettings, requireOrgContext } from "@/lib/tenant";
+import { AnalysisSettings } from "@/components/dashboard/pages/AnalysisSettings";
+import { prisma } from "@/lib/db";
+import { DEFAULT_ANALYSIS_CODE_SETTINGS, readSettings, requireOrgContext } from "@/lib/tenant";
 
-export const metadata: Metadata = { title: "Analysis settings" };
+export const metadata: Metadata = { title: "Analysis Settings" };
 export const dynamic = "force-dynamic";
 
 export default async function AnalysisSettingsPage() {
   const ctx = await requireOrgContext();
-  const initial = readSettings(ctx.org).analysis ?? { severityThreshold: "high", blockOnRegression: true, autoHealing: false, minCoverage: 80, prComment: true };
-  return (
-    <div className="space-y-6">
-      <PageHeader kicker="SETTINGS" title="Analysis settings" description="Severity thresholds, PR check rules and auto-healing." />
-      <Card title="Analysis">
-        <div className="px-5 py-4"><AnalysisForm initial={initial} readOnly={ctx.readOnly} /></div>
-      </Card>
-    </div>
-  );
+  const [environments, settings] = await Promise.all([
+    prisma.environmentConfig.findMany({ where: { organisationId: ctx.org.id }, select: { id: true, name: true, isDefault: true }, orderBy: { name: "asc" } }),
+    Promise.resolve(readSettings(ctx.org)),
+  ]);
+  const stored = settings.analysisCode;
+  const initial = {
+    ...DEFAULT_ANALYSIS_CODE_SETTINGS,
+    ...(stored ?? {}),
+    environmentId: stored?.environmentId || environments.find((e) => e.isDefault)?.id || environments[0]?.id || "",
+  };
+  return <AnalysisSettings readOnly={ctx.readOnly} initial={initial} environments={environments} />;
 }

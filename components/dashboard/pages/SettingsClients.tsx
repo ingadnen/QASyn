@@ -34,7 +34,7 @@ export function SettingsSimpleForm({ kind, readOnly }: { kind: "webhook" | "noti
           </label>
           <label className="block">
             <span className="text-xs font-medium text-slate-600">URL</span>
-            <input className={cn(inputCls, "mt-1")} value={url} disabled={readOnly} onChange={(e) => setUrl(e.target.value)} placeholder="https://ci.example.com/hook" />
+            <input className={cn(inputCls, "mt-1")} value={url} disabled={readOnly} onChange={(e) => setUrl(e.target.value)} placeholder="https://ci.your-domain.com/hook" />
           </label>
         </>
       ) : (

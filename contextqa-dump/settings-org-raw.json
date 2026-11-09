@@ -1,0 +1,514 @@
+{
+ "url": "https://gmailad.contextqa.com/settings/organization_setting",
+ "title": "Organization Setting - AI Powered Test Automation Platform | ContextQA OS",
+ "headings": [
+  {
+   "tag": "H1",
+   "text": "Organization Setting"
+  },
+  {
+   "tag": "H3",
+   "text": "Company Information"
+  },
+  {
+   "tag": "H3",
+   "text": "Test Execution Settings"
+  },
+  {
+   "tag": "H3",
+   "text": "Time Zone Settings"
+  },
+  {
+   "tag": "H3",
+   "text": "AI Configuration"
+  },
+  {
+   "tag": "H3",
+   "text": "Mock API Testing"
+  },
+  {
+   "tag": "H3",
+   "text": "Email Notifications"
+  },
+  {
+   "tag": "H3",
+   "text": "Viewport Configurations"
+  },
+  {
+   "tag": "H4",
+   "text": "MOBILE"
+  },
+  {
+   "tag": "H4",
+   "text": "TABLET"
+  },
+  {
+   "tag": "H4",
+   "text": "LAPTOP"
+  },
+  {
+   "tag": "H4",
+   "text": "DESKTOP"
+  },
+  {
+   "tag": "H3",
+   "text": "Proxy Profiles"
+  },
+  {
+   "tag": "H3",
+   "text": "No proxy profiles"
+  },
+  {
+   "tag": "H3",
+   "text": "Remote Browser Profiles"
+  },
+  {
+   "tag": "H3",
+   "text": "No remote browser profiles"
+  }
+ ],
+ "text": "menu\nadd\nNew Test Cases\nAUTONOMOUS SDLC\ngrid_view\nOverview\nmerge\nPull requests\ntravel_explore\nCrawl\ncode\nCode Analysis\nPLATFORM\ndescription\nRequirements\nfact_check\nTest cases\ncontent_paste_go\nPlans\nexpand_more\ndatabase\nEnvironment & Data\ncloud_upload\nUploads\narticle\nKnowledge Base\ngroup\nTeam & access\nWORK\nlan\nTunnels\nwebhook\nIntegrations\ncredit_card\nBilling & usage\ncable\nMCP\nsettings\nSettings\nexpand_less\nhelp\nHelp & docs\nchat\nLive chat\nTrial · 12 days left\nAR\nAdnen Rebhi\nrbhadnen4@gmail.com\nunfold_more\nOrganization Setting\n\nManage company identity, execution defaults, AI behavior, and email reporting preferences.\n\nCompany Information\nTest Execution\nAI Configuration\nNotifications\nViewport\nProxy\nRemote Browser\nCompany Information\nCompany Name *\nCompany Logo\ncloud_upload\nClick to upload or drag and drop\nPNG with a transparent background recommended · light/white version reads best on the sidebar · JPG, JPEG accepted · Max 2MB\nTest Execution Settings\nDefault Browser*\nChrome\nTest Case Timeout (minutes) *\nCrawl Timeout (minutes) *\nRetry Failed Steps *\nWait Timeout for Locators (seconds) *\nAuto Wait Duration (seconds) *\nCapture All Step Screenshots\nEnable Video Recording\nEnable Autonomous Crawl\nAuto approve with auto heal\nOrganize by module\ninfo\nShow scrollbars during test runs\ninfo\nEnable Click Press Hold\nViewport *\ndesktop_windows\nDesktop\nlaptop_windows\nLaptop\ntablet_mac\nTablet\nsmartphone\nMobile\nResolution\nSelect resolution\nNote : Default (1280×720) if not selected any resolution.\nAuto-fix\nEnable Auto-fix\ninfo\nAuto-fix Rerun Count *\nTime Zone Settings\nTime Zone *\nCentral Time (US & Canada)\nAI Configuration\n\nControl AI behavior for test automation and self-healing\n\nDefault AI Action*\nCreate step\n\nAI suggests fixes but waits for approval\n\nEnable AI Smartness*\nExpert (Recommended)\nDefault Knowledge Base\nSelect a knowledge base\n\nReference test case used for AI learning and context\n\nUse AI Metadata\n\nUse AI Metadata to .\n\nMock API Testing\n\nRecord real API responses and replay them during future test runs for faster, more stable tests.\n\nMock API Testing New\n\nRecord real API responses and replay them during future test runs for faster, more stable tests.\"\n\nEmail Notifications\nWeekly Report Email Recipients\nViewport Configurations\nadd\nAdd Viewport\nMOBILE\nMobile S (375×667)\nclose\nMobile M (390×844)\nclose\nMobile L (412×915)\nclose\nMobile S (375×667)\nclose\nMobile M (390×844)\nclose\nMobile L (412×915)\nclose\nTABLET\nTablet Portrait (768×1024)\nclose\nTablet Landscape (1024×768)\nclose\niPad Pro (1024×1366)\nclose\nTablet Portrait (768×1024)\nclose\nTablet Landscape (1024×768)\nclose\niPad Pro (1024×1366)\nclose\nLAPTOP\nLaptop S (1280×720)\nclose\nLaptop M (1366×768)\nclose\nLaptop L (1440×900)\nclose\nLaptop S (1280×720)\nclose\nLaptop M (1366×768)\nclose\nLaptop L (1440×900)\nclose\nDESKTOP\nDefault (1280×720)\nclose\nFull HD (1920×1080)\nclose\n2K / QHD (2560×1440)\nclose\n4K / UHD (3840×2160)\nclose\nDefault (1280×720)\nclose\nFull HD (1920×1080)\nclose\n2K / QHD (2560×1440)\nclose\n4K / UHD (3840×2160)\nclose\nProxy Profiles\nadd\nAdd Proxy\n\nProxy connections available to every test plan and test case in this organization. Assign one from a test plan's or test case's settings.\n\nNo proxy profiles\n\nAdd a proxy to route test execution through your internal network.\n\nRemote Browser Profiles\nadd\nAdd Remote Browser\n\nRemote browser endpoints available to every test plan and test case in this organization. Assign one from a test plan's or test case's settings.\n\nNo remote browser profiles\n\nAdd a remote browser to run tests on an external browser endpoint.\n\nsave\nSave Settings",
+ "tables": [],
+ "tabs": [],
+ "buttons": [
+  {
+   "text": "grid_view Overview",
+   "aria": "Overview",
+   "disabled": false
+  },
+  {
+   "text": "merge Pull requests",
+   "aria": "Pull requests",
+   "disabled": false
+  },
+  {
+   "text": "travel_explore Crawl",
+   "aria": "Crawl",
+   "disabled": false
+  },
+  {
+   "text": "code Code Analysis",
+   "aria": "Code Analysis",
+   "disabled": false
+  },
+  {
+   "text": "description Requirements",
+   "aria": "Requirements",
+   "disabled": false
+  },
+  {
+   "text": "fact_check Test cases",
+   "aria": "Test cases",
+   "disabled": false
+  },
+  {
+   "text": "content_paste_go Plans expand_more",
+   "aria": "Plans",
+   "disabled": false
+  },
+  {
+   "text": "database Environment & Data",
+   "aria": "Environment & Data",
+   "disabled": false
+  },
+  {
+   "text": "cloud_upload Uploads",
+   "aria": "Uploads",
+   "disabled": false
+  },
+  {
+   "text": "article Knowledge Base",
+   "aria": "Knowledge Base",
+   "disabled": false
+  },
+  {
+   "text": "group Team & access",
+   "aria": "Team & access",
+   "disabled": false
+  },
+  {
+   "text": "lan Tunnels",
+   "aria": "Tunnels",
+   "disabled": false
+  },
+  {
+   "text": "webhook Integrations",
+   "aria": "Integrations",
+   "disabled": false
+  },
+  {
+   "text": "credit_card Billing & usage",
+   "aria": "Billing & usage",
+   "disabled": false
+  },
+  {
+   "text": "cable MCP",
+   "aria": "MCP",
+   "disabled": false
+  },
+  {
+   "text": "settings Settings expand_less",
+   "aria": "Settings",
+   "disabled": false
+  },
+  {
+   "text": "help Help & docs",
+   "aria": "Help & docs",
+   "disabled": false
+  },
+  {
+   "text": "chat Live chat",
+   "aria": "Live chat",
+   "disabled": false
+  },
+  {
+   "text": "Company Information",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "Test Execution",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "AI Configuration",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "Notifications",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "Viewport",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "Proxy",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "Remote Browser",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "",
+   "aria": "Automatically capture on first run",
+   "disabled": false
+  },
+  {
+   "text": "add Add Viewport",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "add Add Proxy",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "add Add Remote Browser",
+   "aria": "",
+   "disabled": false
+  },
+  {
+   "text": "save Save Settings",
+   "aria": "",
+   "disabled": false
+  }
+ ],
+ "controls": [
+  {
+   "tag": "INPUT",
+   "type": "text",
+   "name": "companyName",
+   "label": "Company Name",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "MAT-SELECT",
+   "type": "combobox",
+   "name": "",
+   "label": "",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "number",
+   "name": "testcaseTimeout",
+   "label": "Test Case Timeout (minutes)",
+   "value": "150",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "number",
+   "name": "crawlTimeout",
+   "label": "Crawl Timeout (minutes)",
+   "value": "30",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "number",
+   "name": "retryFailedSteps",
+   "label": "Retry Failed Steps",
+   "value": "1",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "number",
+   "name": "waitTimeoutLocators",
+   "label": "Wait Timeout for Locators (seconds)",
+   "value": "15",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "number",
+   "name": "autoWaitDuration",
+   "label": "Auto Wait Duration (seconds)",
+   "value": "200",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": true
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "radio",
+   "name": "mat-radio-group-0",
+   "label": "mat-radio-group-0",
+   "value": "desktop",
+   "checked": true
+  },
+  {
+   "tag": "INPUT",
+   "type": "radio",
+   "name": "mat-radio-group-0",
+   "label": "mat-radio-group-0",
+   "value": "laptop",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "radio",
+   "name": "mat-radio-group-0",
+   "label": "mat-radio-group-0",
+   "value": "tablet",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "radio",
+   "name": "mat-radio-group-0",
+   "label": "mat-radio-group-0",
+   "value": "mobile",
+   "checked": false
+  },
+  {
+   "tag": "MAT-SELECT",
+   "type": "combobox",
+   "name": "",
+   "label": "",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": true
+  },
+  {
+   "tag": "INPUT",
+   "type": "number",
+   "name": "autoFixRerunCount",
+   "label": "Auto-fix Rerun Count",
+   "value": "1",
+   "checked": false
+  },
+  {
+   "tag": "MAT-SELECT",
+   "type": "combobox",
+   "name": "",
+   "label": "",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "MAT-SELECT",
+   "type": "combobox",
+   "name": "",
+   "label": "",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "MAT-SELECT",
+   "type": "combobox",
+   "name": "",
+   "label": "",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "MAT-SELECT",
+   "type": "combobox",
+   "name": "",
+   "label": "",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "checkbox",
+   "name": "",
+   "label": "",
+   "value": "on",
+   "checked": true
+  },
+  {
+   "tag": "BUTTON",
+   "type": "button",
+   "name": "",
+   "label": "Automatically capture on first run",
+   "value": "",
+   "checked": false
+  },
+  {
+   "tag": "INPUT",
+   "type": "text",
+   "name": "emailValue",
+   "label": "Weekly Report Email Recipients",
+   "value": "",
+   "checked": false
+  }
+ ],
+ "icons": [
+  "menu",
+  "add",
+  "grid_view",
+  "merge",
+  "travel_explore",
+  "code",
+  "description",
+  "fact_check",
+  "content_paste_go",
+  "expand_more",
+  "database",
+  "cloud_upload",
+  "article",
+  "group",
+  "lan",
+  "webhook",
+  "credit_card",
+  "cable",
+  "settings",
+  "expand_less",
+  "help",
+  "chat",
+  "unfold_more",
+  "info",
+  "desktop_windows",
+  "laptop_windows",
+  "tablet_mac",
+  "smartphone",
+  "close",
+  "save"
+ ],
+ "badges": [
+  "Mobile S (375×667) close",
+  "Mobile S (375×667)",
+  "close",
+  "Mobile M (390×844) close",
+  "Mobile M (390×844)",
+  "Mobile L (412×915) close",
+  "Mobile L (412×915)",
+  "Tablet Portrait (768×1024) close",
+  "Tablet Portrait (768×1024)",
+  "Tablet Landscape (1024×768) close",
+  "Tablet Landscape (1024×768)",
+  "iPad Pro (1024×1366) close",
+  "iPad Pro (1024×1366)",
+  "Laptop S (1280×720) close",
+  "Laptop S (1280×720)",
+  "Laptop M (1366×768) close",
+  "Laptop M (1366×768)",
+  "Laptop L (1440×900) close",
+  "Laptop L (1440×900)",
+  "Default (1280×720) close",
+  "Default (1280×720)",
+  "Full HD (1920×1080) close",
+  "Full HD (1920×1080)",
+  "2K / QHD (2560×1440) close",
+  "2K / QHD (2560×1440)",
+  "4K / UHD (3840×2160) close",
+  "4K / UHD (3840×2160)"
+ ],
+ "emptyStates": [],
+ "links": []
+}

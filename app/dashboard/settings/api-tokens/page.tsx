@@ -1,35 +1,44 @@
 import type { Metadata } from "next";
-import { ApiTokenCreate } from "@/components/dashboard/pages/Forms";
-import { Card, EmptyState, PageHeader, ActionButton } from "@/components/dashboard/ui";
+import { ApiTokensList } from "@/components/dashboard/pages/ApiTokensList";
 import { prisma } from "@/lib/db";
-import { timeAgo } from "@/lib/format";
 import { requireOrgContext } from "@/lib/tenant";
 
-export const metadata: Metadata = { title: "API tokens" };
+export const metadata: Metadata = { title: "API Tokens" };
 export const dynamic = "force-dynamic";
+
+function parseList(value: string): string[] {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 export default async function ApiTokensPage() {
   const ctx = await requireOrgContext();
   const tokens = await prisma.apiToken.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } });
   return (
-    <div className="space-y-6">
-      <PageHeader kicker="SETTINGS" title="API tokens" description="Tokens are shown once at creation (cqa_…). Only their hash is stored." />
-      <Card title="New token"><div className="px-5 py-4"><ApiTokenCreate readOnly={ctx.readOnly} /></div></Card>
-      <Card title={`${tokens.length} tokens`}>
-        {tokens.length === 0 ? <EmptyState title="No tokens" description="Create one above for CI or MCP clients." /> : (
-          <ul className="divide-y divide-slate-100">
-            {tokens.map((t) => (
-              <li key={t.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-slate-800">{t.name}</p>
-                  <p className="text-xs text-slate-500"><code>{t.tokenPrefix}…</code> · created {timeAgo(t.createdAt)}{t.lastUsedAt ? ` · last used ${timeAgo(t.lastUsedAt)}` : " · never used"}</p>
-                </div>
-                <ActionButton url={`/api/dashboard/api-tokens/${t.id}`} method="DELETE" variant="danger" disabled={ctx.readOnly} confirmText="Revoke this token?">Revoke</ActionButton>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+    <div>
+      <div className="mb-5">
+        <h1 className="text-[20px] font-bold leading-7 text-[#101828]">API Tokens</h1>
+        <p className="mt-2 max-w-4xl text-[13.5px] leading-5 text-[#4a5565]">
+          Scoped, long-lived credentials for scripts and integrations. You only see tokens you created — each carries a fixed permission set, an expiry, and an optional IP allowlist.
+        </p>
+      </div>
+      <ApiTokensList
+        readOnly={ctx.readOnly}
+        tokens={tokens.map((t) => ({
+          id: t.id,
+          name: t.name,
+          prefix: t.tokenPrefix,
+          scopes: parseList(t.scopesJson),
+          expiresAt: t.expiresAt?.toISOString() ?? null,
+          lastUsedAt: t.lastUsedAt?.toISOString() ?? null,
+          createdAt: t.createdAt.toISOString(),
+          ipCount: parseList(t.ipAllowlistJson).length,
+        }))}
+      />
     </div>
   );
 }

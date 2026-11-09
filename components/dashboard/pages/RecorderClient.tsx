@@ -14,7 +14,7 @@ interface RecordedStep {
 }
 
 const DEMO_PAGES = [
-  { url: "https://example.com", title: "Example Domain" },
+  { url: "https://your-domain.com", title: "Your Application" },
   { url: "https://jsonplaceholder.typicode.com/posts/1", title: "JSONPlaceholder post" },
 ];
 

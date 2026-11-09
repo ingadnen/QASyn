@@ -1,23 +1,31 @@
 import type { Metadata } from "next";
-import { OrgSettingsForm } from "@/components/dashboard/pages/Forms";
-import { Card, PageHeader, ActionButton } from "@/components/dashboard/ui";
-import { requireOrgContext } from "@/lib/tenant";
+import { OrganizationSettings } from "@/components/dashboard/pages/OrganizationSettings";
+import { prisma } from "@/lib/db";
+import { DEFAULT_ORGANIZATION_PREFERENCES, readSettings, requireOrgContext } from "@/lib/tenant";
 
-export const metadata: Metadata = { title: "Organisation settings" };
+export const metadata: Metadata = { title: "Organization Setting" };
 export const dynamic = "force-dynamic";
 
 export default async function OrgSettingsPage() {
   const ctx = await requireOrgContext();
+  const [viewports, proxies, remotes, knowledge] = await Promise.all([
+    prisma.viewportSetting.findMany({ where: { organisationId: ctx.org.id }, orderBy: [{ category: "asc" }, { width: "asc" }] }),
+    prisma.proxyProfile.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" } }),
+    prisma.remoteBrowserProfile.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" } }),
+    prisma.knowledgeItem.findMany({ where: { organisationId: ctx.org.id }, select: { id: true, title: true }, orderBy: { updatedAt: "desc" }, take: 50 }),
+  ]);
+  const settings = readSettings(ctx.org);
+  const initial = { ...DEFAULT_ORGANIZATION_PREFERENCES, ...(settings.organization ?? {}) };
   return (
-    <div className="space-y-6">
-      <PageHeader kicker="SETTINGS" title="Organisation" description={`Slug: ${ctx.org.slug} · plan: ${ctx.org.plan}`} />
-      <Card title="General"><div className="px-5 py-4"><OrgSettingsForm name={ctx.org.name} website={ctx.org.website ?? ""} readOnly={ctx.readOnly} /></div></Card>
-      <Card title="Danger zone">
-        <div className="px-5 py-4">
-          <p className="text-sm text-slate-600">Resetting deletes all data of this organisation (test cases, bugs, crawls…). The Acme demo cannot be deleted.</p>
-          <div className="mt-3"><ActionButton url="/api/dashboard/settings/organization" method="DELETE" json={{ confirm: ctx.org.slug }} variant="danger" disabled={ctx.readOnly || ctx.org.isMockDemo} confirmText={`This deletes ALL data. Type is pre-filled with your slug "${ctx.org.slug}". Continue?`}>Reset organisation data</ActionButton></div>
-        </div>
-      </Card>
-    </div>
+    <OrganizationSettings
+      readOnly={ctx.readOnly}
+      orgName={ctx.org.name}
+      logoUrl={ctx.org.logoUrl}
+      initial={initial}
+      viewports={viewports.map((v) => ({ id: v.id, name: v.name, width: v.width, height: v.height, category: v.category }))}
+      proxies={proxies.map((p) => ({ id: p.id, name: p.name, url: p.url, host: p.host, port: p.port, username: p.username }))}
+      remotes={remotes.map((r) => ({ id: r.id, name: r.name, remoteUrl: r.remoteUrl, username: r.username, status: r.status }))}
+      knowledge={knowledge}
+    />
   );
 }

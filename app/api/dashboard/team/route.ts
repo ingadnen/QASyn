@@ -26,6 +26,9 @@ export async function POST(request: Request) {
   const parsed = inviteSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   const { email, role } = parsed.data;
+  const roles = parsed.data.roles && parsed.data.roles.length > 0 ? parsed.data.roles : [role];
+  const displayName = parsed.data.name?.trim() || email.split("@")[0];
+  const primaryRole = roles[0];
 
   const existing = await prisma.user.findUnique({ where: { email }, select: { organisationId: true } });
   if (existing) {
@@ -37,7 +40,7 @@ export async function POST(request: Request) {
 
   await delay(MOCK_LATENCY_MS);
   const member = await prisma.user.create({
-    data: { email, name: email.split("@")[0], avatarInitials: initialsOf("", email), role, status: "invited", organisationId: ctx.org.id },
+    data: { email, name: displayName, avatarInitials: initialsOf(displayName, email), role: primaryRole, status: "invited", organisationId: ctx.org.id },
     select: { id: true, email: true, role: true, status: true },
   });
   await audit(prisma, ctx, "member.invited", `${email} · ${role}`);

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   let { urlOrPath } = parsed.data;
   if (parsed.data.type === "website" || parsed.data.type === "openapi") {
     const normalized = normalizeWebsite(urlOrPath);
-    if (!normalized && parsed.data.type === "website") return jsonError("Enter a valid website, e.g. https://docs.example.com", 400);
+    if (!normalized && parsed.data.type === "website") return jsonError("Enter a valid website, e.g. https://docs.your-domain.com", 400);
     if (normalized) urlOrPath = normalized;
   }
 

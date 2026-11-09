@@ -88,16 +88,125 @@ export async function spendCredits(db: Db, organisationId: string, amount: numbe
   await db.organisation.update({ where: { id: organisationId }, data: { creditsUsed } });
 }
 
+export interface OrganizationPreferences {
+  defaultBrowser: "Chromium" | "Chrome" | "Firefox" | "Safari" | "Edge";
+  testcaseTimeout: number;
+  crawlTimeout: number;
+  retryFailedSteps: number;
+  waitTimeoutLocators: number;
+  autoWaitDuration: number;
+  captureStepScreenshots: boolean;
+  videoRecording: boolean;
+  autonomousCrawl: boolean;
+  autoApproveAutoHeal: boolean;
+  organizeByModule: boolean;
+  showScrollbars: boolean;
+  clickPressHold: boolean;
+  viewport: "desktop" | "laptop" | "tablet" | "mobile";
+  resolution: string;
+  autoFix: boolean;
+  autoFixRerunCount: number;
+  timeZone: string;
+  defaultAiAction: "Only action" | "Create step" | "Create dynamic step" | "Create Partial steps";
+  aiSmartness: "Expert (Recommended)" | "Fast" | "Strict";
+  knowledgeBaseId: string;
+  useAiMetadata: boolean;
+  mockApi: boolean;
+  weeklyReportRecipients: string[];
+}
+
+export const DEFAULT_ORGANIZATION_PREFERENCES: OrganizationPreferences = {
+  defaultBrowser: "Chrome",
+  testcaseTimeout: 150,
+  crawlTimeout: 30,
+  retryFailedSteps: 1,
+  waitTimeoutLocators: 15,
+  autoWaitDuration: 200,
+  captureStepScreenshots: false,
+  videoRecording: false,
+  autonomousCrawl: false,
+  autoApproveAutoHeal: false,
+  organizeByModule: true,
+  showScrollbars: false,
+  clickPressHold: false,
+  viewport: "desktop",
+  resolution: "",
+  autoFix: true,
+  autoFixRerunCount: 1,
+  timeZone: "Central Time (US & Canada)",
+  defaultAiAction: "Create step",
+  aiSmartness: "Expert (Recommended)",
+  knowledgeBaseId: "",
+  useAiMetadata: true,
+  mockApi: false,
+  weeklyReportRecipients: [],
+};
+
+export interface AnalysisCodeSettings {
+  baseBranches: string;
+  maxFiles: number;
+  pathScope: string;
+  runMode: "never" | "after_merge" | "before_merge";
+  environmentId: string;
+  postPrComment: boolean;
+  postStatusCheck: boolean;
+  suppressPaths: string;
+}
+
+export const DEFAULT_ANALYSIS_CODE_SETTINGS: AnalysisCodeSettings = {
+  baseBranches: "main, release/*",
+  maxFiles: 200,
+  pathScope: "",
+  runMode: "after_merge",
+  environmentId: "",
+  postPrComment: true,
+  postStatusCheck: true,
+  suppressPaths: "",
+};
+
+export interface BugReproductionSettings {
+  environmentId: string;
+  dataProfileId: string;
+  triggerMode: "label" | "every";
+  triggerLabels: string[];
+  triggerOnCreated: boolean;
+  triggerOnLabeled: boolean;
+  triggerOnEdited: boolean;
+  triggerOnComment: boolean;
+  maxPerTicket: number | null;
+  maxPerDay: number | null;
+  revalidate: boolean;
+}
+
+export const DEFAULT_BUG_REPRODUCTION_SETTINGS: BugReproductionSettings = {
+  environmentId: "",
+  dataProfileId: "",
+  triggerMode: "label",
+  triggerLabels: [],
+  triggerOnCreated: true,
+  triggerOnLabeled: true,
+  triggerOnEdited: false,
+  triggerOnComment: true,
+  maxPerTicket: 3,
+  maxPerDay: null,
+  revalidate: true,
+};
+
 export interface OrgSettings {
   dismissed?: string[];
   analysis?: { severityThreshold: string; blockOnRegression: boolean; autoHealing: boolean; minCoverage: number; prComment: boolean };
   bugReproduction?: { autoReproduce: boolean; sources: string[]; captureVideo: boolean; captureNetwork: boolean; captureConsole: boolean; maxAttempts: number };
+  organization?: OrganizationPreferences;
+  analysisCode?: AnalysisCodeSettings;
+  bugReproductionSettings?: BugReproductionSettings;
   codeAnalysisAt?: string;
   slackChannelCreated?: boolean;
   /** Learning progress: moduleId → { status, updatedAt } */
   learning?: Record<string, { status: string; updatedAt: string }>;
   /** RBAC permission matrix (permission → role → allowed) */
   permissions?: Record<string, Record<string, boolean>>;
+  /** Tunnels alert delivery preferences. */
+  tunnelAlerts?: { sendAlerts: boolean; delivery: "Immediate" | "Daily digest"; digestHour: string; channel: string };
 }
 
 export function readSettings(org: Pick<Organisation, "settingsJson">): OrgSettings {

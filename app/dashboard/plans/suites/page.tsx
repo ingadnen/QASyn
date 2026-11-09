@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { CollectionCreate } from "@/components/dashboard/pages/Forms";
-import { GuidedTour } from "@/components/dashboard/pages/GuidedTour";
-import { Card, EmptyState, PageHeader, ActionButton } from "@/components/dashboard/ui";
-import Link from "next/link";
+import { SuitesClient, type SuiteRow } from "@/components/dashboard/pages/SuitesClient";
+import { PageHeader } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
-import { timeAgo } from "@/lib/format";
 import { requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Test suites" };
@@ -12,28 +9,25 @@ export const dynamic = "force-dynamic";
 
 export default async function SuitesPage() {
   const ctx = await requireOrgContext();
-  const suites = await prisma.testSuite.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } });
+  const suites = await prisma.testSuite.findMany({
+    where: { organisationId: ctx.org.id },
+    orderBy: { createdAt: "desc" },
+  });
+  const rows: SuiteRow[] = suites.map((suite) => ({
+    id: suite.id,
+    name: suite.name,
+    platform: suite.platform,
+    module: suite.module,
+    testCasesCount: suite.testCasesCount,
+    labelsJson: suite.labelsJson,
+    lastRunAt: suite.lastRunAt ? suite.lastRunAt.toISOString() : null,
+    passRate: suite.passRate,
+    createdAt: suite.createdAt.toISOString(),
+  }));
   return (
-    <div className="space-y-6">
-      <PageHeader kicker="PLATFORM" title="Test suites" description="Reusable groups of test cases, runnable on demand or on a schedule." />
-      <GuidedTour />
-      <Card title="New suite"><div className="px-5 py-4"><CollectionCreate kind="suites" readOnly={ctx.readOnly} /></div></Card>
-      <Card title={`${suites.length} suites`}>
-        {suites.length === 0 ? <EmptyState title="No suites" description="Create your first suite above." /> : (
-          <ul className="divide-y divide-slate-100">
-            {suites.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                <div className="min-w-0 flex-1">
-                  <Link href={`/dashboard/plans/suites/${s.id}`} className="font-medium text-brand-700 hover:underline">{s.name}</Link>
-                  <p className="text-xs text-slate-500">{s.description ?? "—"} · {s.schedule}{s.module ? ` · ${s.module}` : ""} · {s.testCasesCount} cases · {Math.round(s.passRate)}% pass{s.lastRunAt ? ` · last run ${timeAgo(s.lastRunAt)}` : " · Not executed"}</p>
-                </div>
-                <ActionButton url={`/api/dashboard/collections/suites/${s.id}`} method="PATCH" json={{ action: "run" }} disabled={ctx.readOnly}>Run</ActionButton>
-                <ActionButton url={`/api/dashboard/collections/suites/${s.id}`} method="DELETE" variant="danger" disabled={ctx.readOnly} confirmText="Delete this suite?">Delete</ActionButton>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+    <div className="space-y-5">
+      <PageHeader title="Test Suites" description="View and manage all your test suites." />
+      <SuitesClient suites={rows} readOnly={ctx.readOnly} defaultEmail={ctx.user.email} />
     </div>
   );
 }

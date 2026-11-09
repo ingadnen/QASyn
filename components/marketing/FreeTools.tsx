@@ -9,7 +9,7 @@ const field = "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text
 
 export function FreeTools() {
   const [tab, setTab] = useState(0);
-  const [nl, setNl] = useState("Navigate to https://app.example.com/login, click Sign in, enter alice@example.com, verify Welcome");
+  const [nl, setNl] = useState("Navigate to https://app.your-domain.com/login, click Sign in, enter user@your-domain.com, verify Welcome");
   const [html, setHtml] = useState('<button data-testid="submit" class="btn primary">Submit</button>');
   const [broken, setBroken] = useState("css:.old-btn");
   const [payload, setPayload] = useState('{"user":{"id":42,"role":"QA"},"token":"tok_9f27"}');

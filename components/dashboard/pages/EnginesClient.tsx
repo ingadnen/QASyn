@@ -272,7 +272,7 @@ export function ApiTestingEditor({ testId, initial, readOnly }: { testId: string
                 <option value="soap">SOAP</option>
                 <option value="grpc">gRPC</option>
               </select>
-              <input className="h-9 min-w-56 flex-1 rounded-lg border border-slate-200 px-2 text-sm" value={s.url} disabled={readOnly} onChange={(e) => update(i, { url: e.target.value })} placeholder="https://api.example.com/…" />
+              <input className="h-9 min-w-56 flex-1 rounded-lg border border-slate-200 px-2 text-sm" value={s.url} disabled={readOnly} onChange={(e) => update(i, { url: e.target.value })} placeholder="https://api.your-domain.com/…" />
               {result && (
                 <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", result.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>
                   {result.status} {result.ok ? "✓" : "✗"}

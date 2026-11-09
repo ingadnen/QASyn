@@ -21,3 +21,17 @@ export async function PATCH(request: Request, { params }: Params) {
   await audit(prisma, ctx, "member.role_changed", `${member.email} → ${parsed.data.role}`);
   return NextResponse.json({ member: updated });
 }
+
+/** DELETE /api/dashboard/team/[id] — revoke a pending invitation (org-scoped). */
+export async function DELETE(_request: Request, { params }: Params) {
+  const guard = await guardApi({ write: true });
+  if (!guard.ok) return guard.response;
+  const { ctx } = guard;
+  const { id } = await params;
+  const member = await prisma.user.findFirst({ where: { id, organisationId: ctx.org.id } });
+  if (!member) return jsonError("Member not found.", 404);
+  if (member.status !== "invited") return jsonError("Only pending invitations can be revoked.", 409);
+  await prisma.user.delete({ where: { id: member.id } });
+  await audit(prisma, ctx, "member.revoked", member.email);
+  return NextResponse.json({ ok: true });
+}

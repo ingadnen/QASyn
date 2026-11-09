@@ -124,7 +124,7 @@ export function exportTestCase(tc: { title: string }, steps: NlpStep[], framewor
         {
           path: `test/specs/${name}.js`,
           language: "javascript",
-          content: `describe("${tc.title}", () => {\n  it("runs the recorded flow", async () => {\n    await browser.url("${steps[0]?.target ?? "https://example.com"}");\n${body}\n  });\n});\n`,
+          content: `describe("${tc.title}", () => {\n  it("runs the recorded flow", async () => {\n    await browser.url("${steps[0]?.target ?? "https://your-domain.com"}");\n${body}\n  });\n});\n`,
         },
         { path: "wdio.conf.js", language: "javascript", content: `exports.config = { specs: ["./test/specs/**/*.js"], capabilities: [{ browserName: "chrome" }] };\n` },
       ];

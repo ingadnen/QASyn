@@ -33,6 +33,47 @@ export function useAction() {
   return { run, pending, error, setError };
 }
 
+/* ---------------------------------------------------------------------------
+ * ContextQA design tokens (captured from gmailad.contextqa.com)
+ * ------------------------------------------------------------------------- */
+
+export const cqa = {
+  primary: "#5b4ee8",
+  primaryHover: "#6d61ff",
+  ink: "#111827",
+  muted: "#6b7280",
+  line: "#e5e7eb",
+  surface: "#ffffff",
+  canvas: "#f7f8fa",
+  headBg: "#ffffff",
+  headText: "#6b7280",
+};
+
+export const cqaBtnPrimary =
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#5b4ee8] px-3.5 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#6d61ff] disabled:cursor-not-allowed disabled:opacity-50";
+export const cqaBtnSecondary =
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[13px] font-medium text-[#374151] transition hover:bg-[#f9fafb] disabled:cursor-not-allowed disabled:opacity-50";
+export const cqaBtnGhost =
+  "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-[12.5px] font-medium text-[#6b7280] transition hover:bg-[#f3f4f6] hover:text-[#111827]";
+export const cqaIconBtn =
+  "inline-flex size-8 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-[#f3f4f6] hover:text-[#111827]";
+export const cqaCard = "rounded-[11px] border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
+export const cqaInput =
+  "h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]";
+export const cqaLabel = "mb-1.5 block text-[12.5px] font-medium text-[#374151]";
+
+export function CqaIcon({ name, className, filled }: { name: string; className?: string; filled?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn("material-symbols-outlined select-none leading-none", className)}
+      style={filled ? { fontVariationSettings: "'FILL' 1" } : undefined}
+    >
+      {name}
+    </span>
+  );
+}
+
 export function PageHeader({
   title,
   description,
@@ -45,11 +86,10 @@ export function PageHeader({
   kicker?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        {kicker && <p className="text-[11px] font-semibold tracking-[0.16em] text-brand-600">{kicker}</p>}
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-slate-500">{description}</p>}
+    <div className="flex flex-wrap items-start justify-between gap-4" data-kicker={kicker}>
+      <div className="min-w-0">
+        <h1 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-[#111827]">{title}</h1>
+        {description && <p className="mt-1 max-w-3xl text-[13.5px] leading-5 text-[#6b7280]">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -58,10 +98,10 @@ export function PageHeader({
 
 export function Card({ className, children, title, actions }: { className?: string; children: React.ReactNode; title?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <section className={cn("rounded-xl border border-slate-200 bg-white shadow-sm", className)}>
+    <section className={cn(cqaCard, className)}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+        <header className="flex items-center justify-between gap-3 border-b border-[#f0f1f3] px-4 py-3">
+          <h2 className="text-[14px] font-semibold text-[#111827]">{title}</h2>
           {actions}
         </header>
       )}
@@ -72,12 +112,12 @@ export function Card({ className, children, title, actions }: { className?: stri
 
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-      <div className="flex size-10 items-center justify-center rounded-full bg-brand-50 text-brand-600" aria-hidden="true">
-        ∅
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
+      <div className="flex size-11 items-center justify-center rounded-full bg-[#f3f4f6] text-[#9ca3af]" aria-hidden="true">
+        <CqaIcon name="inbox" className="text-[24px]" />
       </div>
-      <p className="text-sm font-semibold text-slate-800">{title}</p>
-      {description && <p className="max-w-sm text-sm text-slate-500">{description}</p>}
+      <p className="text-[14px] font-medium text-[#374151]">{title}</p>
+      {description && <p className="max-w-sm text-[12.5px] text-[#9ca3af]">{description}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   );
@@ -92,51 +132,60 @@ export function ErrorNote({ error }: { error: string | null }) {
   );
 }
 
-const PILL: Record<string, string> = {
-  passing: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  passed_baseline: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  covered: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  indexed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  completed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  active: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  fixed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  CONNECTED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  low: "bg-slate-100 text-slate-600 ring-slate-500/10",
-  failing: "bg-red-50 text-red-700 ring-red-600/20",
-  regression_caught: "bg-red-50 text-red-700 ring-red-600/20",
-  critical: "bg-red-50 text-red-700 ring-red-600/20",
-  failed: "bg-red-50 text-red-700 ring-red-600/20",
-  FAILED: "bg-red-50 text-red-700 ring-red-600/20",
-  uncovered: "bg-red-50 text-red-700 ring-red-600/20",
-  high: "bg-orange-50 text-orange-700 ring-orange-600/20",
-  flaky: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  partial: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  medium: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  reproduced: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  invited: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  running: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  indexing: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  INDEXING: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  open: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  draft: "bg-slate-100 text-slate-600 ring-slate-500/10",
+const TONE: Record<string, string> = {
+  green: "bg-[#f0fdf4] text-[#00a63e] border-[#b9f8cf]",
+  red: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]",
+  amber: "bg-[#fffbeb] text-[#d97706] border-[#fde68a]",
+  blue: "bg-[#eff6ff] text-[#2563eb] border-[#bfdbfe]",
+  gray: "bg-[#f9fafb] text-[#6b7280] border-[#e5e7eb]",
+  purple: "bg-[#f5f3ff] text-[#5b4ee8] border-[#ddd6fe]",
 };
 
+function toneFor(value: string): keyof typeof TONE {
+  const v = value.toLowerCase();
+  if (["passing", "passed", "pass", "completed", "complete", "covered", "ready", "active", "connected", "success", "indexed", "fixed", "reproduced"].includes(v)) return "green";
+  if (["failing", "failed", "fail", "error", "uncovered", "regression_caught", "critical", "blocked"].includes(v)) return "red";
+  if (["pending", "pending action", "pending_action", "partial", "medium", "flaky", "invited", "in review", "in_progress", "in progress", "warning"].includes(v)) return "amber";
+  if (["running", "indexing", "open", "in progress", "queued"].includes(v)) return "blue";
+  if (["high", "no-go", "no go"].includes(v)) return "red";
+  if (["low", "draft", "idle", "not executed", "not_executed", "none", "off", "archived"].includes(v)) return "gray";
+  return "gray";
+}
+
 export function StatusPill({ value, label }: { value: string; label?: string }) {
-  const live = value === "running" || value === "indexing" || value === "INDEXING";
+  const live = ["running", "indexing", "indexing"].includes(value.toLowerCase());
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
-        PILL[value] ?? "bg-slate-100 text-slate-600 ring-slate-500/10",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-[2px] text-[12px] font-medium leading-[17px]",
+        TONE[toneFor(label ?? value)],
       )}
     >
       {live && <span className="size-1.5 animate-pulse rounded-full bg-current" />}
-      {label ?? value.replace(/_/g, " ").toLowerCase()}
+      {label ?? titleCase(value.replace(/_/g, " "))}
     </span>
   );
 }
 
-export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+function titleCase(value: string) {
+  return value.replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  size = "md",
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
+}) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -144,22 +193,24 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
   if (!open) return null;
+  const width = size === "sm" ? "max-w-md" : size === "lg" ? "max-w-2xl" : size === "xl" ? "max-w-4xl" : "max-w-[560px]";
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0f172a]/50 p-4" onMouseDown={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="animate-fade-in max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl"
+        className={cn("animate-fade-in flex max-h-[92vh] w-full flex-col overflow-hidden rounded-xl bg-white shadow-[0_24px_64px_rgba(15,23,42,0.24)]", width)}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-          <button type="button" onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close">
-            ✕
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[#f0f1f3] px-6 py-4">
+          <h2 className="text-[17px] font-semibold text-[#111827]">{title}</h2>
+          <button type="button" onClick={onClose} className={cqaIconBtn} aria-label="Close">
+            <CqaIcon name="close" className="text-[20px]" />
           </button>
         </header>
-        <div className="px-5 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        {footer && <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[#f0f1f3] px-6 py-3.5">{footer}</footer>}
       </div>
     </div>
   );
@@ -180,12 +231,8 @@ export function Select<T extends string>({
 }) {
   return (
     <label className={cn("block", className)}>
-      <span className="block text-sm font-medium text-slate-700">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
-      >
+      <span className={cqaLabel}>{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value as T)} className={cqaInput}>
         {options.map((o) => {
           const opt = typeof o === "string" ? { value: o, label: o } : o;
           return (
@@ -203,8 +250,8 @@ export function Toggle({ checked, onChange, label, description }: { checked: boo
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <div>
-        <p className="text-sm font-medium text-slate-800">{label}</p>
-        {description && <p className="text-xs text-slate-500">{description}</p>}
+        <p className="text-[13px] font-medium text-[#111827]">{label}</p>
+        {description && <p className="mt-0.5 text-[12px] text-[#6b7280]">{description}</p>}
       </div>
       <button
         type="button"
@@ -212,9 +259,9 @@ export function Toggle({ checked, onChange, label, description }: { checked: boo
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className={cn("relative h-6 w-11 shrink-0 rounded-full transition", checked ? "bg-brand-600" : "bg-slate-300")}
+        className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
       >
-        <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition", checked ? "left-[22px]" : "left-0.5")} />
+        <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", checked ? "left-[21px]" : "left-[3px]")} />
       </button>
     </div>
   );

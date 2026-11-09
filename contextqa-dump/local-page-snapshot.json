@@ -1,0 +1,922 @@
+{
+  "overview": {
+    "url": "http://localhost:3000/dashboard/overview",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA i Live · 4 events expand history expand_more Join your ContextQA support channel Get a shared Slack channel with the ContextQA team. We will send the invite to the organization owner, cgi@cgi.com. Create Slack channel — Join your ContextQA support channel Test cases 13 4 passing · 9 failing Bugs 0 0 reproduced Time & cost saved i $60 est. bugs · PR checks · regressions Regressions caught 0 PRs checked 0 watched on every push SLA / lead time coming soon Integrations add Modules mapped & coverage By module By criticality 4 modules Test cases by module. Coverage figures are provisional. Core 4 of 8 tests failing 90% expand_more Checkout 2 of 2 tests failing 80% expand_more Settings 2 of 2 tests failing 80% expand_more Billing 1 of 1 tests failing 80% expand_more Recents View all fact_check End-to-End Navigation and Sign-In Flow Test Case baseline · 4 steps · passing 22m fact_check End-to-End Navigation and Sign-In Flow Test Case baseline · 4 steps · passing 3h fact_check End-to-End Navigation and Sign-In Flow Test Case baseline · 4 steps · flaky 3h fact_check End-to-End Navigation and Sign-In Flow Test Case baseline · 4 steps · passing 3h fact_check End-to-End Navigation and Sign-In Flow Test Case baseline · 4 steps · passing 3h FINISH SETTING UP view_kanban Connect your bug tracker Jira or Linear. New tickets arrive already reproduced. Connect — Connect your bug tracker Dismiss person_add Invite a teammate Show the team the baseline. They land with everything already built. Invite — Invite a teammate Dismiss",
+    "headings": [],
+    "tabs": [
+      "By module",
+      "By criticality"
+    ],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "i\nLive · 4 events\nexpand history\nexpand_more",
+      "Create Slack channel\n— Join your ContextQA support channel",
+      "Core\n4 of 8 tests failing\n90%\nexpand_more",
+      "Checkout\n2 of 2 tests failing\n80%\nexpand_more",
+      "Settings\n2 of 2 tests failing\n80%\nexpand_more",
+      "Billing\n1 of 1 tests failing\n80%\nexpand_more",
+      "Dismiss",
+      "Dismiss"
+    ],
+    "tableHeaders": []
+  },
+  "pull-requests": {
+    "url": "http://localhost:3000/dashboard/pull-requests",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA PR Impact Analysis Pull requests analysed for impact, and the tests drafted for them search add Filter refresh add Connect GitHub or GitLab in Integrations to receive PR checks automatically on every push. Simulations remain available. No data available There is no data available to display.",
+    "headings": [
+      "PR Impact Analysis"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add"
+    ],
+    "tableHeaders": []
+  },
+  "crawl": {
+    "url": "http://localhost:3000/dashboard/crawl",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Crawl Every crawl of your application and the test cases it produced search add Filter refresh settings add New Crawl Name Format Type Test Plan Status Test Cases Created by Created Date Action REQ-007 Sign in, browse the primary navigation and validate the main heading Auto Crawl language Crawl cgi.com crawl plan Completed 3 Linked CGI Admin 09 Nov 2026 2:24:08 AM more_horiz REQ-006 Sign in, browse the primary navigation and validate the main heading Auto Crawl language Crawl cgi.com crawl plan Completed 2 Linked CGI Admin 09 Nov 2026 2:23:44 AM more_horiz REQ-005 Sign in, browse the primary navigation and validate the main heading Auto Crawl language Crawl cgi.com crawl plan Completed 8 Linked CGI Admin 09 Nov 2026 2:12:03 AM more_horiz REQ-004 Sign in, browse the primary navigation and validate the main heading Auto Crawl language Crawl cgi.com crawl plan Completed 5 Linked CGI Admin 09 Nov 2026 2:11:45 AM more_horiz REQ-003 Sign in, browse the primary navigation and validate the main heading Auto Crawl language Crawl cgi.com crawl plan Completed 8 Linked CGI Admin 09 Nov 2026 2:10:20 AM more_horiz Rows per page 10 20 50 1–5 of 5",
+    "headings": [
+      "Crawl"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add\nFilter",
+      "refresh",
+      "settings",
+      "add\nNew Crawl"
+    ],
+    "tableHeaders": [
+      "Name",
+      "Format",
+      "Type",
+      "Test Plan",
+      "Status",
+      "Test Cases",
+      "Created by",
+      "Created Date",
+      "Action"
+    ]
+  },
+  "code-analysis": {
+    "url": "http://localhost:3000/dashboard/code-analysis",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Code Analysis Analyses of your connected repositories search add Filter refresh add No repository connected. Connect GitHub or GitLab in Integrations to analyse code. No data available There is no data available to display.",
+    "headings": [
+      "Code Analysis"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add"
+    ],
+    "tableHeaders": []
+  },
+  "requirements": {
+    "url": "http://localhost:3000/dashboard/requirements",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Requirements Library Upload requirements, review questionnaires, track test case generation, and manage change history search add Filter refresh settings add New Requirement Name Format Type Test Plan Status Test Cases Created by Created Date Action REQ-007 Wizard parity uploaded specification Auto Crawl language Crawl - Pending Action 0 Linked CGI Admin 09 Nov 2026 5:24:05 AM more_horiz REQ-006 Wizard parity uploaded specification Auto Crawl language Crawl - Pending Action 0 Linked CGI Admin 09 Nov 2026 5:22:41 AM more_horiz REQ-005 CGI end-to-end crawl requirement Auto Crawl language Crawl - Pending Action 7 Linked CGI Admin 09 Nov 2026 2:24:08 AM more_horiz REQ-004 CGI end-to-end crawl requirement Auto Crawl language Crawl - Pending Action 4 Linked CGI Admin 09 Nov 2026 2:23:44 AM more_horiz REQ-003 CGI end-to-end crawl requirement Auto Crawl language Crawl - Pending Action 11 Linked CGI Admin 09 Nov 2026 2:12:03 AM more_horiz REQ-002 CGI end-to-end crawl requirement Auto Crawl language Crawl - Pending Action 5 Linked CGI Admin 09 Nov 2026 2:11:45 AM more_horiz REQ-001 CGI end-to-end crawl requirement Auto Crawl language Crawl - Completed 13 Linked CGI Admin 09 Nov 2026 2:10:20 AM more_horiz Rows per page 10 20 50 1–7 of 7",
+    "headings": [
+      "Requirements Library"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add\nFilter",
+      "refresh",
+      "settings",
+      "add\nNew Requirement"
+    ],
+    "tableHeaders": [
+      "Name",
+      "Format",
+      "Type",
+      "Test Plan",
+      "Status",
+      "Test Cases",
+      "Created by",
+      "Created Date",
+      "Action"
+    ]
+  },
+  "test-cases": {
+    "url": "http://localhost:3000/dashboard/test-cases",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Test Cases Manage and Execute all your Test Cases Test Cases Step Groups view_list List folder Modular search All Test Cases My Test Cases Suite Cases add Filter settings refresh add New Test Case Test Case Action Type Priority Result Status Module Labels Created By Folder Created At Updated At Last Run TC-013 Update the payment method Automated Functional High Not Executed Draft Billing crawl billing CGI Admin Billing 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-012 Add an item to the cart Automated Functional High Not Executed Draft Checkout crawl checkout CGI Admin Checkout 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-011 Complete checkout Automated Functional High Not Executed Draft Checkout crawl checkout CGI Admin Checkout 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-010 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:24 08 Nov 2026, 21:24 09 Nov 2026, 00:03 more_horiz TC-009 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:23 08 Nov 2026, 21:23 08 Nov 2026, 21:23 more_horiz TC-008 End-to-End Navigation and Sign-In Flow Manual Functional High Failed In Review Core manual core CGI Admin Core 08 Nov 2026, 21:12 08 Nov 2026, 21:12 08 Nov 2026, 21:12 more_horiz TC-007 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:11 08 Nov 2026, 21:11 08 Nov 2026, 21:11 more_horiz TC-006 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 08 Nov 2026, 21:10 more_horiz TC-005 Sign up with e-mail Automated Functional High Not Executed Draft Core crawl core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-004 Log in and reach the dashboard Automated Functional High Not Executed Draft Core crawl core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-003 Submit the contact form Automated Functional Medium Not Executed Draft Core crawl core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-002 Change notification preferences Automated Functional Low Not Executed Draft Settings crawl settings CGI Admin Settings 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-001 Edit profile details Automated Functional Medium Not Executed Draft Settings crawl settings CGI Admin Settings 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz Rows per page 10 20 50 1–10 of 13",
+    "headings": [
+      "Test Cases"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "Test Cases",
+      "Step Groups",
+      "view_list\nList",
+      "folder\nModular",
+      "add\nFilter",
+      "settings",
+      "refresh",
+      "add\nNew Test Case"
+    ],
+    "tableHeaders": [
+      "Test Case",
+      "Action",
+      "Type",
+      "Priority",
+      "Result",
+      "Status",
+      "Module",
+      "Labels",
+      "Created By",
+      "Folder",
+      "Created At",
+      "Updated At",
+      "Last Run"
+    ]
+  },
+  "step-groups": {
+    "url": "http://localhost:3000/dashboard/test-cases?tab=step-groups",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Test Cases Manage and Execute all your Test Cases Test Cases Step Groups view_list List folder Modular search All Test Cases My Test Cases Suite Cases add Filter settings refresh add New Test Case Test Case Action Type Priority Result Status Module Labels Created By Folder Created At Updated At Last Run TC-013 Update the payment method Automated Functional High Not Executed Draft Billing crawl billing CGI Admin Billing 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-012 Add an item to the cart Automated Functional High Not Executed Draft Checkout crawl checkout CGI Admin Checkout 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-011 Complete checkout Automated Functional High Not Executed Draft Checkout crawl checkout CGI Admin Checkout 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-010 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:24 08 Nov 2026, 21:24 09 Nov 2026, 00:03 more_horiz TC-009 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:23 08 Nov 2026, 21:23 08 Nov 2026, 21:23 more_horiz TC-008 End-to-End Navigation and Sign-In Flow Manual Functional High Failed In Review Core manual core CGI Admin Core 08 Nov 2026, 21:12 08 Nov 2026, 21:12 08 Nov 2026, 21:12 more_horiz TC-007 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:11 08 Nov 2026, 21:11 08 Nov 2026, 21:11 more_horiz TC-006 End-to-End Navigation and Sign-In Flow Manual Functional High Passed Ready Core manual core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 08 Nov 2026, 21:10 more_horiz TC-005 Sign up with e-mail Automated Functional High Not Executed Draft Core crawl core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-004 Log in and reach the dashboard Automated Functional High Not Executed Draft Core crawl core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-003 Submit the contact form Automated Functional Medium Not Executed Draft Core crawl core CGI Admin Core 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-002 Change notification preferences Automated Functional Low Not Executed Draft Settings crawl settings CGI Admin Settings 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz TC-001 Edit profile details Automated Functional Medium Not Executed Draft Settings crawl settings CGI Admin Settings 08 Nov 2026, 21:10 08 Nov 2026, 21:10 - more_horiz Rows per page 10 20 50 1–10 of 13",
+    "headings": [
+      "Test Cases"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "Test Cases",
+      "Step Groups",
+      "view_list\nList",
+      "folder\nModular",
+      "add\nFilter",
+      "settings",
+      "refresh",
+      "add\nNew Test Case"
+    ],
+    "tableHeaders": [
+      "Test Case",
+      "Action",
+      "Type",
+      "Priority",
+      "Result",
+      "Status",
+      "Module",
+      "Labels",
+      "Created By",
+      "Folder",
+      "Created At",
+      "Updated At",
+      "Last Run"
+    ]
+  },
+  "suites": {
+    "url": "http://localhost:3000/dashboard/plans/suites",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Test Suites View and manage all your test suites. search add Filter refresh settings add Create Test Suite Suite Name Platform Test Cases Latest Result Created Date Modified Folder Action TS-3 Wizard Parity Suite desktop_windows Web 2 error_outline Not Executed 09 Nov 2026, 00:24 09 Nov 2026, 00:24 Unorganised more_horiz TS-2 Wizard Parity Suite desktop_windows Web 2 error_outline Not Executed 09 Nov 2026, 00:22 09 Nov 2026, 00:22 Unorganised more_horiz TS-1 cgi.com crawl suite desktop_windows Web 8 cancel Failed 08 Nov 2026, 21:10 09 Nov 2026, 00:03 Unorganised more_horiz Rows per page 10 20 50 1–3 of 3",
+    "headings": [
+      "Test Suites"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add\nFilter",
+      "refresh",
+      "settings",
+      "add\nCreate Test Suite"
+    ],
+    "tableHeaders": [
+      "Suite Name",
+      "Platform",
+      "Test Cases",
+      "Latest Result",
+      "Created Date",
+      "Modified",
+      "Folder",
+      "Action"
+    ]
+  },
+  "test-plans": {
+    "url": "http://localhost:3000/dashboard/plans/test-plans",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Test Plans Group test suites into plans and execute them across environments, devices, and schedules corporate_fare cgi sync Running 0 layers Capacity 5 schedule Queued 0 0/5 Test Plans (2) Schedules (0) search add Filter refresh settings add New Test Plan Name Last Run Actions Wizard Parity Plan 2 suites · 2 cases — schedule Schedule description Reports content_copy Clone play_arrow Run cgi.com crawl plan 13 suites · 8 cases Failed schedule Schedule description Reports content_copy Clone play_arrow Run Rows per page 10 20 50 1–2 of 2",
+    "headings": [
+      "Test Plans"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add\nFilter",
+      "refresh",
+      "settings",
+      "add\nNew Test Plan",
+      "schedule\nSchedule",
+      "content_copy\nClone",
+      "play_arrow\nRun",
+      "schedule\nSchedule",
+      "content_copy\nClone",
+      "play_arrow\nRun"
+    ],
+    "tableHeaders": [
+      "Name",
+      "Last Run",
+      "Actions"
+    ]
+  },
+  "environments": {
+    "url": "http://localhost:3000/dashboard/environments",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Environment & Data Management The complete data layer that powers test execution across every environment, test case, and plan. Three variable types — that's it. dns Environments table_rows Test Data Profiles public Global Data lock_person Auth Profiles search grid_view Grid view_list List file_download Import file_upload Export add New environment ST Staging DEFAULT Updated 09 Nov 2026 content_copy delete Default staging environment for cgi. 0 VARS 0 DBS 0 PROFILES edit Edit add_circle Variables PR Production Updated 09 Nov 2026 content_copy delete Production verification environment for cgi. 0 VARS 0 DBS 0 PROFILES edit Edit star Set default add_circle Variables add_circle New environment Rows per page 50 100 1–2 of 2",
+    "headings": [
+      "Environment & Data Management"
+    ],
+    "tabs": [
+      "dns\nEnvironments",
+      "table_rows\nTest Data Profiles",
+      "public\nGlobal Data",
+      "lock_person\nAuth Profiles"
+    ],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "grid_view\nGrid",
+      "view_list\nList",
+      "file_download\nImport",
+      "file_upload\nExport",
+      "add\nNew environment",
+      "content_copy",
+      "delete",
+      "edit\nEdit",
+      "add_circle\nVariables",
+      "content_copy",
+      "delete",
+      "edit\nEdit",
+      "star\nSet default",
+      "add_circle\nVariables",
+      "add_circle\nNew environment"
+    ],
+    "tableHeaders": []
+  },
+  "env-profiles": {
+    "url": "http://localhost:3000/dashboard/environments?tab=profiles",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Environment & Data Management The complete data layer that powers test execution across every environment, test case, and plan. Three variable types — that's it. dns Environments table_rows Test Data Profiles public Global Data lock_person Auth Profiles search All environments Staging Production All permissions RO RW file_download Import file_upload Export add New test data profile table_rows No test data profiles yet Create a profile to scope test data per environment. add New test data profile Rows per page 50 100 1–0 of 0",
+    "headings": [
+      "Environment & Data Management"
+    ],
+    "tabs": [
+      "dns\nEnvironments",
+      "table_rows\nTest Data Profiles",
+      "public\nGlobal Data",
+      "lock_person\nAuth Profiles"
+    ],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "file_download\nImport",
+      "file_upload\nExport",
+      "add\nNew test data profile",
+      "add\nNew test data profile"
+    ],
+    "tableHeaders": []
+  },
+  "env-global": {
+    "url": "http://localhost:3000/dashboard/environments?tab=global",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Environment & Data Management The complete data layer that powers test execution across every environment, test case, and plan. Three variable types — that's it. dns Environments table_rows Test Data Profiles public Global Data lock_person Auth Profiles public Environment-agnostic. These variables are accessible from every test case regardless of which environment is selected. Names must be unique across the entire workspace. Tag them for quick filtering. search file_download Import file_upload Export all add New global variable settings refresh public No global variables Create workspace-wide variables accessible from any test case. add New global variable Rows per page 50 100 1–0 of 0",
+    "headings": [
+      "Environment & Data Management"
+    ],
+    "tabs": [
+      "dns\nEnvironments",
+      "table_rows\nTest Data Profiles",
+      "public\nGlobal Data",
+      "lock_person\nAuth Profiles"
+    ],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "file_download\nImport",
+      "file_upload\nExport all",
+      "add\nNew global variable",
+      "settings",
+      "refresh",
+      "add\nNew global variable"
+    ],
+    "tableHeaders": []
+  },
+  "env-auth": {
+    "url": "http://localhost:3000/dashboard/environments?tab=auth",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Environment & Data Management The complete data layer that powers test execution across every environment, test case, and plan. Three variable types — that's it. dns Environments table_rows Test Data Profiles public Global Data lock_person Auth Profiles The app logins Ship holds for your tests and crawls. Each keeps its latest captured session, encrypted, and the login test that can sign in again when it expires. add Add auth profile search file_download Import file_upload Export lock_person No auth profiles yet Add a login for Ship to use, or finish onboarding and the login it captured appears here. add Add auth profile Proxy Profiles Proxy connections available to every test plan and test case in this organization. Assign one from a test plan's or test case's settings. add Add Proxy lan No proxy profiles Add a proxy to route test execution through your internal network. Viewport Configurations Named viewports available to test plans and execution settings. add Add Viewport MOBILE Mobile S (375×667) close MOBILE Mobile M (390×844) close MOBILE Mobile L (412×915) close TABLET Tablet Portrait (768×1024) close TABLET Tablet Landscape (1024×768) close TABLET iPad Pro (1024×1366) close LAPTOP Laptop S (1280×720) close LAPTOP Laptop M (1366×768) close LAPTOP Laptop L (1440×900) close DESKTOP Default (1280×720) close DESKTOP Full HD (1920×1080) close DESKTOP 2K / QHD (2560×1440) close DESKTOP 4K / UHD (3840×2160) close",
+    "headings": [
+      "Environment & Data Management",
+      "Proxy Profiles",
+      "Viewport Configurations"
+    ],
+    "tabs": [
+      "dns\nEnvironments",
+      "table_rows\nTest Data Profiles",
+      "public\nGlobal Data",
+      "lock_person\nAuth Profiles"
+    ],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add\nAdd auth profile",
+      "file_download\nImport",
+      "file_upload\nExport",
+      "add\nAdd auth profile",
+      "add\nAdd Proxy",
+      "add\nAdd Viewport",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close"
+    ],
+    "tableHeaders": []
+  },
+  "uploads": {
+    "url": "http://localhost:3000/dashboard/uploads",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Uploads Manage and organize all your uploaded files and folders add Create Folder search settings refresh No data available There is no data available to display.",
+    "headings": [
+      "Uploads"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add\nCreate Folder"
+    ],
+    "tableHeaders": []
+  },
+  "knowledge-base": {
+    "url": "http://localhost:3000/dashboard/knowledge-base",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Knowledge Base add Add search refresh Name Type Status Updated Action article cgi.com (crawl) https://cgi.com Website Indexed 3 h ago delete",
+    "headings": [
+      "Knowledge Base"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "add\nAdd",
+      "delete"
+    ],
+    "tableHeaders": [
+      "Name",
+      "Type",
+      "Status",
+      "Updated",
+      "Action"
+    ]
+  },
+  "team": {
+    "url": "http://localhost:3000/dashboard/team",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Team & access Invite users and manage their roles Users Roles & Permissions person_add Invite user search NAME EMAIL ROLES VERIFIED ADMIN CA CGI Admin cgi@cgi.com — check_circle Admin more_horiz Rows per page 10 20 50 1–1 of 1",
+    "headings": [
+      "Team & access"
+    ],
+    "tabs": [
+      "Users",
+      "Roles & Permissions"
+    ],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "person_add\nInvite user",
+      "more_horiz"
+    ],
+    "tableHeaders": [
+      "NAME",
+      "EMAIL",
+      "ROLES",
+      "VERIFIED",
+      "ADMIN"
+    ]
+  },
+  "tunnels": {
+    "url": "http://localhost:3000/dashboard/tunnels",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Tunnels Publish an app running on your machine as a URL ContextQA can test. One agent per machine; one URL per route. lan 0 of 5 machines · 0 of 15 routes notifications Alerts add Add machine Machines 0 · worst first lan No machines yet Add a machine to publish apps running on your network. add Add machine Routes are checked every 2 min. Install guide · Network requirements",
+    "headings": [
+      "Tunnels",
+      "Machines"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "notifications\nAlerts",
+      "add\nAdd machine",
+      "add\nAdd machine",
+      "Install guide",
+      "Network requirements"
+    ],
+    "tableHeaders": []
+  },
+  "integrations": {
+    "url": "http://localhost:3000/dashboard/integrations",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA All Plugins Bug Reporting Product Management J Jira Enable your team to stay connected to your favorite Atlassian Jira Product, to raise bugs, check status and rerun on closure of bugs, etc. # Slack Connect to Slack to get notifications for your run instantly. Workspace not linked for bug reproduction CQA ContextQA Lab Connect to your ContextQA account as your test lab on cloud. lock Upgrade to the Enterprise plan to use this integration. L Linear Enable your team to report a bug on Linear, track status and rerun on closure of bug without leaving ContextQA from test case results page. Az Azure DevOps Boards Enable your team to report a bug on Azure DevOps Boards, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. AV Azure Vault Enable your team to securely store and access secrets using Azure Key Vault integration with ContextQA. lock Upgrade to the Enterprise plan to use this integration. GH GitHub Connect your GitHub account so ContextQA can read the repositories it analyses. Authorization happens on GitHub — no credentials are entered here. GL GitLab Connect GitLab to analyse merge requests and keep your tests in step with code changes. F Figma Enable your team to report a bug on Figma, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. Fr Freshrelease Enable your team to report a bug on Freshrelease, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. Y YouTrack Enable your team to report a bug on YouTrack, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. M Mantis Bug Tracker Enable your team to report a bug on Mantis Bug Tracker, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. B Backlog Enable your team to report a bug on Backlog, track status and rerun on closue of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. Z Zepel Enable your team to report a bug on Zepel, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. Bz BugZilla Enable your team to report a bug on BugZilla, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. T Trello Enable your team to report a bug on Trello, track status and rerun on closure of bug without leaving ContextQA from the test case results page. lock Upgrade to the Enterprise plan to use this integration. C ClickUp Enable your team to report a bug on ClickUp, track status and rerun on closure of bug without leaving ContextQA from test case results page. PG Private Grid Connect to your Appium Grid account as your test lab on cloud. lock Upgrade to the Enterprise plan to use this integration. Jk Jenkins Integration of Jenkins with ContextQA helps you to run your scripts whenever there is a change in software code. Jenkins helps to schedule your build to run the test cases from a batch file, save your test reports and the execution history. lock Upgrade to the Enterprise plan to use this integration. CS CodeShip CI Codeship helps to release software quickly, automatically and multiple times a day. It integrates with ContextQA, automatically deploying when tests pass and notifyi",
+    "headings": [
+      "Jira",
+      "Slack",
+      "ContextQA Lab",
+      "Linear",
+      "Azure DevOps Boards",
+      "Azure Vault",
+      "GitHub",
+      "GitLab",
+      "Figma",
+      "Freshrelease",
+      "YouTrack",
+      "Mantis Bug Tracker",
+      "Backlog",
+      "Zepel",
+      "BugZilla",
+      "Trello",
+      "ClickUp",
+      "Private Grid",
+      "Jenkins",
+      "CodeShip CI"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "All Plugins",
+      "Bug Reporting",
+      "Product Management"
+    ],
+    "tableHeaders": []
+  },
+  "billing": {
+    "url": "http://localhost:3000/dashboard/billing",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Billing & usage Credits for cgi · what you were granted, what was consumed, and what it was spent on. Billing Usage Available credits 2,720 credits account_balance_wallet 2,720 plan credits · resets Nov 22 0 additional · no expiry Plan credits are used first. Additional credits are used afterward and do not expire. bar_chart View usage CURRENT PLAN schedule Trial · 14 days left 14-day free trial $0 Nov 8 – Nov 22 · no card required during the trial 14 DAYS Day 1 of 14 · 14 days left · ends Nov 22 account_balance_wallet CREDITS 2,720 credits available now redeem CREDITS 3,000 credits granted this period trending_down CREDITS 280 credits used this period savings CREDITS 0 credits do not expire Choose a plan Payment lock Handled by Stripe Add in Stripe No payment method yet. Not required during the trial. ContextQA never stores card details. All payment data lives with Stripe. Credit history One row per credit grant, newest first. PERIOD EVENT GRANTED CONSUMED EXPIRED UNUSED PAID CREATED t2026-11-08 calendar_month Trial 3,000 280 — — Nov 8, 2026 Rows per page 10 25 50",
+    "headings": [
+      "Billing & usage",
+      "Available credits",
+      "Payment",
+      "Credit history"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "Choose a plan",
+      "Add in Stripe"
+    ],
+    "tableHeaders": [
+      "PERIOD",
+      "EVENT",
+      "GRANTED",
+      "CONSUMED",
+      "EXPIRED UNUSED",
+      "PAID",
+      "CREATED"
+    ]
+  },
+  "mcp": {
+    "url": "http://localhost:3000/dashboard/mcp",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Connect ContextQA Use ContextQA from ChatGPT, Claude, Cursor, Codex or another MCP-compatible client. description Documentation AGENT SKILL Use ContextQA with your AI agent Download the ContextQA skill and give it to any compatible AI agent. It teaches the agent how and when to use ContextQA to investigate test failures, reproduce bugs and work with your testing workflows. download Download skill View skill content_copy Copy agent prompt encrypted No ContextQA credentials in the file draft SKILL.md Platform-independent open_in_full --- name: contextqa license: MIT CLIENTS forum ChatGPT Chat assistant · Desktop & web smart_toy Claude Chat assistant · Desktop & web terminal Codex Coding agent · Terminal code Claude Code Coding agent · Terminal edit_square Cursor Code editor · IDE forum ChatGPT Chat assistant · Desktop & web · about 2 minutes to set up Add the ContextQA connector Name the connector ContextQA, paste the server URL and choose Connect. ChatGPT opens the ContextQA sign-in in your browser; complete OAuth and return. https://mcp.contextqa.com/mcp content_copy content_copy Copy configuration",
+    "headings": [
+      "Connect ContextQA",
+      "Use ContextQA with your AI agent",
+      "ChatGPT",
+      "Add the ContextQA connector"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "download\nDownload skill",
+      "View skill",
+      "content_copy\nCopy agent prompt",
+      "draft\n\nSKILL.md\n\nPlatform-independent\n\nopen_in_full\n\n---\nname: contextqa\nlicense: MIT",
+      "forum\nChatGPT\nChat assistant · Desktop & web",
+      "smart_toy\nClaude\nChat assistant · Desktop & web",
+      "terminal\nCodex\nCoding agent · Terminal",
+      "code\nClaude Code\nCoding agent · Terminal",
+      "edit_square\nCursor\nCode editor · IDE",
+      "content_copy",
+      "content_copy\nCopy configuration"
+    ],
+    "tableHeaders": []
+  },
+  "settings-organization": {
+    "url": "http://localhost:3000/dashboard/settings/organization",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Organization Setting Manage company identity, execution defaults, AI behavior, and email reporting preferences. Company Information Test Execution AI Configuration Notifications Viewport Proxy Remote Browser Company Information Company Name* Company Logo cloud_upload Click to upload or drag and drop PNG with a transparent background recommended · light/white version reads best on the sidebar · JPG, JPEG accepted · Max 2MB Test Execution Settings Default Browser* Chromium Chrome Firefox Safari Edge Test Case Timeout (minutes)* Crawl Timeout (minutes)* Retry Failed Steps* Wait Timeout for Locators (seconds)* Auto Wait Duration (seconds)* Capture All Step Screenshots Enable Video Recording Enable Autonomous Crawl Auto approve with auto heal Organize by module info Show scrollbars during test runs info Enable Click Press Hold Viewport * desktop_windows Desktop laptop_windows Laptop tablet_mac Tablet smartphone Mobile Resolution Select resolution Default (1280×720) Full HD (1920×1080) 2K / QHD (2560×1440) 4K / UHD (3840×2160) Note : Default (1280×720) if not selected any resolution. Auto-fix Enable Auto-fix info Auto-fix Rerun Count* Time Zone Settings Time Zone* UTC Eastern Time (US & Canada) Central Time (US & Canada) Mountain Time (US & Canada) Arizona Pacific Time (US & Canada) Alaska Hawaii Detroit Indiana (Indianapolis) Boise Eastern Time (Toronto) Pacific Time (Vancouver) Mountain Time (Edmonton) Central Time (Winnipeg) Saskatchewan (Regina) Atlantic Time (Halifax) Newfoundland Atlantic Time (Goose Bay) Tijuana Mexico City Monterrey Chihuahua Puerto Rico Havana Guatemala Costa Rica Panama Jamaica Port-au-Prince Santo Domingo Bogotá Caracas Lima Guayaquil La Paz Santiago Buenos Aires Brasília Montevideo Asunción Reykjavik Azores Cape Verde Canary Islands London Dublin Paris Berlin Amsterdam Brussels Madrid Rome Lisbon Zurich Vienna Warsaw Prague Budapest Bucharest Sofia Athens Stockholm Oslo Copenhagen Helsinki Riga Tallinn Vilnius Belgrade Zagreb Istanbul Kyiv Minsk Chisinau Moscow Samara Volgograd Yekaterinburg Novosibirsk Krasnoyarsk Irkutsk Yakutsk Vladivostok Kamchatka Casablanca Cairo Tunis Algiers Lagos Accra Abidjan Nairobi Addis Ababa Dar es Salaam Kampala Johannesburg Maputo Jerusalem Amman Beirut Baghdad Kuwait Riyadh Bahrain Qatar Dubai Muscat Tehran Kabul Karachi India (Kolkata) Kathmandu Dhaka Colombo Yangon Bangkok Jakarta Phnom Penh Ho Chi Minh City Singapore Kuala Lumpur Manila Hong Kong Shanghai Taipei Tokyo Seoul Tbilisi Yerevan Baku Tashkent Almaty Bishkek Dushanbe Ashgabat Perth Adelaide Darwin Brisbane Sydney Melbourne Hobart Guam Port Moresby Nouméa Fiji Auckland Chatham Islands Tonga Samoa American Samoa Tahiti Marshall Islands Norfolk Island AI Configuration Control AI behavior for test automation and self-healing Default AI Action* Only action Create step Create dynamic step Create Partial steps AI suggests fixes but waits for approval Enable AI Smartness* Expert (Recommended) Fast Strict Default Knowledge Base Select a knowledge base cgi.com (crawl) Reference test case used for AI learning and context Use AI Metadata Use AI Metadata to . Mock API Testing Record real API responses and replay them during future test runs for faster, more stable tests. Mock API Testing New Record real API responses and replay them during future test runs for faster, more stable tests.\" Email Notifications Weekly Report Email Recipients Viewport Configurations add Add Viewport MOBILE Mobile S (375×667) close Mobile M (390×844) close Mobile L (412×915) close TABLET Tablet Portrait (768×1024) close Tablet Landscape (1024×768) close iPad Pro (1024×1366) close LAPTOP Laptop S (1280×720) close Laptop M (1366×768) close Laptop L (1440×900) close DESKTOP Default (1280×720) close Full HD (1920×1080) close 2K / QHD (2560×1440) close 4K / U",
+    "headings": [
+      "Organization Setting",
+      "Company Information",
+      "Test Execution Settings",
+      "Time Zone Settings",
+      "AI Configuration",
+      "Mock API Testing",
+      "Email Notifications",
+      "Viewport Configurations",
+      "Proxy Profiles",
+      "No proxy profiles",
+      "Remote Browser Profiles",
+      "No remote browser profiles"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "Company Information",
+      "Test Execution",
+      "AI Configuration",
+      "Notifications",
+      "Viewport",
+      "Proxy",
+      "Remote Browser",
+      "cloud_upload\nClick to upload or drag and drop\nPNG with a transparent background recommended · light/white version reads best on the sidebar · JPG, JPEG accepted · Max 2MB",
+      "desktop_windows\nDesktop",
+      "laptop_windows\nLaptop",
+      "tablet_mac\nTablet",
+      "smartphone\nMobile",
+      "add\nAdd Viewport",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "close",
+      "add\nAdd Proxy",
+      "add\nAdd Remote Browser",
+      "save\nSave Settings"
+    ],
+    "tableHeaders": []
+  },
+  "settings-audits": {
+    "url": "http://localhost:3000/dashboard/settings/audits",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA System Audits refresh filter_alt Date Module & ID Details 09/11/2026 00:24:14 Test plan-7 CGI Admin created Test plan with data: Wizard Parity Plan 09/11/2026 00:24:08 Workspace-2 CGI Admin created Workspace with data: Wizard Parity Suite 09/11/2026 00:24:05 Requirement-2 CGI Admin created Requirement with data: REQ-007 Wizard parity uploaded specification 09/11/2026 00:22:45 Workspace-1 CGI Admin created Workspace with data: Wizard Parity Suite 09/11/2026 00:22:41 Requirement-1 CGI Admin created Requirement with data: REQ-006 Wizard parity uploaded specification 09/11/2026 00:06:58 Test case-30 CGI Admin created Test case with data: End-to-End Navigation and Sign-In Flow 08/11/2026 23:19:58 Test case-29 CGI Admin updated Test case with data: End-to-End Navigation and Sign-In Flow 08/11/2026 22:32:58 Test case-28 CGI Admin performed EXECUTED action on Test case with data: End-to-End Navigation and Sign-In Flow 08/11/2026 21:45:58 Test case-27 CGI Admin performed ROOT_CAUSE action on Test case with data: End-to-End Navigation and Sign-In Flow 08/11/2026 20:58:58 Test case-26 CGI Admin created Steps with data: navigateToUrl Rows per page 10 20 50 1–10 of 53 chevron_left chevron_right",
+    "headings": [
+      "System Audits"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "refresh",
+      "filter_alt",
+      "chevron_left",
+      "chevron_right"
+    ],
+    "tableHeaders": [
+      "Date",
+      "Module & ID",
+      "Details"
+    ]
+  },
+  "settings-analysis": {
+    "url": "http://localhost:3000/dashboard/settings/analysis",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Analysis Settings Targets & Execution per repo Where approved changes land, and where they run. Base branch filter Only PRs targeting these branches are analyzed. Separate with commas, e.g. main, release/*. Use * for every branch. Max files per analysis Cost/latency guard. Beyond this the run is marked partial. Path scope One glob per line. Monorepo subtree scoping — e.g. apps/web/**. When should we run your tests? Impact analysis tells you which cases a change affects. This decides whether we also run them. Don't run them Analyse and report only. Nothing is executed. After the pull request merges Run the affected cases against your chosen environment once the merged build is deployed. Before it merges Run against the pull request's own build, so the PR carries real pass/fail before anyone approves it. Environment * Production Staging The run uses this environment's variables, overriding what each case would otherwise use. warning Cases with a fixed URL will not test the new build. The environment above reaches steps that use environment variables. A step with a hard-coded URL, a global, or a URL written into an AI-agent instruction keeps pointing where it already pointed — so it will pass without having tested this deployment. Promotion, Governance & Operations Guardrails for applying changes and reporting back to the PR. Post PR comment Off leaves only the check. Post status check A check run on GitHub, a commit status on GitLab. Advisory either way — it never fails the build. Suppress paths One glob per line. Never analyse generated or vendored code — the biggest source of noise. Every value here is snapshotted onto the analysis row at analysis time — the “Decided under” line in each row's detail renders that snapshot, not live config. save Update",
+    "headings": [
+      "Analysis Settings",
+      "Targets & Execution per repo",
+      "Promotion, Governance & Operations"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "Don't run them\nAnalyse and report only. Nothing is executed.",
+      "After the pull request merges\nRun the affected cases against your chosen environment once the merged build is deployed.",
+      "Before it merges\nRun against the pull request's own build, so the PR carries real pass/fail before anyone approves it.",
+      "save\nUpdate"
+    ],
+    "tableHeaders": []
+  },
+  "settings-bug-repro": {
+    "url": "http://localhost:3000/dashboard/settings/bug-reproduction",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Bug Reproduction Settings Reproduce a bug from a plain-text report — a ticket, a Slack message, anything. The AI parses the report; these settings decide which Environment and Data Profile it reproduces with, and what to fall back to when neither is specified. Defaults Used when a report doesn't name a specific Environment or Data Profile. Both are managed under Environments and Data Profiles — this only picks which one Bug Reproduction reaches for by default. Environment Select an Environment Production Staging The environment reproduction runs against unless the report names one. Data Profile No data profiles for this environment Test-data profile attached to the default environment above. Recognized label formats Add either of these to a ticket to pick the exact Environment or Data Profile to reproduce with, instead of the defaults above — the AI matches the value after the colon by name. Environment Data Profile env:value environment:value dataprofile:value When to reproduce Choose which tickets start a reproduction automatically, and which actions trigger one. Applies to Linear, Jira and ClickUp; for ClickUp tasks, trigger labels are task tags. Only tickets with a trigger label Recommended. Nothing runs unless a ticket carries one of the labels below. Every new ticket Labels are ignored. Every new ticket is reproduced — set a daily cap below. Trigger labels Only tickets with one of these labels are reproduced. ClickUp tasks match them as tags. info Connect Linear to choose from your workspace's labels. You can still type a label name. Try again Trigger on A new ticket is created Reproduce as soon as a matching ticket appears. A trigger label is added Reproduce when someone labels an existing ticket. The title or description is edited Re-runs when the reporter supplies more detail. Each re-run is a full reproduction. Someone comments /reproduce Always available to a person asking explicitly, label or not. Limits Max reproductions per ticket Max reproductions per day Leave blank for no limit. Each reproduction runs a full browser session, so a broad trigger on a busy project adds up quickly. Re-validate fixes When a reproduced ticket moves to one of these statuses, re-run its saved test and comment Fixed, Not fixed or Could not verify. Each re-validation is charged as a test run. Only tickets ContextQA reproduced earlier are re-run. save Update",
+    "headings": [
+      "Bug Reproduction Settings",
+      "Defaults",
+      "Recognized label formats",
+      "When to reproduce",
+      "Re-validate fixes"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "Only tickets with a trigger label\nRecommended. Nothing runs unless a ticket carries one of the labels below.",
+      "Every new ticket\nLabels are ignored. Every new ticket is reproduced — set a daily cap below.",
+      "save\nUpdate"
+    ],
+    "tableHeaders": [
+      "Environment",
+      "Data Profile"
+    ]
+  },
+  "settings-api-tokens": {
+    "url": "http://localhost:3000/dashboard/settings/api-tokens",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA API Tokens Scoped, long-lived credentials for scripts and integrations. You only see tokens you created — each carries a fixed permission set, an expiry, and an optional IP allowlist. search All statuses Active Expired add Create token bolt Rate limit 120 req/min · Email send 10/hour No API tokens yet Create a token to let a script, CI job, or integration call the ContextQA API on your behalf. You choose its scopes and expiry, and see the value once. add Create token",
+    "headings": [
+      "API Tokens",
+      "No API tokens yet"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA"
+    ],
+    "tableHeaders": []
+  },
+  "settings-api-tokens-new": {
+    "url": "http://localhost:3000/dashboard/settings/api-tokens/new",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA arrow_back Back to API Tokens key Create API token key API Token | No scopes | calendar_month Expires Dec 9, 2026 Give the token a recognisable name, pick the narrowest set of scopes that works, and decide where it may be called from. warning The token value is shown once, on creation. It is never stored in a readable form, so it cannot be retrieved, resent, or recovered afterwards — copy it into your secret store before closing the dialog. If it is lost, delete the token and create a new one. badge Details The name is a label only — it never affects access. Name * Must be unique among your active tokens. Max 255 characters. Expires 7 days 30 days (default) 60 days 90 days 180 days Never expire The server rejects anything beyond 180 days from creation, unless Never expire is selected. verified_user Permissions None selected Clear all At least one scope is required. Each scope maps to a fixed set of routes. View Test Cases GET /test_cases · GET /test_cases/{test_case_id} visibility Create & Edit Test Cases POST /test_cases · PUT /test_cases/{test_case_id} edit View Test Case Results GET /test_case_results · GET /test_case_results/{test_case_result_id} fact_check View Test Plans GET /test_plans · GET /test_plans/{test_plan_id} visibility Create & Edit Test Plans POST /test_plans · PUT /test_plans/{test_plan_id} edit Execute Test Plans GET /test_plans/{test_plan_id}/execution play_arrow View Test Plan Results GET /test_plan_results · GET /test_plan_results/{test_plan_result_id} fact_check View Test Suites GET /test_suites · GET /test_suites/{test_suite_id} visibility Create & Edit Test Suites POST /test_suites · PUT /test_suites/{test_suite_id} edit View Test Suite Results GET /test_suite_results · GET /test_suite_results/{test_suite_result_id} fact_check View Test Steps GET /test_steps · GET /test_steps/{test_step_id} visibility Create & Edit Test Steps POST /test_steps · PUT /test_steps/{test_step_id} edit View Test Step Results GET /test_step_results · GET /test_step_results/{test_step_result_id} fact_check Send Email priority_high High abuse risk POST /api/email/send mail View System Audit GET /api/v1/system-audits history Upload Media GET /test_plans/build_upload_url upload Full Access all_inclusive Broad Every scope above except EMAIL_SEND all_inclusive shield Advanced — IP allowlist Unrestricted expand_more Enforced before authentication. Unrestricted by default. The token value appears once, right after you create it. Cancel key Create token",
+    "headings": [
+      "Create API token",
+      "Details",
+      "Permissions"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "Clear all",
+      "shield\nAdvanced — IP allowlist\nUnrestricted\nexpand_more",
+      "key\nCreate token"
+    ],
+    "tableHeaders": []
+  },
+  "detail-requirement": {
+    "url": "http://localhost:3000/dashboard/requirements/cmw8mj6kc0005x96gmptxzavn",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA CGI end-to-end crawl requirement Completed Doc | Web | REQ-001 | CGI Admin | Nov 8, 2026, 9:10:20 PM file_upload Export 13 Generated Test Cases Positive: 5 Edge: 0 Field Validation: 0 End To End: 5 Functional: 3 Boundary Value: 0 All: 13 Create: 13 Test Cases Questionnaire Requirement Data History (Coming soon) Metadata Gaps (Coming soon) search filter_alt Test Case Action Type Priority Prerequisite Variables Decision Actions TC-01 End-to-End Navigation and Sign-In Flow Core · 4 steps Create End To End Major — *|url| Accepted more_horiz TC-02 End-to-End Navigation and Sign-In Flow Core · 4 steps Create End To End Major — *|url| Accepted more_horiz TC-03 End-to-End Navigation and Sign-In Flow Core · 4 steps Create End To End Major — *|url| Accepted more_horiz TC-04 End-to-End Navigation and Sign-In Flow Core · 4 steps Create End To End Major — *|url| Accepted more_horiz TC-05 End-to-End Navigation and Sign-In Flow Core · 4 steps Create End To End Major — *|url| Accepted more_horiz TC-06 Sign up with e-mail Core · 6 steps Create Positive Critical — *|base_url| Pending review more_horiz TC-07 Log in and reach the dashboard Core · 5 steps Create Functional Critical — *|base_url| Pending review more_horiz TC-08 Submit the contact form Core · 5 steps Create Positive Medium — *|base_url| Pending review more_horiz TC-09 Change notification preferences Settings · 4 steps Create Positive Minor — *|base_url| Pending review more_horiz TC-10 Add an item to the cart Checkout · 5 steps Create Functional Major — *|base_url| Pending review more_horiz Rows per page 10 20 50 1–10 of 13 chevron_left chevron_right",
+    "headings": [
+      "CGI end-to-end crawl requirement"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "file_upload\nExport",
+      "Test Cases",
+      "Questionnaire",
+      "Requirement Data",
+      "History (Coming soon)",
+      "Metadata",
+      "Gaps (Coming soon)",
+      "filter_alt",
+      "chevron_left",
+      "chevron_right"
+    ],
+    "tableHeaders": [
+      "Test Case",
+      "Action",
+      "Type",
+      "Priority",
+      "Prerequisite",
+      "Variables",
+      "Decision",
+      "Actions"
+    ]
+  },
+  "detail-crawl": {
+    "url": "http://localhost:3000/dashboard/crawl/cmw8n0xfd000ox90c1yq3ahxw",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA Sign in, browse the primary navigation and validate the main heading Completed Crawl | Web | REQ-005 | CGI Admin | Nov 8, 2026, 9:24:08 PM file_upload Export 7 Generated Test Cases Positive: 4 Edge: 0 Field Validation: 0 End To End: 0 Functional: 3 Boundary Value: 0 All: 7 Create: 7 Test Cases Questionnaire Requirement Data History (Coming soon) Metadata Gaps (Coming soon) search filter_alt Test Case Action Type Priority Prerequisite Variables Decision Actions TC-01 Sign up with e-mail Core · 6 steps Create Functional Critical — *|base_url| Pending review more_horiz TC-02 Log in and reach the dashboard Core · 5 steps Create Positive Critical — *|base_url| Pending review more_horiz TC-03 Submit the contact form Core · 5 steps Create Positive Medium — *|base_url| Pending review more_horiz TC-04 Change notification preferences Settings · 4 steps Create Functional Minor — *|base_url| Pending review more_horiz TC-05 Add an item to the cart Checkout · 5 steps Create Positive Major — *|base_url| Pending review more_horiz TC-06 Edit profile details Settings · 5 steps Create Positive Medium — *|base_url| Pending review more_horiz TC-07 Complete checkout Checkout · 9 steps Create Functional Critical — *|base_url| Pending review more_horiz Rows per page 10 20 50 1–7 of 7 chevron_left chevron_right",
+    "headings": [
+      "Sign in, browse the primary navigation and validate the main heading"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "file_upload\nExport",
+      "Test Cases",
+      "Questionnaire",
+      "Requirement Data",
+      "History (Coming soon)",
+      "Metadata",
+      "Gaps (Coming soon)",
+      "filter_alt",
+      "chevron_left",
+      "chevron_right"
+    ],
+    "tableHeaders": [
+      "Test Case",
+      "Action",
+      "Type",
+      "Priority",
+      "Prerequisite",
+      "Variables",
+      "Decision",
+      "Actions"
+    ]
+  },
+  "studio": {
+    "url": "http://localhost:3000/dashboard/test-studio/cmw8n0zdv000wx90c99otvogh",
+    "body": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA End-to-End Navigation and Sign-In Flow edit Ready High expand_more more_vert autorenew play_arrow Run add Add Prerequisite Test Steps (4) Relationships Version History search drag_indicator Reorder 1 Navigate to https://cgi.com View Details arrow_upward arrow_downward delete 8 Nov 2026 2 Verify that the current page URL contains cgi.com View Details arrow_upward arrow_downward delete 8 Nov 2026 3 Click on the primary navigation link View Details arrow_upward arrow_downward delete 8 Nov 2026 4 auto_awesome AI Verification Verify that the main heading is visible View Details arrow_upward arrow_downward delete 8 Nov 2026 add Add Step folder Test Case data_object Variables play_circle Used in Test history Run History Description edit Edit Validate the Core workflow for \"End-to-End Navigation and Sign-In Flow\" on https://cgi.com, including navigation, verification steps and locale persistence. person_outline Created by System calendar_today Created on Nov 8, 2026, 9:24 PM check_circle Status Ready flag Priority High category Module Core storage Environment Staging label Version 1.0 devices Platform web label Labels label core label regression Configuration play_circle Execution expand_more Environment Staging Type Not set smart_toy AI Configuration expand_more Enable AI Smartness Org Level (Expert) Default AI Action Org Level (Create step) Default Knowledge Base cgi.com (crawl) Enable AI metadata collection Org Level (true) Auto approve with auto heal Org Level (false) Enable Click Press Hold Org Level (false) timer Wait and retries expand_more Enable Avoid Auto wait for steps Off Retry Failed Steps Org Level (1) Test Case Timeout (minutes) Org Level (150) Wait Timeout for Locators (secs) Org Level (15) devices Device Setting expand_more Default Browser Org Level (Chrome) Viewport desktop: Default (1280x720) Proxy None Remote Browser None Run in test plan as Headless flag Key Flags expand_more Mobile Testing Off Extension Use Off Data Driven Off",
+    "headings": [
+      "End-to-End Navigation and Sign-In Flow",
+      "Description"
+    ],
+    "tabs": [],
+    "buttons": [
+      "menu",
+      "content_paste_go",
+      "database",
+      "settings",
+      "help",
+      "chat",
+      "CA",
+      "edit",
+      "Ready",
+      "High\nexpand_more",
+      "more_vert",
+      "autorenew",
+      "play_arrow\nRun",
+      "add\nAdd Prerequisite",
+      "Test Steps (4)",
+      "Relationships",
+      "Version History",
+      "drag_indicator\nReorder",
+      "View Details",
+      "arrow_upward",
+      "arrow_downward",
+      "delete",
+      "View Details",
+      "arrow_upward",
+      "arrow_downward",
+      "delete",
+      "View Details",
+      "arrow_upward",
+      "arrow_downward",
+      "delete",
+      "View Details",
+      "arrow_upward",
+      "arrow_downward",
+      "delete",
+      "add\nAdd Step",
+      "folder\nTest Case",
+      "data_object\nVariables",
+      "play_circle\nUsed in Test",
+      "history\nRun History",
+      "edit\nEdit",
+      "play_circle\nExecution\nexpand_more",
+      "smart_toy\nAI Configuration\nexpand_more",
+      "timer\nWait and retries\nexpand_more",
+      "devices\nDevice Setting\nexpand_more",
+      "flag\nKey Flags\nexpand_more"
+    ],
+    "tableHeaders": []
+  }
+}

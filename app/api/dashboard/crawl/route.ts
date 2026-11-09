@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   const raw = parsed.data.targetUrl?.trim() || ctx.org.website || "";
   const targetUrl = raw ? normalizeWebsite(raw) : null;
-  if (!targetUrl) return jsonError("Enter the URL of the app to crawl, e.g. https://staging.example.com", 400);
+  if (!targetUrl) return jsonError("Enter the URL of the app to crawl, e.g. https://staging.your-domain.com", 400);
 
   const running = await prisma.crawlSession.findFirst({ where: { organisationId: ctx.org.id, status: "running" } });
   if (running) return jsonError("A crawl is already running. Complete it first.", 409, { crawlId: running.id });

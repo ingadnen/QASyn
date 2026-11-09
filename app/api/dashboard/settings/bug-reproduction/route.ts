@@ -3,18 +3,18 @@ import { prisma } from "@/lib/db";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, writeSettings } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
-import { bugReproSettingsSchema } from "@/lib/validation";
+import { bugReproductionSettingsSchema } from "@/lib/validation";
 
 async function handle(request: Request) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
-  const parsed = bugReproSettingsSchema.safeParse(await readJson(request));
+  const parsed = bugReproductionSettingsSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   await delay(MOCK_LATENCY_MS / 2);
-  const settings = await writeSettings(prisma, ctx.org, { bugReproduction: parsed.data });
-  await audit(prisma, ctx, "settings.bug_reproduction_updated", parsed.data.autoReproduce ? "auto-reproduce on" : "auto-reproduce off");
-  return NextResponse.json({ bugReproduction: settings.bugReproduction });
+  const settings = await writeSettings(prisma, ctx.org, { bugReproductionSettings: parsed.data });
+  await audit(prisma, ctx, "settings.bug_reproduction_updated", `${parsed.data.triggerMode} · ${parsed.data.triggerLabels.join(", ") || "no labels"}`);
+  return NextResponse.json({ bugReproductionSettings: settings.bugReproductionSettings });
 }
 
 export const PUT = handle;

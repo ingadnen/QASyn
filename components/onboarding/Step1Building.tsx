@@ -179,7 +179,7 @@ export function Step1Building() {
                 setCheck(null);
                 patch({ environmentUrl: e.target.value });
               }}
-              error={state.environmentUrl && !normalizedUrl ? "Enter a valid URL, e.g. https://staging.example.com" : null}
+              error={state.environmentUrl && !normalizedUrl ? "Enter a valid URL, e.g. https://staging.your-domain.com" : null}
             />
             <div className="flex flex-wrap items-center gap-3">
               <Button variant="secondary" size="sm" onClick={checkConnection} loading={checking} loadingText="Checking…" disabled={!normalizedUrl}>

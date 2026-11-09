@@ -78,6 +78,8 @@ model Organisation {
   users         User[]
   onboarding    Onboarding?
   integrations  Integration[]
+  tunnelMachines TunnelMachine[]
+  creditEntries CreditEntry[]
   testRuns      TestRun[]
   testCases     TestCase[]
   testSuites    TestSuite[]
@@ -114,9 +116,16 @@ model Organisation {
   requirements  Requirement[]
   knowledge     KnowledgeItem[]
   environments  EnvironmentConfig[]
+  globalVariables GlobalVariable[]
+  authProfiles  AuthProfile[]
+  proxyProfiles ProxyProfile[]
+  remoteBrowserProfiles RemoteBrowserProfile[]
+  viewports     ViewportSetting[]
   apiTokens     ApiToken[]
   auditLogs     SystemAuditLog[]
   uploads       Upload[]
+  testCaseVersions TestCaseVersion[]
+  testCaseRuns  TestCaseRun[]
 }
 
 model Onboarding {
@@ -160,6 +169,43 @@ model Integration {
   updatedAt      DateTime     @updatedAt
 
   @@unique([organisationId, provider])
+}
+
+/// A machine enrolled through the ContextQA tunnel agent (Tunnels module).
+model TunnelMachine {
+  id             String   @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// win | mac | linux
+  os             String   @default("win")
+  /// pending | connected | expired | offline
+  status         String   @default("expired")
+  browserHost    Boolean  @default(false)
+  token          String
+  routeCount     Int      @default(0)
+  lastSeenAt     DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([organisationId])
+}
+
+/// A credit ledger row: one charge, refund or grant for the workspace.
+model CreditEntry {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  occurredAt     DateTime     @default(now())
+  /// e.g. Web test run, Autonomous crawl, Root cause analysis
+  action         String
+  /// Signed credits: negative for charges, positive for refunds and grants.
+  credits        Int
+  /// charge | refund | grant
+  kind           String       @default("charge")
+  note           String?
+
+  @@index([organisationId, occurredAt])
 }
 
 model TestRun {
@@ -216,10 +262,16 @@ model TestCase {
   organisation   Organisation  @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   title          String
   module         String
+  description    String?
+  /// JSON array of labels shown in Test Studio
+  labelsJson     String        @default("[]")
   /// critical | high | medium | low
   criticality    String
   /// passing | failing | draft | flaky
   status         String        @default("draft")
+  environment    String?
+  version        String        @default("1.0")
+  platform       String        @default("web")
   stepsCount     Int           @default(1)
   /// JSON array of NLP steps for the Test Case Studio: [{ id, action, target, value, selector }]
   stepsJson      String        @default("[]")
@@ -243,8 +295,57 @@ model TestCase {
   requirements   Requirement[]
   testSuites     TestSuite[]
   testPlans      TestPlan[]
+  versions       TestCaseVersion[]
+  runs           TestCaseRun[]
 
   @@index([organisationId, module])
+}
+
+model TestCaseVersion {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  testCaseId     String
+  testCase       TestCase     @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  version        Int
+  summary        String
+  author         String       @default("System")
+  /// JSON array of step labels added in this version
+  addedJson      String       @default("[]")
+  /// JSON array of step labels removed in this version
+  removedJson    String       @default("[]")
+  /// Full step snapshot used by Restore
+  stepsJson      String       @default("[]")
+  createdAt      DateTime     @default(now())
+
+  @@unique([testCaseId, version])
+  @@index([organisationId])
+}
+
+model TestCaseRun {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  testCaseId     String
+  testCase       TestCase     @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  runNumber      Int
+  /// PASSED | FAILED
+  status         String
+  /// Automated | Manual
+  trigger        String       @default("Automated")
+  /// Standalone Run | test plan name
+  mode           String       @default("Standalone Run")
+  durationMs     Int          @default(0)
+  failedStep     Int?
+  failedStepText String?
+  autoFix        Boolean      @default(false)
+  createdBy      String       @default("System")
+  /// JSON execution log
+  logJson        String       @default("[]")
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId, createdAt])
+  @@index([testCaseId])
 }
 
 model TestSuite {
@@ -257,12 +358,19 @@ model TestSuite {
   schedule       String       @default("manual")
   /// Module filter ("" = all modules)
   module         String       @default("")
+  /// Web | Mobile | API
+  platform       String       @default("Web")
+  /// JSON array of labels
+  labelsJson     String       @default("[]")
+  /// JSON array of prerequisite test case ids
+  prerequisitesJson String    @default("[]")
   testCasesCount Int          @default(0)
   passRate       Float        @default(0)
   lastRunAt      DateTime?
   createdAt      DateTime     @default(now())
   testCases      TestCase[]
   primaryCases   TestCase[]   @relation("SuiteCases")
+  plans          TestPlan[]
   projectId      String?
   project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
@@ -286,6 +394,9 @@ model TestPlan {
   lastRunAt      DateTime?
   createdAt      DateTime     @default(now())
   testCases      TestCase[]
+  suites         TestSuite[]
+  /// JSON: execution settings, notifications, recovery actions, proxy/remote routing
+  settingsJson   String       @default("{}")
   projectId      String?
   project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
@@ -526,6 +637,8 @@ model EnvironmentConfig {
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   name           String
   baseUrl        String
+  description    String       @default("")
+  accent         String       @default("#5b4ee8")
   /// none | basic | bearer | form
   authType       String       @default("none")
   /// JSON object of KEY → value
@@ -537,6 +650,80 @@ model EnvironmentConfig {
   @@index([organisationId])
 }
 
+/// Workspace-wide variable, accessible from every environment and test case.
+model GlobalVariable {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// String | Number | Boolean | Secret
+  type           String       @default("String")
+  /// RO | RW
+  permission     String       @default("RO")
+  value          String       @default("")
+  /// JSON array of tag strings
+  tags           String       @default("[]")
+  description    String       @default("")
+  createdAt      DateTime     @default(now())
+
+  @@unique([organisationId, name])
+  @@index([organisationId])
+}
+
+/// Saved app login used by crawls, test cases and Ship sessions.
+model AuthProfile {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  appUrl         String
+  loginUrl       String       @default("")
+  /// Username and password | SSO | API token | Cookie
+  method         String       @default("Username and password")
+  username       String       @default("")
+  passwordCipher String       @default("")
+  autoSignIn     Boolean      @default(true)
+  /// JSON: verification selector, OTP handling, extra headers, session metadata
+  advancedJson   String       @default("{}")
+  lastSignedInAt DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Network proxy used by the remote browser fleet.
+model ProxyProfile {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  /// Full proxy URL, e.g. http://host:port
+  url            String       @default("")
+  host           String
+  port           Int          @default(8080)
+  username       String       @default("")
+  passwordCipher String       @default("")
+  enabled        Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// Named viewport used by test plans and execution settings.
+model ViewportSetting {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  width          Int
+  height         Int
+  /// Mobile | Tablet | Desktop
+  category       String       @default("Desktop")
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
 model ApiToken {
   id             String       @id @default(cuid())
   organisationId String
@@ -544,7 +731,29 @@ model ApiToken {
   name           String
   tokenPrefix    String
   tokenHash      String       @unique
+  /// JSON array of scope ids (e.g. TEST_CASE_READ)
+  scopesJson     String       @default("[]")
+  expiresAt      DateTime?
+  /// JSON array of CIDR / IP strings; empty = unrestricted
+  ipAllowlistJson String      @default("[]")
   lastUsedAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId])
+}
+
+/// External browser endpoint (Selenium/Playwright grid, BrowserStack, Sauce Labs…).
+model RemoteBrowserProfile {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  remoteUrl      String
+  username       String       @default("")
+  password       String       @default("")
+  /// verified | unverified
+  status         String       @default("unverified")
+  lastCheckedAt  DateTime?
   createdAt      DateTime     @default(now())
 
   @@index([organisationId])
@@ -731,6 +940,11 @@ model DataProfile {
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   name           String
+  description    String       @default("")
+  /// RO | RW
+  permission     String       @default("RO")
+  /// JSON array of environment ids this profile is scoped to
+  environmentIds String       @default("[]")
   /// manual | csv | excel
   sourceType     String       @default("manual")
   columnsJson    String       @default("[]")

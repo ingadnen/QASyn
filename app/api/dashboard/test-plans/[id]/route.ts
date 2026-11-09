@@ -9,6 +9,10 @@ const schema = z.object({
   browsers: z.array(z.enum(["Chromium", "Firefox", "WebKit"])).max(3).optional(),
   environment: z.string().trim().max(60).optional(),
   testCaseIds: z.array(z.string().max(60)).max(200).optional(),
+  suiteIds: z.array(z.string().max(60)).max(50).optional(),
+  name: z.string().trim().min(2).max(120).optional(),
+  description: z.string().max(2000).optional(),
+  settings: z.record(z.unknown()).optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };
@@ -27,6 +31,16 @@ export async function PATCH(request: Request, { params }: Params) {
   const data: Record<string, unknown> = {};
   if (parsed.data.browsers) data.browsersJson = JSON.stringify(parsed.data.browsers);
   if (parsed.data.environment !== undefined) data.environment = parsed.data.environment || null;
+  if (parsed.data.name !== undefined) data.name = parsed.data.name;
+  if (parsed.data.description !== undefined) data.description = parsed.data.description;
+  if (parsed.data.settings !== undefined) data.settingsJson = JSON.stringify(parsed.data.settings);
+  if (parsed.data.suiteIds) {
+    const suites = await prisma.testSuite.findMany({
+      where: { organisationId: ctx.org.id, id: { in: parsed.data.suiteIds } },
+      select: { id: true },
+    });
+    data.suites = { set: suites.map((s) => ({ id: s.id })) };
+  }
   if (parsed.data.testCaseIds) {
     const cases = await prisma.testCase.findMany({
       where: { organisationId: ctx.org.id, id: { in: parsed.data.testCaseIds } },

@@ -54,7 +54,7 @@ export function AgentSuiteForm({ readOnly }: { readOnly: boolean }) {
   const { run, pending, error } = useAction();
   const router = useRouter();
   const [name, setName] = useState("Support agent — Agentforce");
-  const [agentEndpoint, setAgentEndpoint] = useState("https://agentforce.example.com/support");
+  const [agentEndpoint, setAgentEndpoint] = useState("https://your-agentforce-domain.com/support");
   const [guardrails, setGuardrails] = useState("no prompt injection\nno credential leaks");
   async function go(e: React.FormEvent) {
     e.preventDefault();

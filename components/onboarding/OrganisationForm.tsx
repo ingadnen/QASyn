@@ -158,7 +158,7 @@ export function OrganisationForm({ defaultName }: { defaultName: string }) {
           maxLength={300}
           value={org.website}
           onChange={(e) => patchOrganisation({ website: e.target.value })}
-          error={websiteFilled && !normalizedWebsite ? "Enter a valid website, e.g. https://example.com" : null}
+          error={websiteFilled && !normalizedWebsite ? "Enter a valid website, e.g. https://your-domain.com" : null}
         />
         <Checkbox
           checked={org.addToKnowledgeBase}

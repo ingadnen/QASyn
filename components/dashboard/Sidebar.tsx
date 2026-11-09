@@ -13,60 +13,73 @@ interface NavItem {
   label: string;
   icon: string;
   badge?: string;
-  accordion?: "plans";
+  children?: NavItem[];
 }
 
-const PLANS: NavItem[] = [
-  { href: "/dashboard/plans/suites", label: "Test Suites", icon: "" },
-  { href: "/dashboard/plans/test-plans", label: "Test Plans", icon: "" },
-];
-
-const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
+const NAV: Array<{ title: string; items: NavItem[] }> = [
   {
     title: "AUTONOMOUS SDLC",
     items: [
-      { href: "/dashboard/overview", label: "Overview", icon: "M3 12l9-8 9 8M5 10v10h14V10" },
-      { href: "/dashboard/pull-requests", label: "Pull requests", icon: "M6 3v12M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9v3a3 3 0 0 1-3 3H9" },
-      { href: "/dashboard/crawl", label: "Crawl", icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" },
-      { href: "/dashboard/code-analysis", label: "Code Analysis", icon: "M8 6l-6 6 6 6M16 6l6 6-6 6" },
+      { href: "/dashboard/overview", label: "Overview", icon: "grid_view" },
+      { href: "/dashboard/pull-requests", label: "Pull requests", icon: "merge" },
+      { href: "/dashboard/crawl", label: "Crawl", icon: "travel_explore" },
+      { href: "/dashboard/code-analysis", label: "Code Analysis", icon: "code" },
     ],
   },
   {
     title: "PLATFORM",
     items: [
-      { href: "/dashboard/requirements", label: "Requirements", icon: "M9 5h10M9 12h10M9 19h10M4 5h.01M4 12h.01M4 19h.01" },
-      { href: "/dashboard/test-cases", label: "Test cases", icon: "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" },
-      { href: "/dashboard/plans", label: "Plans", icon: "M4 6h16M4 12h16M4 18h16", accordion: "plans" },
-      { href: "/dashboard/environments", label: "Environment & Data", icon: "M4 7h16M4 12h16M4 17h16M7 7v10" },
-      { href: "/dashboard/uploads", label: "Uploads", icon: "M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" },
-      { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: "M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2V5zM6 19h12" },
-      { href: "/dashboard/team", label: "Team & access", icon: "M16 11a4 4 0 1 0-8 0M3 21a9 9 0 0 1 18 0" },
+      { href: "/dashboard/requirements", label: "Requirements", icon: "description" },
+      { href: "/dashboard/test-cases", label: "Test cases", icon: "fact_check" },
+      {
+        href: "/dashboard/plans",
+        label: "Plans",
+        icon: "content_paste_go",
+        children: [
+          { href: "/dashboard/plans/suites", label: "Test Suites", icon: "folder_copy" },
+          { href: "/dashboard/plans/test-plans", label: "Test Plans", icon: "event_note" },
+        ],
+      },
+      {
+        href: "/dashboard/environments",
+        label: "Environment & Data",
+        icon: "database",
+        children: [
+          { href: "/dashboard/environments", label: "Environments", icon: "dns" },
+          { href: "/dashboard/environments?tab=profiles", label: "Test Data Profiles", icon: "table_chart" },
+          { href: "/dashboard/environments?tab=global", label: "Global Data", icon: "public" },
+          { href: "/dashboard/environments?tab=auth", label: "Auth Profiles", icon: "key" },
+        ],
+      },
+      { href: "/dashboard/uploads", label: "Uploads", icon: "cloud_upload" },
+      { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: "article" },
+      { href: "/dashboard/team", label: "Team & access", icon: "group" },
     ],
   },
   {
     title: "WORK",
     items: [
-      { href: "/dashboard/tunnels", label: "Tunnels", icon: "M4 17l6-6-6-6M12 19h8", badge: "New" },
-      { href: "/dashboard/integrations", label: "Integrations", icon: "M14 3h7v7M10 14L21 3M21 14v7H3V3h7" },
-      { href: "/dashboard/billing", label: "Billing & usage", icon: "M3 7h18v10H3zM3 11h18" },
-      { href: "/dashboard/mcp", label: "MCP", icon: "M12 2v6m0 8v6M2 12h6m8 0h6M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" },
+      { href: "/dashboard/tunnels", label: "Tunnels", icon: "lan" },
+      { href: "/dashboard/integrations", label: "Integrations", icon: "webhook" },
+      { href: "/dashboard/billing", label: "Billing & usage", icon: "credit_card" },
+      { href: "/dashboard/mcp", label: "MCP", icon: "cable" },
     ],
   },
 ];
 
 const SETTINGS: NavItem[] = [
-  { href: "/dashboard/settings/organization", label: "Organization", icon: "" },
-  { href: "/dashboard/settings/audits", label: "System audits", icon: "" },
-  { href: "/dashboard/settings/analysis", label: "Analysis Settings", icon: "" },
-  { href: "/dashboard/settings/bug-reproduction", label: "Bug Reproduction Settings", icon: "" },
-  { href: "/dashboard/settings/api-tokens", label: "API Tokens", icon: "" },
+  { href: "/dashboard/settings/organization", label: "Organization Setting", icon: "corporate_fare" },
+  { href: "/dashboard/settings/audits", label: "System Audits", icon: "history" },
+  { href: "/dashboard/settings/analysis", label: "Analysis Settings", icon: "analytics" },
+  { href: "/dashboard/settings/bug-reproduction", label: "Bug Reproduction", icon: "bug_report" },
+  { href: "/dashboard/settings/api-tokens", label: "API Tokens", icon: "vpn_key" },
 ];
 
-function Icon({ d }: { d: string }) {
+function SymbolIcon({ name, className }: { name: string; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={d} />
-    </svg>
+    <span aria-hidden="true" className={cn("material-symbols-outlined select-none", className)}>
+      {name}
+    </span>
   );
 }
 
@@ -84,7 +97,9 @@ export interface SidebarProps {
 export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDaysLeft, plan, user, ownOrgName }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [expanded, setExpanded] = useState(false);
   const [plansOpen, setPlansOpen] = useState(pathname.startsWith("/dashboard/plans"));
+  const [envOpen, setEnvOpen] = useState(pathname.startsWith("/dashboard/environments"));
   const [settingsOpen, setSettingsOpen] = useState(pathname.startsWith("/dashboard/settings"));
   const [menuOpen, setMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -117,116 +132,222 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
     }
   }
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const active = (href: string) => {
+    const base = href.split("?")[0];
+    if (base === "/dashboard/environments") return pathname === base;
+    return pathname === base || pathname.startsWith(`${base}/`);
+  };
 
-  const link = (item: NavItem, nested = false) => {
-    if (item.accordion === "plans") {
-      const expanded = plansOpen;
-      const parentActive = pathname.startsWith("/dashboard/plans");
+  const item = (nav: NavItem, depth = 0) => {
+    if (nav.children) {
+      const open = nav.href === "/dashboard/plans" ? plansOpen : envOpen;
+      const toggle = () => (nav.href === "/dashboard/plans" ? setPlansOpen((v) => !v) : setEnvOpen((v) => !v));
+      const parentActive = nav.children.some((c) => active(c.href.split("?")[0])) || active(nav.href);
       return (
-        <div key={item.href}>
+        <div key={nav.href}>
           <button
             type="button"
-            onClick={() => setPlansOpen((v) => !v)}
-            aria-expanded={expanded}
+            title={expanded ? undefined : nav.label}
+            aria-label={nav.label}
+            aria-expanded={open}
+            onClick={() => {
+              toggle();
+              if (!expanded) setExpanded(true);
+            }}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition hover:bg-white/5",
-              parentActive ? "text-white" : "text-slate-400",
+              "group flex w-full items-center gap-3 rounded-lg py-2 text-[13px] transition",
+              expanded ? "px-3" : "justify-center px-0",
+              parentActive ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
             )}
           >
-            {item.icon && <Icon d={item.icon} />}
-            <span className="flex-1 text-left">{item.label}</span>
-            <span className="text-xs">{expanded ? "▾" : "▸"}</span>
+            <SymbolIcon name={nav.icon} className={cn("text-[22px]", parentActive && "text-[#8b80ff]")} />
+            {expanded && (
+              <>
+                <span className="flex-1 text-left">{nav.label}</span>
+                <SymbolIcon name={open ? "expand_less" : "expand_more"} className="text-[18px]" />
+              </>
+            )}
           </button>
-          {expanded && <div className="mt-0.5 space-y-0.5">{PLANS.map((p) => link(p, true))}</div>}
+          {expanded && open && (
+            <div className="mt-0.5 space-y-0.5 pl-3">
+              {nav.children.map((c) => (
+                <Link
+                  key={c.href + c.label}
+                  href={c.href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md py-1.5 pl-8 pr-3 text-[12.5px] transition",
+                    active(c.href.split("?")[0]) && pathname === c.href.split("?")[0]
+                      ? "bg-[#5b4ee8]/15 text-white"
+                      : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
+                  )}
+                >
+                  <span className="truncate">{c.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
     return (
       <Link
-        key={item.href}
-        href={item.href}
-        aria-current={isActive(item.href) ? "page" : undefined}
+        key={nav.href}
+        href={nav.href}
+        title={expanded ? undefined : nav.label}
+        aria-label={nav.label}
+        aria-current={active(nav.href) ? "page" : undefined}
         className={cn(
-          "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition",
-          nested && "pl-9",
-          isActive(item.href) ? "bg-white/10 font-medium text-white" : "text-slate-400 hover:bg-white/5 hover:text-slate-100",
+          "group flex items-center gap-3 rounded-lg py-2 text-[13px] transition",
+          expanded ? "px-3" : "justify-center px-0",
+          active(nav.href) ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
         )}
       >
-        {item.icon && <Icon d={item.icon} />}
-        <span className="flex-1 truncate">{item.label}</span>
-        {item.badge && <span className="rounded-full bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-brand-200">{item.badge}</span>}
+        <SymbolIcon name={nav.icon} className={cn("text-[22px]", active(nav.href) && "text-[#8b80ff]")} />
+        {expanded && (
+          <>
+            <span className="flex-1 truncate">{nav.label}</span>
+            {nav.badge && <span className="rounded-full bg-[#5b4ee8] px-1.5 text-[10px] font-semibold text-white">{nav.badge}</span>}
+          </>
+        )}
       </Link>
     );
   };
 
   const nav = (
-    <div className="flex h-full flex-col bg-[#0d0e17] text-slate-300">
-      <div className="flex items-center gap-2.5 px-4 pt-4 pb-3">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#0b0f1a] text-[#98a2b3]">
+      <div className={cn("flex items-center gap-2.5 pb-2 pt-3.5", expanded ? "px-3" : "justify-center px-0")}>
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" className="size-8 rounded-lg object-cover" />
         ) : (
-          <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-brand-700 text-sm font-bold text-white">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#5b4ee8] text-sm font-bold text-white">
             {orgName.charAt(0).toUpperCase()}
           </span>
         )}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white">{orgName}</p>
-          <p className="flex items-center gap-1.5 text-[11px] text-emerald-400">
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> Live{isDemo && <span className="text-amber-300"> · demo</span>}
-          </p>
-        </div>
+        {expanded && (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-white">{orgName}</p>
+            <p className="flex items-center gap-1 text-[10.5px] text-emerald-400">
+              <span className="size-1.5 rounded-full bg-emerald-400" /> Live{isDemo ? <span className="text-amber-300"> · demo</span> : null}
+            </p>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
+          className="flex size-8 shrink-0 items-center justify-center rounded-md text-[#98a2b3] hover:bg-white/5 hover:text-white"
+        >
+          <SymbolIcon name={expanded ? "menu_open" : "menu"} className="text-[20px]" />
+        </button>
       </div>
 
-      <div className="px-3 pb-3">
+      <div className={cn("pb-3 pt-1", expanded ? "px-3" : "px-2")}>
         <Link
           href="/dashboard/test-cases?new=1"
-          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-brand-600 text-sm font-semibold text-white shadow-sm shadow-brand-600/40 transition hover:bg-brand-500"
+          title="New Test Cases"
+          aria-label="New Test Cases"
+          className={cn(
+            "flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#5b4ee8] text-sm font-semibold text-white transition hover:bg-[#6d61ff]",
+            expanded ? "w-full" : "mx-auto w-9",
+          )}
         >
-          + New Test Cases
+          <SymbolIcon name="add" className="text-[20px]" />
+          {expanded && <span>New Test Cases</span>}
         </Link>
       </div>
 
-      <nav aria-label="Dashboard" className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
-        {SECTIONS.map((section) => (
+      <nav aria-label="Dashboard" className={cn("flex-1 space-y-4 overflow-y-auto pb-3", expanded ? "px-2" : "px-2")}>
+        {NAV.map((section) => (
           <div key={section.title}>
-            <p className="px-2.5 pb-1.5 text-[10px] font-semibold tracking-[0.16em] text-slate-500">{section.title}</p>
-            <div className="space-y-0.5">{section.items.map((i) => link(i))}</div>
+            {expanded ? (
+              <p className="px-3 pb-1 text-[9.5px] font-semibold tracking-[0.14em] text-[#5f6b7d]">{section.title}</p>
+            ) : (
+              <p className="mx-auto mb-1 h-px w-6 bg-white/10" aria-hidden="true" />
+            )}
+            <div className="space-y-0.5">{section.items.map((i) => item(i))}</div>
           </div>
         ))}
         <div>
+          {expanded ? (
+            <p className="px-3 pb-1 text-[9.5px] font-semibold tracking-[0.14em] text-[#5f6b7d]">SETTINGS</p>
+          ) : (
+            <p className="mx-auto mb-1 h-px w-6 bg-white/10" aria-hidden="true" />
+          )}
           <button
             type="button"
-            onClick={() => setSettingsOpen((v) => !v)}
+            title={expanded ? undefined : "Settings"}
+            aria-label="Settings"
             aria-expanded={settingsOpen}
+            onClick={() => {
+              setSettingsOpen((v) => !v);
+              if (!expanded) setExpanded(true);
+            }}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition hover:bg-white/5",
-              pathname.startsWith("/dashboard/settings") ? "text-white" : "text-slate-400",
+              "flex w-full items-center gap-3 rounded-lg py-2 text-[13px] transition",
+              expanded ? "px-3" : "justify-center px-0",
+              pathname.startsWith("/dashboard/settings") ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
             )}
           >
-            <Icon d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-            <span className="flex-1 text-left">Settings</span>
-            <span className="text-xs">{settingsOpen ? "▾" : "▸"}</span>
+            <SymbolIcon name="settings" className="text-[22px]" />
+            {expanded && (
+              <>
+                <span className="flex-1 text-left">Settings</span>
+                <SymbolIcon name={settingsOpen ? "expand_less" : "expand_more"} className="text-[18px]" />
+              </>
+            )}
           </button>
-          {settingsOpen && <div className="mt-0.5 space-y-0.5">{SETTINGS.map((i) => link(i, true))}</div>}
+          {expanded && settingsOpen && (
+            <div className="mt-0.5 space-y-0.5 pl-3">
+              {SETTINGS.map((s) => (
+                <Link
+                  key={s.href}
+                  href={s.href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md py-1.5 pl-8 pr-3 text-[12.5px] transition",
+                    pathname === s.href ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
+                  )}
+                >
+                  <span className="truncate">{s.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </nav>
 
-      <div className="space-y-1 border-t border-white/5 px-3 py-3">
-        <button type="button" onClick={() => setHelpOpen(true)} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] text-slate-400 hover:bg-white/5 hover:text-slate-100">
-          <Icon d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" /> Help &amp; docs
+      <div className={cn("space-y-0.5 border-t border-white/5 py-2", expanded ? "px-2" : "px-2")}>
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          title={expanded ? undefined : "Help & docs"}
+          aria-label="Help & docs"
+          className={cn("flex w-full items-center gap-3 rounded-lg py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
+        >
+          <SymbolIcon name="help" className="text-[20px]" />
+          {expanded && <span>Help &amp; docs</span>}
         </button>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event(OPEN_CHAT_EVENT))}
-          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] text-slate-400 hover:bg-white/5 hover:text-slate-100"
+          title={expanded ? undefined : "Live chat"}
+          aria-label="Live chat"
+          className={cn("flex w-full items-center gap-3 rounded-lg py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
         >
-          <Icon d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> Live chat
+          <SymbolIcon name="chat" className="text-[20px]" />
+          {expanded && <span>Live chat</span>}
         </button>
-        <Link href="/dashboard/billing" className="flex items-center gap-2 px-2.5 py-1.5 text-[12px] text-amber-300 hover:text-amber-200">
-          <span className="size-1.5 rounded-full bg-amber-400" />
-          {plan === "trial" ? `Trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` : `${plan.charAt(0).toUpperCase()}${plan.slice(1)} plan`}
+        <Link
+          href="/dashboard/billing"
+          title={plan === "trial" ? `Trial · ${trialDaysLeft} days left` : `${plan} plan`}
+          className={cn("flex items-center gap-2 rounded-lg py-1.5 text-[11.5px] text-amber-300 hover:bg-white/5", expanded ? "px-3" : "justify-center px-0")}
+        >
+          <SymbolIcon name="workspace_premium" className="text-[18px]" />
+          {expanded && (
+            <span className="truncate">
+              {plan === "trial" ? `Trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` : `${plan.charAt(0).toUpperCase()}${plan.slice(1)} plan`}
+            </span>
+          )}
         </Link>
 
         <div ref={menuRef} className="relative">
@@ -235,18 +356,26 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            className="flex w-full items-center gap-2.5 rounded-lg bg-white/5 px-2.5 py-2 text-left hover:bg-white/10"
+            title={expanded ? undefined : user.name}
+            className={cn("flex w-full items-center gap-2.5 rounded-lg py-1.5 text-left hover:bg-white/5", expanded ? "px-2" : "justify-center px-0")}
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">{user.initials}</span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium text-white">{user.name}</span>
-              <span className="block truncate text-[11px] text-slate-400">{user.email}</span>
-            </span>
-            <span className="text-xs text-slate-500">⋯</span>
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#3b2f9e] text-[11px] font-semibold text-white">{user.initials}</span>
+            {expanded && (
+              <>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12px] font-medium text-white">{user.name}</span>
+                  <span className="block truncate text-[10.5px] text-[#98a2b3]">{user.email}</span>
+                </span>
+                <SymbolIcon name="unfold_more" className="text-[16px] text-[#98a2b3]" />
+              </>
+            )}
           </button>
           {menuOpen && (
-            <div role="menu" className="absolute bottom-full left-0 mb-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#161827] py-1 text-[13px] shadow-2xl">
-              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold tracking-[0.14em] text-slate-500">WORKSPACES</p>
+            <div
+              role="menu"
+              className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-xl border border-white/10 bg-[#161827] py-1 text-[13px] shadow-2xl"
+            >
+              <p className="px-3 pb-1 pt-2 text-[10px] font-semibold tracking-[0.14em] text-slate-500">WORKSPACES</p>
               {ownOrgName ? (
                 <button
                   role="menuitem"
@@ -287,23 +416,23 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
 
   return (
     <>
-      <div className="flex items-center justify-between bg-[#0d0e17] px-4 py-3 lg:hidden">
+      <div className="flex items-center justify-between bg-[#0b0f1a] px-4 py-2.5 lg:hidden">
         <span className="text-sm font-semibold text-white">{orgName}</span>
         <button type="button" onClick={() => setMobileOpen(true)} className="rounded-md p-1.5 text-slate-300" aria-label="Open navigation">
-          <Icon d="M4 7h16M4 12h16M4 17h16" />
+          <SymbolIcon name="menu" />
         </button>
       </div>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block">{nav}</aside>
+      <aside className={cn("fixed inset-y-0 left-0 z-40 hidden transition-[width] duration-200 lg:block", expanded ? "w-[236px]" : "w-[60px]")}>{nav}</aside>
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative h-full w-64">{nav}</aside>
+          <aside className="relative h-full w-[236px]">{nav}</aside>
         </div>
       )}
 
       <Modal open={helpOpen} onClose={() => setHelpOpen(false)} title="Help & docs">
         <div className="space-y-3 text-sm text-slate-600">
-          <p>QASyn is a local prototype. Everything below runs on simulated data stored in SQLite.</p>
+          <p>QASyn mirrors the ContextQA autonomous quality workspace on local SQLite data.</p>
           <ul className="space-y-2">
             <li><strong className="text-slate-800">Crawl</strong> — maps your app and turns flows into draft test cases.</li>
             <li><strong className="text-slate-800">Pull requests</strong> — simulate a PR to see impact analysis and regressions.</li>
@@ -311,7 +440,11 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
             <li><strong className="text-slate-800">MCP</strong> — query your workspace from an AI assistant with an API token.</li>
           </ul>
           <p>
-            Questions? Use <button type="button" className="font-medium text-brand-600 hover:underline" onClick={() => { setHelpOpen(false); window.dispatchEvent(new Event(OPEN_CHAT_EVENT)); }}>Live chat</button>.
+            Questions? Use{" "}
+            <button type="button" className="font-medium text-brand-600 hover:underline" onClick={() => { setHelpOpen(false); window.dispatchEvent(new Event(OPEN_CHAT_EVENT)); }}>
+              Live chat
+            </button>
+            .
           </p>
         </div>
       </Modal>

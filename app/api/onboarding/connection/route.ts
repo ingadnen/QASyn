@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   if (parsed.data.reachMode === "staging") {
     const url = normalizeWebsite(parsed.data.environmentUrl);
-    if (!url) return NextResponse.json({ ok: false, message: "Enter a valid URL, e.g. https://staging.example.com" });
+    if (!url) return NextResponse.json({ ok: false, message: "Enter a valid URL, e.g. https://staging.your-domain.com" });
     const host = hostOf(url) ?? url;
     const latencyMs = 80 + (host.length * 37) % 220;
     return NextResponse.json({ ok: true, message: `Reached ${host} · HTTP 200 · ${latencyMs} ms`, url });

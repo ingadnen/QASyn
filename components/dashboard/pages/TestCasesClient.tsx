@@ -388,7 +388,7 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
           <>
             {method === "ai" && (
               <>
-                <Input label="Target URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" />
+                <Input label="Target URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.your-domain.com/login" />
                 <Input label="Prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} placeholder="Sign in, add a product, apply a coupon, complete checkout. Cover payment validation." />
                 <Input label="Requirement name (optional)" value={requirementName} onChange={(e) => setRequirementName(e.target.value)} placeholder="Requirement name (optional)" />
               </>
@@ -401,7 +401,7 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
             )}
             {method === "record" && (
               <div className="space-y-3">
-                <Input label="Application URL to record" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" />
+                <Input label="Application URL to record" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.your-domain.com/login" />
                 <p className="text-xs text-slate-500">Record & Play opens the recorder with this URL pre-filled.</p>
               </div>
             )}

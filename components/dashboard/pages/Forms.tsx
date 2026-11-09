@@ -126,7 +126,7 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
         }}
       >
         <Field label="Target URL">
-          <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" disabled={readOnly} />
+          <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder={defaultUrl || "https://your-domain.com/login"} disabled={readOnly} />
         </Field>
         <label className="block">
           <span className="block text-sm font-medium text-slate-700">Explore prompt</span>
@@ -294,7 +294,7 @@ export function EnvironmentCreate({ readOnly }: { readOnly: boolean }) {
       }}
     >
       <Field label="Name"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Staging" disabled={readOnly} /></Field>
-      <Field label="Base URL"><input className={inputCls} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://staging.example.com" disabled={readOnly} /></Field>
+      <Field label="Base URL"><input className={inputCls} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://staging.your-domain.com" disabled={readOnly} /></Field>
       <Select label="Auth type" value={authType} onChange={setAuthType} options={["none", "basic", "bearer", "form"]} />
       <Field label="Variables (KEY=value per line)"><textarea className={cn(inputCls, "h-auto py-2")} rows={2} value={vars} onChange={(e) => setVars(e.target.value)} disabled={readOnly} /></Field>
       <div className="sm:col-span-2"><Button type="submit" loading={pending === "e"} disabled={readOnly}>Create environment</Button></div>

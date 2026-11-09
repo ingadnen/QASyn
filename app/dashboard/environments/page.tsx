@@ -1,124 +1,93 @@
 import type { Metadata } from "next";
-import { EnvironmentCreate } from "@/components/dashboard/pages/Forms";
-import { AuthProfileForm } from "@/components/dashboard/pages/AuthProfileForm";
-import { DataProfileForm } from "@/components/dashboard/pages/StudioClients";
-import { EnvVariablesForm } from "@/components/dashboard/pages/EnvVariablesClient";
-import { Card, EmptyState, PageHeader, ActionButton, StatusPill } from "@/components/dashboard/ui";
+import { EnvironmentData } from "@/components/dashboard/pages/EnvironmentData";
 import { prisma } from "@/lib/db";
-import { maskSecret } from "@/lib/data-profiles";
 import { requireOrgContext } from "@/lib/tenant";
 
-export const metadata: Metadata = { title: "Environments" };
+export const metadata: Metadata = { title: "Environment & Data" };
 export const dynamic = "force-dynamic";
+
+function parseArray(value: string): string[] {
+  try {
+    const parsed = JSON.parse(value || "[]");
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function countArray(value: string): number {
+  return parseArray(value).length;
+}
 
 export default async function EnvironmentsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const ctx = await requireOrgContext();
-  const { tab = "environments" } = await searchParams;
-  const [envs, profiles, variables] = await Promise.all([
-    prisma.environmentConfig.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" }, include: { _count: { select: { variables: true } } } }),
+  const { tab: rawTab } = await searchParams;
+  const tab = rawTab === "profiles" || rawTab === "global" || rawTab === "auth" ? rawTab : "environments";
+
+  const [environments, profiles, globals, auths, proxies, viewports] = await Promise.all([
+    prisma.environmentConfig.findMany({
+      where: { organisationId: ctx.org.id },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      include: { variables: { orderBy: { key: "asc" } } },
+    }),
     prisma.dataProfile.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } }),
-    prisma.environmentVariable.findMany({ where: { environment: { organisationId: ctx.org.id } }, orderBy: { key: "asc" }, include: { environment: { select: { name: true } } } }),
+    prisma.globalVariable.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } }),
+    prisma.authProfile.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } }),
+    prisma.proxyProfile.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } }),
+    prisma.viewportSetting.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } }),
   ]);
 
+  const parsedProfiles = profiles.map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    permission: p.permission,
+    columns: countArray(p.columnsJson),
+    rows: countArray(p.rowsJson),
+    environmentIds: parseArray(p.environmentIds),
+    createdAt: p.createdAt.toISOString(),
+  }));
+
+  const envs = environments.map((env) => ({
+    id: env.id,
+    name: env.name,
+    baseUrl: env.baseUrl,
+    description: env.description,
+    accent: env.accent,
+    isDefault: env.isDefault,
+    variablesCount: env.variables.length,
+    profilesCount: parsedProfiles.filter((p) => p.environmentIds.includes(env.id)).length,
+    updatedAt: env.createdAt.toISOString(),
+    variables: env.variables.map((v) => ({ id: v.id, key: v.key, value: v.isSecret ? "••••••••" : v.value, isSecret: v.isSecret })),
+  }));
+
   return (
-    <div className="space-y-6">
-      <PageHeader kicker="PLATFORM" title="Environment & Data" description="The complete data layer that powers test execution: environments, test data profiles, global data and auth profiles." />
-      <nav aria-label="Data sections" className="inline-flex rounded-lg bg-slate-100 p-1">
-        {[
-          { value: "environments", label: "Environments" },
-          { value: "profiles", label: "Test Data Profiles" },
-          { value: "global", label: "Global Data" },
-          { value: "auth", label: "Auth Profiles" },
-        ].map((o) => (
-          <a
-            key={o.value}
-            href={`/dashboard/environments?tab=${o.value}`}
-            aria-current={tab === o.value ? "page" : undefined}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${tab === o.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
-          >
-            {o.label}
-          </a>
-        ))}
-      </nav>
-
-      {tab === "environments" && (
-        <>
-          <Card title="New environment"><div className="px-5 py-4"><EnvironmentCreate readOnly={ctx.readOnly} /></div></Card>
-          <Card title={`${envs.length} environments (Grid / List · Import · Export)`}>
-            {envs.length === 0 ? <EmptyState title="No environments" description="Add Staging, QA or Localhost above." /> : (
-              <ul className="divide-y divide-slate-100">
-                {envs.map((e) => (
-                  <li key={e.id} className="px-5 py-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-slate-800">{e.name} {e.isDefault && <StatusPill value="active" label="DEFAULT" />}</p>
-                        <p className="truncate text-xs text-slate-500">{e.baseUrl} · auth: {e.authType} · vars: {e._count.variables} · dbs: 0 · profiles: {profiles.length}</p>
-                      </div>
-                      {!e.isDefault && <ActionButton url={`/api/dashboard/environments/${e.id}`} json={{ action: "default" }} disabled={ctx.readOnly}>Set default</ActionButton>}
-                      <ActionButton url={`/api/dashboard/environments/${e.id}`} method="DELETE" variant="danger" disabled={ctx.readOnly} confirmText="Delete this environment?">Delete</ActionButton>
-                    </div>
-                    <div className="mt-3">
-                      <EnvVariablesForm environmentId={e.id} readOnly={ctx.readOnly} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-        </>
-      )}
-
-      {tab === "profiles" && (
-        <>
-          <Card title="New profile (CSV import)"><div className="px-5 py-4"><DataProfileForm readOnly={ctx.readOnly} /></div></Card>
-          <Card title="Test Data Profiles">
-            {profiles.length === 0 ? <EmptyState title="No profiles" description="Create one above." /> : (
-              <ul className="divide-y divide-slate-100 px-5 py-2">
-                {profiles.map((p) => <li key={p.id} className="py-2 text-sm"><strong>{p.name}</strong> <span className="text-xs text-slate-500">{p.sourceType}</span></li>)}
-              </ul>
-            )}
-          </Card>
-        </>
-      )}
-
-      {tab === "global" && (
-        <>
-          <Card title="New global variable">
-            <div className="px-5 py-4">
-              {envs[0] ? <EnvVariablesForm environmentId={envs[0].id} readOnly={ctx.readOnly} /> : <p className="text-sm text-slate-500">Create an environment first.</p>}
-            </div>
-          </Card>
-          <Card title="Global Data (global_variables)">
-            {variables.length === 0 ? <EmptyState title="No global variables" description="Add variables above." /> : (
-              <ul className="divide-y divide-slate-100 px-5 py-2">
-                {variables.map((v) => (
-                  <li key={v.id} className="flex items-center gap-3 py-2 text-sm">
-                    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{v.key}</code>
-                    <span className="flex-1 truncate text-slate-600">{v.isSecret ? maskSecret(v.value) : v.value}</span>
-                    <span className="text-xs text-slate-400">{v.environment.name}{v.isSecret ? " · secret" : ""}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-        </>
-      )}
-
-      {tab === "auth" && (
-        <Card title="Auth Profiles">
-          <div className="space-y-3 px-5 py-4">
-            <p className="text-sm text-slate-600">Authentication, proxy and viewport profiles per environment (persisted in organisation settings, secrets masked).</p>
-            <AuthProfileForm readOnly={ctx.readOnly} environmentId={envs[0]?.id ?? ""} />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">Auth profiles (bearer/basic)</div>
-              <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">Proxy profiles (/proxy_profiles)</div>
-              <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">Viewports (/viewports)</div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      <p className="text-xs text-slate-400">Tip: use the tabs above — Environments, Test Data Profiles, Global Data (/global_variables), Auth Profiles (/auth_profiles, /proxy_profiles, /viewports), exactly like the live Environment & Data hub.</p>
-    </div>
+    <EnvironmentData
+      tab={tab}
+      readOnly={ctx.readOnly}
+      envs={envs}
+      profiles={parsedProfiles}
+      globals={globals.map((g) => ({
+        id: g.id,
+        name: g.name,
+        type: g.type,
+        permission: g.permission,
+        value: g.value,
+        tags: parseArray(g.tags),
+        description: g.description,
+      }))}
+      auths={auths.map((a) => ({
+        id: a.id,
+        name: a.name,
+        appUrl: a.appUrl,
+        loginUrl: a.loginUrl,
+        method: a.method,
+        username: a.username,
+        autoSignIn: a.autoSignIn,
+        lastSignedInAt: a.lastSignedInAt?.toISOString() ?? null,
+      }))}
+      proxies={proxies.map((p) => ({ id: p.id, name: p.name, host: p.host, port: p.port, username: p.username, enabled: p.enabled }))}
+      viewports={viewports.map((v) => ({ id: v.id, name: v.name, width: v.width, height: v.height, category: v.category }))}
+    />
   );
 }

@@ -1,34 +1,41 @@
 import type { Metadata } from "next";
-import { TunnelActions } from "@/components/dashboard/pages/Forms";
-import { Card, PageHeader } from "@/components/dashboard/ui";
-import { maskToken } from "@/lib/utils";
+import { Tunnels } from "@/components/dashboard/pages/TunnelsParity";
 import { prisma } from "@/lib/db";
-import { requireOrgContext } from "@/lib/tenant";
+import { readSettings, requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Tunnels" };
 export const dynamic = "force-dynamic";
 
 export default async function TunnelsPage() {
   const ctx = await requireOrgContext();
-  const onboarding = await prisma.onboarding.findUnique({ where: { organisationId: ctx.org.id } });
-  const readOnly = ctx.readOnly;
-  // Full token is shown in the owning workspace; masked in read-only demo.
-  const token = onboarding?.tunnelToken ? (readOnly ? maskToken(onboarding.tunnelToken) : onboarding.tunnelToken) : null;
+  const machines = await prisma.tunnelMachine.findMany({
+    where: { organisationId: ctx.org.id },
+    orderBy: { createdAt: "asc" },
+  });
+  const settings = readSettings(ctx.org);
+  const alerts = settings.tunnelAlerts ?? {
+    sendAlerts: true,
+    delivery: "Immediate" as const,
+    digestHour: "09:00",
+    channel: "",
+  };
+
   return (
-    <div className="space-y-6">
-      <PageHeader kicker="WORK · NEW" title="Tunnels" description="Expose localhost to the AQE engine through a secure tunnel. The token is generated server-side and never sent to other organisations." />
-      <Card title="Localhost tunnel">
-        <div className="px-5 py-4">
-          <TunnelActions token={token} enrolled={onboarding?.tunnelEnrolled ?? false} port={onboarding?.localPort ?? 3000} readOnly={readOnly} />
-        </div>
-      </Card>
-      <Card title="How it works">
-        <ol className="list-decimal space-y-1 px-5 py-4 pl-10 text-sm text-slate-600">
-          <li>Install the agent: <code>qa tunnel install</code></li>
-          <li>Connect with the token above: <code>qa tunnel connect --port 3000</code></li>
-          <li>Click “Simulate enrolment” here (no real network call is made in this prototype).</li>
-        </ol>
-      </Card>
-    </div>
+    <Tunnels
+      readOnly={ctx.readOnly}
+      orgName={ctx.org.name}
+      maxMachines={5}
+      maxRoutes={15}
+      alerts={alerts}
+      machines={machines.map((machine) => ({
+        id: machine.id,
+        name: machine.name,
+        os: machine.os,
+        status: machine.status,
+        browserHost: machine.browserHost,
+        routeCount: machine.routeCount,
+        createdAt: machine.createdAt.toISOString(),
+      }))}
+    />
   );
 }

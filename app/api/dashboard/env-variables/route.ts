@@ -43,3 +43,18 @@ export async function POST(request: Request) {
   await audit(prisma, ctx, "env_variable.upsert", `${env.name}.${key}`);
   return NextResponse.json({ variable: { ...variable, value: isSecret ? "••••" : value } }, { status: 201 });
 }
+
+/** DELETE /api/dashboard/env-variables?id=� */
+export async function DELETE(request: Request) {
+  const guard = await guardApi({ write: true });
+  if (!guard.ok) return guard.response;
+  const id = new URL(request.url).searchParams.get("id") ?? "";
+  if (!id) return jsonError("id is required.", 400);
+  const variable = await prisma.environmentVariable.findFirst({
+    where: { id, environment: { organisationId: guard.ctx.org.id } },
+  });
+  if (!variable) return jsonError("Variable not found.", 404);
+  await prisma.environmentVariable.delete({ where: { id: variable.id } });
+  await audit(prisma, guard.ctx, "env_variable.deleted", variable.key);
+  return NextResponse.json({ ok: true });
+}

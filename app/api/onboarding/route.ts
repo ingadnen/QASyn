@@ -65,7 +65,7 @@ export async function PATCH(request: Request) {
       let target: string;
       if (payload.reachMode === "staging") {
         environmentUrl = normalizeWebsite(payload.environmentUrl ?? "");
-        if (!environmentUrl) return jsonError("Enter a valid app endpoint, e.g. https://staging.example.com", 400);
+        if (!environmentUrl) return jsonError("Enter a valid app endpoint, e.g. https://staging.your-domain.com", 400);
         target = environmentUrl;
       } else {
         if (!onboarding.tunnelEnrolled) return jsonError("Waiting for the tunnel to enrol. Run the command first.", 400);

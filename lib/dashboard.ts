@@ -104,6 +104,7 @@ export async function getOverview(organisationId: string) {
     integrations: integrations.map((i) => ({ provider: i.provider as Provider, status: i.status as IntegrationStatus, detail: i.detail })),
     modules,
     criticality,
+    coverageBaseline: latestRun?.coverage ?? 78,
     crawl,
     recents: recents.map((r) => ({ id: r.id, actorEmail: r.actorEmail, action: r.action, target: r.target, createdAt: r.createdAt.toISOString() })),
     latestRun: latestRun ? { run: serializeRun(latestRun), logs: latestRun.logs.map(serializeLog) } : null,

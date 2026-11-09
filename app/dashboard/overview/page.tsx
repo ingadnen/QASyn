@@ -1,194 +1,218 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CoverageTabs, CrawlBanner, FinishCard, OverviewTerminal, SlackBanner } from "@/components/dashboard/overview/OverviewWidgets";
-import { Card, PageHeader, StatusPill } from "@/components/dashboard/ui";
-import { hostFromUrl } from "@/lib/crawl";
+import {
+  Overview,
+  type OverviewCoverageRow,
+  type OverviewEvent,
+  type OverviewRecent,
+} from "@/components/dashboard/pages/Overview";
 import { getOverview, parseCrawlLogs } from "@/lib/dashboard";
 import { prisma } from "@/lib/db";
-import { crawlLiveStats } from "@/lib/engine";
-import { timeAgo, usd } from "@/lib/format";
 import { readSettings, requireOrgContext } from "@/lib/tenant";
-import type { CrawlLogLine, CrawlStatus } from "@/lib/types";
-import { firstName } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Overview" };
 export const dynamic = "force-dynamic";
 
-function Kpi({ label, value, hint, accent }: { label: string; value: string; hint: string; accent: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="flex items-center gap-2 text-xs font-medium text-slate-500">
-        <span className={`size-2 rounded-full ${accent}`} />
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{hint}</p>
-    </div>
-  );
+const PROVIDER_LABELS: Record<string, string> = {
+  JIRA: "Jira",
+  SLACK: "Slack",
+  GITHUB: "GitHub",
+  GITLAB: "GitLab",
+  LINEAR: "Linear",
+  AZURE_DEVOPS: "Azure DevOps",
+  AZURE_VAULT: "Azure Vault",
+  FIGMA: "Figma",
+  FRESHRELEASE: "Freshrelease",
+  YOUTRACK: "YouTrack",
+  MANTIS: "Mantis",
+  BACKLOG: "Backlog",
+  ZEPEL: "Zepel",
+  BUGZILLA: "BugZilla",
+  TRELLO: "Trello",
+  CLICKUP: "ClickUp",
+  JENKINS: "Jenkins",
+  CODESHIP: "CodeShip",
+  CONTEXTQA_LAB: "ContextQA Lab",
+  PRIVATE_GRID: "Private Grid",
+};
+
+function timeOf(date: Date) {
+  return date.toLocaleTimeString("en-GB", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function ageOf(date: Date) {
+  const minutes = Math.max(1, Math.round((Date.now() - date.getTime()) / 60_000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days}d`;
+  const months = Math.round(days / 30);
+  return `${months}mo`;
+}
+
+function tagFor(action: string) {
+  if (action.startsWith("crawl")) return "CRAWL";
+  if (action.startsWith("test_case")) return "TEST";
+  if (action.startsWith("bug")) return "BUG";
+  if (action.startsWith("pr.")) return "PR";
+  if (action.startsWith("suite")) return "SUITE";
+  if (action.startsWith("member")) return "TEAM";
+  if (action.startsWith("integration")) return "INTEGRATION";
+  if (action.startsWith("api_token")) return "TOKEN";
+  if (action.startsWith("requirement")) return "REQ";
+  if (action.startsWith("plan")) return "PLAN";
+  return action.split(".")[0].replace(/_/g, " ").toUpperCase().slice(0, 12);
+}
+
+/** Splits 100% across rows with the largest-remainder method. */
+function sharePercentages(counts: number[]) {
+  const total = counts.reduce((sum, value) => sum + value, 0);
+  if (!total) return counts.map(() => 0);
+  const raw = counts.map((value) => (value / total) * 100);
+  const floors = raw.map((value) => Math.floor(value));
+  let remainder = 100 - floors.reduce((sum, value) => sum + value, 0);
+  const order = raw
+    .map((value, index) => ({ index, fraction: value - floors[index] }))
+    .sort((a, b) => b.fraction - a.fraction);
+  for (let cursor = 0; cursor < order.length && remainder > 0; cursor += 1) {
+    floors[order[cursor].index] += 1;
+    remainder -= 1;
+  }
+  return floors;
 }
 
 export default async function OverviewPage() {
   const ctx = await requireOrgContext();
   const orgId = ctx.org.id;
-  const [data, members] = await Promise.all([getOverview(orgId), prisma.user.count({ where: { organisationId: orgId } })]);
+  const [data, members, recentTests] = await Promise.all([
+    getOverview(orgId),
+    prisma.user.count({ where: { organisationId: orgId } }),
+    prisma.testCase.findMany({
+      where: { organisationId: orgId },
+      orderBy: [{ lastRunAt: "desc" }, { createdAt: "desc" }],
+      take: 5,
+      select: { id: true, title: true, stepsCount: true, status: true, lastRunAt: true, createdAt: true },
+    }),
+  ]);
+
   const settings = readSettings(ctx.org);
   const dismissed = new Set(settings.dismissed ?? []);
-
   const crawl = data.crawl;
-  const liveStats = crawl ? crawlLiveStats(crawl) : null;
-  const crawlDto = crawl
-    ? {
-        id: crawl.id,
-        targetUrl: crawl.targetUrl,
-        status: crawl.status as CrawlStatus,
-        startedAt: crawl.startedAt.toISOString(),
-        logs: parseCrawlLogs(crawl.logs),
-      }
-    : null;
+  const crawlLogs = crawl ? parseCrawlLogs(crawl.logs) : [];
 
-  const runLines: CrawlLogLine[] = data.latestRun
-    ? data.latestRun.logs.map((l, i) => ({ offsetMs: i * 400, tag: l.tag, message: l.message }))
-    : [];
-  const runLabel = data.latestRun ? `Release #${data.latestRun.run.release} · v${data.latestRun.run.version}` : null;
+  let events: OverviewEvent[] = [];
+  if (crawl && crawlLogs.length > 0) {
+    events = crawlLogs.slice(0, 4).map((line) => ({
+      time: timeOf(new Date(crawl.startedAt.getTime() + line.offsetMs)),
+      tag: line.tag.toUpperCase(),
+      message: line.message,
+    }));
+  } else if (data.recents.length > 0) {
+    events = data.recents.slice(0, 4).map((entry) => ({
+      time: timeOf(new Date(entry.createdAt)),
+      tag: tagFor(entry.action),
+      message: entry.target,
+    }));
+  } else if (crawl) {
+    const completed = crawl.completedAt ?? new Date(crawl.startedAt.getTime() + 20 * 60_000);
+    events = [
+      { time: timeOf(crawl.startedAt), tag: "CRAWL", message: `Crawling ${crawl.targetUrl}` },
+      { time: timeOf(completed), tag: "CRAWL", message: "Crawl completed." },
+      { time: timeOf(new Date(completed.getTime() + 1_000)), tag: "CRAWL", message: "Crawl now starting to generate test cases…" },
+      {
+        time: timeOf(new Date(completed.getTime() + 88_000)),
+        tag: "CRAWL",
+        message: `Crawl generated ${crawl.flowsMapped} test case${crawl.flowsMapped === 1 ? "" : "s"}.`,
+      },
+    ];
+    if (crawl.status === "running") events = events.slice(0, 1);
+  }
 
-  const connected = new Set(data.integrations.filter((i) => i.status === "CONNECTED").map((i) => i.provider));
-  const showSlack = !dismissed.has("slack") && !settings.slackChannelCreated;
-  const showBugTracker = !dismissed.has("bugTracker") && !connected.has("JIRA") && !connected.has("LINEAR");
+  const failureCount = (row: { total: number; passing: number }) => Math.max(0, row.total - row.passing);
+  const badgeFor = (row: { total: number; passing: number }) => {
+    const failing = failureCount(row);
+    if (failing > 0) return `${failing} of ${row.total} tests failing`;
+    return `${row.total} test${row.total === 1 ? "" : "s"} passing`;
+  };
+  const detailFor = (row: { total: number; passing: number }) => {
+    const failing = failureCount(row);
+    return `${row.total} by AI${failing > 0 ? ` ${failing} tests failed their last run.` : ""}`;
+  };
+  const coverageScore = (row: { total: number; passing: number }) => {
+    if (!row.total) return 0;
+    const ratio = failureCount(row) / row.total;
+    return Math.max(60, Math.min(96, Math.round(data.coverageBaseline - ratio * 20)));
+  };
+
+  const modules: OverviewCoverageRow[] = data.modules.map((row) => ({
+    key: `module-${row.name}`,
+    name: row.name,
+    badge: badgeFor(row),
+    percent: coverageScore(row),
+    detail: detailFor(row),
+  }));
+
+  const TIERS = [
+    { key: "critical", name: "Critical risk" },
+    { key: "high", name: "High risk" },
+    { key: "medium", name: "Medium risk" },
+    { key: "low", name: "Low risk" },
+  ];
+  const tierData = TIERS.flatMap((tier) => {
+    const row = data.criticality.find((item) => item.name === tier.key);
+    return row ? [{ ...tier, ...row }] : [];
+  });
+  const tierShares = sharePercentages(tierData.map((row) => row.total));
+  const criticality: OverviewCoverageRow[] = tierData.map((row, index) => ({
+    key: `tier-${row.key}`,
+    name: row.name,
+    badge: `${row.total} test${row.total === 1 ? "" : "s"}`,
+    percent: tierShares[index] ?? 0,
+    detail: detailFor(row),
+  }));
+
+  const total = data.tests.total;
+  const passing = data.tests.passing;
+  const failing = Math.max(0, total - passing);
+
+  const connected = data.integrations.filter((integration) => ["CONNECTED", "INDEXING"].includes(integration.status));
+  const connectedProviders = new Set(connected.map((integration) => integration.provider));
+  const integrations = connected.map((integration) => PROVIDER_LABELS[integration.provider] ?? integration.provider);
+
+  const recents: OverviewRecent[] = recentTests.map((test) => ({
+    id: test.id,
+    title: test.title,
+    steps: test.stepsCount,
+    status: test.status,
+    age: ageOf(test.lastRunAt ?? test.createdAt),
+    href: `/dashboard/test-studio/${test.id}`,
+  }));
+
+  const showSlack = !settings.slackChannelCreated && !dismissed.has("slack");
+  const showBugTracker = !dismissed.has("bugTracker") && !connectedProviders.has("JIRA") && !connectedProviders.has("LINEAR");
   const showInvite = !dismissed.has("invite") && members <= 1;
-  const passRate = data.tests.total ? Math.round((data.tests.passing / data.tests.total) * 100) : 0;
-  const credits = ctx.org.trialCredits - ctx.org.creditsUsed;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        kicker={ctx.org.isMockDemo ? "DEMO WORKSPACE" : "OVERVIEW"}
-        title={`Welcome back, ${firstName(ctx.user.name)}`}
-        description={`Quality signals for ${ctx.org.name}, updated from every crawl, pull request and test run.`}
-        actions={
-          <>
-            <Link href="/dashboard/pull-requests" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
-              Check a PR
-            </Link>
-            <Link href="/dashboard/test-cases?new=1" className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500">
-              + New Test Cases
-            </Link>
-          </>
-        }
-      />
-
-      <OverviewTerminal crawl={crawlDto} runLines={crawl?.status === "running" ? [] : runLines} runLabel={crawl?.status === "running" ? null : runLabel} />
-
-      {showSlack && <SlackBanner orgName={ctx.org.name} readOnly={ctx.readOnly} />}
-
-      {crawl?.status === "running" && liveStats && (
-        <CrawlBanner crawlId={crawl.id} host={hostFromUrl(crawl.targetUrl)} pages={liveStats.pagesVisited} flows={liveStats.flowsMapped} readOnly={ctx.readOnly} />
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="Test cases" value={String(data.tests.total)} hint={data.tests.total ? `${passRate}% passing · ${data.tests.failing} failing` : "Generated by crawls and AI"} accent="bg-brand-500" />
-        <Kpi label="Bugs reproduced" value={String(data.bugs.reproduced)} hint={`${data.bugs.total} bug reports in total`} accent="bg-amber-500" />
-        <Kpi label="Regressions caught" value={String(data.regressions)} hint="Before they reached production" accent="bg-red-500" />
-        <Kpi label="Cost avoided" value={usd(data.saved)} hint={`≈ ${data.hoursSaved} engineering hours saved`} accent="bg-emerald-500" />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-4">
-          <p className="text-xs font-medium text-slate-500">Pull requests checked</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{data.prsChecked}</p>
-          <Link href="/dashboard/pull-requests" className="mt-2 inline-block text-xs font-medium text-brand-600 hover:underline">
-            View pull requests →
-          </Link>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs font-medium text-slate-500">PR lead time</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{data.leadTimeHours === null ? "—" : `${data.leadTimeHours.toFixed(1)} h`}</p>
-          <p className="mt-2 text-xs text-slate-500">From opened to verified, across checked PRs</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs font-medium text-slate-500">Credits remaining</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">
-            {credits.toLocaleString("en-US")} <span className="text-sm font-normal text-slate-400">/ {ctx.org.trialCredits.toLocaleString("en-US")}</span>
-          </p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-brand-500" style={{ width: `${ctx.org.trialCredits ? (credits / ctx.org.trialCredits) * 100 : 0}%` }} />
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <CoverageTabs modules={data.modules} criticality={data.criticality} />
-        </div>
-        <Card title="Recents" actions={<Link href="/dashboard/settings/audits" className="text-xs font-medium text-brand-600 hover:underline">All activity</Link>}>
-          {data.recents.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-500">No activity yet.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {data.recents.map((r) => (
-                <li key={r.id} className="px-5 py-2.5">
-                  <p className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate font-medium text-slate-800">{r.action}</span>
-                    <span suppressHydrationWarning className="shrink-0 text-xs text-slate-400">{timeAgo(r.createdAt)}</span>
-                  </p>
-                  <p className="truncate text-xs text-slate-500">
-                    {r.target} · {r.actorEmail}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-
-      {(showBugTracker || showInvite || !crawl) && (
-        <section>
-          <p className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-slate-500">FINISH SETTING UP</p>
-          <div className="grid gap-4 md:grid-cols-3">
-            {!crawl && (
-              <div className="flex flex-col rounded-xl border border-dashed border-slate-300 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-900">Crawl your app</p>
-                <p className="mt-1 flex-1 text-xs text-slate-500">Map pages and flows to generate your first test cases.</p>
-                <Link href="/dashboard/crawl" className="mt-3 w-fit rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500">
-                  Start a crawl
-                </Link>
-              </div>
-            )}
-            {showBugTracker && (
-              <FinishCard
-                card="bugTracker"
-                title="Connect your bug tracker"
-                description="Jira or Linear issues are reproduced automatically with video, network logs and root cause."
-                href="/dashboard/integrations"
-                cta="Connect"
-                readOnly={ctx.readOnly}
-              />
-            )}
-            {showInvite && (
-              <FinishCard
-                card="invite"
-                title="Invite your team"
-                description="Share PR verdicts, bug reproductions and coverage with engineers and QA."
-                href="/dashboard/team"
-                cta="Invite teammates"
-                readOnly={ctx.readOnly}
-              />
-            )}
-          </div>
-        </section>
-      )}
-
-      {data.integrations.length > 0 && (
-        <Card title="Integrations">
-          <ul className="flex flex-wrap gap-2 px-5 py-4">
-            {data.integrations.map((i) => (
-              <li key={i.provider} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm">
-                <span className="font-medium capitalize text-slate-800">{i.provider.toLowerCase()}</span>
-                <StatusPill value={i.status} />
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-    </div>
+    <Overview
+      readOnly={ctx.readOnly}
+      ownerEmail={ctx.user.email}
+      terminal={{ events, running: crawl?.status === "running" }}
+      stats={{
+        total: data.tests.total,
+        passing,
+        failing,
+        bugs: data.bugs.total,
+        reproduced: data.bugs.reproduced,
+        saved: data.saved,
+        regressions: data.regressions,
+      }}
+      strip={{ prsChecked: data.prsChecked, integrations }}
+      modules={modules}
+      criticality={criticality}
+      recents={recents}
+      showSlack={showSlack}
+      showBugTracker={showBugTracker}
+      showInvite={showInvite}
+    />
   );
 }

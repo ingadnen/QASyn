@@ -1,6 +1,6 @@
 import type { Focus, OsKey, Plan, Provider } from "./types";
 
-export const PLAN_CREDITS: Record<Plan, number> = { trial: 3000, free: 500, starter: 10_000, pro: 50_000, enterprise: 250_000 };
+export const PLAN_CREDITS: Record<Plan, number> = { trial: 3000, free: 500, starter: 2000, pro: 12_000, enterprise: 250_000 };
 export const PLAN_INFO: Record<Plan, { label: string; price: string; blurb: string }> = {
   trial: { label: "Trial", price: "$0", blurb: "15 days · 3,000 credits" },
   free: { label: "Free", price: "$0/mo", blurb: "500 credits / month" },

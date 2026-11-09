@@ -34,7 +34,16 @@ export async function POST(request: Request) {
   return NextResponse.json({ component }, { status: 201 });
 }
 
-/** DELETE stub guard for symmetry. */
-export async function DELETE() {
-  return jsonError("Use the list route with an id in future versions.", 405);
+/** DELETE /api/dashboard/test-components?id=... - remove a reusable step group. */
+export async function DELETE(request: Request) {
+  const guard = await guardApi({ write: true });
+  if (!guard.ok) return guard.response;
+  const { ctx } = guard;
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return jsonError("Missing step group id.", 400);
+  const component = await prisma.testComponent.findFirst({ where: { id, organisationId: ctx.org.id } });
+  if (!component) return jsonError("Step group not found.", 404);
+  await prisma.testComponent.delete({ where: { id: component.id } });
+  await audit(prisma, ctx, "test_component.deleted", component.name);
+  return NextResponse.json({ ok: true });
 }

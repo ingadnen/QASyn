@@ -5,7 +5,7 @@ import { runTestCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
-import { collectionActionSchema } from "@/lib/validation";
+import { collectionActionSchema, collectionUpdateSchema } from "@/lib/validation";
 
 type Params = { params: Promise<{ kind: string; id: string }> };
 
@@ -34,7 +34,38 @@ export async function PATCH(request: Request, { params }: Params) {
     });
     const data = { testCasesCount: cases.length, testCases: { set: cases.map((c) => ({ id: c.id })) } };
     const updated = kind === "suites" ? await prisma.testSuite.update({ where: { id: item.id }, data }) : await prisma.testPlan.update({ where: { id: item.id }, data });
-    await audit(prisma, ctx, kind === "suites" ? "suite.linked" : "test_plan.linked", `${item.name} · ${cases.length} cases`);
+    await audit(prisma, ctx, kind === "suites" ? "test_suite.linked" : "test_plan.linked", `${item.name} · ${cases.length} cases`);
+    return NextResponse.json({ item: updated });
+  }
+
+  if (body?.action === "update") {
+    const parsedUpdate = collectionUpdateSchema.safeParse(body);
+    if (!parsedUpdate.success) return validationError(parsedUpdate.error);
+    const input = parsedUpdate.data;
+    if (kind === "suites") {
+      const updated = await prisma.testSuite.update({
+        where: { id: item.id },
+        data: {
+          ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.module !== undefined ? { module: input.module } : {}),
+          ...(input.platform !== undefined ? { platform: input.platform } : {}),
+          ...(input.labels !== undefined ? { labelsJson: JSON.stringify(input.labels) } : {}),
+          ...(input.prerequisites !== undefined ? { prerequisitesJson: JSON.stringify(input.prerequisites) } : {}),
+        },
+      });
+      await audit(prisma, ctx, "test_suite.updated", updated.name);
+      return NextResponse.json({ item: updated });
+    }
+    const updated = await prisma.testPlan.update({
+      where: { id: item.id },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.module !== undefined ? { module: input.module } : {}),
+      },
+    });
+    await audit(prisma, ctx, "test_plan.updated", updated.name);
     return NextResponse.json({ item: updated });
   }
 
@@ -58,7 +89,7 @@ export async function PATCH(request: Request, { params }: Params) {
     },
     { timeout: 30_000 },
   );
-  await audit(prisma, ctx, kind === "suites" ? "suite.run" : "test_plan.run", `${item.name} · ${result.passed}/${result.total}`);
+  await audit(prisma, ctx, kind === "suites" ? "test_suite.run" : "test_plan.run", `${item.name} · ${result.passed}/${result.total}`);
   return NextResponse.json(result);
 }
 
@@ -72,6 +103,6 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!item) return jsonError("Not found.", 404);
   if (kind === "suites") await prisma.testSuite.delete({ where: { id: item.id } });
   else await prisma.testPlan.delete({ where: { id: item.id } });
-  await audit(prisma, ctx, kind === "suites" ? "suite.deleted" : "test_plan.deleted", item.name);
+  await audit(prisma, ctx, kind === "suites" ? "test_suite.deleted" : "test_plan.deleted", item.name);
   return NextResponse.json({ ok: true });
 }
