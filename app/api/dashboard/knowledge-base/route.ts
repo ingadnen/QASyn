@@ -5,6 +5,17 @@ import { audit, guardApi } from "@/lib/tenant";
 import { delay, normalizeWebsite } from "@/lib/utils";
 import { knowledgeSchema } from "@/lib/validation";
 
+/** GET /api/dashboard/knowledge-base - list knowledge items of the displayed organisation. */
+export async function GET() {
+  const guard = await guardApi();
+  if (!guard.ok) return guard.response;
+  const items = await prisma.knowledgeItem.findMany({
+    where: { organisationId: guard.ctx.org.id },
+    orderBy: { updatedAt: "desc" },
+  });
+  return NextResponse.json({ items });
+}
+
 /** POST /api/dashboard/knowledge-base — adds a source; indexing settles after a few seconds (simulated, no fetch). */
 export async function POST(request: Request) {
   const guard = await guardApi({ write: true });

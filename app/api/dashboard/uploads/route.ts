@@ -18,6 +18,17 @@ function kindFromName(fileName: string): UploadKind {
   return "other";
 }
 
+/** GET /api/dashboard/uploads - list uploads of the displayed organisation. */
+export async function GET() {
+  const guard = await guardApi();
+  if (!guard.ok) return guard.response;
+  const uploads = await prisma.upload.findMany({
+    where: { organisationId: guard.ctx.org.id },
+    orderBy: { createdAt: "desc" },
+  });
+  return NextResponse.json({ uploads });
+}
+
 /**
  * POST /api/dashboard/uploads { fileName, sizeBytes, kind? }
  * Metadata only: file contents never leave the browser in this prototype.

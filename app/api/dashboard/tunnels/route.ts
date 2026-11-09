@@ -115,7 +115,7 @@ export async function DELETE(request: Request) {
 }
 
 /** Read settings helper for server pages. */
-export function tunnelAlertSettings(org: { settingsJson: string }) {
+function tunnelAlertSettings(org: { settingsJson: string }) {
   const settings = readSettings(org) as { tunnelAlerts?: { sendAlerts?: boolean; delivery?: "Immediate" | "Daily digest"; digestHour?: string; channel?: string } };
   return settings.tunnelAlerts ?? { sendAlerts: true, delivery: "Immediate" as const, digestHour: "09:00", channel: "" };
 }

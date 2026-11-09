@@ -8,6 +8,18 @@ import { apiTokenSchema } from "@/lib/validation";
 
 const MAX_TOKENS = 10;
 
+/** GET /api/dashboard/api-tokens - list token metadata (never the secret). */
+export async function GET() {
+  const guard = await guardApi();
+  if (!guard.ok) return guard.response;
+  const tokens = await prisma.apiToken.findMany({
+    where: { organisationId: guard.ctx.org.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, tokenPrefix: true, scopesJson: true, expiresAt: true, createdAt: true, lastUsedAt: true },
+  });
+  return NextResponse.json({ tokens });
+}
+
 /** POST /api/dashboard/api-tokens { name } — the plain token is returned ONCE; only its SHA-256 is stored. */
 export async function POST(request: Request) {
   const guard = await guardApi({ write: true });

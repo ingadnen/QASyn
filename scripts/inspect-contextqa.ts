@@ -57,7 +57,7 @@ const MODAL_TRIGGERS: Array<{ key: string; button: RegExp; dialogName?: string }
   { key: "modal-global-variable", button: /New Global Variable/i },
   { key: "modal-auth-profile", button: /Add auth profile|New Auth/i },
   { key: "modal-upload-folder", button: /Create Folder|Upload File/i },
-  { key: "modal-knowledge-add", button: /Add Knowledge Source/Add\b/i },
+  { key: "modal-knowledge-add", button: /Add Knowledge Source|Add/i },
   { key: "modal-team-invite", button: /Invite user/i },
   { key: "modal-tunnel-machine", button: /Add machine|New Tunnel/i },
   { key: "modal-api-token", button: /Create token|Create API Token/i },
@@ -75,7 +75,7 @@ async function visibleText(page: import("playwright").Page, locator: import("pla
 
 async function extractControls(page: import("playwright").Page, scope: import("playwright").Locator) {
   const inputs = await scope.locator("input, select, textarea").evaluateAll((els: Element[]) =>
-    els.map((el: HTMLInputElement & HTMLSelectElement) => ({
+    els.map((el) => ({
       tag: el.tagName,
       type: (el as HTMLInputElement).type ?? null,
       name: (el as HTMLInputElement).name ?? "",
@@ -83,7 +83,7 @@ async function extractControls(page: import("playwright").Page, scope: import("p
       aria: el.getAttribute("aria-label") ?? "",
       placeholder: (el as HTMLInputElement).placeholder ?? "",
       value: (el as HTMLInputElement).value ?? "",
-      options: el.tagName === "SELECT" ? Array.from(el.options).map((o) => o.text) : undefined,
+      options: el.tagName === "SELECT" ? Array.from((el as HTMLSelectElement).options).map((o) => o.text) : undefined,
       checked: (el as HTMLInputElement).checked ?? undefined,
       disabled: (el as HTMLInputElement).disabled ?? false,
     })),

@@ -1,0 +1,2578 @@
+{
+  "generatedAt": "2026-11-09T14:40:20.868Z",
+  "base": "http://localhost:3000",
+  "failures": 0,
+  "modules": [
+    {
+      "id": "login",
+      "name": "Login / Shell",
+      "route": "/login",
+      "checks": [
+        {
+          "check": "Login as cgi@cgi.com reaches the dashboard",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"AUTONOMOUS SDLC\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Overview\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Pull requests\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Crawl\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Code Analysis\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"PLATFORM\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Requirements\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Test cases\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Plans\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Environment & Data\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Uploads\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Knowledge Base\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Team & access\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"WORK\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Tunnels\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Integrations\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Billing & usage\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"MCP\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar contains \"Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar has no invented entries",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plans accordion exposes Test Suites",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plans accordion exposes Test Plans",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Settings accordion contains \"Organization\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Settings accordion contains \"System Audits\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Settings accordion contains \"Analysis Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Settings accordion contains \"Bug Reproduction\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Settings accordion contains \"API Tokens\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar footer has Help & docs",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar footer has Live chat",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar footer shows trial days",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Sidebar shows the user card",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "01-overview",
+      "name": "Overview",
+      "route": "/dashboard/overview",
+      "checks": [
+        {
+          "check": "Overview shows live terminal",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article g"
+        },
+        {
+          "check": "Overview has expand history",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview KPI \"Test cases\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview KPI \"Bugs\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview KPI \"Time & cost saved\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview KPI \"Regressions caught\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview secondary PRs checked",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview secondary SLA / lead time",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview secondary Integrations",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Coverage tabs By module / By criticality",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview Recents",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview Finish setting up",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Coverage By criticality renders",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview has no example.com",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Overview has no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "02-pull-requests",
+      "name": "Pull requests",
+      "route": "/dashboard/pull-requests",
+      "checks": [
+        {
+          "check": "Pull requests heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pull requests description",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pull requests empty state",
+          "ok": true,
+          "detail": "no table — empty state shown"
+        },
+        {
+          "check": "Pull requests toolbar Filter",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pull requests Analyse button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analyse modal contains \"PR #\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analyse modal contains \"Files changed\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analyse modal contains \"Title\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analyse modal contains \"Branch\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analyse modal contains \"Author\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analyse modal contains \"Run PR check (25 credits)\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analyse modal contains \"Cancel\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pull requests shows no raw JSON",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pull requests no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "03-crawl",
+      "name": "Crawl",
+      "route": "/dashboard/crawl",
+      "checks": [
+        {
+          "check": "Crawl heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl table has 10 columns incl. checkbox",
+          "ok": true,
+          "detail": "10 cols"
+        },
+        {
+          "check": "Crawl column \"Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Format\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Type\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Test Plan\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Status\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Test Cases\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Created by\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Created Date\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl column \"Action\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl New Crawl button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Crawl modal \"Show Configuration Options\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Crawl modal \"Target URL\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Crawl modal \"Explore prompt\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Crawl modal \"Requirement Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Crawl modal \"Additional Context\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Crawl modal \"Cancel\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Crawl modal \"Start Crawl\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Target URL is org website",
+          "ok": true,
+          "detail": "https://cgi.com"
+        },
+        {
+          "check": "Crawl config \"Web Application\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl config \"Mobile\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl config \"API\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl config \"Require approval\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl config \"Auto publish\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl config \"Create Test Suite\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl config \"Create Test Plan\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl config \"Positive / Happy Path\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "A running crawl was created",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl table shows the created crawl",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl table shows linked test cases",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl table has no raw JSON",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail tab \"Test Cases\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail tab \"Questionnaire\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail tab \"Requirement Data\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail tab \"History (Coming soon)\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail tab \"Metadata\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail tab \"Gaps (Coming soon)\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail Generated Test Cases",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail Export",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl detail no example.com",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Crawl no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "04-code-analysis",
+      "name": "Code Analysis",
+      "route": "/dashboard/code-analysis",
+      "checks": [
+        {
+          "check": "Code Analysis heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Code Analysis description",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Code Analysis search",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Code Analysis Analyse repositories button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Code Analysis empty state",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Code Analysis no example.com",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Code Analysis no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "05-requirements",
+      "name": "Requirements",
+      "route": "/dashboard/requirements",
+      "checks": [
+        {
+          "check": "Requirements heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements New Requirement button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements 10 columns (9 visible + checkbox)",
+          "ok": true,
+          "detail": "10 cols"
+        },
+        {
+          "check": "Requirements column \"Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Format\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Type\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Test Plan\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Status\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Test Cases\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Created by\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Created Date\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements column \"Action\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement method \"Generate from Integrations\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement method \"Generate from File\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement method \"Generate from Crawl\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Created requirement appears in list",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement detail tab \"Test Cases\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement detail tab \"Questionnaire\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement detail tab \"Requirement Data\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement detail tab \"History (Coming soon)\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement detail tab \"Metadata\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement detail tab \"Gaps (Coming soon)\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirement detail Export",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Cleanup: requirement deleted via API",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Requirements no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "06-test-cases",
+      "name": "Test Cases",
+      "route": "/dashboard/test-cases",
+      "checks": [
+        {
+          "check": "Test Cases heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test Cases tab Step Groups visible",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "List view toggle",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Modular view toggle",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Table settings button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Refresh button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Test Case button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Created By\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Status\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Test Type\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Type\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Priority\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Latest Run Result\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Added to Suite\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Module\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Created Date\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Updated Date\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Labels\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Filter \"Requirements\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Table settings shows columns",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case method \"AI Assistance\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case method \"Import Files\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case method \"Record & Play\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case method \"Create manually\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case modal Step 1 of 2",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case step 2 Title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case step 2 Steps",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "UI-created test case persisted",
+          "ok": true,
+          "detail": "15 cases"
+        },
+        {
+          "check": "Test Cases no example.com in API",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test Cases no module 'all'",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Cleanup: UI test case deleted",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test Cases no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "07-step-groups",
+      "name": "Step Groups",
+      "route": "/dashboard/test-cases?tab=groups",
+      "checks": [
+        {
+          "check": "Step Groups heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "All Step Groups dropdown",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Step Group button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Step Group modal Name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Step Group advanced options",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Step Group Status",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Step Group created and listed",
+          "ok": true,
+          "detail": "2 groups"
+        },
+        {
+          "check": "Cleanup: Step Group deleted",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Step Groups no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "08-studio",
+      "name": "Test Studio",
+      "route": "/dashboard/test-studio/[id]",
+      "checks": [
+        {
+          "check": "Studio seed test case created",
+          "ok": true,
+          "detail": "status 201"
+        },
+        {
+          "check": "Generated stepsJson has exactly 4 steps",
+          "ok": true,
+          "detail": "4 steps"
+        },
+        {
+          "check": "Generated steps use org URL (cgi.com)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Generated steps never use example.com",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio status badge",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio tabs Test Steps (4)",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable set"
+        },
+        {
+          "check": "Studio Relationships tab",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio Version History tab",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio Run button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio Auto-fix rerun",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio Add Prerequisite",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio More actions",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio Edit test case",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio panel \"Test Case\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio panel \"Variables\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio panel \"Used in Test\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio panel \"Run History\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio View Details modal Action type / Selector",
+          "ok": true,
+          "detail": "Step Details close 1 Navigate Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforce Workflow S"
+        },
+        {
+          "check": "Add Step modal title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Add Step template library",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Add Step templates listed",
+          "ok": true,
+          "detail": "161 buttons"
+        },
+        {
+          "check": "Edit modal \"Test case name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Description\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Module\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Status\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Priority\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Environment\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Version\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Platform\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Edit modal \"Labels\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Prerequisite modal search",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Relationships shows Test Plans tab",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Relationships shows Used as Prerequisite",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Relationships sync message",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Version History renders",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable set"
+        },
+        {
+          "check": "Version History lists versions",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Version History Restore",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio back to Test Steps tab",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio persisted added step",
+          "ok": true,
+          "detail": "5 rows"
+        },
+        {
+          "check": "Studio run complete",
+          "ok": true,
+          "detail": "Live close play_circle Live STANDALONE RUN Run complete 3/5 passed check_circle 1. Navigate to the application check_circle 2. Verify that the application home "
+        },
+        {
+          "check": "Studio run passed count",
+          "ok": true,
+          "detail": "Live close play_circle Live STANDALONE RUN Run complete 3/5 passed check_circle 1. Navigate to the application check_circle 2. Verify that the application home "
+        },
+        {
+          "check": "Studio no example.com",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Studio no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "09-suites",
+      "name": "Test Suites",
+      "route": "/dashboard/plans/suites",
+      "checks": [
+        {
+          "check": "Test Suites heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Modular toggle",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Create Test Suite button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite wizard Suite Basics",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite wizard Suite Name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite wizard Folder",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite wizard platform Web App",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite wizard step 2 Add Test Cases",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite created via wizard",
+          "ok": true,
+          "detail": "3 suites"
+        },
+        {
+          "check": "Suite wizard dropdown propagation (cases fetched)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite detail tab \"Test Cases (\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite detail tab \"Used in Test Plans (\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite detail tab \"History\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite detail tab \"Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite detail Manage Test Cases",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite detail Clone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Manage Test Cases modal content",
+          "ok": true,
+          "detail": "Manage Test Cases close search TC-014 Parity Debug Title 999 Billing TC-013 Update the payment method Billing TC-012 Add an item to the cart Checkout TC-011 Com"
+        },
+        {
+          "check": "Suite deleted via API (id gone)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite created id not in list via API",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suites Modular folder cards",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suites no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "10-test-plans",
+      "name": "Test Plans",
+      "route": "/dashboard/plans/test-plans",
+      "checks": [
+        {
+          "check": "Test Plans heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New Test Plan button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard step 1 label",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard Test Plan Name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard Viewport",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard Resolution",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard step 2 Test Machines",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard step 2 Add Machine",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard step 2 Test Suites",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard suite options listed",
+          "ok": true,
+          "detail": "2 checkboxes"
+        },
+        {
+          "check": "Plan wizard shows suite dropdown options",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan wizard step 3 Settings",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan created via wizard",
+          "ok": true,
+          "detail": "2 plans"
+        },
+        {
+          "check": "Plan wizard suite selection used",
+          "ok": true,
+          "detail": "Parity Suite 13 cases"
+        },
+        {
+          "check": "Plan detail shows name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail Run Now",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"Overview\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"Runs\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"Reports\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"Schedules\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"CI / CD\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"Execution History\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail tab \"Version History\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan detail Plan summary",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan Run Now creates execution",
+          "ok": true,
+          "detail": "C cgi Live menu_open add New Test Cases AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM descripti"
+        },
+        {
+          "check": "Test Plans no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "11-environments",
+      "name": "Environment & Data",
+      "route": "/dashboard/environments",
+      "checks": [
+        {
+          "check": "Environment heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environment tab \"Environments\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environment tab \"Test Data Profiles\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environment tab \"Global Data\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environment tab \"Auth Profiles\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Grid/List switch",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Import button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "New environment button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environment modal Environment name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environment modal Create environment",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environment created via modal",
+          "ok": true,
+          "detail": "5 envs"
+        },
+        {
+          "check": "Auth Profiles shows Proxy Profiles",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Auth Profiles shows Viewport Configurations",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Add auth profile",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Add Proxy",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Add Viewport",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Profiles New test data profile",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Global New global variable",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Import modal shows columns",
+          "ok": true,
+          "detail": "Import environments close Upload a CSV or JSON file. Expected columns: name, baseUrl, description cloud_upload Click to choose a file CSV or JSON · 0 rows detec"
+        },
+        {
+          "check": "Env cleanup removed",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Environments no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "12-uploads",
+      "name": "Uploads",
+      "route": "/dashboard/uploads",
+      "checks": [
+        {
+          "check": "Uploads heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads empty state",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads folder modal \"File Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads folder modal \"File Type\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads folder modal \"File Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads folder modal \"Versioning\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads folder modal \"Overwrite existing file\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads folder modal \"Cancel\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads folder modal \"Create\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Upload folder created via modal (visible in list)",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable set"
+        },
+        {
+          "check": "Upload folder deleted via UI",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "13-knowledge-base",
+      "name": "Knowledge Base",
+      "route": "/dashboard/knowledge-base",
+      "checks": [
+        {
+          "check": "Knowledge Base heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base column \"Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base column \"Type\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base column \"Status\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base column \"Updated\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base column \"Action\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base Add button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base modal Name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base modal Save",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base source created via modal (visible in list)",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable set"
+        },
+        {
+          "check": "Knowledge Base source deleted via UI",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Knowledge Base no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "14-team",
+      "name": "Team & access",
+      "route": "/dashboard/team",
+      "checks": [
+        {
+          "check": "Team heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Team tab \"Users\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Team tab \"Roles & Permissions\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Team column \"NAME\"",
+          "ok": true,
+          "detail": "NAME,EMAIL,ROLES,VERIFIED,ADMIN,"
+        },
+        {
+          "check": "Team column \"EMAIL\"",
+          "ok": true,
+          "detail": "NAME,EMAIL,ROLES,VERIFIED,ADMIN,"
+        },
+        {
+          "check": "Team column \"ROLES\"",
+          "ok": true,
+          "detail": "NAME,EMAIL,ROLES,VERIFIED,ADMIN,"
+        },
+        {
+          "check": "Team column \"VERIFIED\"",
+          "ok": true,
+          "detail": "NAME,EMAIL,ROLES,VERIFIED,ADMIN,"
+        },
+        {
+          "check": "Team column \"ADMIN\"",
+          "ok": true,
+          "detail": "NAME,EMAIL,ROLES,VERIFIED,ADMIN,"
+        },
+        {
+          "check": "Team Invite user",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invite modal \"Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invite modal \"Email\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invite modal \"Phone Number\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invite modal \"Roles\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invite modal \"Save\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invite modal \"Cancel\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invited member appears",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Invited member persisted",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles matrix \"Crawl\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles matrix \"Test Studio\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles matrix \"Suites & Plans\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles matrix \"Environments & Data\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles matrix \"Billing & usage\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles matrix \"API Tokens\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles matrix \"System audits\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles role \"Admin\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles role \"Founder\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles role \"Eng manager\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles role \"Engineer\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles role \"QA\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Roles toggle what each role can access",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Team no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "15-tunnels",
+      "name": "Tunnels",
+      "route": "/dashboard/tunnels",
+      "checks": [
+        {
+          "check": "Tunnels heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tunnels Machines",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tunnels Alerts",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tunnels Add machine",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Machine modal Machine name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Machine modal Create install command",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Install command dialog shows powershell",
+          "ok": true,
+          "detail": "Install command for parkhvu close Run this once on the machine, in PowerShell opened as administrator. The one-time token expires in ten minutes; create a new c"
+        },
+        {
+          "check": "Install command one-time token",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tunnel machine appears",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tunnel machine persisted",
+          "ok": true,
+          "detail": "1 machines"
+        },
+        {
+          "check": "Tunnels no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "16-integrations",
+      "name": "Integrations",
+      "route": "/dashboard/integrations",
+      "checks": [
+        {
+          "check": "Integrations tab \"All Plugins\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations tab \"Bug Reporting\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations tab \"Product Management\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations card \"Jira\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations card \"Slack\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations card \"GitHub\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations card \"GitLab\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations card \"Linear\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations card \"Figma\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations card \"Trello\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations enterprise lock text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations Jira toggle persists",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations Bug Reporting filters",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations Product Management filters",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "17-billing",
+      "name": "Billing & usage",
+      "route": "/dashboard/billing",
+      "checks": [
+        {
+          "check": "Billing heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing tab Billing",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing tab Usage",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing Available credits",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing Payment",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing Credit history",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing Choose a plan",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing Add payment method",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan card \"Starter\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan card \"Pro\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan card \"Enterprise\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Payment modal title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Payment modal Save",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Usage heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Billing no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "18-mcp",
+      "name": "MCP",
+      "route": "/dashboard/mcp",
+      "checks": [
+        {
+          "check": "MCP heading Connect ContextQA",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP Use ContextQA with your AI agent",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP Add the ContextQA connector",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP Download skill",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP View skill",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP Copy agent prompt",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP SKILL.md card",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP client \"ChatGPT\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP client \"Claude\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP client \"Codex\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP client \"Cursor\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP Copy configuration",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP skill preview dialog",
+          "ok": true,
+          "detail": "draft SKILL.md Read-only · Platform-independent · No credentials included close This skill teaches your agent when and how to use the ContextQA tools available "
+        },
+        {
+          "check": "MCP no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "19-settings",
+      "name": "Settings",
+      "route": "/dashboard/settings/organization",
+      "checks": [
+        {
+          "check": "Organization Setting heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization anchor \"Company Information\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization anchor \"Test Execution\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization anchor \"AI Configuration\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization anchor \"Notifications\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization anchor \"Viewport\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization anchor \"Proxy\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization anchor \"Remote Browser\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Company Information\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Test Execution Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Time Zone Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"AI Configuration\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Mock API Testing\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Email Notifications\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Viewport Configurations\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Proxy Profiles\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization card \"Remote Browser Profiles\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization Save Settings",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Organization save confirms Settings saved",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "System Audits heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits column \"Date\"",
+          "ok": true,
+          "detail": "Date,Module & ID,Details"
+        },
+        {
+          "check": "Audits column \"Module & ID\"",
+          "ok": true,
+          "detail": "Date,Module & ID,Details"
+        },
+        {
+          "check": "Audits column \"Details\"",
+          "ok": true,
+          "detail": "Date,Module & ID,Details"
+        },
+        {
+          "check": "Audits Filter module control",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"All modules\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Test case\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Test suite\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Test plan\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Environment\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Crawl\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Requirement\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"API token\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Settings\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Integration\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits filter option \"Team\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits pagination Previous/Next",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits Rows per page",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Audits has Test suite module",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Settings heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Targets & Execution per repo",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Promotion, Governance",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Update button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis save confirms Settings saved",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bug Reproduction heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bug section \"Defaults\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bug section \"Recognized label formats\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bug section \"When to reproduce\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bug section \"Re-validate fixes\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bug Update button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bug save confirms Settings saved",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "API Tokens heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "API Tokens Search tokens",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "API Tokens Filter by status",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "API Tokens Create token link",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "API Tokens rate limit",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Scopes\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Created\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Expires\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Last used\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Actions\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Create API token heading",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Create token Details",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Create token Permissions",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Create token Name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Create token disabled without name/scope",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Scope checklist View Test Cases",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "API token created view",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA arr"
+        },
+        {
+          "check": "Token shown once warning",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Token Copy button",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Token appears in list",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Revoke token control",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Token revoked from list",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Settings overall no page errors",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Global: no example.com anywhere",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Global: no module 'all'",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Global: no 'Edit a all item'",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    }
+  ],
+  "totalChecks": 478
+}
