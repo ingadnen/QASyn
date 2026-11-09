@@ -177,6 +177,11 @@ export const startCrawlSchema = z.object({
   publishMode: z.string().max(40).optional(),
   testTypes: z.array(z.string().max(60)).max(20).optional(),
   prerequisites: z.array(z.string().max(60)).max(20).optional(),
+  explorePrompt: z.string().max(2000).optional(),
+  additionalContext: z.string().max(2000).optional(),
+  requirementName: z.string().max(200).optional(),
+  createSuite: z.boolean().optional(),
+  createPlan: z.boolean().optional(),
 });
 export const crawlActionSchema = z.object({ action: z.enum(["complete", "cancel"]) });
 export const collectionActionSchema = z.object({ action: z.literal("run") });

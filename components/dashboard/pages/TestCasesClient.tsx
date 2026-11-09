@@ -321,7 +321,7 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
   const [method, setMethod] = useState<"ai" | "import" | "record" | "manual">("ai");
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
-  const [module, setModule] = useState(modules[0] ?? "Core");
+  const [module, setModule] = useState(modules.find((m) => m !== "all") ?? "Core");
   const [criticality, setCriticality] = useState<Criticality>("medium");
   const [stepsCount, setSteps] = useState(3);
   const [prompt, setPrompt] = useState("");
@@ -331,12 +331,15 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const safeModule = !module.trim() || module.trim().toLowerCase() === "all" ? "Core" : module.trim();
     if (method === "record") {
       window.location.href = `/dashboard/recorder${url ? `?url=${encodeURIComponent(url)}` : ""}`.replace("/dashboard/recorder", "/dashboard/recorder");
       return;
     }
     const json =
-      method === "manual" ? { mode: "manual", title, module, criticality, stepsCount } : { mode: "ai", module, criticality, prompt: prompt || (url ? `Explore ${url}` : ""), count };
+      method === "manual"
+        ? { mode: "manual", title, module: safeModule, criticality, stepsCount }
+        : { mode: "ai", module: safeModule, criticality, prompt: prompt || (url ? `Explore ${url}` : ""), count };
     const res = await run<{ created: number }>("create", "/api/dashboard/test-cases", { json });
     if (res) {
       onCreated(res.created);

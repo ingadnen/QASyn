@@ -41,6 +41,11 @@ export async function POST(request: Request) {
     publishMode: parsed.data.publishMode,
     testTypes: parsed.data.testTypes,
     prerequisites: parsed.data.prerequisites,
+    explorePrompt: parsed.data.explorePrompt,
+    additionalContext: parsed.data.additionalContext,
+    requirementName: parsed.data.requirementName,
+    createSuite: parsed.data.createSuite,
+    createPlan: parsed.data.createPlan,
   });
   return NextResponse.json({ crawl: { id: crawl.id, status: crawl.status } }, { status: 201 });
 }

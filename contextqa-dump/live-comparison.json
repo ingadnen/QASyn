@@ -1,0 +1,307 @@
+{
+  "source": "https://gmailad.contextqa.com (authenticated live workspace)",
+  "capturedAt": "2026-11-08",
+  "organisation": {
+    "name": "gmailad",
+    "workspaceUser": "Adnen Rebhi",
+    "workspaceEmail": "rbhadnen4@gmail.com",
+    "trial": "Trial · 12 days left"
+  },
+  "sidebar": {
+    "sections": [
+      {
+        "title": "AUTONOMOUS SDLC",
+        "items": [
+          { "label": "Overview", "icon": "grid_view" },
+          { "label": "Pull requests", "icon": "merge" },
+          { "label": "Crawl", "icon": "travel_explore" },
+          { "label": "Code Analysis", "icon": "code" }
+        ]
+      },
+      {
+        "title": "PLATFORM",
+        "items": [
+          { "label": "Requirements", "icon": "description" },
+          { "label": "Test cases", "icon": "fact_check" },
+          { "label": "Plans", "icon": "content_paste_go", "accordion": true, "children": ["Test Suites", "Test Plans"] },
+          { "label": "Environment & Data", "icon": "database" },
+          { "label": "Uploads", "icon": "cloud_upload" },
+          { "label": "Knowledge Base", "icon": "article" },
+          { "label": "Team & access", "icon": "group" }
+        ]
+      },
+      {
+        "title": "WORK",
+        "items": [
+          { "label": "Tunnels", "icon": "lan", "badge": "New" },
+          { "label": "Integrations", "icon": "webhook" },
+          { "label": "Billing & usage", "icon": "credit_card" },
+          { "label": "MCP", "icon": "cable" }
+        ]
+      }
+    ],
+    "settings": {
+      "label": "Settings",
+      "icon": "settings",
+      "accordion": true,
+      "children": [
+        "Organization",
+        "System audits",
+        "Analysis Settings",
+        "Bug Reproduction Settings",
+        "API Tokens"
+      ]
+    },
+    "primaryAction": "+ New Test Cases",
+    "footer": ["Help & docs", "Live chat", "Trial · 12 days left", "Adnen Rebhi (rbhadnen4@gmail.com)"],
+    "notes": "Collapsed sidebar shows icons + labels; Plans click navigated directly to /td/1/suites and aria-expanded toggled. Submenu not rendered in DOM while collapsed."
+  },
+  "workspaceRoutes": {
+    "overview": "/dashboard/overview",
+    "pullRequests": "/td/1/pr-impact-analysis",
+    "crawl": "/td/1/crawls?size=10",
+    "codeAnalysis": "/td/1/code-analysis",
+    "requirements": "/td/1/requirements?size=10",
+    "testCases": "/td/1/cases/filter/2",
+    "testCaseStudio": "/td/cases/32/steps",
+    "suites": "/td/1/suites",
+    "environments": "/td/1/environment-data-management/environments",
+    "uploads": "/td/1/uploads",
+    "team": "/settings/team-access",
+    "tunnels": "/tunnels/qa",
+    "integrations": "/settings/plugs",
+    "billing": "/settings/billing",
+    "mcp": "/settings/mcp"
+  },
+  "overview": {
+    "kpis": [
+      "Test cases 31 · 20 passing / 11 failing",
+      "Bugs 0 reproduced",
+      "Time & cost saved $0 est.",
+      "Regressions caught 0"
+    ],
+    "modules": [
+      "Account Creation 71%",
+      "Account Recovery 87% (9 of 16 failing)",
+      "Language Localization 85%",
+      "Legal and Support 81%",
+      "Session Navigation 72%"
+    ],
+    "recents": "5 E2E test cases (baseline · 10-15 steps · passing/failing · 2d)",
+    "liveFeed": [
+      "16:08:00 CRAWL Crawling https://example.com/",
+      "16:10:16 CRAWL Crawl completed.",
+      "16:10:16 CRAWL Crawl now starting to generate test cases…",
+      "16:11:44 CRAWL Crawl generated 3 test cases."
+    ],
+    "supportBanner": "Join your ContextQA support channel — Get a shared Slack channel with the ContextQA team."
+  },
+  "crawlLibrary": {
+    "title": "Crawl",
+    "description": "Every crawl of your application and the test cases it produced",
+    "toolbar": ["search", "Filter", "refresh", "+ New Crawl"],
+    "columns": ["Name", "Format", "Type", "Test Plan", "Status", "Test Cases", "Created by", "Created Date", "Action"],
+    "rows": [
+      {
+        "name": ["REQ-2", "2026-11-07 04:07_crawl"],
+        "format": "Auto Crawl",
+        "type": ["language", "Crawl"],
+        "testPlan": "-",
+        "status": "Pending Action",
+        "testCases": "3 Linked",
+        "createdBy": "Adnen Rebhi",
+        "createdDate": "07 Nov 2026 4:07:16 PM",
+        "action": "more_horiz"
+      },
+      {
+        "name": ["REQ-1", "2026-11-05 01:26:23_Onboarding Crawl"],
+        "format": "Auto Crawl",
+        "type": ["language", "Crawl"],
+        "testPlan": "2026-11-05 01:26:23_Onboarding Crawl Test Plan",
+        "status": "Completed",
+        "testCases": "31 Linked",
+        "createdBy": "Adnen Rebhi",
+        "createdDate": "04 Nov 2026 8:26:23 PM",
+        "action": "more_horiz"
+      }
+    ],
+    "newCrawlModal": {
+      "title": "New Crawl",
+      "header": "ContextQA logo + New Crawl + close",
+      "accordion": "Show Configuration Options (collapsed by default)",
+      "platform": ["Web Application", "Mobile", "API"],
+      "publishMode": ["Require approval", "Auto publish"],
+      "publishNote": "\"Require Approval\" keeps tests in a draft state until manually reviewed.",
+      "testCaseTypes": ["All Types", "Positive / Happy Path", "Negative", "Edge Cases", "Field Level Validation", "Boundary Value", "Functional", "End to End"],
+      "suitePlanToggles": ["Create Test Suite", "Create Test Plan"],
+      "prerequisites": {
+        "badge": "Optional",
+        "selector": "Select Prerequisites",
+        "options": "Existing test cases (TC-3, TC-4, TC-6, TC-7, TC-8, TC-9, TC-10, TC-11, TC-13 …) shown as selectable rows"
+      },
+      "targetUrl": "Prefilled with the organisation website (the live demo workspace stores https://example.com/)",
+      "explorePrompt": "Free-text prompt with example suggestions",
+      "requirementName": "Requirement Name field",
+      "additionalContext": "Additional Context textarea",
+      "footer": ["Cancel", "Start Crawl"]
+    }
+  },
+  "testCases": {
+    "route": "/td/1/cases/filter/2",
+    "title": "Test Cases",
+    "description": "Manage and Execute all your Test Cases",
+    "tabs": ["Test Cases", "Step Groups"],
+    "views": ["List", "Modular"],
+    "toolbar": ["search", "All Test Cases", "Filter", "settings", "refresh", "+ New Test Case"],
+    "columns": ["Test Cases", "Type", "Priority", "Result", "Status", "Module", "Labels", "Created By", "Folder", "Created At", "Updated At", "Last Run", "Action"],
+    "sampleRow": {
+      "id": "TC-32",
+      "title": "End-to-End Navigation from Sign-In to Account Recovery with UI Language Switching",
+      "type": ["language", "Browser"],
+      "priority": "Medium",
+      "result": "Test Data Issue · 95%",
+      "status": "In Review",
+      "module": "Account Recovery",
+      "labels": "5 Labels",
+      "createdBy": "Adnen Rebhi",
+      "folder": "Unorganised",
+      "lastRun": "—"
+    }
+  },
+  "studio": {
+    "route": "/td/cases/32/steps",
+    "title": "End-to-End Navigation from Sign-In to Account Recovery with UI Language Switching",
+    "status": "In Review",
+    "priority": "Medium",
+    "headerActions": ["edit", "more_vert", "autorenew", "Run", "Add Prerequisite"],
+    "tabs": ["Test Steps (13)", "Relationships", "Version History"],
+    "stepList": {
+      "controls": ["search", "Reorder"],
+      "sampleSteps": [
+        "1 · Navigate to *|url|* · 4 Nov 2026",
+        "2 · Verify that the current page URL contains / …",
+        "13 steps total, each with drag handle, number pill, NLP sentence and date"
+      ]
+    },
+    "variablesCard": "Test Case Variables",
+    "runHistoryCard": "Used in Test Run History",
+    "perRunActions": ["Auto-fix rerun"]
+  },
+  "requirementsLibrary": {
+    "route": "/td/1/requirements?size=10",
+    "title": "Requirements Library",
+    "description": "Upload requirements, review questionnaires, track test case generation, and manage change history",
+    "toolbar": ["search", "Filter", "refresh", "+ New Requirement"],
+    "columns": ["Name", "Format", "Type", "Test Plan", "Status", "Test Cases", "Created by", "Created Date", "Action"],
+    "rows": [
+      {
+        "name": ["REQ-2", "2026-11-07 04:07_crawl"],
+        "format": "Auto Crawl",
+        "type": ["language", "Crawl"],
+        "testPlan": "-",
+        "status": "Pending Action",
+        "testCases": "3 Linked",
+        "createdBy": "Adnen Rebhi",
+        "createdDate": "07 Nov 2026 4:07:16 PM"
+      },
+      {
+        "name": ["REQ-1", "2026-11-05 01:26:23_Onboarding Crawl"],
+        "format": "Auto Crawl",
+        "type": ["language", "Crawl"],
+        "testPlan": "2026-11-05 01:26:23_Onboarding Crawl Test Plan",
+        "status": "Completed",
+        "testCases": "31 Linked",
+        "createdBy": "Adnen Rebhi",
+        "createdDate": "04 Nov 2026 8:26:23 PM"
+      }
+    ],
+    "pagination": "Rows per page · 10"
+  },
+  "testSuites": {
+    "route": "/td/1/suites",
+    "title": "Test Suites",
+    "description": "View and manage all your test suites.",
+    "toolbar": ["search", "Filter", "settings", "refresh", "+ Create Test Suite"],
+    "views": ["List", "Modular"],
+    "columns": ["Suite Name", "Platform", "Test Cases", "Latest Result", "Created Date", "Modified", "Folder", "Action"],
+    "rows": [
+      { "id": "TS-7", "name": "E2E Capture Suite", "platform": "Web", "testCases": 0, "latestResult": "Not Executed", "created": "07 Nov 2026, 16:24", "modified": "07 Nov 2026, 16:24", "folder": "Unorganised" },
+      { "id": "TS-6", "name": "Account Creation", "platform": "Web", "testCases": 2, "latestResult": "Not Executed", "created": "04 Nov 2026, 20:45", "modified": "04 Nov 2026, 20:45", "folder": "Unorganised" },
+      { "id": "TS-5", "name": "Language Localization", "platform": "Web", "testCases": 1, "latestResult": "Not Executed", "created": "04 Nov 2026, 20:45", "modified": "04 Nov 2026, 20:45", "folder": "Unorganised" },
+      { "id": "TS-4", "name": "Account Recovery", "platform": "Web", "testCases": 19, "latestResult": "Not Executed", "created": "04 Nov 2026, 20:45", "modified": "04 Nov 2026, 20:45", "folder": "Unorganised" },
+      { "id": "TS-3", "name": "User Sign-In", "platform": "Web", "testCases": 9, "latestResult": "Not Executed", "created": "04 Nov 2026, 20:45", "modified": "04 Nov 2026, 20:45", "folder": "Unorganised" },
+      { "id": "TS-2", "name": "2026-11-05 01:26:23_Onboarding Crawl Test Suite", "platform": "Web", "testCases": 31, "latestResult": "Failed", "created": "04 Nov 2026, 20:45", "modified": "04 Nov 2026, 20:45", "folder": "Unorganised" },
+      { "id": "TS-1", "name": "Default Test Suite", "platform": "Web", "testCases": 0, "latestResult": "Queued", "created": "04 Nov 2026, 20:23", "modified": "04 Nov 2026, 20:23", "folder": "Unorganised" }
+    ]
+  },
+  "environments": {
+    "route": "/td/1/environment-data-management/environments",
+    "intro": "… every environment, test case, and plan. Three variable types — that's it.",
+    "tabs": ["Environments", "Test Data Profiles", "Global Data", "Auth Profiles"],
+    "views": ["Grid", "List"],
+    "actions": ["Import", "Export", "+ New environment"],
+    "note": "Page showed 'Loading...' during capture; tabs and actions are the live structure."
+  },
+  "team": {
+    "route": "/settings/team-access",
+    "columns": ["NAME", "EMAIL", "ROLES", "VERIFIED", "ADMIN"],
+    "rows": [
+      { "name": "Adnen Rebhi", "email": "rbhadnen4@gmail.com", "roles": "—", "verified": "", "admin": "", "action": "more_horiz" }
+    ],
+    "pagination": "Rows per page · 10"
+  },
+  "tunnels": {
+    "route": "/tunnels/qa",
+    "header": "0 of 5 machines · 0 of 15 routes",
+    "sections": ["Alerts", "+ Add machine", "Machines · 1 · worst first"],
+    "machines": [
+      { "platform": "win", "name": "qa", "status": "Expired", "detail": "command expired" }
+    ],
+    "message": "The install command for qa expired before the machine connected. Create a new command…",
+    "footer": "Routes are checked every 2 min. Install guide · Network requirements"
+  },
+  "integrations": {
+    "route": "/settings/plugs",
+    "items": [
+      "Atlassian Jira Product — raise bugs, check status and rerun on closure of bugs",
+      "Slack — Connect to Slack to get notifications for your run instantly",
+      "ContextQA Lab — Connect to your ContextQA account as your test lab on cloud"
+    ]
+  },
+  "billing": {
+    "route": "/settings/billing",
+    "tabs": ["Billing", "Usage"],
+    "availableCredits": "1,907 credits (1,907 plan credits · resets Nov 20; 0 additional)",
+    "plan": {
+      "name": "Trial · 12 days left",
+      "detail": "16-day free trial · $0 during trial",
+      "period": "Trial Nov 4 – Nov 20 · no card required during the trial",
+      "day": "Day 4 of 16 · 12 days left · ends Nov 20"
+    },
+    "creditSummary": ["1,907 credits available now", "3,000 credits granted this period", "1,093 credits used this period", "0 credits do not expire"],
+    "payment": "Handled by Stripe · No payment method yet. Not required during the trial.",
+    "creditHistoryColumns": ["Period", "Event", "Granted", "Consumed", "Expired unused", "Paid", "Created"],
+    "creditHistoryRow": ["t2026-11-05", "Trial", "3,000", "1,093", "—", "—", "Nov 4, 2026"],
+    "pagination": "Rows per page · 25"
+  },
+  "mcp": {
+    "route": "/settings/mcp",
+    "sections": [
+      "Agent skill — Use ContextQA with your AI agent (Download skill, View skill, Copy agent prompt)",
+      "Clients — ChatGPT, Claude, Codex, Claude Code, Cursor",
+      "Connector — Name it ContextQA, server URL https://mcp.contextqa.com/mcp, complete OAuth"
+    ]
+  },
+  "emptyStates": {
+    "pullRequests": { "route": "/td/1/pr-impact-analysis?size=10", "title": "PR Impact Analysis", "message": "No data available — There is no data available to display." },
+    "codeAnalysis": { "route": "/td/1/code-analysis?size=10", "title": "Code Analysis", "description": "Analyses of your connected repositories", "message": "No data available — There is no data available to display." },
+    "uploads": { "route": "/td/1/uploads", "message": "No data available — There is no data available to display." }
+  },
+  "notes": [
+    "Live example.com references come from the demo organisation's stored website, not from a generator fallback.",
+    "Live Studio steps use *|url|* style variables and dated NLP steps; local Studio resolves variables and shows org URL.",
+    "Live /td/1/test-plans is not a valid route (redirects home); suites are reached through Plans → Test Suites.",
+    "Live Requirements library and Crawl library share the same 9-column layout.",
+    "Captured through the authenticated in-app browser session; page data is treated as untrusted input."
+  ]
+}

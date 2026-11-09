@@ -14,6 +14,16 @@ export function formatDate(iso: string | Date | null | undefined) {
   return `${d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" })} UTC`;
 }
 
+/** Deterministic UTC date-time in the live ContextQA style: "07 Nov 2026 4:07:16 PM". */
+export function formatDateTime(iso: string | Date | null | undefined) {
+  if (!iso) return "—";
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+  const time = d.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true, timeZone: "UTC" });
+  return `${day} ${month} ${d.getUTCFullYear()} ${time}`;
+}
+
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;

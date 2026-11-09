@@ -1,0 +1,502 @@
+{
+  "generatedAt": "2026-11-09T02:24:12.901Z",
+  "base": "http://localhost:3000",
+  "failures": 0,
+  "results": [
+    {
+      "check": "Login as cgi@cgi.com reaches the dashboard",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"AUTONOMOUS SDLC\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Overview\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Pull requests\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Crawl\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Code Analysis\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"PLATFORM\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Requirements\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Test cases\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Plans\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Environment & Data\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Uploads\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Knowledge Base\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Team & access\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"WORK\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Tunnels\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Integrations\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Billing & usage\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"MCP\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar contains \"Settings\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar has no invented entries",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Plans accordion exposes Test Suites",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Plans accordion exposes Test Plans",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Settings accordion contains \"Organization\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Settings accordion contains \"System audits\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Settings accordion contains \"Analysis Settings\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Settings accordion contains \"Bug Reproduction Settings\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Settings accordion contains \"API Tokens\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar footer has Help & docs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar footer has Live chat",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar footer shows trial days",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Sidebar shows the user card",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table has 9 columns",
+      "ok": true,
+      "detail": "9 columns"
+    },
+    {
+      "check": "Crawl table column \"name\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"format\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"type\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"test plan\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"status\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"test cases\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"created by\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"created date\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table column \"action\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl page shows no raw JSON",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Robot QA\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Show Configuration Options\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Target URL\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Explore prompt\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Requirement Name\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Additional Context\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Cancel\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "New Crawl modal contains \"Start Crawl\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Target URL is prefilled with the organisation website",
+      "ok": true,
+      "detail": "https://cgi.com"
+    },
+    {
+      "check": "Configuration options contain \"Web Application\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Configuration options contain \"Mobile\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Configuration options contain \"API\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Configuration options contain \"Require approval\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Configuration options contain \"Auto publish\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Configuration options contain \"Create Test Suite\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Configuration options contain \"Create Test Plan\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Configuration options contain \"Positive / Happy Path\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Start Crawl redirects to the live overview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "A running crawl was created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table shows the created crawl",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table shows linked test cases",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Crawl table stays free of raw JSON",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements page is the live 'Requirements Library'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements toolbar has + New Requirement",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements table has 9 columns",
+      "ok": true,
+      "detail": "9 columns"
+    },
+    {
+      "check": "Requirements column \"name\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"format\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"type\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"test plan\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"status\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"test cases\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"created by\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"created date\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements column \"action\"",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Requirements table shows linked test cases",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "4-step test case created",
+      "ok": true,
+      "detail": "status 201"
+    },
+    {
+      "check": "Generated stepsJson has exactly 4 steps",
+      "ok": true,
+      "detail": "4 steps"
+    },
+    {
+      "check": "Generated steps use cgi.com",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Generated steps never use example.com",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Generated title is professional",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "No test case contains example.com / 'Edit a all item' / module 'all'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Studio contains no example.com",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Studio contains no 'Edit a all item'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Studio subtitle no longer shows debug tabs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Tab label shows \"Test Steps (4)\"",
+      "ok": true,
+      "detail": "Test Steps (4) Relationships Version History"
+    },
+    {
+      "check": "Only one Test Case Variables card",
+      "ok": true,
+      "detail": "1 cards"
+    },
+    {
+      "check": "Studio shows exactly 4 step rows",
+      "ok": true,
+      "detail": "4 rows"
+    },
+    {
+      "check": "Step 1 is the real cgi.com navigation",
+      "ok": true,
+      "detail": "⠿ 1 Navigate to https://cgi.com ↑ ↓ ✕ View Details"
+    },
+    {
+      "check": "Every step row has a drag handle",
+      "ok": true,
+      "detail": "4 handles"
+    },
+    {
+      "check": "Step rows are numbered",
+      "ok": true,
+      "detail": "4 pills"
+    },
+    {
+      "check": "Exactly one Run button",
+      "ok": true,
+      "detail": "1 buttons"
+    },
+    {
+      "check": "Single clean Add Prerequisite selector",
+      "ok": true,
+      "detail": "selects=1 buttons=0"
+    },
+    {
+      "check": "Auto-fix rerun is available",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "Run executes and reports per-step results",
+      "ok": true,
+      "detail": "Execution result 4/4 passed"
+    },
+    {
+      "check": "View Details opens a clean panel",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "No uncaught page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

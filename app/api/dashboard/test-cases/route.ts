@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { generateTitles } from "@/lib/engine";
+import { buildStepsJson, generateTitles } from "@/lib/engine";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
@@ -35,6 +35,8 @@ export async function POST(request: Request) {
           criticality: input.criticality,
           stepsCount: input.stepsCount,
           source: "manual",
+          stepsJson: buildStepsJson(ctx.org.website ?? "", input.stepsCount, input.module, input.title),
+          variablesJson: JSON.stringify({ url: ctx.org.website ?? "" }),
         },
       });
       await audit(tx, ctx, "test_case.created", tc.title);
@@ -46,6 +48,7 @@ export async function POST(request: Request) {
     const titles = generateTitles(input.module, input.prompt, input.count).filter((t) => !existing.has(t));
     const rows = [];
     for (const title of titles) {
+      const stepsCount = 3 + (title.length % 5);
       rows.push(
         await tx.testCase.create({
           data: {
@@ -53,8 +56,10 @@ export async function POST(request: Request) {
             title,
             module: input.module,
             criticality: input.criticality,
-            stepsCount: 3 + (title.length % 5),
+            stepsCount,
             source: "ai",
+            stepsJson: buildStepsJson(ctx.org.website ?? "", stepsCount, input.module, title),
+            variablesJson: JSON.stringify({ url: ctx.org.website ?? "" }),
           },
         }),
       );

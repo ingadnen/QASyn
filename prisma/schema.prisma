@@ -477,6 +477,13 @@ model CrawlSession {
   prerequisitesJson String    @default("[]")
   /// Requirement auto-created for this crawl
   requirementId  String?
+  /// Explore prompt entered in the New Crawl modal
+  explorePrompt  String       @default("")
+  /// Additional context entered in the New Crawl modal
+  additionalContext String    @default("")
+  /// Create a Test Suite / Test Plan from generated cases
+  createSuite    Boolean      @default(false)
+  createPlan     Boolean      @default(false)
 
   @@index([organisationId, startedAt])
 }

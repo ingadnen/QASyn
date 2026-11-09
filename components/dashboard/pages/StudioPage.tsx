@@ -18,6 +18,28 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const tc = await prisma.testCase.findFirst({ where: { id, organisationId: ctx.org.id } });
   if (!tc) notFound();
+  const lastCrawl = await prisma.crawlSession.findFirst({
+    where: { organisationId: ctx.org.id },
+    orderBy: { startedAt: "desc" },
+    select: { targetUrl: true },
+  });
+  const orgUrl = ctx.org.website ?? lastCrawl?.targetUrl ?? "";
+  const needsBackfill = !tc.stepsJson || tc.stepsJson === "[]" || (orgUrl && tc.stepsJson.includes("example.com") && !orgUrl.includes("example.com")) || tc.stepsJson.includes("example.com");
+  if (needsBackfill) {
+    const { buildStepsJson } = await import("@/lib/engine");
+    const stepsCount = Math.max(1, tc.stepsCount);
+    let existingVars: Record<string, unknown> = {};
+    try {
+      existingVars = JSON.parse(tc.variablesJson || "{}");
+    } catch {
+      existingVars = {};
+    }
+    const variablesJson = JSON.stringify({ ...existingVars, ...(orgUrl ? { url: orgUrl } : {}) });
+    const stepsJson = buildStepsJson(orgUrl, stepsCount, tc.module, tc.title);
+    await prisma.testCase.update({ where: { id: tc.id }, data: { stepsJson, variablesJson } });
+    tc.stepsJson = stepsJson;
+    tc.variablesJson = variablesJson;
+  }
   let steps: StudioStep[] = [];
   try {
     steps = JSON.parse(tc.stepsJson || "[]");
@@ -48,7 +70,7 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
       <PageHeader
         kicker="WEB TESTING · TEST STEPS EDITOR"
         title={tc.title}
-        description={`${tc.module} · ${tc.stepsCount} step${tc.stepsCount === 1 ? "" : "s"} · ${assertions.length} assertions · tabs: Test Steps / Relationships / Version History`}
+        description={`${tc.module} · ${tc.stepsCount} step${tc.stepsCount === 1 ? "" : "s"} · ${assertions.length} assertion${assertions.length === 1 ? "" : "s"}`}
         actions={
           <>
             <StatusPill value={tc.status} />
@@ -58,7 +80,8 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
         }
       />
       <StudioTabs
-        testSteps={<StudioClient testCaseId={tc.id} initialSteps={steps} readOnly={ctx.readOnly} cases={allCases} />}
+        stepCount={steps.length}
+        testSteps={<StudioClient testCaseId={tc.id} initialSteps={steps} initialVariables={variables} readOnly={ctx.readOnly} cases={allCases} orgUrl={orgUrl} />}
         relationships={
           <Card title="Relationships">
             <div className="grid gap-6 px-5 py-4 lg:grid-cols-3">
@@ -88,11 +111,6 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
           </Card>
         }
       />
-      <Card title="Test Case Variables">
-        <p className="px-5 py-3 text-sm text-slate-600">
-          Use <code>{"*|var|*"}</code> in steps. Current: {Object.keys(variables).length ? Object.entries(variables).map(([k, v]) => `${k}=${v}`).join(", ") : "none (edit in Studio inspector)"}
-        </p>
-      </Card>
       <Card title="Used in Test Run History">
         {runs.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-slate-500">No runs yet — hit Run Test above.</p>

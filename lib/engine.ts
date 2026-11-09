@@ -14,25 +14,37 @@ type Actor = Pick<OrgContext, "org" | "user">;
 
 const PENDING_MS = 6000;
 
-export async function startCrawl(db: Db, actor: Actor, targetUrl: string, opts?: { platform?: string; publishMode?: string; testTypes?: string[]; prerequisites?: string[] }): Promise<CrawlSession> {
+export async function startCrawl(db: Db, actor: Actor, targetUrl: string, opts?: { platform?: string; publishMode?: string; testTypes?: string[]; prerequisites?: string[]; explorePrompt?: string; additionalContext?: string; requirementName?: string; createSuite?: boolean; createPlan?: boolean }): Promise<CrawlSession> {
   const running = await db.crawlSession.findFirst({ where: { organisationId: actor.org.id, status: "running" } });
   if (running) return running;
+  const logs = buildCrawlLogs(targetUrl);
+  if (opts?.explorePrompt?.trim()) {
+    logs.splice(1, 0, { offsetMs: 150, tag: "MAP", message: `Explore prompt: ${opts.explorePrompt.trim()}` });
+  }
+  if (opts?.additionalContext?.trim()) {
+    logs.splice(2, 0, { offsetMs: 180, tag: "INFO", message: opts.additionalContext.trim() });
+  }
   const crawl = await db.crawlSession.create({
     data: {
       organisationId: actor.org.id,
       targetUrl,
       status: "running",
-      logs: JSON.stringify(buildCrawlLogs(targetUrl)),
+      logs: JSON.stringify(logs),
       publishMode: opts?.publishMode ?? "Require approval",
       testTypesJson: JSON.stringify(opts?.testTypes ?? []),
       prerequisitesJson: JSON.stringify(opts?.prerequisites ?? []),
+      explorePrompt: opts?.explorePrompt ?? "",
+      additionalContext: opts?.additionalContext ?? "",
+      createSuite: opts?.createSuite ?? false,
+      createPlan: opts?.createPlan ?? false,
     },
   });
   // Auto-create the associated requirement (REQ-00X <date>_crawl)
   const count = await db.requirement.count({ where: { organisationId: actor.org.id } });
   const code = `REQ-${String(count + 1).padStart(3, "0")}`;
+  const requirementTitle = opts?.requirementName?.trim() || `${new Date().toISOString().slice(0, 10)}_crawl — ${hostFromUrl(targetUrl)}`;
   const requirement = await db.requirement
-    .create({ data: { organisationId: actor.org.id, code, title: `${new Date().toISOString().slice(0, 10)}_crawl — ${hostFromUrl(targetUrl)}`, source: "doc", coverageStatus: "uncovered" } })
+    .create({ data: { organisationId: actor.org.id, code, title: requirementTitle, source: "doc", coverageStatus: "uncovered" } })
     .catch(() => null);
   if (requirement) {
     await db.crawlSession.update({ where: { id: crawl.id }, data: { requirementId: requirement.id } });
@@ -59,8 +71,10 @@ export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
           module: flow.module,
           criticality: flow.criticality,
           status: "draft",
-          stepsCount: flow.steps,
+          stepsCount: Math.max(1, flow.steps),
           source: "crawl",
+          stepsJson: buildStepsJson(crawl.targetUrl, Math.max(1, flow.steps), flow.module, flow.name),
+          variablesJson: JSON.stringify({ url: crawl.targetUrl }),
         })),
       });
     }
@@ -80,17 +94,23 @@ export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
       data: { organisationId: actor.org.id, title: `${host} (crawl)`, type: "website", urlOrPath: crawl.targetUrl, status: "indexed" },
     });
   }
-  // Auto Publish: create TestSuite + TestPlan so generated cases are immediately runnable.
-  if (crawl.publishMode === "Auto publish" && fresh.length > 0) {
+  // Create the Test Suite / Test Plan when requested (toggles) or on Auto publish.
+  const wantsSuite = crawl.createSuite || crawl.publishMode === "Auto publish";
+  const wantsPlan = crawl.createPlan || crawl.publishMode === "Auto publish";
+  if ((wantsSuite || wantsPlan) && fresh.length > 0) {
     const created = await db.testCase.findMany({ where: { organisationId: actor.org.id, title: { in: fresh.map((c) => c.name) } } });
-    const suite = await db.testSuite.create({
-      data: { organisationId: actor.org.id, name: `${host} crawl suite`, description: `Generated from crawl ${crawl.targetUrl}`, testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
-    });
-    const plan = await db.testPlan.create({
-      data: { organisationId: actor.org.id, name: `${host} crawl plan`, environment: "Staging", testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
-    });
-    await audit(db, actor, "crawl.suite_created", `${suite.name} · ${fresh.length} cases`);
-    await audit(db, actor, "crawl.plan_created", plan.name);
+    if (wantsSuite) {
+      const suite = await db.testSuite.create({
+        data: { organisationId: actor.org.id, name: `${host} crawl suite`, description: `Generated from crawl ${crawl.targetUrl}`, testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
+      });
+      await audit(db, actor, "crawl.suite_created", `${suite.name} · ${fresh.length} cases`);
+    }
+    if (wantsPlan) {
+      const plan = await db.testPlan.create({
+        data: { organisationId: actor.org.id, name: `${host} crawl plan`, environment: "Staging", testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
+      });
+      await audit(db, actor, "crawl.plan_created", plan.name);
+    }
   }
   // Link generated cases back to the auto-created Requirement so coverage shows immediately.
   if (crawl.requirementId && fresh.length > 0) {
@@ -210,11 +230,58 @@ const AI_TEMPLATES: Record<string, string[]> = {
   Checkout: ["Pay with a saved card", "Handle declined payment", "Edit shipping address at checkout", "Guest checkout"],
 };
 
+const E2E_TITLES = [
+  "End-to-End Navigation and Sign-In Flow",
+  "Account Recovery and Validation Flow",
+  "Header Navigation and Language Localization",
+  "Session Persistence and Security Check",
+  "Search and Catalog Browsing Flow",
+  "Shopping Cart and Checkout Completion",
+  "User Profile and Settings Management",
+  "Error Handling and Form Validation Flow",
+];
+
 export function generateTitles(module: string, prompt: string, count: number): string[] {
-  const base = AI_TEMPLATES[module] ?? [`Open the ${module} page`, `Create a ${module} item`, `Edit a ${module} item`, `Delete a ${module} item`];
-  const focus = prompt.trim().replace(/\s+/g, " ").slice(0, 60);
-  const titles = base.map((t) => (focus ? `${t} — ${focus}` : t));
-  return titles.slice(0, Math.max(1, Math.min(count, titles.length)));
+  const safeModule = module === "all" || !module ? "Core" : module;
+  const base = AI_TEMPLATES[safeModule] ?? E2E_TITLES;
+  const focusRaw = prompt.trim().replace(/\s+/g, " ");
+  const generic = /^(all|any|none|n\/?a|test|tests|crawl|e2e)$/i.test(focusRaw);
+  const focus = !generic && focusRaw.length >= 8 ? focusRaw.slice(0, 60) : "";
+  const titles = (focus ? [...E2E_TITLES, ...base].map((t) => `${t} — ${focus}`) : [...E2E_TITLES, ...base]);
+  const unique = [...new Set(titles)];
+  return unique.slice(0, Math.max(1, Math.min(count, unique.length)));
+}
+
+export interface NlpStepLike {
+  id: string;
+  action: string;
+  target: string;
+  value: string;
+  selector: string;
+}
+
+/** Builds exactly `count` realistic NLP steps anchored on the organisation URL. */
+export function buildStepsJson(orgUrl: string, count: number, module: string, title = ""): string {
+  const base = (orgUrl || "").trim().replace(/\/$/, "");
+  const host = base ? base.replace(/^https?:\/\//, "") : "the application";
+  const goTo = base || "the application";
+  const flows: Array<[string, string, string]> = [
+    ["Navigate", `Navigate to ${goTo}`, ""],
+    ["Verify Element", base ? `Verify that the current page URL contains ${host}` : "Verify that the application home page is displayed", ""],
+    ["Click", "Click on the primary navigation link", ""],
+    ["AI Assertion", "Verify that the main heading is visible", ""],
+    ["Enter Text", `Enter ${title || "test value"} in the search field`, ""],
+    ["Click", `Click on ${module} module link`, ""],
+    ["AI Assertion", `Verify that the ${module.toLowerCase()} page loads correctly`, ""],
+    ["Click", "Click on the submit button", ""],
+    ["Verify Element", "Verify the confirmation message is visible", ""],
+    ["Navigate", `Navigate to ${base ? `${base}/settings` : "the settings page"}`, ""],
+  ];
+  const steps: NlpStepLike[] = Array.from({ length: Math.max(1, count) }, (_, i) => {
+    const [action, target, value] = flows[i % flows.length];
+    return { id: `s${i + 1}`, action, target: action === "Navigate" && i > 0 && i % 5 === 4 ? `${base}/settings` : target, value, selector: "" };
+  });
+  return JSON.stringify(steps);
 }
 
 /** Lazy state transitions (PR analysis, KB indexing, integration indexing). */

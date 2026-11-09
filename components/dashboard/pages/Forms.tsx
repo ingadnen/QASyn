@@ -21,7 +21,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const inputCls =
   "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100";
 
-export function CrawlForm({ defaultUrl, readOnly }: { defaultUrl: string; readOnly: boolean }) {
+export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: string; readOnly: boolean; onCancel?: () => void }) {
   const { run, pending, error } = useAction();
   const router = useRouter();
   const [url, setUrl] = useState(defaultUrl);
@@ -31,8 +31,26 @@ export function CrawlForm({ defaultUrl, readOnly }: { defaultUrl: string; readOn
   const [prerequisites, setPrerequisites] = useState("");
   const TYPE_OPTIONS = ["Positive / Happy Path", "Negative", "Edge Cases", "Field Level Validation", "Boundary Value", "Functional", "End to End"];
   const [configOpen, setConfigOpen] = useState(false);
+  const [explorePrompt, setExplorePrompt] = useState("");
+  const [requirementName, setRequirementName] = useState("");
+  const [additionalContext, setAdditionalContext] = useState("");
+  const [createSuite, setCreateSuite] = useState(true);
+  const [createPlan, setCreatePlan] = useState(true);
+  const EXAMPLES = ["Test the sign-in flow", "Cover the primary navigation", "Validate forms and error states"];
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="7" width="16" height="13" rx="3" />
+            <path d="M12 7V4M8 12h.01M16 12h.01M9 16h6" />
+          </svg>
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-slate-900">Robot QA · Autonomous Crawl</p>
+          <p className="text-xs text-slate-600">Map your application and generate reviewed test cases automatically.</p>
+        </div>
+      </div>
       <button type="button" onClick={() => setConfigOpen((v) => !v)} aria-expanded={configOpen} className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-700">
         <span>⚙ {configOpen ? "Hide Configuration Options" : "Show Configuration Options"}</span>
         <span>{configOpen ? "▾" : "▸"}</span>
@@ -74,13 +92,32 @@ export function CrawlForm({ defaultUrl, readOnly }: { defaultUrl: string; readOn
             </div>
             <p className="mt-1 text-xs text-slate-500">Choose the types of test cases AI should generate. If not selected, AI will automatically determine the test cases type for you.</p>
           </div>
+          <div className={cn("rounded-xl border border-slate-200 px-4 sm:col-span-2", readOnly && "pointer-events-none opacity-60")}>
+            <Toggle checked={createSuite} onChange={setCreateSuite} label="Create Test Suite" description="Group the generated test cases into a suite." />
+            <div className="border-t border-slate-100" />
+            <Toggle checked={createPlan} onChange={setCreatePlan} label="Create Test Plan" description="Attach the generated cases to a runnable plan." />
+          </div>
         </div>
       )}
       <form
-        className="flex flex-wrap items-end gap-2"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          const res = run<{ crawl: { id: string } }>("c", "/api/dashboard/crawl", { json: { targetUrl: url || undefined, platform, publishMode, testTypes: [...types], prerequisites } });
+          const prereqIds = prerequisites.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
+          const res = run<{ crawl: { id: string } }>("c", "/api/dashboard/crawl", {
+            json: {
+              targetUrl: url || undefined,
+              platform,
+              publishMode,
+              testTypes: [...types],
+              prerequisites: prereqIds,
+              explorePrompt,
+              additionalContext,
+              requirementName,
+              createSuite,
+              createPlan,
+            },
+          });
           void res.then((r) => {
             // Live behaviour (mirrors ContextQA): toast + redirect to the AQE live feed.
             sessionStorage.setItem("qasyn_crawl_notice", r ? `Crawl started — crawling ${url || defaultUrl}` : "");
@@ -88,21 +125,66 @@ export function CrawlForm({ defaultUrl, readOnly }: { defaultUrl: string; readOn
           });
         }}
       >
-        <div className="min-w-64 flex-1">
-          <Field label="Target URL — What should the crawl explore?">
-            <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" disabled={readOnly} />
+        <Field label="Target URL">
+          <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.example.com/login" disabled={readOnly} />
+        </Field>
+        <label className="block">
+          <span className="block text-sm font-medium text-slate-700">Explore prompt</span>
+          <span className="mt-1.5 block">
+            <textarea
+              className={cn(inputCls, "h-auto py-2")}
+              rows={3}
+              value={explorePrompt}
+              disabled={readOnly}
+              onChange={(e) => setExplorePrompt(e.target.value)}
+              placeholder="Tell Robot QA what to explore, e.g. sign in, browse the catalog and add an item to the cart…"
+            />
+          </span>
+          <span className="mt-1 flex flex-wrap gap-1.5">
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                disabled={readOnly}
+                onClick={() => setExplorePrompt((v) => (v ? `${v.trim()} ${ex.toLowerCase()}` : ex))}
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-200"
+              >
+                {ex}
+              </button>
+            ))}
+          </span>
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Requirement Name">
+            <input className={inputCls} value={requirementName} onChange={(e) => setRequirementName(e.target.value)} placeholder={defaultUrl ? `Crawl — ${defaultUrl.replace(/^https?:\/\//, "")}` : "Crawl requirement"} disabled={readOnly} />
           </Field>
+          <label className="block">
+            <span className="block text-sm font-medium text-slate-700">Prerequisites</span>
+            <span className="mt-1.5 block">
+              <input className={inputCls} value={prerequisites} disabled={readOnly} onChange={(e) => setPrerequisites(e.target.value)} placeholder="Select Prerequisites (e.g. TC-3, TC-4)" />
+            </span>
+          </label>
         </div>
-        <Button type="submit" loading={pending === "c"} loadingText="Starting…" disabled={readOnly}>
-          Start Crawl
-        </Button>
+        <label className="block">
+          <span className="block text-sm font-medium text-slate-700">Additional Context</span>
+          <span className="mt-1.5 block">
+            <textarea
+              className={cn(inputCls, "h-auto py-2")}
+              rows={2}
+              value={additionalContext}
+              disabled={readOnly}
+              onChange={(e) => setAdditionalContext(e.target.value)}
+              placeholder="Any credentials, constraints or areas to avoid…"
+            />
+          </span>
+        </label>
+        {publishMode === "Require approval" && <p className="text-xs text-slate-500">“Require Approval” keeps tests in a draft state until manually reviewed.</p>}
+        {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
+        <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+          <Button type="button" variant="secondary" onClick={() => onCancel?.()} disabled={pending === "c"}>Cancel</Button>
+          <Button type="submit" loading={pending === "c"} loadingText="Starting…" disabled={readOnly}>Start Crawl</Button>
+        </div>
       </form>
-      <label className="block">
-        <span className="text-xs font-medium text-slate-600">Prerequisites (optional) — existing test cases</span>
-        <input className={cn(inputCls, "mt-1")} value={prerequisites} disabled={readOnly} onChange={(e) => setPrerequisites(e.target.value)} placeholder="Select Prerequisites (e.g. TC-3, TC-4)" />
-      </label>
-      {publishMode === "Require approval" && <p className="text-xs text-slate-500">“Require Approval” keeps tests in a draft state until manually reviewed.</p>}
-      {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
     </div>
   );
 }

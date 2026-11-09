@@ -9,20 +9,16 @@ export function StudioHeaderButtons({ tc, cases, readOnly }: { tc: { id: string;
   const { run, pending, error } = useAction();
   const router = useRouter();
   const [criticality, setCriticality] = useState(tc.criticality);
-  const [prereq, setPrereq] = useState("");
 
-  async function runTest() {
-    const res = await run("run", `/api/dashboard/test-cases/${tc.id}`, { method: "PATCH", json: { action: "run" } });
+  async function addPrereq(id: string) {
+    if (!id) return;
+    const res = await run("pre", `/api/dashboard/test-cases/${tc.id}`, { method: "PATCH", json: { action: "prerequisites", testCaseIds: [id] } });
     if (res) router.refresh();
   }
-  async function autofix() {
-    const res = await run("fix", `/api/dashboard/test-cases/${tc.id}`, { method: "PATCH", json: { action: "run_steps" } });
-    if (res) router.refresh();
-  }
-  async function addPrereq() {
-    if (!prereq) return;
-    const res = await run("pre", `/api/dashboard/test-cases/${tc.id}`, { method: "PATCH", json: { action: "prerequisites", testCaseIds: [prereq] } });
-    if (res) router.refresh();
+
+  /** Single run entry point: the visible steps list executes and shows per-step results. */
+  function launchRun(autoFix = false) {
+    window.dispatchEvent(new CustomEvent("qasyn:studio-run", { detail: { autoFix } }));
   }
 
   return (
@@ -42,15 +38,20 @@ export function StudioHeaderButtons({ tc, cases, readOnly }: { tc: { id: string;
         <option value="high">High</option>
         <option value="critical">Critical</option>
       </select>
-      <select aria-label="Prerequisite TC" className="h-9 w-48 rounded-lg border border-slate-200 px-2 text-sm" value={prereq} disabled={readOnly} onChange={(e) => setPrereq(e.target.value)}>
-        <option value="">+ Add Prerequisite…</option>
+      <select
+        aria-label="Add prerequisite"
+        className="h-9 w-48 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700"
+        value=""
+        disabled={readOnly}
+        onChange={(e) => void addPrereq(e.target.value)}
+      >
+        <option value="">+ Add Prerequisite</option>
         {cases.filter((c) => c.id !== tc.id).map((c) => (
           <option key={c.id} value={c.id}>{c.title}</option>
         ))}
       </select>
-      <Button size="sm" variant="secondary" onClick={() => void addPrereq()} disabled={readOnly || !prereq}>+ Add Prerequisite</Button>
-      <Button size="sm" variant="secondary" onClick={() => void autofix()} loading={pending === "fix"} disabled={readOnly}>Auto-fix rerun</Button>
-      <Button size="sm" onClick={() => void runTest()} loading={pending === "run"} loadingText="Running…" disabled={readOnly}>▶ Run</Button>
+      <Button size="sm" variant="secondary" onClick={() => launchRun(true)} disabled={readOnly || pending === "pre"}>Auto-fix rerun</Button>
+      <Button size="sm" onClick={() => launchRun(false)} disabled={readOnly}>▶ Run</Button>
       {error && <span role="alert" className="text-xs text-red-600">{error}</span>}
     </span>
   );
