@@ -84,13 +84,26 @@ export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
   if (crawl.publishMode === "Auto publish" && fresh.length > 0) {
     const created = await db.testCase.findMany({ where: { organisationId: actor.org.id, title: { in: fresh.map((c) => c.name) } } });
     const suite = await db.testSuite.create({
-      data: { organisationId: actor.org.id, name: `${host} crawl suite`, description: `Generated from crawl ${crawl.targetUrl}`, testCasesCount: fresh.length, passRate: 0 },
+      data: { organisationId: actor.org.id, name: `${host} crawl suite`, description: `Generated from crawl ${crawl.targetUrl}`, testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
     });
     const plan = await db.testPlan.create({
       data: { organisationId: actor.org.id, name: `${host} crawl plan`, environment: "Staging", testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
     });
     await audit(db, actor, "crawl.suite_created", `${suite.name} · ${fresh.length} cases`);
     await audit(db, actor, "crawl.plan_created", plan.name);
+  }
+  // Link generated cases back to the auto-created Requirement so coverage shows immediately.
+  if (crawl.requirementId && fresh.length > 0) {
+    const created = await db.testCase.findMany({ where: { organisationId: actor.org.id, title: { in: fresh.map((c) => c.name) } } });
+    await db.requirement.update({
+      where: { id: crawl.requirementId },
+      data: {
+        linkedTestsCount: created.length,
+        coverageStatus: created.length > 0 ? "covered" : "uncovered",
+        testCases: { connect: created.map((c) => ({ id: c.id })) },
+      },
+    });
+    await audit(db, actor, "crawl.requirement_linked", `${created.length} cases → requirement`);
   }
   await audit(db, actor, "crawl.completed", `${host} · ${fresh.length} test cases`);
   return { created: fresh.length };
