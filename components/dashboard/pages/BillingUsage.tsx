@@ -321,6 +321,7 @@ function BillingView({
 }) {
   const consumed = Math.abs(entries.filter((entry) => entry.credits < 0).reduce((sum, entry) => sum + entry.credits, 0));
   const periodKey = `t${trialStart.getFullYear()}-${String(trialStart.getMonth() + 1).padStart(2, "0")}-${String(trialStart.getDate()).padStart(2, "0")}`;
+  const [historyPageSize, setHistoryPageSize] = useState(25);
 
   return (
     <div className="space-y-4">
@@ -495,11 +496,17 @@ function BillingView({
           </table>
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[#f0f1f3] px-4 py-2.5 text-[11.5px] text-[#6b7280]">
+          <span className="mr-auto tabular-nums">1–1 of 1</span>
           <span>Rows per page</span>
-          <select className="rounded-md border border-[#e5e7eb] bg-white px-2 py-1 text-[12px]" defaultValue="25">
-            <option>10</option>
-            <option>25</option>
-            <option>50</option>
+          <select
+            aria-label="Credit history rows per page"
+            className="rounded-md border border-[#e5e7eb] bg-white px-2 py-1 text-[12px]"
+            value={historyPageSize}
+            onChange={(event) => setHistoryPageSize(Number(event.target.value))}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
           </select>
         </div>
       </section>

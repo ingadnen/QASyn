@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T14:40:20.868Z",
+  "generatedAt": "2026-11-10T02:46:27.209Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -159,14 +159,14 @@
           "detail": ""
         },
         {
-          "check": "Sidebar footer shows trial days",
+          "check": "Sidebar footer shows the active plan or trial days",
           "ok": true,
-          "detail": ""
+          "detail": "plan pro"
         },
         {
           "check": "Sidebar shows the user card",
           "ok": true,
-          "detail": ""
+          "detail": "Cgi"
         }
       ],
       "pageErrors": [],
@@ -438,7 +438,7 @@
         {
           "check": "Target URL is org website",
           "ok": true,
-          "detail": "https://cgi.com"
+          "detail": "expected https://www.cgi.com · got https://www.cgi.com"
         },
         {
           "check": "Crawl config \"Web Application\"",
@@ -778,66 +778,6 @@
           "detail": ""
         },
         {
-          "check": "Filter \"Created By\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Status\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Test Type\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Type\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Priority\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Latest Run Result\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Added to Suite\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Module\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Created Date\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Updated Date\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Labels\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Filter \"Requirements\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
           "check": "Table settings shows columns",
           "ok": true,
           "detail": ""
@@ -880,7 +820,7 @@
         {
           "check": "UI-created test case persisted",
           "ok": true,
-          "detail": "15 cases"
+          "detail": "8 cases"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -944,7 +884,7 @@
         {
           "check": "Step Group created and listed",
           "ok": true,
-          "detail": "2 groups"
+          "detail": "1 groups"
         },
         {
           "check": "Cleanup: Step Group deleted",
@@ -976,7 +916,7 @@
           "detail": "4 steps"
         },
         {
-          "check": "Generated steps use org URL (cgi.com)",
+          "check": "Generated steps use org URL (www.cgi.com)",
           "ok": true,
           "detail": ""
         },
@@ -1168,12 +1108,12 @@
         {
           "check": "Studio run complete",
           "ok": true,
-          "detail": "Live close play_circle Live STANDALONE RUN Run complete 3/5 passed check_circle 1. Navigate to the application check_circle 2. Verify that the application home "
+          "detail": "Live close play_circle Live STANDALONE RUN Run complete 3/5 passed check_circle 1. Navigate to https://www.cgi.com check_circle 2. Verify that the current page "
         },
         {
           "check": "Studio run passed count",
           "ok": true,
-          "detail": "Live close play_circle Live STANDALONE RUN Run complete 3/5 passed check_circle 1. Navigate to the application check_circle 2. Verify that the application home "
+          "detail": "Live close play_circle Live STANDALONE RUN Run complete 3/5 passed check_circle 1. Navigate to https://www.cgi.com check_circle 2. Verify that the current page "
         },
         {
           "check": "Studio no example.com",
@@ -1237,7 +1177,7 @@
         {
           "check": "Suite created via wizard",
           "ok": true,
-          "detail": "3 suites"
+          "detail": "2 suites"
         },
         {
           "check": "Suite wizard dropdown propagation (cases fetched)",
@@ -1277,7 +1217,7 @@
         {
           "check": "Manage Test Cases modal content",
           "ok": true,
-          "detail": "Manage Test Cases close search TC-014 Parity Debug Title 999 Billing TC-013 Update the payment method Billing TC-012 Add an item to the cart Checkout TC-011 Com"
+          "detail": "Manage Test Cases close search TC-007 Complete checkout Checkout TC-006 Sign up with e-mail Core TC-005 Log in and reach the dashboard Core TC-004 Submit the co"
         },
         {
           "check": "Suite deleted via API (id gone)",
@@ -1356,7 +1296,7 @@
         {
           "check": "Plan wizard suite options listed",
           "ok": true,
-          "detail": "2 checkboxes"
+          "detail": "1 checkboxes"
         },
         {
           "check": "Plan wizard shows suite dropdown options",
@@ -1371,12 +1311,12 @@
         {
           "check": "Plan created via wizard",
           "ok": true,
-          "detail": "2 plans"
+          "detail": "1 plans"
         },
         {
           "check": "Plan wizard suite selection used",
           "ok": true,
-          "detail": "Parity Suite 13 cases"
+          "detail": "Parity Suite 67674 0 cases"
         },
         {
           "check": "Plan detail shows name",
@@ -1430,6 +1370,11 @@
         },
         {
           "check": "Plan detail Plan summary",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Add Test Suites modal opens",
           "ok": true,
           "detail": ""
         },
@@ -1505,7 +1450,7 @@
         {
           "check": "Environment created via modal",
           "ok": true,
-          "detail": "5 envs"
+          "detail": "1 envs"
         },
         {
           "check": "Auth Profiles shows Proxy Profiles",
@@ -1906,7 +1851,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for parkhvu close Run this once on the machine, in PowerShell opened as administrator. The one-time token expires in ten minutes; create a new c"
+          "detail": "Install command for par17fwq close Run this once on the machine, in PowerShell opened as administrator. The one-time token expires in ten minutes; create a new "
         },
         {
           "check": "Install command one-time token",
@@ -2460,32 +2405,7 @@
           "detail": ""
         },
         {
-          "check": "Tokens column \"Name\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Tokens column \"Scopes\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Tokens column \"Created\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Tokens column \"Expires\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Tokens column \"Last used\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Tokens column \"Actions\"",
+          "check": "Tokens empty state",
           "ok": true,
           "detail": ""
         },
@@ -2522,7 +2442,7 @@
         {
           "check": "API token created view",
           "ok": true,
-          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CA arr"
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CG arr"
         },
         {
           "check": "Token shown once warning",
@@ -2553,6 +2473,340 @@
           "check": "Settings overall no page errors",
           "ok": true,
           "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "part4-layout-actions",
+      "name": "PART 4 — Layout, menus, actions, live/local",
+      "route": "/dashboard/crawl",
+      "checks": [
+        {
+          "check": "PART 4 expanded sidebar and main boxes exist",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 expanded sidebar is 240px wide",
+          "ok": true,
+          "detail": "240.0px"
+        },
+        {
+          "check": "PART 4 expanded main starts after sidebar (no overlap)",
+          "ok": true,
+          "detail": "sidebar 0.0+240.0 · main x 240.0"
+        },
+        {
+          "check": "PART 4 expanded main takes the remaining width",
+          "ok": true,
+          "detail": "1200.0px"
+        },
+        {
+          "check": "PART 4 collapse sidebar control exists",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 collapsed sidebar and main boxes exist",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 collapsed sidebar is 60px wide",
+          "ok": true,
+          "detail": "60.0px"
+        },
+        {
+          "check": "PART 4 collapsed main starts after sidebar (no overlap)",
+          "ok": true,
+          "detail": "sidebar 0.0+60.0 · main x 60.0"
+        },
+        {
+          "check": "PART 4 collapse gives the main pane more room",
+          "ok": true,
+          "detail": "main x 240.0→60.0 · width 1200.0→1380.0"
+        },
+        {
+          "check": "PART 4 crawl row menu triggers exist",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 RowMenu is portaled into document.body",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 RowMenu uses position: fixed",
+          "ok": true,
+          "detail": "fixed"
+        },
+        {
+          "check": "PART 4 RowMenu uses z-index 9999",
+          "ok": true,
+          "detail": "9999"
+        },
+        {
+          "check": "PART 4 RowMenu itself is inside the viewport",
+          "ok": true,
+          "detail": "1175,247 208×253"
+        },
+        {
+          "check": "PART 4 RowMenu renders every action item",
+          "ok": true,
+          "detail": "7 items"
+        },
+        {
+          "check": "PART 4 every RowMenu item is fully visible via boundingBox",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 RowMenu keeps the live action set",
+          "ok": true,
+          "detail": "visibility View Details done_all Complete Crawl Now download Download Original upload Export Test Cases data_object Export Test Cases (JSON) sync Re-import / Update delete Delete"
+        },
+        {
+          "check": "PART 4 RowMenu closes on Escape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 RowMenu flips upward when space below is short",
+          "ok": true,
+          "detail": "trigger y 271 · menu 14–267"
+        },
+        {
+          "check": "PART 4 crawl table has no vertical scrollbar",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 disposable crawl created through the API",
+          "ok": true,
+          "detail": "status 201 · cmwa39288002zx9i08rk5zmoy"
+        },
+        {
+          "check": "PART 4 disposable crawl completed with generated cases",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "PART 4 disposable crawl persisted in SQLite",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 disposable crawl appears in the table",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 search filters the crawl table to the match",
+          "ok": true,
+          "detail": "1 row(s)"
+        },
+        {
+          "check": "PART 4 Filter opens a popover",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 active filter renders a removable chip",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 filter keeps only completed crawls",
+          "ok": true,
+          "detail": "3 row(s)"
+        },
+        {
+          "check": "PART 4 filter chip can be removed",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Settings popover lists Visible columns",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Visible Columns hides Created by",
+          "ok": true,
+          "detail": "Name, Format, Type, Test Plan, Status, Test Cases, Created Date, Action"
+        },
+        {
+          "check": "PART 4 Visible Columns restores Created by",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 selecting a row shows the bulk bar",
+          "ok": true,
+          "detail": "1 selected · play_arrow Run selected sync Re-import upload Export CSV delete Delete selected close Clear"
+        },
+        {
+          "check": "PART 4 bulk bar exposes real actions",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Clear dismisses the bulk bar",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Rows per page selector exists",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Rows per page changes to 25",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Rows per page changes back to 10",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Prev/Next pagination controls exist",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Re-import row action returns API 200",
+          "ok": true,
+          "detail": "status 200 · {\"status\":\"completed\",\"created\":0,\"updated\":7,\"total\":7}"
+        },
+        {
+          "check": "PART 4 Re-import shows a success toast",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 Delete dialog names the crawl and the database",
+          "ok": true,
+          "detail": "Delete crawl close Delete PARITY CRAWL 56300? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+        },
+        {
+          "check": "PART 4 Delete row action returns API 200",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "PART 4 deleted crawl disappears from the table",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 deleted crawl is absent from the crawl API",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 deleted crawl is absent from SQLite",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Live/local parity — sidebar (authenticated live reference)",
+          "ok": true,
+          "detail": "23 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — Crawl library",
+          "ok": true,
+          "detail": "6 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — Crawl columns",
+          "ok": true,
+          "detail": "9 live label(s) matched"
+        },
+        {
+          "check": "Live reference is the authenticated ContextQA workspace",
+          "ok": true,
+          "detail": "https://gmailad.contextqa.com (authenticated live workspace)"
+        },
+        {
+          "check": "Live/local parity — Requirements library",
+          "ok": true,
+          "detail": "6 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — Requirements columns",
+          "ok": true,
+          "detail": "9 live label(s) matched"
+        },
+        {
+          "check": "PART 4 requirements table has no vertical scrollbar",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Live/local parity — Test Cases header/tabs/views",
+          "ok": true,
+          "detail": "6 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — Test Cases columns",
+          "ok": true,
+          "detail": "13 live label(s) matched"
+        },
+        {
+          "check": "PART 4 test cases table has no vertical scrollbar",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Live/local parity — Test Suites library",
+          "ok": true,
+          "detail": "7 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — Test Suites columns",
+          "ok": true,
+          "detail": "8 live label(s) matched"
+        },
+        {
+          "check": "PART 4 suites table has no vertical scrollbar",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Live/local parity — Environment & Data",
+          "ok": true,
+          "detail": "9 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — Team & access columns",
+          "ok": true,
+          "detail": "5 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — Billing tabs and credit history",
+          "ok": true,
+          "detail": "9 live label(s) matched"
+        },
+        {
+          "check": "Live/local parity — MCP sections",
+          "ok": true,
+          "detail": "6 live label(s) matched"
+        },
+        {
+          "check": "PART 4 side-by-side report written",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 4 no page errors",
+          "ok": true,
+          "detail": ""
         },
         {
           "check": "Global: no example.com anywhere",
@@ -2574,5 +2828,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 478
+  "totalChecks": 527
 }

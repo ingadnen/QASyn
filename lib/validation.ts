@@ -25,7 +25,9 @@ const optionalWebsite = z
   .max(300)
   .optional()
   .transform((value, ctx) => {
-    if (!value || !value.trim()) return null;
+    // Omitted means "leave unchanged" for PATCH; an empty string clears it.
+    if (value === undefined) return undefined;
+    if (!value.trim()) return null;
     const normalized = normalizeWebsite(value);
     if (!normalized) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Enter a valid website, e.g. https://your-domain.com" });
@@ -172,9 +174,14 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
       .max(50),
   }),
   z.object({ action: z.literal("run_steps"), autoFix: z.boolean().optional() }),
+  z.object({ action: z.literal("clone"), title: title.optional(), folderId: z.string().max(60).nullable().optional() }),
+  z.object({ action: z.literal("move"), folderId: z.string().max(60).nullable() }),
 ]);
 
-export const runBatchSchema = z.object({ module: z.string().max(40).optional() });
+export const runBatchSchema = z.object({
+  module: z.string().max(40).optional(),
+  testCaseIds: z.array(z.string().max(60)).max(100).optional(),
+});
 
 export const startCrawlSchema = z.object({
   targetUrl: z.string().max(300).optional(),
@@ -188,7 +195,15 @@ export const startCrawlSchema = z.object({
   createSuite: z.boolean().optional(),
   createPlan: z.boolean().optional(),
 });
-export const crawlActionSchema = z.object({ action: z.enum(["complete", "cancel"]) });
+export const crawlActionSchema = z.object({ action: z.enum(["complete", "cancel", "reimport"]) });
+export const requirementActionSchema = z.object({
+  action: z.enum(["generate", "reimport"]),
+  count: z.number().int().min(1).max(10).optional(),
+});
+export const testFolderSchema = z.object({
+  name: z.string().trim().min(2).max(60),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#5b4ee8"),
+});
 export const collectionActionSchema = z.object({ action: z.literal("run") });
 
 export const collectionUpdateSchema = z.object({
@@ -197,6 +212,7 @@ export const collectionUpdateSchema = z.object({
   description: z.string().max(2000).optional(),
   module: z.string().max(80).optional(),
   platform: z.enum(["Web", "Mobile", "API"]).optional(),
+  environment: z.string().max(60).optional(),
   labels: z.array(z.string().trim().max(40)).max(20).optional(),
   prerequisites: z.array(z.string().max(60)).max(50).optional(),
 });

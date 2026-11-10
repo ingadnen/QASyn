@@ -6,6 +6,7 @@
  * Run: npx tsx scripts/verify-local-parity.ts
  */
 import { chromium, type Page } from "playwright";
+import { PrismaClient } from "@prisma/client";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -103,6 +104,90 @@ async function goto(page: Page, route: string) {
   await page.waitForTimeout(600);
 }
 
+async function loadAccountSnapshot() {
+  const client = new PrismaClient();
+  try {
+    return await client.user.findUnique({
+      where: { email: "cgi@cgi.com" },
+      select: { name: true, organisation: { select: { plan: true, website: true } } },
+    });
+  } finally {
+    await client.$disconnect();
+  }
+}
+
+interface BoundingBoxLike {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function boxInViewport(box: BoundingBoxLike | null, viewport: { width: number; height: number }, tolerance = 1) {
+  if (!box) return false;
+  return (
+    box.width > 0 &&
+    box.height > 0 &&
+    box.x >= -tolerance &&
+    box.y >= -tolerance &&
+    box.x + box.width <= viewport.width + tolerance &&
+    box.y + box.height <= viewport.height + tolerance
+  );
+}
+
+async function tableHeaders(page: Page): Promise<string[]> {
+  const headers = (await page.locator("table thead th").allInnerTexts().catch(() => [])) as string[];
+  return headers.map((header) => header.trim()).filter(Boolean);
+}
+
+async function tableScrollIssues(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const issues: string[] = [];
+    document.querySelectorAll("table").forEach((table, index) => {
+      let element: HTMLElement | null = table.parentElement;
+      while (element && element !== document.body) {
+        const style = getComputedStyle(element);
+        if (/(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight + 1) {
+          issues.push(`table ${index}: scrollHeight ${element.scrollHeight} > clientHeight ${element.clientHeight}`);
+        }
+        element = element.parentElement;
+      }
+    });
+    return issues;
+  });
+}
+
+function liveLabelCandidates(label: string) {
+  const candidates = [label, label.replace(/\s+Settings$/i, "")];
+  if (/s$/i.test(label)) candidates.push(label.slice(0, -1));
+  return candidates;
+}
+
+function missingLiveLabels(labels: string[], localText: string) {
+  const lower = localText.toLowerCase();
+  return labels
+    .map((label) => label.replace(/^\+\s*/, "").trim())
+    .filter((label) => label && !["search", "refresh", "settings"].includes(label.toLowerCase()))
+    .filter((label) => !liveLabelCandidates(label).some((candidate) => lower.includes(candidate.toLowerCase())));
+}
+
+interface LiveReference {
+  source?: string;
+  sidebar?: {
+    sections?: Array<{ title: string; items: Array<{ label: string }> }>;
+    settings?: { children?: string[] };
+  };
+  crawlLibrary?: { title?: string; description?: string; toolbar?: string[]; columns?: string[] };
+  requirementsLibrary?: { title?: string; description?: string; toolbar?: string[]; columns?: string[] };
+  testCases?: { title?: string; description?: string; tabs?: string[]; views?: string[]; columns?: string[] };
+  testSuites?: { title?: string; description?: string; toolbar?: string[]; columns?: string[] };
+  environments?: { tabs?: string[]; views?: string[]; actions?: string[] };
+  team?: { columns?: string[] };
+  billing?: { tabs?: string[]; creditHistoryColumns?: string[] };
+  mcp?: { sections?: string[] };
+}
+
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -134,6 +219,13 @@ async function main() {
   await page.waitForTimeout(800);
   const loginModule = mod("login", "Login / Shell", "/login");
   check("Login as cgi@cgi.com reaches the dashboard", page.url().includes("/dashboard"));
+
+  // Expectations come from the active organisation, never from hardcoded demo data.
+  const account = await loadAccountSnapshot();
+  const activeUserName = account?.name ?? "";
+  const activeOrgPlan = account?.organisation?.plan ?? "";
+  const activeOrgWebsite = account?.organisation?.website ?? "";
+  const activeOrgHost = activeOrgWebsite.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
   // ── Sidebar ─────────────────────────────────────────────────────
   const aside = page.locator('aside nav[aria-label="Dashboard"]');
@@ -168,8 +260,18 @@ async function main() {
   const sidebarFooter = (await page.locator("aside").first().innerText()) || "";
   check("Sidebar footer has Help & docs", sidebarFooter.includes("Help & docs"));
   check("Sidebar footer has Live chat", sidebarFooter.includes("Live chat"));
-  check("Sidebar footer shows trial days", /Trial.*\d+ days? left/.test(sidebarFooter));
-  check("Sidebar shows the user card", sidebarFooter.includes("CGI Admin") && sidebarFooter.includes("cgi@cgi.com"));
+  check(
+    "Sidebar footer shows the active plan or trial days",
+    activeOrgPlan === "trial"
+      ? /Trial.*\d+ days? left/.test(sidebarFooter)
+      : sidebarFooter.toLowerCase().includes(`${activeOrgPlan.toLowerCase()} plan`),
+    `plan ${activeOrgPlan || "unknown"}`,
+  );
+  check(
+    "Sidebar shows the user card",
+    Boolean(activeUserName) && sidebarFooter.includes(activeUserName) && sidebarFooter.includes("cgi@cgi.com"),
+    activeUserName || "user name missing",
+  );
   await shot(page, "sidebar");
   void loginModule;
 
@@ -251,11 +353,15 @@ async function main() {
       check(`New Crawl modal "${bit}"`, mt.includes(bit));
     }
     let targetValue = await crawlDlg.locator("input").first().inputValue().catch(() => "");
-    if (!targetValue) {
-      await crawlDlg.locator("input").first().fill("https://cgi.com", { force: true }).catch(() => undefined);
-      targetValue = "https://cgi.com";
+    if (!targetValue && activeOrgWebsite) {
+      await crawlDlg.locator("input").first().fill(activeOrgWebsite, { force: true }).catch(() => undefined);
+      targetValue = activeOrgWebsite;
     }
-    check("Target URL is org website", targetValue === "https://cgi.com", targetValue);
+    check(
+      "Target URL is org website",
+      Boolean(activeOrgWebsite) && targetValue === activeOrgWebsite,
+      `expected ${activeOrgWebsite || "(unset)"} · got ${targetValue || "(empty)"}`,
+    );
     await crawlDlg.getByRole("button", { name: /Show Configuration Options/ }).click().catch(() => undefined);
     await page.waitForTimeout(300);
     const cfg = ((await crawlDlg.innerText()) || "").replace(/\s+/g, " ");
@@ -273,7 +379,7 @@ async function main() {
   let crawls = (crawlApi.body.crawls as Array<Record<string, unknown>> | undefined) ?? [];
   let running = crawls.find((c) => String(c.status) === "running");
   if (!running) {
-    const retry = await apiJson(page, "/api/dashboard/crawl", "POST", { targetUrl: "https://cgi.com" });
+    const retry = await apiJson(page, "/api/dashboard/crawl", "POST", { targetUrl: activeOrgWebsite || undefined });
     const retryApi = await apiJson(page, "/api/dashboard/crawl", "GET");
     crawls = (retryApi.body.crawls as Array<Record<string, unknown>> | undefined) ?? crawls;
     running = crawls.find((c) => String(c.status) === "running");
@@ -470,6 +576,7 @@ async function main() {
     check("Step Group Status", st.includes("Status"));
     const SG_NAME = `Parity Step Group ${RUN_ID}`;
     await sgDlg.getByPlaceholder("e.g. Sign in as a returning user").fill(SG_NAME).catch(() => undefined);
+    await sgDlg.getByLabel("Step 1 target").fill("Sign in as a returning user").catch(() => undefined);
     await sgDlg.getByRole("button", { name: /^Create$/ }).first().click().catch(() => {
       return page.getByRole("button", { name: /^Save$/ }).first().click();
     });
@@ -507,7 +614,10 @@ async function main() {
     parsedSteps = [];
   }
   check("Generated stepsJson has exactly 4 steps", parsedSteps.length === 4, `${parsedSteps.length} steps`);
-  check("Generated steps use org URL (cgi.com)", stepsJson.includes("cgi.com") || stepsJson.includes("https://") || stepsJson.includes("the application"));
+  check(
+    `Generated steps use org URL (${activeOrgHost || "org"})`,
+    (Boolean(activeOrgHost) && stepsJson.includes(activeOrgHost)) || stepsJson.includes("https://") || stepsJson.includes("the application"),
+  );
   check("Generated steps never use example.com", !stepsJson.includes("example.com"));
   await goto(page, `/dashboard/test-studio/${tcId}`);
   const studioBody = await body(page);
@@ -969,7 +1079,7 @@ async function main() {
       check("Knowledge Base modal Name", kt.includes("Name"));
       check("Knowledge Base modal Save", kt.includes("Save"));
       await kbDlg.getByPlaceholder("Product documentation").fill("Parity KB Source").catch(() => undefined);
-      await kbDlg.locator("textarea, input").nth(1).fill("https://cgi.com/docs").catch(() => undefined);
+      await kbDlg.locator("textarea, input").nth(1).fill(activeOrgWebsite ? `${activeOrgWebsite.replace(/\/$/, "")}/docs` : "https://docs.local").catch(() => undefined);
       await kbDlg.getByRole("button", { name: /^Save$/ }).click().catch(() => undefined);
       await page.waitForTimeout(1500);
     }
@@ -1314,6 +1424,408 @@ async function main() {
   }
   check("Settings overall no page errors", moduleErrors.length === 0);
   await shot(page, "19-settings-tokens");
+
+  // ── PART 4 — Layout geometry, RowMenu, CRUD, live/local ───────────
+  moduleErrors = [];
+  const p4 = mod("part4-layout-actions", "PART 4 — Layout, menus, actions, live/local", "/dashboard/crawl");
+  void p4;
+  await goto(page, "/dashboard/crawl");
+
+  // Expanded / collapsed shell geometry.
+  if ((await page.getByRole("button", { name: "Expand sidebar" }).count()) > 0) {
+    await page.getByRole("button", { name: "Expand sidebar" }).first().click().catch(() => undefined);
+    await page.waitForTimeout(400);
+  }
+  const sidebarLocator = page.locator("aside:visible").first();
+  const mainLocator = page.locator("main").first();
+  const expandedSidebar = await sidebarLocator.boundingBox();
+  const expandedMain = await mainLocator.boundingBox();
+  check("PART 4 expanded sidebar and main boxes exist", Boolean(expandedSidebar && expandedMain));
+  if (expandedSidebar && expandedMain) {
+    check("PART 4 expanded sidebar is 240px wide", Math.abs(expandedSidebar.width - 240) <= 2, `${expandedSidebar.width.toFixed(1)}px`);
+    check(
+      "PART 4 expanded main starts after sidebar (no overlap)",
+      expandedMain.x >= expandedSidebar.x + expandedSidebar.width - 1,
+      `sidebar ${expandedSidebar.x.toFixed(1)}+${expandedSidebar.width.toFixed(1)} · main x ${expandedMain.x.toFixed(1)}`,
+    );
+    check(
+      "PART 4 expanded main takes the remaining width",
+      expandedMain.width >= 1440 - 240 - 40,
+      `${expandedMain.width.toFixed(1)}px`,
+    );
+  }
+
+  const collapseButton = page.getByRole("button", { name: "Collapse sidebar" }).first();
+  check("PART 4 collapse sidebar control exists", (await collapseButton.count()) > 0);
+  if ((await collapseButton.count()) > 0) {
+    await collapseButton.click().catch(() => undefined);
+    await page.waitForTimeout(450);
+    const collapsedSidebar = await sidebarLocator.boundingBox();
+    const collapsedMain = await mainLocator.boundingBox();
+    check("PART 4 collapsed sidebar and main boxes exist", Boolean(collapsedSidebar && collapsedMain));
+    if (collapsedSidebar && collapsedMain && expandedMain) {
+      check("PART 4 collapsed sidebar is 60px wide", Math.abs(collapsedSidebar.width - 60) <= 2, `${collapsedSidebar.width.toFixed(1)}px`);
+      check(
+        "PART 4 collapsed main starts after sidebar (no overlap)",
+        collapsedMain.x >= collapsedSidebar.x + collapsedSidebar.width - 1,
+        `sidebar ${collapsedSidebar.x.toFixed(1)}+${collapsedSidebar.width.toFixed(1)} · main x ${collapsedMain.x.toFixed(1)}`,
+      );
+      check(
+        "PART 4 collapse gives the main pane more room",
+        collapsedMain.x <= expandedMain.x - 150 && collapsedMain.width >= expandedMain.width + 150,
+        `main x ${expandedMain.x.toFixed(1)}→${collapsedMain.x.toFixed(1)} · width ${expandedMain.width.toFixed(1)}→${collapsedMain.width.toFixed(1)}`,
+      );
+    }
+    await page.getByRole("button", { name: "Expand sidebar" }).first().click().catch(() => undefined);
+    await page.waitForTimeout(400);
+  }
+
+  // RowMenu must be a body portal, fixed, fully visible, keyboard-dismissible.
+  const anyRowTrigger = page.getByRole("button", { name: /^Actions for / }).first();
+  check("PART 4 crawl row menu triggers exist", (await anyRowTrigger.count()) > 0);
+  if ((await anyRowTrigger.count()) > 0) {
+    await anyRowTrigger.click();
+    const rowMenu = page.locator("[data-row-menu]");
+    await rowMenu.waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+    const placement = await page.evaluate(() => {
+      const element = document.querySelector("[data-row-menu]") as HTMLElement | null;
+      if (!element) return null;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return {
+        parentIsBody: element.parentElement === document.body,
+        position: style.position,
+        zIndex: style.zIndex,
+        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      };
+    });
+    check("PART 4 RowMenu is portaled into document.body", placement?.parentIsBody === true);
+    check("PART 4 RowMenu uses position: fixed", placement?.position === "fixed", placement?.position ?? "missing");
+    check("PART 4 RowMenu uses z-index 9999", placement?.zIndex === "9999", placement?.zIndex ?? "missing");
+    check(
+      "PART 4 RowMenu itself is inside the viewport",
+      boxInViewport(placement?.rect ?? null, { width: 1440, height: 900 }),
+      placement ? `${placement.rect.x.toFixed(0)},${placement.rect.y.toFixed(0)} ${placement.rect.width.toFixed(0)}×${placement.rect.height.toFixed(0)}` : "missing",
+    );
+    const itemCount = await rowMenu.locator('[role="menuitem"]').count();
+    check("PART 4 RowMenu renders every action item", itemCount >= 6, `${itemCount} items`);
+    const itemProblems: string[] = [];
+    for (let i = 0; i < itemCount; i++) {
+      const item = rowMenu.locator('[role="menuitem"]').nth(i);
+      const box = await item.boundingBox();
+      if (!boxInViewport(box, { width: 1440, height: 900 })) {
+        const label = ((await item.innerText().catch(() => "")) || `item ${i}`).replace(/\s+/g, " ").trim();
+        itemProblems.push(`${label}${box ? ` @ ${box.x.toFixed(0)},${box.y.toFixed(0)} ${box.width.toFixed(0)}×${box.height.toFixed(0)}` : " has no box"}`);
+      }
+    }
+    check("PART 4 every RowMenu item is fully visible via boundingBox", itemProblems.length === 0, itemProblems.join(" | "));
+    const rowMenuText = ((await rowMenu.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    check("PART 4 RowMenu keeps the live action set", ["View Details", "Export Test Cases", "Re-import / Update", "Delete"].every((label) => rowMenuText.includes(label)), rowMenuText.slice(0, 180));
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(250);
+    check("PART 4 RowMenu closes on Escape", (await page.locator("[data-row-menu]").count()) === 0);
+  }
+
+  // Flip-up near the bottom of a short viewport.
+  await page.setViewportSize({ width: 1440, height: 460 });
+  await page.waitForTimeout(350);
+  const lastRowTrigger = page.getByRole("button", { name: /^Actions for / }).last();
+  if ((await lastRowTrigger.count()) > 0) {
+    await lastRowTrigger.scrollIntoViewIfNeeded().catch(() => undefined);
+    await page.waitForTimeout(250);
+    const triggerBox = await lastRowTrigger.boundingBox();
+    await lastRowTrigger.click().catch(() => undefined);
+    await page.locator("[data-row-menu]").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+    const flippedMenuBox = await page.locator("[data-row-menu]").boundingBox();
+    check(
+      "PART 4 RowMenu flips upward when space below is short",
+      Boolean(
+        triggerBox &&
+          flippedMenuBox &&
+          flippedMenuBox.y < triggerBox.y &&
+          flippedMenuBox.y + flippedMenuBox.height <= 460 + 1,
+      ),
+      triggerBox && flippedMenuBox
+        ? `trigger y ${triggerBox.y.toFixed(0)} · menu ${flippedMenuBox.y.toFixed(0)}–${(flippedMenuBox.y + flippedMenuBox.height).toFixed(0)}`
+        : "missing",
+    );
+    await page.keyboard.press("Escape");
+  } else {
+    check("PART 4 RowMenu flips upward when space below is short", false, "no row trigger");
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(350);
+
+  // Tables with 1–10 rows must not create an internal vertical scrollbar.
+  const crawlScrollIssues = await tableScrollIssues(page);
+  check("PART 4 crawl table has no vertical scrollbar", crawlScrollIssues.length === 0, crawlScrollIssues.join(" | "));
+
+  // Disposable crawl: create through the API, complete, verify presence, then delete via UI/DB.
+  const db = new PrismaClient();
+  const org = await db.organisation.findFirst({ where: { name: "cgi" }, select: { website: true } });
+  const crawlTarget = org?.website ?? activeOrgWebsite;
+  const CRAWL_NAME = `PARITY CRAWL ${RUN_ID}`;
+  let createCrawl = await apiJson(page, "/api/dashboard/crawl", "POST", {
+    targetUrl: crawlTarget,
+    explorePrompt: CRAWL_NAME,
+    requirementName: `${CRAWL_NAME} requirement`,
+    additionalContext: "PART 4 disposable crawl — safe to delete.",
+  });
+  if (createCrawl.status === 409) {
+    const runningId = String((createCrawl.body as { crawlId?: string }).crawlId ?? "");
+    if (runningId) {
+      await apiJson(page, `/api/dashboard/crawl/${runningId}`, "PATCH", { action: "complete" });
+    }
+    createCrawl = await apiJson(page, "/api/dashboard/crawl", "POST", {
+      targetUrl: crawlTarget,
+      explorePrompt: CRAWL_NAME,
+      requirementName: `${CRAWL_NAME} requirement`,
+      additionalContext: "PART 4 disposable crawl — safe to delete.",
+    });
+  }
+  const crawlId = String((createCrawl.body as { crawl?: { id?: string } }).crawl?.id ?? "");
+  check("PART 4 disposable crawl created through the API", createCrawl.status === 201 && Boolean(crawlId), `status ${createCrawl.status}${crawlId ? ` · ${crawlId}` : ""}`);
+
+  let crawlCompleted = false;
+  if (crawlId) {
+    const complete = await apiJson(page, `/api/dashboard/crawl/${crawlId}`, "PATCH", { action: "complete" });
+    crawlCompleted = complete.status === 200 && String((complete.body as { status?: string }).status ?? "") === "completed";
+    check("PART 4 disposable crawl completed with generated cases", crawlCompleted, `status ${complete.status}`);
+    const dbPresent = await db.crawlSession.findUnique({ where: { id: crawlId } });
+    check("PART 4 disposable crawl persisted in SQLite", Boolean(dbPresent));
+  }
+
+  await goto(page, "/dashboard/crawl");
+  const crawlLink = page.getByRole("link", { name: CRAWL_NAME, exact: true });
+  await crawlLink.waitFor({ state: "visible", timeout: 12000 }).catch(() => undefined);
+  check("PART 4 disposable crawl appears in the table", (await crawlLink.count()) > 0);
+
+  // Live search narrows to the disposable row.
+  const searchBox = page.getByLabel("Search").first();
+  await searchBox.fill(CRAWL_NAME).catch(() => undefined);
+  await page.waitForTimeout(400);
+  const searchRows = await page.locator("tbody tr").count();
+  const searchRowsText = ((await page.locator("tbody").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check("PART 4 search filters the crawl table to the match", searchRows === 1 && searchRowsText.includes(CRAWL_NAME), `${searchRows} row(s)`);
+  await searchBox.fill("").catch(() => undefined);
+  await page.waitForTimeout(400);
+
+  // + Filter popover and removable chip.
+  await page.getByRole("button", { name: /^Filter/ }).first().click().catch(() => undefined);
+  const filterPopover = page.locator("[data-filter-popover]");
+  await filterPopover.waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+  check("PART 4 Filter opens a popover", (await filterPopover.count()) > 0 && (await filterPopover.isVisible().catch(() => false)));
+  const statusFilter = page.getByLabel("Filter by Status");
+  if ((await statusFilter.count()) > 0) {
+    await statusFilter.selectOption("completed").catch(() => undefined);
+    await statusFilter.locator("xpath=..").getByRole("button", { name: "Add" }).click().catch(() => undefined);
+    await page.waitForTimeout(450);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+    const chip = page.locator('[data-filter-chip="status"]');
+    check("PART 4 active filter renders a removable chip", (await chip.count()) > 0 && ((await chip.innerText().catch(() => "")) || "").toLowerCase().includes("completed"));
+    const filteredTexts = ((await page.locator("tbody tr").allInnerTexts().catch(() => [])) as string[]).map((entry) => entry.replace(/\s+/g, " "));
+    check("PART 4 filter keeps only completed crawls", filteredTexts.length > 0 && filteredTexts.every((entry) => entry.includes("Completed")), `${filteredTexts.length} row(s)`);
+    await page.getByRole("button", { name: "Remove Status filter" }).click().catch(() => undefined);
+    await page.waitForTimeout(350);
+    check("PART 4 filter chip can be removed", (await page.locator('[data-filter-chip="status"]').count()) === 0);
+  } else {
+    check("PART 4 active filter renders a removable chip", false, "status filter missing");
+  }
+
+  // Visible columns toggle really hides and restores a column.
+  await page.getByRole("button", { name: "Table settings" }).click().catch(() => undefined);
+  const columnsPopover = page.locator("[data-columns-popover]");
+  await columnsPopover.waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+  check("PART 4 Settings popover lists Visible columns", ((await columnsPopover.innerText().catch(() => "")) || "").includes("Visible columns"));
+  const createdByLabel = columnsPopover.locator("label").filter({ hasText: "Created by" });
+  if ((await createdByLabel.count()) > 0) {
+    await createdByLabel.locator('input[type="checkbox"]').uncheck().catch(() => undefined);
+    await page.waitForTimeout(300);
+    const hiddenHeaders = await tableHeaders(page);
+    check("PART 4 Visible Columns hides Created by", !hiddenHeaders.some((header) => header.toLowerCase() === "created by"), hiddenHeaders.join(", "));
+    await createdByLabel.locator('input[type="checkbox"]').check().catch(() => undefined);
+    await page.waitForTimeout(300);
+    const restoredHeaders = await tableHeaders(page);
+    check("PART 4 Visible Columns restores Created by", restoredHeaders.some((header) => header.toLowerCase() === "created by"));
+  } else {
+    check("PART 4 Visible Columns hides Created by", false, "Created by checkbox missing");
+  }
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+
+  // Selection bar and bulk actions.
+  const rowCheckbox = page.getByLabel(`Select ${CRAWL_NAME}`, { exact: true });
+  if ((await rowCheckbox.count()) > 0) {
+    await rowCheckbox.check().catch(() => undefined);
+    await page.waitForTimeout(300);
+    const bulkBar = page.locator("[data-bulk-bar]");
+    const bulkText = ((await bulkBar.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    check("PART 4 selecting a row shows the bulk bar", (await bulkBar.count()) > 0 && bulkText.includes("1 selected"), bulkText.slice(0, 160));
+    check(
+      "PART 4 bulk bar exposes real actions",
+      ["Run selected", "Re-import", "Export CSV", "Delete selected"].every((label) => bulkText.includes(label)),
+    );
+    await bulkBar.getByRole("button", { name: "Clear" }).click().catch(() => undefined);
+    await page.waitForTimeout(250);
+    check("PART 4 Clear dismisses the bulk bar", (await page.locator("[data-bulk-bar]").count()) === 0);
+  } else {
+    check("PART 4 selecting a row shows the bulk bar", false, "row checkbox missing");
+  }
+
+  // Pagination controls.
+  const pageSizeSelect = page.getByLabel("Rows per page").first();
+  check("PART 4 Rows per page selector exists", (await pageSizeSelect.count()) > 0);
+  if ((await pageSizeSelect.count()) > 0) {
+    await pageSizeSelect.selectOption("25").catch(() => undefined);
+    await page.waitForTimeout(250);
+    check("PART 4 Rows per page changes to 25", (await pageSizeSelect.inputValue().catch(() => "")) === "25");
+    await pageSizeSelect.selectOption("10").catch(() => undefined);
+    await page.waitForTimeout(250);
+    check("PART 4 Rows per page changes back to 10", (await pageSizeSelect.inputValue().catch(() => "")) === "10");
+  }
+  check(
+    "PART 4 Prev/Next pagination controls exist",
+    (await page.getByRole("button", { name: "Previous page" }).count()) > 0 && (await page.getByRole("button", { name: "Next page" }).count()) > 0,
+  );
+
+  // Re-import through the row menu and assert the API returns 200.
+  if (crawlId) {
+    await page.getByRole("button", { name: `Actions for ${CRAWL_NAME}`, exact: true }).click().catch(() => undefined);
+    await page.locator("[data-row-menu]").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+    const reimportItem = page.locator("[data-row-menu]").getByRole("menuitem", { name: /Re-import/ });
+    let reimportStatus = 0;
+    if ((await reimportItem.count()) > 0) {
+      const [response] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes(`/api/dashboard/crawl/${crawlId}`) && res.request().method() === "PATCH", { timeout: 20000 }).catch(() => null),
+        reimportItem.click().catch(() => undefined),
+      ]);
+      reimportStatus = response?.status() ?? 0;
+      let reimportBody: { status?: string; created?: number; updated?: number } = {};
+      try {
+        reimportBody = (await response?.json()) as { status?: string; created?: number; updated?: number };
+      } catch {
+        reimportBody = {};
+      }
+      check(
+        "PART 4 Re-import row action returns API 200",
+        reimportStatus === 200 && (reimportBody.status === "completed" || typeof reimportBody.created === "number" || typeof reimportBody.updated === "number"),
+        `status ${reimportStatus} · ${JSON.stringify(reimportBody).slice(0, 120)}`,
+      );
+    } else {
+      check("PART 4 Re-import row action returns API 200", false, "Re-import item missing");
+    }
+    let reimportToast = false;
+    for (let i = 0; i < 10; i++) {
+      await page.waitForTimeout(400);
+      if (/re-imported/i.test(await body(page))) {
+        reimportToast = true;
+        break;
+      }
+    }
+    check("PART 4 Re-import shows a success toast", reimportToast);
+  }
+
+  // Delete the disposable crawl through the UI; verify table, API and SQLite.
+  if (crawlId) {
+    await page.getByRole("button", { name: `Actions for ${CRAWL_NAME}`, exact: true }).click().catch(() => undefined);
+    await page.locator("[data-row-menu]").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+    await page.locator("[data-row-menu]").getByRole("menuitem", { name: /^Delete/ }).click().catch(() => undefined);
+    const deleteDialog = page.getByRole("dialog", { name: "Delete crawl" });
+    await deleteDialog.waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+    const deleteText = ((await deleteDialog.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    check("PART 4 Delete dialog names the crawl and the database", deleteText.includes(CRAWL_NAME) && /database/i.test(deleteText), deleteText.slice(0, 180));
+    let deleteStatus = 0;
+    if ((await deleteDialog.count()) > 0) {
+      const [response] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes(`/api/dashboard/crawl/${crawlId}`) && res.request().method() === "DELETE", { timeout: 15000 }).catch(() => null),
+        deleteDialog.getByRole("button", { name: "Delete crawl" }).click().catch(() => undefined),
+      ]);
+      deleteStatus = response?.status() ?? 0;
+    }
+    check("PART 4 Delete row action returns API 200", deleteStatus === 200, `status ${deleteStatus}`);
+    await page.waitForTimeout(700);
+    check("PART 4 deleted crawl disappears from the table", (await page.getByRole("link", { name: CRAWL_NAME, exact: true }).count()) === 0);
+    const listAfterDelete = await apiJson(page, "/api/dashboard/crawl", "GET");
+    const idsAfterDelete = ((listAfterDelete.body as { crawls?: Array<{ id: string }> }).crawls ?? []).map((row) => row.id);
+    check("PART 4 deleted crawl is absent from the crawl API", !idsAfterDelete.includes(crawlId));
+    const dbAfterDelete = await db.crawlSession.findUnique({ where: { id: crawlId } });
+    check("PART 4 deleted crawl is absent from SQLite", dbAfterDelete === null);
+  }
+
+  // Side-by-side live reference vs local DOM.
+  const live = JSON.parse(fs.readFileSync(path.join(OUT, "live-comparison.json"), "utf8")) as LiveReference;
+  const sideBySide: Array<{ area: string; live: string[]; local: string[]; missing: string[]; ok: boolean }> = [];
+  function compareLive(area: string, liveValues: string[], localText: string) {
+    const missing = missingLiveLabels(liveValues, localText);
+    sideBySide.push({ area, live: liveValues, local: [localText.replace(/\s+/g, " ").slice(0, 1200)], missing, ok: missing.length === 0 });
+    check(`Live/local parity — ${area}`, missing.length === 0, missing.length ? `missing: ${missing.join(", ")}` : `${liveValues.length} live label(s) matched`);
+  }
+
+  await goto(page, "/dashboard/crawl");
+  if ((await page.getByRole("button", { name: "Expand sidebar" }).count()) > 0) {
+    await page.getByRole("button", { name: "Expand sidebar" }).first().click().catch(() => undefined);
+    await page.waitForTimeout(400);
+  }
+  const asideNav = page.locator('aside:visible nav[aria-label="Dashboard"]').first();
+  await asideNav.getByRole("button", { name: /Plans/ }).first().click().catch(() => undefined);
+  await asideNav.getByRole("button", { name: /Settings/ }).first().click().catch(() => undefined);
+  await page.waitForTimeout(350);
+  const localSidebarText = ((await page.locator("aside:visible").first().innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  const liveSidebarLabels = [
+    ...(live.sidebar?.sections ?? []).flatMap((section) => [section.title, ...section.items.map((item) => item.label)]),
+    ...(live.sidebar?.settings?.children ?? []),
+  ];
+  compareLive("sidebar (authenticated live reference)", liveSidebarLabels, localSidebarText);
+
+  await goto(page, "/dashboard/crawl");
+  const crawlText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("Crawl library", [live.crawlLibrary?.title ?? "", live.crawlLibrary?.description ?? "", ...(live.crawlLibrary?.toolbar ?? [])], crawlText);
+  compareLive("Crawl columns", live.crawlLibrary?.columns ?? [], (await tableHeaders(page)).join(" | "));
+  check("Live reference is the authenticated ContextQA workspace", /authenticated/i.test(live.source ?? ""), live.source ?? "missing");
+
+  await goto(page, "/dashboard/requirements");
+  const requirementsText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("Requirements library", [live.requirementsLibrary?.title ?? "", live.requirementsLibrary?.description ?? "", ...(live.requirementsLibrary?.toolbar ?? [])], requirementsText);
+  compareLive("Requirements columns", live.requirementsLibrary?.columns ?? [], (await tableHeaders(page)).join(" | "));
+  check("PART 4 requirements table has no vertical scrollbar", (await tableScrollIssues(page)).length === 0);
+
+  await goto(page, "/dashboard/test-cases");
+  const casesText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("Test Cases header/tabs/views", [live.testCases?.title ?? "", live.testCases?.description ?? "", ...(live.testCases?.tabs ?? []), ...(live.testCases?.views ?? [])], casesText);
+  compareLive("Test Cases columns", live.testCases?.columns ?? [], (await tableHeaders(page)).join(" | "));
+  check("PART 4 test cases table has no vertical scrollbar", (await tableScrollIssues(page)).length === 0);
+
+  await goto(page, "/dashboard/plans/suites");
+  const suitesText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("Test Suites library", [live.testSuites?.title ?? "", live.testSuites?.description ?? "", ...(live.testSuites?.toolbar ?? [])], suitesText);
+  compareLive("Test Suites columns", live.testSuites?.columns ?? [], (await tableHeaders(page)).join(" | "));
+  check("PART 4 suites table has no vertical scrollbar", (await tableScrollIssues(page)).length === 0);
+
+  await goto(page, "/dashboard/environments");
+  const environmentsText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("Environment & Data", [...(live.environments?.tabs ?? []), ...(live.environments?.views ?? []), ...(live.environments?.actions ?? [])], environmentsText);
+
+  await goto(page, "/dashboard/team");
+  const teamText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("Team & access columns", live.team?.columns ?? [], (await tableHeaders(page)).join(" | ") || teamText);
+
+  await goto(page, "/dashboard/billing");
+  const billingText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("Billing tabs and credit history", [...(live.billing?.tabs ?? []), ...(live.billing?.creditHistoryColumns ?? [])], billingText);
+
+  await goto(page, "/dashboard/mcp");
+  const mcpText = ((await body(page)) || "").replace(/\s+/g, " ");
+  compareLive("MCP sections", ["Agent skill", "Clients", "Connector", "ChatGPT", "Claude", "Cursor"], mcpText);
+
+  fs.writeFileSync(
+    path.join(OUT, "part4-live-local.json"),
+    JSON.stringify({ generatedAt: new Date().toISOString(), liveSource: live.source ?? null, comparisons: sideBySide }, null, 2),
+  );
+  check("PART 4 side-by-side report written", fs.existsSync(path.join(OUT, "part4-live-local.json")));
+  check("PART 4 no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await db.$disconnect();
+  await shot(page, "part4-final");
 
   // ── Global integrity ────────────────────────────────────────────
   const allCasesFinal = await apiJson(page, "/api/dashboard/test-cases", "GET");

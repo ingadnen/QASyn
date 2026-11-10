@@ -174,6 +174,17 @@ export function EnvironmentData(props: EnvironmentDataProps) {
   const { run, pending, error, setError } = useAction();
   const [q, setQ] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [envPageSize, setEnvPageSize] = useState(50);
+  const [profilePageSize, setProfilePageSize] = useState(50);
+  const [globalPageSize, setGlobalPageSize] = useState(50);
+  const [globalColumns, setGlobalColumns] = useState<Record<string, boolean>>({
+    Name: true,
+    Type: true,
+    Permission: true,
+    Value: true,
+    Tags: true,
+    Description: true,
+  });
   const [envFilter, setEnvFilter] = useState("All environments");
   const [permFilter, setPermFilter] = useState("All permissions");
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
@@ -306,7 +317,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
               />
             ) : view === "grid" ? (
               <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filteredEnvs.map((env) => (
+                {filteredEnvs.slice(0, envPageSize).map((env) => (
                   <EnvironmentCard
                     key={env.id}
                     env={env}
@@ -339,7 +350,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEnvs.map((env) => (
+                    {filteredEnvs.slice(0, envPageSize).map((env) => (
                       <tr key={env.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
@@ -369,12 +380,19 @@ export function EnvironmentData(props: EnvironmentDataProps) {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#f0f1f3] px-4 py-2.5 text-[12px] text-[#6b7280]">
               <div className="flex items-center gap-2">
                 <span>Rows per page</span>
-                <select aria-label="Rows per page" className="h-7 rounded border border-[#e5e7eb] bg-white px-1.5 text-[12px]" defaultValue="50">
-                  <option>50</option>
-                  <option>100</option>
+                <select
+                  aria-label="Rows per page"
+                  className="h-7 rounded border border-[#e5e7eb] bg-white px-1.5 text-[12px]"
+                  value={envPageSize}
+                  onChange={(event) => setEnvPageSize(Number(event.target.value))}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
                 </select>
               </div>
-              <span className="tabular-nums">1–{filteredEnvs.length} of {filteredEnvs.length}</span>
+              <span className="tabular-nums">1–{Math.min(filteredEnvs.length, envPageSize)} of {filteredEnvs.length}</span>
             </div>
           </div>
         </div>
@@ -427,7 +445,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProfiles.map((p) => (
+                    {filteredProfiles.slice(0, profilePageSize).map((p) => (
                       <tr key={p.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
                         <td className="px-4 py-3">
                           <p className="font-medium text-[#1f2937]">{p.name}</p>
@@ -455,8 +473,13 @@ export function EnvironmentData(props: EnvironmentDataProps) {
               </div>
             )}
             <div className="flex items-center justify-between border-t border-[#f0f1f3] px-4 py-2.5 text-[12px] text-[#6b7280]">
-              <span>Rows per page <select aria-label="Rows per page" className="ml-1 h-7 rounded border border-[#e5e7eb] bg-white px-1.5 text-[12px]" defaultValue="50"><option>50</option><option>100</option></select></span>
-              <span className="tabular-nums">1–{filteredProfiles.length} of {filteredProfiles.length}</span>
+              <span>Rows per page <select
+                aria-label="Rows per page"
+                className="ml-1 h-7 rounded border border-[#e5e7eb] bg-white px-1.5 text-[12px]"
+                value={profilePageSize}
+                onChange={(event) => setProfilePageSize(Number(event.target.value))}
+              ><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={100}>100</option></select></span>
+              <span className="tabular-nums">1–{Math.min(filteredProfiles.length, profilePageSize)} of {filteredProfiles.length}</span>
             </div>
           </div>
         </div>
@@ -493,7 +516,15 @@ export function EnvironmentData(props: EnvironmentDataProps) {
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">Show columns</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12.5px] text-[#374151]">
                 {["Name", "Type", "Permission", "Value", "Tags", "Description"].map((c) => (
-                  <label key={c} className="flex items-center gap-2"><input type="checkbox" defaultChecked className="size-3.5 accent-[#5b4ee8]" />{c}</label>
+                  <label key={c} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={globalColumns[c]}
+                      onChange={(event) => setGlobalColumns((prev) => ({ ...prev, [c]: event.target.checked }))}
+                      className="size-3.5 accent-[#5b4ee8]"
+                    />
+                    {c}
+                  </label>
                 ))}
               </div>
             </div>
@@ -515,28 +546,36 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                 <table className="w-full min-w-[860px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#f0f1f3]">
-                      {["Variable", "Type", "Permission", "Value", "Tags", "Description", ""].map((h) => (
-                        <th key={h} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{h}</th>
+                      {([
+                        ["Name", "Variable"],
+                        ["Type", "Type"],
+                        ["Permission", "Permission"],
+                        ["Value", "Value"],
+                        ["Tags", "Tags"],
+                        ["Description", "Description"],
+                      ] as const).filter(([key]) => globalColumns[key]).map(([key, label]) => (
+                        <th key={key} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{label}</th>
                       ))}
+                      <th className="w-10 px-4 py-3" />
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredGlobals.map((g) => (
+                    {filteredGlobals.slice(0, globalPageSize).map((g) => (
                       <tr key={g.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
-                        <td className="px-4 py-3"><code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px] font-medium text-[#374151]">{g.name}</code></td>
-                        <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{g.type}</td>
-                        <td className="px-4 py-3">
+                        {globalColumns.Name && <td className="px-4 py-3"><code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px] font-medium text-[#374151]">{g.name}</code></td>}
+                        {globalColumns.Type && <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{g.type}</td>}
+                        {globalColumns.Permission && <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-1 rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11px] font-medium text-[#374151]">
                             <CqaIcon name={g.permission === "RO" ? "lock" : "edit"} className="text-[13px]" /> {g.permission}
                           </span>
-                        </td>
-                        <td className="max-w-[220px] truncate px-4 py-3 font-mono text-[11.5px] text-[#6b7280]">{g.type === "Secret" ? "••••••••" : g.value || "-"}</td>
-                        <td className="px-4 py-3">
+                        </td>}
+                        {globalColumns.Value && <td className="max-w-[220px] truncate px-4 py-3 font-mono text-[11.5px] text-[#6b7280]">{g.type === "Secret" ? "••••••••" : g.value || "-"}</td>}
+                        {globalColumns.Tags && <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {g.tags.length === 0 ? <span className="text-[12px] text-[#9ca3af]">-</span> : g.tags.map((t) => <span key={t} className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10.5px] font-medium text-[#5b4ee8]">{t}</span>)}
                           </div>
-                        </td>
-                        <td className="max-w-[260px] truncate px-4 py-3 text-[12.5px] text-[#6b7280]">{g.description || "-"}</td>
+                        </td>}
+                        {globalColumns.Description && <td className="max-w-[260px] truncate px-4 py-3 text-[12.5px] text-[#6b7280]">{g.description || "-"}</td>}
                         <td className="px-4 py-3">
                           <button type="button" className={cn(cqaIconBtn, "text-[#dc2626] hover:bg-[#fef2f2]")} aria-label={`Delete ${g.name}`} onClick={() => deleteKind("global", g.id, g.name)}>
                             <CqaIcon name="delete" className="text-[18px]" />
@@ -549,8 +588,13 @@ export function EnvironmentData(props: EnvironmentDataProps) {
               </div>
             )}
             <div className="flex items-center justify-between border-t border-[#f0f1f3] px-4 py-2.5 text-[12px] text-[#6b7280]">
-              <span>Rows per page <select aria-label="Rows per page" className="ml-1 h-7 rounded border border-[#e5e7eb] bg-white px-1.5 text-[12px]" defaultValue="50"><option>50</option><option>100</option></select></span>
-              <span className="tabular-nums">1–{filteredGlobals.length} of {filteredGlobals.length}</span>
+              <span>Rows per page <select
+                aria-label="Rows per page"
+                className="ml-1 h-7 rounded border border-[#e5e7eb] bg-white px-1.5 text-[12px]"
+                value={globalPageSize}
+                onChange={(event) => setGlobalPageSize(Number(event.target.value))}
+              ><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={100}>100</option></select></span>
+              <span className="tabular-nums">1–{Math.min(filteredGlobals.length, globalPageSize)} of {filteredGlobals.length}</span>
             </div>
           </div>
         </div>

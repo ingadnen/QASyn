@@ -31,6 +31,57 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json(result);
   }
 
+  if (input.action === "clone") {
+    if (input.folderId) {
+      const folder = await prisma.testFolder.findFirst({ where: { id: input.folderId, organisationId: ctx.org.id }, select: { id: true } });
+      if (!folder) return jsonError("Folder not found.", 404);
+    }
+    const clone = await prisma.testCase.create({
+      data: {
+        organisationId: ctx.org.id,
+        title: input.title?.trim() || `${tc.title} (Copy)`,
+        module: tc.module,
+        description: tc.description,
+        labelsJson: tc.labelsJson,
+        criticality: tc.criticality,
+        status: "draft",
+        environment: tc.environment,
+        version: tc.version,
+        platform: tc.platform,
+        stepsCount: tc.stepsCount,
+        stepsJson: tc.stepsJson,
+        assertionsJson: tc.assertionsJson,
+        variablesJson: tc.variablesJson,
+        dataProfileId: tc.dataProfileId,
+        projectId: tc.projectId,
+        folderId: input.folderId === undefined ? tc.folderId : input.folderId,
+        source: "manual",
+      },
+    });
+    await prisma.testCaseVersion.create({
+      data: {
+        organisationId: ctx.org.id,
+        testCaseId: clone.id,
+        version: 1,
+        summary: `Cloned from ${tc.title}`,
+        author: ctx.user.name || "System",
+        stepsJson: tc.stepsJson,
+      },
+    });
+    await audit(prisma, ctx, "test_case.cloned", `${tc.title} → ${clone.title}`);
+    return NextResponse.json({ testCase: clone });
+  }
+
+  if (input.action === "move") {
+    if (input.folderId) {
+      const folder = await prisma.testFolder.findFirst({ where: { id: input.folderId, organisationId: ctx.org.id }, select: { id: true } });
+      if (!folder) return jsonError("Folder not found.", 404);
+    }
+    const updated = await prisma.testCase.update({ where: { id: tc.id }, data: { folderId: input.folderId } });
+    await audit(prisma, ctx, "test_case.moved", `${tc.title} → ${input.folderId ? "folder" : "unfiled"}`);
+    return NextResponse.json({ testCase: updated });
+  }
+
   if (input.action === "variables") {
     let existing: Record<string, unknown> = {};
     try {

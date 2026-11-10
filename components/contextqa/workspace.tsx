@@ -2,6 +2,9 @@ import Link from "next/link";
 import { CqaIcon, cqaBtnGhost, cqaBtnPrimary, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 
+export { RowMenu } from "@/components/contextqa/row-menu";
+export type { RowMenuItem } from "@/components/contextqa/row-menu";
+
 export function Toolbar({
   searchPlaceholder = "Search",
   actions,
@@ -121,51 +124,6 @@ export function CqaTabs({
         );
       })}
     </div>
-  );
-}
-
-/** Menu that works without client JavaScript: native <details>. */
-export function RowMenu({
-  items,
-  align = "right",
-}: {
-  items: Array<{ label: string; icon?: string; href?: string; danger?: boolean }>;
-  align?: "left" | "right";
-}) {
-  return (
-    <details className="relative inline-block">
-      <summary
-        aria-label="More actions"
-        className="flex size-8 cursor-pointer list-none items-center justify-center rounded-md text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827] [&::-webkit-details-marker]:hidden"
-      >
-        <CqaIcon name="more_horiz" className="text-[20px]" />
-      </summary>
-      <div
-        className={cn(
-          "absolute z-30 mt-1 w-52 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]",
-          align === "right" ? "right-0" : "left-0",
-        )}
-        role="menu"
-      >
-        {items.map((item) => {
-          const cls = cn(
-            "flex items-center gap-2.5 px-3 py-2 text-[12.5px] hover:bg-[#f9fafb]",
-            item.danger ? "text-[#dc2626]" : "text-[#374151]",
-          );
-          return item.href ? (
-            <Link key={item.label} href={item.href} className={cls} role="menuitem">
-              {item.icon && <CqaIcon name={item.icon} className="text-[17px]" />}
-              {item.label}
-            </Link>
-          ) : (
-            <button key={item.label} type="button" className={cn(cls, "w-full text-left")} role="menuitem">
-              {item.icon && <CqaIcon name={item.icon} className="text-[17px]" />}
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
-    </details>
   );
 }
 

@@ -126,6 +126,7 @@ model Organisation {
   uploads       Upload[]
   testCaseVersions TestCaseVersion[]
   testCaseRuns  TestCaseRun[]
+  testFolders   TestFolder[]
 }
 
 model Onboarding {
@@ -282,6 +283,9 @@ model TestCase {
   /// Linked production suite (optional)
   suiteId        String?
   suite          TestSuite?    @relation("SuiteCases", fields: [suiteId], references: [id], onDelete: SetNull)
+  /// Modular folder shown in the Test Cases grid
+  folderId       String?
+  folder         TestFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
   /// Data-driven testing profile (optional)
   dataProfileId  String?
   dataProfile    DataProfile?  @relation(fields: [dataProfileId], references: [id], onDelete: SetNull)
@@ -1016,6 +1020,7 @@ model NotificationRule {
 }
 
 /// Reusable step group (Test Studio components).
+/// Reusable step group inserted into test cases from Test Studio.
 model TestComponent {
   id             String       @id @default(cuid())
   organisationId String
@@ -1025,6 +1030,20 @@ model TestComponent {
   description    String       @default("")
   createdAt      DateTime     @default(now())
 
+  @@index([organisationId])
+}
+
+/// Modular folder grouping test cases in the grid and Studio.
+model TestFolder {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  color          String       @default("#5b4ee8")
+  createdAt      DateTime     @default(now())
+  testCases      TestCase[]
+
+  @@unique([organisationId, name])
   @@index([organisationId])
 }
 

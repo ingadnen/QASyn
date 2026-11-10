@@ -155,7 +155,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
               if (!expanded) setExpanded(true);
             }}
             className={cn(
-              "group flex w-full items-center gap-3 rounded-lg py-2 text-[13px] transition",
+              "group flex w-full items-center gap-3 rounded-lg py-1.5 text-[13px] transition",
               expanded ? "px-3" : "justify-center px-0",
               parentActive ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
             )}
@@ -197,7 +197,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         aria-label={nav.label}
         aria-current={active(nav.href) ? "page" : undefined}
         className={cn(
-          "group flex items-center gap-3 rounded-lg py-2 text-[13px] transition",
+          "group flex items-center gap-3 rounded-lg py-1.5 text-[13px] transition",
           expanded ? "px-3" : "justify-center px-0",
           active(nav.href) ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
         )}
@@ -257,7 +257,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         </Link>
       </div>
 
-      <nav aria-label="Dashboard" className={cn("flex-1 space-y-4 overflow-y-auto pb-3", expanded ? "px-2" : "px-2")}>
+      <nav aria-label="Dashboard" className={cn("dark-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pb-3", expanded ? "px-2" : "px-2")}>
         {NAV.map((section) => (
           <div key={section.title}>
             {expanded ? (
@@ -284,7 +284,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
               if (!expanded) setExpanded(true);
             }}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg py-2 text-[13px] transition",
+              "flex w-full items-center gap-3 rounded-lg py-1.5 text-[13px] transition",
               expanded ? "px-3" : "justify-center px-0",
               pathname.startsWith("/dashboard/settings") ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
             )}
@@ -422,11 +422,11 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           <SymbolIcon name="menu" />
         </button>
       </div>
-      <aside className={cn("fixed inset-y-0 left-0 z-40 hidden transition-[width] duration-200 lg:block", expanded ? "w-[236px]" : "w-[60px]")}>{nav}</aside>
+      <aside className={cn("sticky top-0 z-40 hidden h-screen shrink-0 transition-[width] duration-200 lg:block", expanded ? "w-[240px]" : "w-[60px]")}>{nav}</aside>
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative h-full w-[236px]">{nav}</aside>
+          <aside className="relative h-full w-[240px]">{nav}</aside>
         </div>
       )}
 

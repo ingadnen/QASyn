@@ -13,11 +13,13 @@ export default async function TunnelsPage() {
     orderBy: { createdAt: "asc" },
   });
   const settings = readSettings(ctx.org);
-  const alerts = settings.tunnelAlerts ?? {
-    sendAlerts: true,
-    delivery: "Immediate" as const,
-    digestHour: "09:00",
-    channel: "",
+  const storedAlerts = settings.tunnelAlerts;
+  const alerts = {
+    sendAlerts: storedAlerts?.sendAlerts ?? true,
+    delivery: storedAlerts?.delivery ?? ("Immediate" as const),
+    digestHour: storedAlerts?.digestHour ?? "09:00",
+    channel: storedAlerts?.channel ?? "",
+    recipients: storedAlerts?.recipients?.length ? storedAlerts.recipients : [ctx.user.email],
   };
 
   return (

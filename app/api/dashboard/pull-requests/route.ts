@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { riskFromFiles } from "@/lib/engine";
@@ -37,4 +38,36 @@ export async function POST(request: Request) {
     return created;
   });
   return NextResponse.json({ pullRequest: pr }, { status: 201 });
+}
+
+const rerunSchema = z.object({ id: z.string().min(1).max(60) });
+
+/** PATCH /api/dashboard/pull-requests — re-runs the impact analysis for one pull request. */
+export async function PATCH(request: Request) {
+  const guard = await guardApi({ write: true });
+  if (!guard.ok) return guard.response;
+  const { ctx } = guard;
+
+  const parsed = rerunSchema.safeParse(await readJson(request));
+  if (!parsed.success) return validationError(parsed.error);
+
+  const pr = await prisma.pullRequestCheck.findFirst({ where: { id: parsed.data.id, organisationId: ctx.org.id } });
+  if (!pr) return jsonError("Pull request not found.", 404);
+
+  const highRisk = pr.riskLevel === "high";
+  const status = highRisk ? "regression_caught" : "passed";
+  const regressions = highRisk ? Math.max(pr.regressions, 1) : 0;
+  const testsRun = Math.max(pr.testsRun, 6);
+
+  await delay(MOCK_LATENCY_MS);
+  const updated = await prisma.$transaction(async (tx) => {
+    const next = await tx.pullRequestCheck.update({
+      where: { id: pr.id },
+      data: { status, regressions, testsRun },
+    });
+    await spendCredits(tx, ctx.org.id, CREDIT_COSTS.prAnalysis);
+    await audit(tx, ctx, "pull_request.reanalysed", `#${pr.prNumber} ${pr.title}`);
+    return next;
+  });
+  return NextResponse.json({ pullRequest: updated });
 }

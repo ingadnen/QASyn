@@ -136,6 +136,110 @@ export function crawlLiveStats(crawl: CrawlSession) {
   return { pagesVisited: p.pagesVisited, flowsMapped: p.flowsMapped };
 }
 
+/** Re-import: regenerate the crawl's mapped flows into test cases, updating existing ones. */
+export async function reimportCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
+  const { pages, flows, host } = crawlPlan(crawl.targetUrl);
+  const existing = await db.testCase.findMany({
+    where: { organisationId: actor.org.id, title: { in: flows.map((flow) => flow.name) } },
+  });
+  const byTitle = new Map(existing.map((testCase) => [testCase.title, testCase]));
+  let created = 0;
+  let updated = 0;
+  const linkedIds: string[] = [];
+
+  for (const flow of flows) {
+    const steps = Math.max(1, flow.steps);
+    const stepsJson = buildStepsJson(crawl.targetUrl, steps, flow.module, flow.name);
+    const current = byTitle.get(flow.name);
+    if (current) {
+      await db.testCase.update({
+        where: { id: current.id },
+        data: { stepsJson, stepsCount: steps, status: "draft", lastRunAt: null, source: "crawl" },
+      });
+      linkedIds.push(current.id);
+      updated++;
+    } else {
+      const testCase = await db.testCase.create({
+        data: {
+          organisationId: actor.org.id,
+          title: flow.name,
+          module: flow.module,
+          criticality: flow.criticality,
+          status: "draft",
+          stepsCount: steps,
+          source: "crawl",
+          stepsJson,
+          variablesJson: JSON.stringify({ url: crawl.targetUrl }),
+        },
+      });
+      linkedIds.push(testCase.id);
+      created++;
+    }
+  }
+
+  const logs = [
+    ...buildCrawlLogs(crawl.targetUrl).slice(0, -1),
+    { offsetMs: 0, tag: "DONE", message: `Re-import complete · ${pages.length} pages · ${flows.length} flows · ${created} created · ${updated} refreshed` },
+  ];
+  await db.crawlSession.update({
+    where: { id: crawl.id },
+    data: { status: "completed", completedAt: new Date(), pagesVisited: pages.length, flowsMapped: flows.length, logs: JSON.stringify(logs) },
+  });
+
+  if (crawl.requirementId) {
+    await db.requirement.update({
+      where: { id: crawl.requirementId },
+      data: {
+        linkedTestsCount: linkedIds.length,
+        coverageStatus: linkedIds.length > 0 ? "covered" : "uncovered",
+        testCases: { set: linkedIds.map((id) => ({ id })) },
+      },
+    });
+  }
+  await audit(db, actor, "crawl.reimported", `${host} · ${created} created · ${updated} refreshed`);
+  return { created, updated, total: flows.length };
+}
+
+/** Generate requirement-derived test cases and link them to the requirement. */
+export async function generateRequirementCases(db: Db, actor: Actor, requirement: { id: string; title: string; code: string; source: string }, count = 3) {
+  const titles = generateTitles("Core", requirement.title, count);
+  const existing = new Set((await db.testCase.findMany({ where: { organisationId: actor.org.id }, select: { title: true } })).map((t) => t.title));
+  const created: TestCase[] = [];
+  for (const base of titles) {
+    let title = base;
+    let suffix = 2;
+    while (existing.has(title)) title = `${base} (${suffix++})`;
+    existing.add(title);
+    const steps = 4 + (created.length % 3);
+    created.push(
+      await db.testCase.create({
+        data: {
+          organisationId: actor.org.id,
+          title,
+          module: "Core",
+          criticality: "high",
+          status: "draft",
+          stepsCount: steps,
+          source: requirement.source === "crawl" ? "crawl" : "ai",
+          stepsJson: buildStepsJson(actor.org.website ?? "", steps, "Core", title),
+          variablesJson: JSON.stringify({ requirement: requirement.code }),
+        },
+      }),
+    );
+  }
+  const countAfter = await db.testCase.count({ where: { organisationId: actor.org.id, requirements: { some: { id: requirement.id } } } });
+  const linkedTotal = countAfter + created.length;
+  await db.requirement.update({
+    where: { id: requirement.id },
+    data: {
+      linkedTestsCount: linkedTotal,
+      coverageStatus: linkedTotal > 1 ? "covered" : linkedTotal === 1 ? "partial" : "uncovered",
+      testCases: { connect: created.map((t) => ({ id: t.id })) },
+    },
+  });
+  await audit(db, actor, "requirement.generated", `${requirement.code} · ${created.length} cases`);
+  return { created: created.length, linked: linkedTotal };
+}
 const ROOT_CAUSES = [
   "stale token in auth/refresh.ts:87",
   "race condition between cart update and price recalculation",

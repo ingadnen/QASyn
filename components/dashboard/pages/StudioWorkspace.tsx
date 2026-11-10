@@ -275,6 +275,8 @@ export function StudioWorkspace({
   const [editOpen, setEditOpen] = useState(false);
   const [prereqOpen, setPrereqOpen] = useState(false);
   const [selectedPrereqs, setSelectedPrereqs] = useState<string[]>(data.prerequisites.map((p) => p.id));
+  const [relationTab, setRelationTab] = useState<"plans" | "prereq">("plans");
+  const [versionId, setVersionId] = useState<string | null>(null);
   const [prereqQuery, setPrereqQuery] = useState("");
   const [runOpen, setRunOpen] = useState(false);
   const [runPhase, setRunPhase] = useState<RunPhase>("preparing");
@@ -335,7 +337,7 @@ export function StudioWorkspace({
   }, [data.variables, steps, usedQuery]);
 
   const detailStep = detailIndex !== null ? steps[detailIndex] : null;
-  const selectedVersion = data.versions[0] ?? null;
+  const selectedVersion = data.versions.find((version) => version.id === versionId) ?? data.versions[0] ?? null;
 
   function toggleSection(key: string) {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -710,10 +712,24 @@ export function StudioWorkspace({
           {tab === "relationships" && (
             <div className="space-y-4">
               <div className="flex items-center gap-5 border-b border-[#e5e7eb]">
-                <button type="button" className="border-b-2 border-[#5b4ee8] pb-2.5 pt-1 text-[13px] font-medium text-[#5b4ee8]">
+                <button
+                  type="button"
+                  onClick={() => setRelationTab("plans")}
+                  className={cn(
+                    "border-b-2 pb-2.5 pt-1 text-[13px]",
+                    relationTab === "plans" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]",
+                  )}
+                >
                   Test Plans ({data.plans.length})
                 </button>
-                <button type="button" className="border-b-2 border-transparent pb-2.5 pt-1 text-[13px] text-[#6b7280]">
+                <button
+                  type="button"
+                  onClick={() => setRelationTab("prereq")}
+                  className={cn(
+                    "border-b-2 pb-2.5 pt-1 text-[13px]",
+                    relationTab === "prereq" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]",
+                  )}
+                >
                   Used as Prerequisite in ({data.prerequisiteOf.length})
                 </button>
               </div>
@@ -721,7 +737,7 @@ export function StudioWorkspace({
                 <CqaIcon name="info" className="text-[15px] text-[#9ca3af]" />
                 <span>Test plans and prerequisite links are kept in sync across the workspace.</span>
               </div>
-              <div className={cn(cqaCard, "overflow-hidden")}>
+              <div className={cn(cqaCard, "overflow-hidden", relationTab !== "plans" && "hidden")}>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] border-collapse text-left">
                     <thead>
@@ -766,7 +782,7 @@ export function StudioWorkspace({
                 </div>
               </div>
 
-              <div className={cn(cqaCard, "overflow-hidden")}>
+              <div className={cn(cqaCard, "overflow-hidden", relationTab !== "prereq" && "hidden")}>
                 <div className="border-b border-[#f0f1f3] px-4 py-2.5 text-[12.5px] font-medium text-[#374151]">Used as Prerequisite in</div>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] border-collapse text-left">
@@ -820,6 +836,7 @@ export function StudioWorkspace({
                       <button
                         key={version.id}
                         type="button"
+                        onClick={() => setVersionId(version.id)}
                         className={cn(
                           "flex w-full items-start gap-2 rounded-md px-2 py-2.5 text-left transition",
                           version.version === selectedVersion?.version ? "bg-[#f5f3ff]" : "hover:bg-[#f9fafb]",

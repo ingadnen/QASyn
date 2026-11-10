@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { apiFetch, errorMessage } from "@/lib/api";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 /** Calls an API route then refreshes the server components of the page. */
@@ -13,15 +14,22 @@ export function useAction() {
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async <T,>(key: string, url: string, init: { method?: "POST" | "PATCH" | "DELETE"; json?: unknown } = {}): Promise<T | null> => {
+    async <T,>(
+      key: string,
+      url: string,
+      init: { method?: "POST" | "PATCH" | "DELETE"; json?: unknown; success?: string } = {},
+    ): Promise<T | null> => {
       setPending(key);
       setError(null);
       try {
         const res = await apiFetch<T>(url, { method: init.method ?? "POST", json: init.json });
+        toast(init.success ?? "Saved.", "success");
         router.refresh();
         return res;
       } catch (e) {
-        setError(errorMessage(e));
+        const message = errorMessage(e);
+        setError(message);
+        toast(message, "error");
         return null;
       } finally {
         setPending(null);

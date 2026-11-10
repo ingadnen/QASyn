@@ -22,6 +22,7 @@ const patchSchema = z.discriminatedUnion("action", [
     delivery: z.enum(["Immediate", "Daily digest"]),
     digestHour: z.string().max(10),
     channel: z.string().max(120),
+    recipients: z.array(z.string().trim().email().max(120)).max(10).default([]),
   }),
 ]);
 
@@ -84,6 +85,7 @@ export async function PATCH(request: Request) {
         delivery: input.delivery,
         digestHour: input.digestHour,
         channel: input.channel,
+        recipients: input.recipients,
       },
     });
     await audit(prisma, ctx, "tunnel.alerts_updated", input.delivery);

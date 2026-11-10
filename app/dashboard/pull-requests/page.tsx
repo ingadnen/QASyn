@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PullRequestRowActions } from "@/components/dashboard/pages/PullRequestRowActions";
 import { SimulatePrButton } from "@/components/dashboard/pages/PullRequestsClient";
 import { AutoRefresh } from "@/components/dashboard/AutoRefresh";
 import { CqaIcon, PageHeader, StatusPill, cqaBtnPrimary, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
@@ -104,15 +105,22 @@ export default async function PullRequestsPage({ searchParams }: { searchParams:
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]">{formatDateTime(p.createdAt)}</td>
                     <td className="px-4 py-3">
-                      <details className="relative">
-                        <summary aria-label="More actions" className="flex size-8 cursor-pointer list-none items-center justify-center rounded-md text-[#6b7280] hover:bg-[#f3f4f6] [&::-webkit-details-marker]:hidden">
-                          <CqaIcon name="more_horiz" className="text-[20px]" />
-                        </summary>
-                        <div className="absolute right-0 z-30 mt-1 w-44 rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-lg">
-                          <button type="button" className="block w-full px-3 py-1.5 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]">View details</button>
-                          <button type="button" className="block w-full px-3 py-1.5 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]">Re-run analysis</button>
-                        </div>
-                      </details>
+                      <PullRequestRowActions
+                        readOnly={ctx.readOnly}
+                        row={{
+                          id: p.id,
+                          prNumber: p.prNumber,
+                          title: p.title,
+                          branch: p.branch,
+                          author: p.author,
+                          filesChanged: p.filesChanged,
+                          riskLevel: p.riskLevel,
+                          status: p.status,
+                          testsRun: p.testsRun,
+                          regressions: p.regressions,
+                          createdAt: p.createdAt.toISOString(),
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}

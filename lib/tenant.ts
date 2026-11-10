@@ -206,7 +206,7 @@ export interface OrgSettings {
   /** RBAC permission matrix (permission → role → allowed) */
   permissions?: Record<string, Record<string, boolean>>;
   /** Tunnels alert delivery preferences. */
-  tunnelAlerts?: { sendAlerts: boolean; delivery: "Immediate" | "Daily digest"; digestHour: string; channel: string };
+  tunnelAlerts?: { sendAlerts: boolean; delivery: "Immediate" | "Daily digest"; digestHour: string; channel: string; recipients?: string[] };
 }
 
 export function readSettings(org: Pick<Organisation, "settingsJson">): OrgSettings {

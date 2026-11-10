@@ -10,3 +10,7 @@ prisma/*.db-*
 prisma/*.db-wal
 prisma/*.db-shm
 prisma/*.db-journal
+
+# Local-only Playwright profile and parity screenshots
+.playwright-contextqa-profile/
+contextqa-dump/*.png

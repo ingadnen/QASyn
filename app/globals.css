@@ -105,6 +105,26 @@
   }
 }
 
+/* Dark-sidebar scrollbar: thin, transparent track, no Windows gutter. */
+.dark-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+.dark-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.dark-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 /* ContextQA live workspace iconography */
 @layer base {
   .material-symbols-outlined {

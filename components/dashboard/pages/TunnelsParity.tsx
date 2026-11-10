@@ -31,6 +31,7 @@ export interface TunnelAlertPrefs {
   delivery: "Immediate" | "Daily digest";
   digestHour: string;
   channel: string;
+  recipients: string[];
 }
 
 export interface TunnelsProps {
@@ -85,6 +86,9 @@ export function Tunnels(props: TunnelsProps) {
   const [commandMachine, setCommandMachine] = useState<{ name: string; token: string } | null>(null);
   const [prefs, setPrefs] = useState<TunnelAlertPrefs>(alerts);
   const [testAlertSent, setTestAlertSent] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
+  const [recipientDraft, setRecipientDraft] = useState("");
+  const [recipientError, setRecipientError] = useState<string | null>(null);
 
   const activeMachines = useMemo(() => machines.filter((m) => m.status === "connected").length, [machines]);
   const routes = useMemo(() => machines.reduce((sum, m) => sum + m.routeCount, 0), [machines]);
@@ -93,7 +97,7 @@ export function Tunnels(props: TunnelsProps) {
     setPrefs(next);
     await run("alerts", "/api/dashboard/tunnels", {
       method: "PATCH",
-      json: { action: "alerts", sendAlerts: next.sendAlerts, delivery: next.delivery, digestHour: next.digestHour, channel: next.channel },
+      json: { action: "alerts", sendAlerts: next.sendAlerts, delivery: next.delivery, digestHour: next.digestHour, channel: next.channel, recipients: next.recipients },
     });
   }
 
@@ -219,9 +223,9 @@ export function Tunnels(props: TunnelsProps) {
             <div className="mt-3 flex items-center justify-between border-t border-[#f0f1f3] pt-3 text-[12.5px]">
               <div>
                 <p className="font-medium text-[#374151]">Recipients</p>
-                <p className="text-[12px] text-[#6b7280]">Tenant admins (1)</p>
+                <p className="text-[12px] text-[#6b7280]">Tenant admins ({prefs.recipients.length})</p>
               </div>
-              <button type="button" className="text-[12px] font-medium text-[#5b4ee8] hover:underline">manage</button>
+              <button type="button" onClick={() => { setRecipientError(null); setManageOpen(true); }} className="text-[12px] font-medium text-[#5b4ee8] hover:underline">manage</button>
             </div>
             <p className="mt-3 text-[11.5px] leading-4 text-[#6b7280]">
               A machine that stops answering for 10 minutes alerts, and so does a route that fails three checks in a row. Auth failures always alert. Recovery is sent when it comes back.
@@ -333,6 +337,70 @@ export function Tunnels(props: TunnelsProps) {
           router.refresh();
         }}
       />
+
+      <Modal
+        open={manageOpen}
+        onClose={() => setManageOpen(false)}
+        title="Alert recipients"
+        footer={<button type="button" className={cqaBtnSecondary} onClick={() => setManageOpen(false)}>Done</button>}
+      >
+        <div className="space-y-3">
+          <p className="text-[12.5px] leading-5 text-[#6b7280]">
+            Tunnel down and recovery alerts are delivered to these addresses. Changes save immediately.
+          </p>
+          <ul className="divide-y divide-[#f3f4f6] overflow-hidden rounded-lg border border-[#e5e7eb]">
+            {prefs.recipients.map((email) => (
+              <li key={email} className="flex items-center justify-between gap-2 px-3 py-2 text-[13px] text-[#374151]">
+                <span className="inline-flex items-center gap-2">
+                  <CqaIcon name="mail" className="text-[16px] text-[#9ca3af]" />
+                  {email}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${email}`}
+                  disabled={readOnly || prefs.recipients.length <= 1}
+                  onClick={() => void savePrefs({ ...prefs, recipients: prefs.recipients.filter((entry) => entry !== email) })}
+                  className="rounded p-1 text-[#9ca3af] hover:bg-[#fef2f2] hover:text-[#dc2626] disabled:opacity-40"
+                >
+                  <CqaIcon name="close" className="text-[16px]" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const email = recipientDraft.trim().toLowerCase();
+              if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+                setRecipientError("Enter a valid email address.");
+                return;
+              }
+              if (prefs.recipients.includes(email)) {
+                setRecipientError("That address is already a recipient.");
+                return;
+              }
+              setRecipientError(null);
+              setRecipientDraft("");
+              void savePrefs({ ...prefs, recipients: [...prefs.recipients, email] });
+            }}
+            className="flex flex-wrap gap-2"
+          >
+            <input
+              type="email"
+              aria-label="New recipient email"
+              placeholder="name@company.com"
+              value={recipientDraft}
+              onChange={(event) => setRecipientDraft(event.target.value)}
+              disabled={readOnly}
+              className={cn(cqaInput, "h-9 flex-1")}
+            />
+            <button type="submit" disabled={readOnly || pending === "alerts"} className={cn(cqaBtnSecondary, "h-9")}>
+              <CqaIcon name="add" className="text-[16px]" /> Add recipient
+            </button>
+          </form>
+          {recipientError && <p className="text-[12px] text-red-600">{recipientError}</p>}
+        </div>
+      </Modal>
 
       <InstallCommandModal
         machine={commandMachine}

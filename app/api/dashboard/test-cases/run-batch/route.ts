@@ -16,10 +16,14 @@ export async function POST(request: Request) {
 
   const parsed = runBatchSchema.safeParse((await readJson(request)) ?? {});
   if (!parsed.success) return validationError(parsed.error);
-  const { module } = parsed.data;
+  const { module, testCaseIds } = parsed.data;
 
   const testCases = await prisma.testCase.findMany({
-    where: { organisationId: ctx.org.id, ...(module ? { module } : {}) },
+    where: {
+      organisationId: ctx.org.id,
+      ...(module ? { module } : {}),
+      ...(testCaseIds && testCaseIds.length > 0 ? { id: { in: testCaseIds } } : {}),
+    },
     take: MAX_BATCH,
     orderBy: { createdAt: "asc" },
   });

@@ -1,24 +1,36 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { generateRequirementCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
-import { linkTestsSchema } from "@/lib/validation";
+import { linkTestsSchema, requirementActionSchema } from "@/lib/validation";
 
 type Params = { params: Promise<{ id: string }> };
 
-/** PATCH /api/dashboard/requirements/[id] { testCaseIds } — replaces the linked test cases. */
+/** PATCH /api/dashboard/requirements/[id] { testCaseIds } | { action: "generate" | "reimport", count? } */
 export async function PATCH(request: Request, { params }: Params) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const { id } = await params;
-
-  const parsed = linkTestsSchema.safeParse(await readJson(request));
-  if (!parsed.success) return validationError(parsed.error);
+  const body = await readJson(request);
 
   const requirement = await prisma.requirement.findFirst({ where: { id, organisationId: ctx.org.id } });
   if (!requirement) return jsonError("Requirement not found.", 404);
+
+  const action = requirementActionSchema.safeParse(body);
+  if (action.success) {
+    await delay(MOCK_LATENCY_MS);
+    const count = action.data.count ?? (action.data.action === "reimport" ? 5 : 3);
+    const result = await prisma.$transaction((tx) => generateRequirementCases(tx, ctx, requirement, count));
+    await audit(prisma, ctx, action.data.action === "reimport" ? "requirement.reimported" : "requirement.generated", `${requirement.code} · ${result.created} cases`);
+    const updated = await prisma.requirement.findFirst({ where: { id: requirement.id } });
+    return NextResponse.json({ requirement: updated, ...result });
+  }
+
+  const parsed = linkTestsSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
 
   // Only test cases of the same organisation can be linked.
   const testCases = await prisma.testCase.findMany({
@@ -46,5 +58,5 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!requirement) return jsonError("Requirement not found.", 404);
   await prisma.requirement.delete({ where: { id: requirement.id } });
   await audit(prisma, ctx, "requirement.deleted", requirement.code);
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, id: requirement.id });
 }

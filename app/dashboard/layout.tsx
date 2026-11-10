@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard/Sidebar";
+import { Toaster } from "@/components/dashboard/Toaster";
 import { FinQAWidget } from "@/components/sections/FinQAWidget";
 import { initialsOf } from "@/lib/auth";
 import { ensureWal, prisma } from "@/lib/db";
@@ -21,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   void ensureWal();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 lg:flex">
       <DashboardSidebar
         orgName={ctx.org.name}
         logoUrl={ctx.org.logoUrl}
@@ -32,7 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         ownOrgName={ctx.ownOrg?.name ?? null}
         user={{ name: ctx.user.name, email: ctx.user.email, initials: ctx.user.avatarInitials || initialsOf(ctx.user.name, ctx.user.email) }}
       />
-      <div className="lg:pl-[60px]">
+      <div className="min-w-0 flex-1">
         {ctx.readOnly && (
           <div className="flex flex-wrap items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-[11px] text-amber-900">
             <span>
@@ -50,6 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <main className="min-h-[calc(100vh-40px)] bg-[#f7f8fa] px-6 py-5 lg:px-8">{children}</main>
       </div>
       <FinQAWidget />
+      <Toaster />
     </div>
   );
 }

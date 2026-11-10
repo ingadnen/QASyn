@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CodeAnalysisRowActions } from "@/components/dashboard/pages/CodeAnalysisRowActions";
 import { RunAnalysisButton } from "@/components/dashboard/pages/RunAnalysisButton";
 import { CqaIcon, PageHeader, StatusPill, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
@@ -107,9 +108,19 @@ export default async function CodeAnalysisPage({ searchParams }: { searchParams:
                     <td className="px-4 py-3"><StatusPill value={r.status} /></td>
                     <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]">{formatDateTime(r.analysedAt)}</td>
                     <td className="px-4 py-3">
-                      <button type="button" className="inline-flex size-8 items-center justify-center rounded-md text-[#6b7280] hover:bg-[#f3f4f6]" aria-label="More actions">
-                        <CqaIcon name="more_horiz" className="text-[20px]" />
-                      </button>
+                      <CodeAnalysisRowActions
+                        readOnly={ctx.readOnly}
+                        row={{
+                          id: r.id,
+                          provider: r.provider,
+                          detail: r.detail,
+                          branch: r.branch,
+                          modules: r.modules,
+                          files: r.files,
+                          status: r.status,
+                          analysedAt: r.analysedAt.toISOString(),
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}

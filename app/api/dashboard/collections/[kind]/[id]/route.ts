@@ -27,6 +27,58 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!item) return jsonError("Not found.", 404);
 
   const body = (await readJson(request)) as { action?: string; testCaseIds?: string[] };
+  if (body?.action === "clone") {
+    const copyName = `${item.name} (Copy)`;
+    if (kind === "suites") {
+      const suite = await prisma.testSuite.findFirstOrThrow({ where: { id: item.id, organisationId: ctx.org.id } });
+      const members = await prisma.testCase.findMany({
+        where: { organisationId: ctx.org.id, testSuites: { some: { id: suite.id } } },
+        select: { id: true },
+      });
+      const clone = await prisma.testSuite.create({
+        data: {
+          organisationId: ctx.org.id,
+          name: copyName,
+          description: suite.description,
+          schedule: suite.schedule,
+          module: suite.module,
+          platform: suite.platform,
+          labelsJson: suite.labelsJson,
+          prerequisitesJson: suite.prerequisitesJson,
+          projectId: suite.projectId,
+          testCases: { connect: members.map((c) => ({ id: c.id })) },
+        },
+      });
+      await audit(prisma, ctx, "test_suite.cloned", `${suite.name} → ${clone.name}`);
+      return NextResponse.json({ item: clone });
+    }
+    const plan = await prisma.testPlan.findFirstOrThrow({ where: { id: item.id, organisationId: ctx.org.id } });
+    const members = await prisma.testCase.findMany({
+      where: { organisationId: ctx.org.id, testPlans: { some: { id: plan.id } } },
+      select: { id: true },
+    });
+    const suites = await prisma.testSuite.findMany({
+      where: { organisationId: ctx.org.id, plans: { some: { id: plan.id } } },
+      select: { id: true },
+    });
+    const clone = await prisma.testPlan.create({
+      data: {
+        organisationId: ctx.org.id,
+        name: copyName,
+        description: plan.description,
+        schedule: plan.schedule,
+        module: plan.module,
+        environment: plan.environment,
+        browsersJson: plan.browsersJson,
+        settingsJson: plan.settingsJson,
+        projectId: plan.projectId,
+        testCases: { connect: members.map((c) => ({ id: c.id })) },
+        suites: { connect: suites.map((s) => ({ id: s.id })) },
+      },
+    });
+    await audit(prisma, ctx, "test_plan.cloned", `${plan.name} → ${clone.name}`);
+    return NextResponse.json({ item: clone });
+  }
   if (body?.action === "link" && Array.isArray(body.testCaseIds)) {
     const cases = await prisma.testCase.findMany({
       where: { organisationId: ctx.org.id, id: { in: body.testCaseIds } },
@@ -63,6 +115,7 @@ export async function PATCH(request: Request, { params }: Params) {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.module !== undefined ? { module: input.module } : {}),
+        ...(input.environment !== undefined ? { environment: input.environment || null } : {}),
       },
     });
     await audit(prisma, ctx, "test_plan.updated", updated.name);

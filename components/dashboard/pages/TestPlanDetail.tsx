@@ -138,6 +138,9 @@ function runStatusLabel(status: string) {
   if (status === "RUNNING") return "Running";
   return "Not Executed";
 }
+function sameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 function Switch({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
   return (
@@ -192,7 +195,13 @@ export function TestPlanDetail({
   const [scheduleTz, setScheduleTz] = useState("UTC");
   const [runQuery, setRunQuery] = useState("");
   const [reportQuery, setReportQuery] = useState("");
+  const [reportFilterOpen, setReportFilterOpen] = useState(false);
+  const [reportStatus, setReportStatus] = useState<"all" | "passed" | "failed" | "not_executed">("all");
   const [selectedRuns, setSelectedRuns] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [scheduleQuery, setScheduleQuery] = useState("");
+  const [calendarMenuOpen, setCalendarMenuOpen] = useState(false);
+  const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
   const [matrixMode, setMatrixMode] = useState<"matrix" | "summary">("matrix");
   const [matrixWindow, setMatrixWindow] = useState(10);
   const [calendarMonth, setCalendarMonth] = useState(() => {
@@ -316,6 +325,35 @@ export function TestPlanDetail({
     if (dayNumber > daysInMonth) return { day: dayNumber - daysInMonth, muted: true, current: false };
     return { day: dayNumber, muted: false, current: true };
   });
+
+  const filteredSchedules = schedules.filter((s) =>
+    !scheduleQuery.trim() || `${s.name} ${s.cronExpression} ${s.timezone}`.toLowerCase().includes(scheduleQuery.trim().toLowerCase()),
+  );
+  const filteredReportExecutions = executions.filter((e) => {
+    if (reportStatus === "all") return true;
+    return runStatusLabel(e.status).toLowerCase().replace(/\s+/g, "_") === reportStatus;
+  });
+  const compareRuns = selectedRuns
+    .map((id) => executions.find((e) => e.id === id))
+    .filter((e): e is PlanExecutionRow => Boolean(e));
+  const now = new Date();
+  const focusDate =
+    now.getFullYear() === calendarMonth.getFullYear() && now.getMonth() === calendarMonth.getMonth()
+      ? now
+      : new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+  const weekAnchor = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+  const weekStart = new Date(weekAnchor);
+  weekStart.setDate(weekAnchor.getDate() - weekAnchor.getDay());
+  const weekCells = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    return { day: date.getDate(), current: date.getMonth() === calendarMonth.getMonth(), muted: date.getMonth() !== calendarMonth.getMonth(), isToday: sameDay(date, now) };
+  });
+  const focusSchedules = schedules.filter((s) => s.nextFireAt && sameDay(new Date(s.nextFireAt), focusDate));
+
+  function toggleCompareRun(id: string) {
+    setSelectedRuns((current) => (current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id].slice(-2)));
+  }
 
   return (
     <div className="pb-10">
@@ -517,12 +555,72 @@ export function TestPlanDetail({
               <input type="search" value={reportQuery} onChange={(e) => setReportQuery(e.target.value)} placeholder="Search" aria-label="Search run history" className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none" />
             </div>
             <button type="button" aria-label="Refresh" onClick={() => router.refresh()} className={cn(cqaIconBtn, "size-9 border border-[#e5e7eb] bg-white")}><CqaIcon name="refresh" className="text-[18px]" /></button>
-            <button type="button" aria-label="Filter runs" className={cn(cqaIconBtn, "size-9 border border-[#e5e7eb] bg-white")}><CqaIcon name="filter_list" className="text-[18px]" /></button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Filter runs"
+                aria-expanded={reportFilterOpen}
+                onClick={() => setReportFilterOpen((value) => !value)}
+                className={cn(
+                  cqaIconBtn,
+                  "size-9 border bg-white",
+                  reportStatus !== "all" ? "border-[#c4bdfa] text-[#5b4ee8]" : "border-[#e5e7eb]",
+                )}
+              >
+                <CqaIcon name="filter_list" className="text-[18px]" />
+              </button>
+              {reportFilterOpen && (
+                <>
+                  <button type="button" aria-label="Close filters" onClick={() => setReportFilterOpen(false)} className="fixed inset-0 z-20 cursor-default" />
+                  <div className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]">
+                    {([
+                      ["all", "All runs"],
+                      ["passed", "Passed"],
+                      ["failed", "Failed"],
+                      ["not_executed", "Not Executed"],
+                    ] as Array<[typeof reportStatus, string]>).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setReportStatus(value);
+                          setReportFilterOpen(false);
+                        }}
+                        className={cn(
+                          "flex w-full items-center justify-between px-3 py-2 text-left text-[12.5px] hover:bg-[#f9fafb]",
+                          reportStatus === value ? "font-medium text-[#5b4ee8]" : "text-[#374151]",
+                        )}
+                      >
+                        {label}
+                        {reportStatus === value && <CqaIcon name="check" className="text-[16px]" />}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           <div className={cn(cqaCard, "mb-4 flex flex-wrap items-center gap-3 px-4 py-2.5 text-[12.5px] text-[#6b7280]")}>
-            <span>Select 2 runs to compare</span>
-            <button type="button" disabled={selectedRuns.length !== 2} className={cn(cqaBtnSecondary, "ml-auto h-8 px-3 text-[12.5px]")}>Compare</button>
+            <span>
+              Select 2 runs to compare
+              {selectedRuns.length > 0 && (
+                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[11.5px] font-medium text-[#5b4ee8]">
+                  {selectedRuns.length} selected
+                  <button type="button" aria-label="Clear run selection" onClick={() => setSelectedRuns([])} className="hover:text-[#111827]">
+                    <CqaIcon name="close" className="text-[13px]" />
+                  </button>
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              disabled={selectedRuns.length !== 2}
+              onClick={() => setCompareOpen(true)}
+              className={cn(cqaBtnSecondary, "ml-auto h-8 px-3 text-[12.5px]")}
+            >
+              Compare
+            </button>
           </div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-[14px] font-semibold text-[#262626]">Test Case Results</h3>
@@ -539,7 +637,13 @@ export function TestPlanDetail({
           ) : (
             <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
               <div className="space-y-4">
-                {executions.map((e) => {
+                {filteredReportExecutions.length === 0 && (
+                  <div className={cn(cqaCard, "px-5 py-10 text-center")}>
+                    <p className="text-[13.5px] font-medium text-[#374151]">No runs match this filter</p>
+                    <p className="mt-1 text-[12px] text-[#9ca3af]">Choose “All runs” in the filter menu to see every execution.</p>
+                  </div>
+                )}
+                {filteredReportExecutions.map((e) => {
                   const index = executions.indexOf(e) + 1;
                   const percent = e.total ? Math.round((e.passed / e.total) * 100) : 0;
                   const visibleCases = matrixCases.filter((c) => !reportQuery.trim() || `${c.code} ${c.title}`.toLowerCase().includes(reportQuery.trim().toLowerCase()));
@@ -549,6 +653,16 @@ export function TestPlanDetail({
                         <div className="flex flex-wrap items-center gap-3">
                           <span className="rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1 text-[12px] font-semibold text-[#374151]">Run #{index}</span>
                           <StatusPill value={runStatusLabel(e.status)} label={runStatusLabel(e.status)} />
+                          <label className="inline-flex items-center gap-1.5 text-[11.5px] text-[#6b7280]">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select run ${index} for comparison`}
+                              checked={selectedRuns.includes(e.id)}
+                              onChange={() => toggleCompareRun(e.id)}
+                              className="size-3.5 accent-[#5b4ee8]"
+                            />
+                            Compare
+                          </label>
                           <span className="text-[12.5px] text-[#6b7280]">Initial: {runStatusLabel(e.status)}</span>
                           <span className="ml-auto text-[12.5px] text-[#4a5565]">Latest outcomes <strong className="text-[#111827]">{e.passed} of {e.total}</strong> passed</span>
                         </div>
@@ -687,20 +801,28 @@ export function TestPlanDetail({
 
           <div className={cn(cqaCard, "mt-4 overflow-hidden")}>
             <div className="flex flex-wrap items-center gap-2 border-b border-[#f0f1f3] px-4 py-2.5">
-              <span className="text-[13px] font-medium text-[#374151]">Schedules <span className="rounded bg-[#f3f4f6] px-1.5 py-[1px] text-[11px] text-[#6b7280]">{schedules.length}</span></span>
+              <span className="text-[13px] font-medium text-[#374151]">Schedules <span className="rounded bg-[#f3f4f6] px-1.5 py-[1px] text-[11px] text-[#6b7280]">{filteredSchedules.length}</span></span>
               <div className="relative ml-auto min-w-[180px]">
                 <CqaIcon name="search" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[17px] text-[#9ca3af]" />
-                <input aria-label="Search schedules" placeholder="Search" className="h-8 w-full rounded-lg border border-[#e5e7eb] pl-8 pr-3 text-[12.5px] outline-none" />
+                <input
+                  aria-label="Search schedules"
+                  placeholder="Search"
+                  value={scheduleQuery}
+                  onChange={(event) => setScheduleQuery(event.target.value)}
+                  className="h-8 w-full rounded-lg border border-[#e5e7eb] pl-8 pr-3 text-[12.5px] outline-none focus:border-[#a9a1f7]"
+                />
               </div>
               <button type="button" aria-label="Add schedule" onClick={() => setScheduleOpen(true)} className={cn(cqaIconBtn, "size-8 border border-[#e5e7eb] bg-white")}><CqaIcon name="add" className="text-[17px]" /></button>
             </div>
-            {schedules.length === 0 ? (
+            {filteredSchedules.length === 0 ? (
               <div className="px-4 py-10 text-center">
-                <p className="text-[13.5px] font-medium text-[#374151]">No schedules yet. Click Add Schedule to set one up.</p>
+                <p className="text-[13.5px] font-medium text-[#374151]">
+                  {schedules.length === 0 ? "No schedules yet. Click Add Schedule to set one up." : "No schedules match your search."}
+                </p>
               </div>
             ) : (
               <ul className="divide-y divide-[#f0f1f3]">
-                {schedules.map((s) => (
+                {filteredSchedules.map((s) => (
                   <li key={s.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                     <CqaIcon name="schedule" className="text-[18px] text-[#5b4ee8]" />
                     <div className="min-w-0 flex-1">
@@ -718,8 +840,45 @@ export function TestPlanDetail({
 
           <div className={cn(cqaCard, "mt-4 overflow-hidden")}>
             <div className="flex flex-wrap items-center gap-3 border-b border-[#f0f1f3] px-4 py-2.5">
-              <button type="button" className="flex size-8 items-center justify-center rounded hover:bg-[#f3f4f6]" aria-label="Calendar menu"><CqaIcon name="menu_open" className="text-[18px] text-[#6b7280]" /></button>
-              <span className="text-[13px] font-medium text-[#374151]">This Month</span>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex size-8 items-center justify-center rounded hover:bg-[#f3f4f6]"
+                  aria-label="Calendar menu"
+                  aria-expanded={calendarMenuOpen}
+                  onClick={() => setCalendarMenuOpen((value) => !value)}
+                >
+                  <CqaIcon name="menu_open" className="text-[18px] text-[#6b7280]" />
+                </button>
+                {calendarMenuOpen && (
+                  <>
+                    <button type="button" aria-label="Close calendar menu" onClick={() => setCalendarMenuOpen(false)} className="fixed inset-0 z-20 cursor-default" />
+                    <div className="absolute left-0 z-30 mt-1 w-52 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]">
+                      <button type="button" onClick={() => { setCalendarMonth(new Date(now.getFullYear(), now.getMonth(), 1)); setCalendarView("month"); setCalendarMenuOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]"><CqaIcon name="today" className="text-[16px]" /> Today</button>
+                      <button type="button" onClick={() => { setCalendarView("week"); setCalendarMenuOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]"><CqaIcon name="date_range" className="text-[16px]" /> Go to this week</button>
+                      <button type="button" onClick={() => { setCalendarView("day"); setCalendarMenuOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]"><CqaIcon name="event" className="text-[16px]" /> Go to today</button>
+                      <button
+                        type="button"
+                        disabled={!schedules.some((s) => s.nextFireAt)}
+                        onClick={() => {
+                          const next = schedules.find((s) => s.nextFireAt);
+                          if (next?.nextFireAt) {
+                            const date = new Date(next.nextFireAt);
+                            setCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+                          }
+                          setCalendarMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
+                      >
+                        <CqaIcon name="schedule" className="text-[16px]" /> Next scheduled run
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              <span className="text-[13px] font-medium text-[#374151]">
+                {calendarView === "month" ? "This Month" : calendarView === "week" ? "This Week" : "This Day"}
+              </span>
               <div className="ml-auto flex items-center gap-1">
                 <button type="button" aria-label="Previous month" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))} className={cn(cqaIconBtn, "size-8")}><CqaIcon name="chevron_left" className="text-[18px]" /></button>
                 <button type="button" aria-label="Next month" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))} className={cn(cqaIconBtn, "size-8")}><CqaIcon name="chevron_right" className="text-[18px]" /></button>
@@ -728,22 +887,66 @@ export function TestPlanDetail({
             <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
               <span className="inline-flex items-center gap-1.5 text-[12.5px] text-[#374151]"><CqaIcon name="event" className="text-[16px] text-[#5b4ee8]" /> {monthLabel}</span>
               <span className="ml-auto flex items-center gap-1">
-                {[["calendar_view_month", "Month"], ["calendar_view_week", "Week"], ["calendar_view_day", "Day"]].map(([icon, label]) => (
-                  <button key={label} type="button" className="inline-flex h-8 items-center gap-1 rounded border border-[#e5e7eb] bg-white px-2 text-[11.5px] text-[#4a5565]"><CqaIcon name={icon} className="text-[15px]" /> {label}</button>
+                {([["calendar_view_month", "Month", "month"], ["calendar_view_week", "Week", "week"], ["calendar_view_day", "Day", "day"]] as const).map(([icon, label, value]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={calendarView === value}
+                    onClick={() => setCalendarView(value)}
+                    className={cn(
+                      "inline-flex h-8 items-center gap-1 rounded border px-2 text-[11.5px]",
+                      calendarView === value ? "border-[#c4bdfa] bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "border-[#e5e7eb] bg-white text-[#4a5565] hover:bg-[#f9fafb]",
+                    )}
+                  >
+                    <CqaIcon name={icon} className="text-[15px]" /> {label}
+                  </button>
                 ))}
               </span>
             </div>
-            <div className="grid grid-cols-7 border-t border-[#f0f1f3] text-center text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">
-              {["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"].map((d) => <div key={d} className="border-r border-[#f0f1f3] px-2 py-2 last:border-r-0">{d}</div>)}
-            </div>
-            <div className="grid grid-cols-7 border-t border-[#f0f1f3]">
-              {calendarCells.map((cell, i) => (
-                <div key={i} className={cn("min-h-[76px] border-b border-r border-[#f0f1f3] px-2 py-1.5 text-[12px] last:border-r-0", cell.muted ? "bg-[#fcfcfd] text-[#d1d5db]" : "bg-white text-[#374151]")}>
-                  <span className={cn(cell.current && cell.day === new Date().getDate() ? "flex size-6 items-center justify-center rounded-full bg-[#5b4ee8] text-white" : "")}>{cell.day}</span>
-                  {cell.current && scheduleDays.has(cell.day) && <span className="mt-1 block rounded bg-[#f5f3ff] px-1 py-0.5 text-[10px] text-[#5b4ee8]">Schedule</span>}
+            {calendarView === "day" ? (
+              <div className="border-t border-[#f0f1f3] px-5 py-5">
+                <p className="text-[13px] font-medium text-[#1f2937]">
+                  {focusDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+                {focusSchedules.length === 0 ? (
+                  <p className="mt-2 text-[12.5px] text-[#9ca3af]">No schedules fire on this day.</p>
+                ) : (
+                  <ul className="mt-3 space-y-2">
+                    {focusSchedules.map((s) => (
+                      <li key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-3 py-2 text-[12.5px]">
+                        <CqaIcon name="schedule" className="text-[16px] text-[#5b4ee8]" />
+                        <span className="font-medium text-[#1f2937]">{s.name}</span>
+                        <span className="text-[#6b7280]">{s.nextFireAt ? new Date(s.nextFireAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "—"}</span>
+                        <StatusPill value={s.enabled ? "active" : "off"} label={s.enabled ? "Enabled" : "Disabled"} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-7 border-t border-[#f0f1f3] text-center text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">
+                  {["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"].map((d) => <div key={d} className="border-r border-[#f0f1f3] px-2 py-2 last:border-r-0">{d}</div>)}
                 </div>
-              ))}
-            </div>
+                <div className="grid grid-cols-7 border-t border-[#f0f1f3]">
+                  {(calendarView === "week" ? weekCells : calendarCells).map((cell, i) => {
+                    const todayCell =
+                      "isToday" in cell
+                        ? cell.isToday
+                        : cell.current &&
+                          calendarMonth.getFullYear() === now.getFullYear() &&
+                          calendarMonth.getMonth() === now.getMonth() &&
+                          cell.day === now.getDate();
+                    return (
+                      <div key={i} className={cn("min-h-[76px] border-b border-r border-[#f0f1f3] px-2 py-1.5 text-[12px] last:border-r-0", cell.muted ? "bg-[#fcfcfd] text-[#d1d5db]" : "bg-white text-[#374151]")}>
+                        <span className={cn(todayCell ? "flex size-6 items-center justify-center rounded-full bg-[#5b4ee8] text-white" : "")}>{cell.day}</span>
+                        {cell.current && scheduleDays.has(cell.day) && <span className="mt-1 block rounded bg-[#f5f3ff] px-1 py-0.5 text-[10px] text-[#5b4ee8]">Schedule</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1105,6 +1308,78 @@ export function TestPlanDetail({
             ))}
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        title="Compare runs"
+        size="lg"
+        footer={<button type="button" className={cqaBtnSecondary} onClick={() => setCompareOpen(false)}>Close</button>}
+      >
+        {compareRuns.length < 2 ? (
+          <p className="text-[13px] text-[#4b5563]">Select exactly two runs from the Run History cards to compare them.</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {compareRuns.map((run) => {
+                const index = executions.indexOf(run) + 1;
+                const percent = run.total ? Math.round((run.passed / run.total) * 100) : 0;
+                return (
+                  <div key={run.id} className="rounded-lg border border-[#e5e7eb] bg-[#fcfcfd] p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-semibold text-[#111827]">Run #{index}</span>
+                      <StatusPill value={runStatusLabel(run.status)} label={runStatusLabel(run.status)} />
+                    </div>
+                    <p className="mt-1 text-[11.5px] text-[#6b7280]">{fmtFull(run.startedAt)} · {duration(run.durationMs)}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] text-[#4a5565]">
+                      <span>Passed <strong className="text-[#00a63e]">{run.passed}</strong></span>
+                      <span>Failed <strong className="text-[#dc2626]">{run.failed}</strong></span>
+                      <span>Not executed <strong className="text-[#6b7280]">{run.notExecuted}</strong></span>
+                      <span>Pass rate <strong className="text-[#111827]">{percent}%</strong></span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
+              <table className="w-full min-w-[560px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-[#f0f1f3] bg-white">
+                    <th className="px-3 py-2 text-[11.5px] font-medium text-[#6b7280]">Test case</th>
+                    {compareRuns.map((run) => (
+                      <th key={run.id} className="px-3 py-2 text-center text-[11.5px] font-medium text-[#6b7280]">Run #{executions.indexOf(run) + 1}</th>
+                    ))}
+                    <th className="px-3 py-2 text-center text-[11.5px] font-medium text-[#6b7280]">Change</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[12px] text-[#374151]">
+                  {matrixCases.map((c) => {
+                    const statuses = compareRuns.map((run) => run.cases.find((x) => x.id === c.id)?.status ?? "not_executed");
+                    const changed = statuses[0] !== statuses[1];
+                    return (
+                      <tr key={c.id} className="border-b border-[#f3f4f6] last:border-0">
+                        <td className="max-w-[320px] px-3 py-2">
+                          <span className="mr-1.5 text-[10px] font-medium text-[#9ca3af]">{c.code}</span>
+                          {c.title}
+                        </td>
+                        {statuses.map((status, i) => (
+                          <td key={i} className="px-3 py-2 text-center">
+                            <span className={cn("inline-flex items-center gap-1 rounded px-1.5 py-[2px] text-[10.5px] font-medium", status === "passed" ? "bg-[#f0fdf4] text-[#00a63e]" : status === "failed" ? "bg-[#fef2f2] text-[#dc2626]" : "bg-[#f9fafb] text-[#6b7280]")}>
+                              <CqaIcon name={status === "passed" ? "task_alt" : status === "failed" ? "highlight_off" : "error_outline"} className="text-[13px]" />
+                              {status === "passed" ? "Passed" : status === "failed" ? "Failed" : "Not Executed"}
+                            </span>
+                          </td>
+                        ))}
+                        <td className="px-3 py-2 text-center text-[11px] text-[#6b7280]">{changed ? "Changed" : "Same"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <Modal open={scheduleOpen} onClose={() => setScheduleOpen(false)} title="New Schedule">
