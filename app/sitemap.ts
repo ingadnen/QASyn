@@ -1,4 +1,4 @@
-import type { MetadataRoute } from "next";
+﻿import type { MetadataRoute } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
       prisma.glossaryTerm.findMany({ select: { slug: true } }),
     ]);
   } catch {
-    // SQLite unavailable/locked during build — serve static paths only.
+    // SQLite unavailable/locked during build â€” serve static paths only.
     posts = [];
     studies = [];
     terms = [];
@@ -32,7 +32,7 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
     "/integrations/claude", "/integrations/chatgpt", "/integrations/cursor",
     "/resources", "/blog", "/case-study", "/roi-calculator", "/podcast", "/webinars", "/tutorials",
     "/ebooks", "/whitepapers", "/glossary", "/academy", "/free-tools", "/comparison", "/newsletter",
-    "/about-us", "/why-contextqa", "/careers", "/channel-partners", "/partner-program", "/pilot-program",
+    "/about-us", "/why-qasyn", "/careers", "/channel-partners", "/partner-program", "/pilot-program",
     "/media-coverage", "/community", "/faqs", "/contact-us", "/pricing",
     "/terms-of-service", "/privacy-policy", "/data-privacy-policy", "/data-processing-agreement", "/cookie-policy",
   ];

@@ -1,27 +1,27 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Comparison" };
 export const dynamic = "force-dynamic";
 
 const ROWS: Array<[string, string, string]> = [
-  ["Single unified platform (web, mobile, API, agents)", "✓", "✗ (add-ons)"],
-  ["Agentic AI authoring (NLP steps, crawl-to-test)", "✓", "Partial"],
-  ["Multi-layer fingerprinting self-healing (0.2/0.4/0.3/0.1)", "✓", "✗"],
-  ["MCP server for Cursor / Claude Code", "✓", "✗"],
-  ["CodiTOS code export (Playwright, Selenium, Cypress)", "✓", "Partial"],
-  ["Physical browser execution (Chrome/Firefox/WebKit)", "✓", "✓"],
-  ["Autonomous Ship release pipeline (Go/No-Go)", "✓", "✗"],
-  ["12-week enterprise pilot with SLA", "✓", "✗"],
+  ["Single unified platform (web, mobile, API, agents)", "âœ“", "âœ— (add-ons)"],
+  ["Agentic AI authoring (NLP steps, crawl-to-test)", "âœ“", "Partial"],
+  ["Multi-layer fingerprinting self-healing (0.2/0.4/0.3/0.1)", "âœ“", "âœ—"],
+  ["MCP server for Cursor / Claude Code", "âœ“", "âœ—"],
+  ["CodiTOS code export (Playwright, Selenium, Cypress)", "âœ“", "Partial"],
+  ["Physical browser execution (Chrome/Firefox/WebKit)", "âœ“", "âœ“"],
+  ["Autonomous Ship release pipeline (Go/No-Go)", "âœ“", "âœ—"],
+  ["12-week enterprise pilot with SLA", "âœ“", "âœ—"],
 ];
 
 export default async function ComparisonSlugPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const titles: Record<string, string> = {
-    "contextqa-vs-browserstack": "ContextQA vs BrowserStack",
-    "contextqa-vs-testmuai": "ContextQA vs TestMu AI (LambdaTest)",
-    "mabl-vs-contextqa": "Mabl vs ContextQA",
-    "testsigma-vs-contextqa": "Testsigma vs ContextQA",
+    "contextqa-vs-browserstack": "QASyn vs BrowserStack",
+    "contextqa-vs-testmuai": "QASyn vs TestMu AI (LambdaTest)",
+    "mabl-vs-contextqa": "Mabl vs QASyn",
+    "testsigma-vs-contextqa": "Testsigma vs QASyn",
   };
   const title = titles[slug];
   if (!title) return <p className="px-5 py-12">Unknown comparison.</p>;
@@ -50,7 +50,7 @@ export default async function ComparisonSlugPage({ params }: { params: Promise<{
           </tbody>
         </table>
       </div>
-      <p className="mt-6 text-sm text-muted">Migration guide: import existing suites via MCP, re-run with healing enabled, and export clean code with CodiTOS — no vendor lock-in.</p>
+      <p className="mt-6 text-sm text-muted">Migration guide: import existing suites via MCP, re-run with healing enabled, and export clean code with CodiTOS â€” no vendor lock-in.</p>
       <div className="mt-6 flex gap-3">
         <Link href="/signup" className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-500">Start free</Link>
         <Link href="/pilot-program" className="rounded-full border border-line bg-white px-5 py-2.5 text-sm font-semibold text-ink hover:bg-slate-50">Apply for pilot</Link>

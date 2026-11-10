@@ -4,6 +4,7 @@ import { prisma, ensureWal } from "@/lib/db";
 import { runTestCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateTestCaseSchema } from "@/lib/validation";
 
@@ -11,7 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /** PATCH /api/dashboard/test-cases/[id] { action: "run" | "set" | "edit" } */
 export async function PATCH(request: Request, { params }: Params) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("testCasesEdit", { write: true });
   if (!guard.ok) return guard.response;
   void ensureWal();
   const { ctx } = guard;
@@ -251,7 +252,7 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("testCasesEdit", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const { id } = await params;

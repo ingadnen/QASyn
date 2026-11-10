@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { NewRequirementButton } from "@/components/dashboard/pages/NewRequirementButton";
 import { RequirementsTable, type RequirementRow } from "@/components/dashboard/pages/RequirementsTable";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Requirements" };
 export const dynamic = "force-dynamic";
 
 export default async function RequirementsPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("requirements");
   const [reqs, crawlRequirements, testCases] = await Promise.all([
     prisma.requirement.findMany({
       where: { organisationId: ctx.org.id },

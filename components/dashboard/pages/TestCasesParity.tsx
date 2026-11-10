@@ -124,6 +124,7 @@ export function TestCasesParity({
   openNew,
   initialTab,
   userName,
+  orgUrl,
 }: {
   rows: ParityTestCase[];
   groups: ParityStepGroup[];
@@ -133,6 +134,7 @@ export function TestCasesParity({
   openNew: boolean;
   initialTab: "cases" | "groups";
   userName: string;
+  orgUrl: string;
 }) {
   const router = useRouter();
   const { run, pending } = useAction();
@@ -548,7 +550,7 @@ export function TestCasesParity({
         </>
       )}
 
-      <NewTestCaseModal open={newOpen} onClose={() => setNewOpen(false)} modules={modules} readOnly={readOnly} />
+      <NewTestCaseModal open={newOpen} onClose={() => setNewOpen(false)} modules={modules} readOnly={readOnly} orgUrl={orgUrl} />
       <NewStepGroupModal open={newGroupOpen} onClose={() => setNewGroupOpen(false)} readOnly={readOnly} cases={rows} />
       <StepGroupEditor open={Boolean(editGroup)} group={editGroup} onClose={() => setEditGroup(null)} readOnly={readOnly} />
 
@@ -942,7 +944,7 @@ function ModularView({
   );
 }
 
-function NewTestCaseModal({ open, onClose, modules, readOnly }: { open: boolean; onClose: () => void; modules: string[]; readOnly: boolean }) {
+function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: boolean; onClose: () => void; modules: string[]; readOnly: boolean; orgUrl: string }) {
   const router = useRouter();
   const { run, pending, error, setError } = useAction();
   const [method, setMethod] = useState<"ai" | "import" | "record" | "manual">("ai");
@@ -951,7 +953,7 @@ function NewTestCaseModal({ open, onClose, modules, readOnly }: { open: boolean;
   const [priority, setPriority] = useState("medium");
   const [title, setTitle] = useState("");
   const [stepsCount, setStepsCount] = useState(3);
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(orgUrl);
   const [prompt, setPrompt] = useState("");
   const [requirementName, setRequirementName] = useState("");
   const [count, setCount] = useState(3);
@@ -966,13 +968,15 @@ function NewTestCaseModal({ open, onClose, modules, readOnly }: { open: boolean;
   function close() {
     setError(null);
     setStep(1);
+    setUrl(orgUrl);
     onClose();
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const targetUrl = url.trim() || orgUrl;
     if (method === "record") {
-      router.push(`/dashboard/recorder${url ? `?url=${encodeURIComponent(url)}` : ""}`);
+      router.push(`/dashboard/recorder${targetUrl ? `?url=${encodeURIComponent(targetUrl)}` : ""}`);
       close();
       return;
     }
@@ -982,7 +986,9 @@ function NewTestCaseModal({ open, onClose, modules, readOnly }: { open: boolean;
         .map((line) => line.split(","))
         .filter((parts) => parts.length >= 2 && parts[0] && parts[1]);
       for (const [t, m] of parsed) {
-        await run("import", "/api/dashboard/test-cases", { json: { mode: "manual", title: t.trim(), module: (m || module).trim(), criticality: priority, stepsCount } });
+        await run("import", "/api/dashboard/test-cases", {
+          json: { mode: "manual", title: t.trim(), module: (m || module).trim(), criticality: priority, stepsCount, targetUrl },
+        });
       }
       router.refresh();
       close();
@@ -990,8 +996,8 @@ function NewTestCaseModal({ open, onClose, modules, readOnly }: { open: boolean;
     }
     const json =
       method === "manual"
-        ? { mode: "manual", title, module, criticality: priority, stepsCount }
-        : { mode: "ai", module, criticality: priority, prompt: prompt || (url ? `Explore ${url}` : ""), count };
+        ? { mode: "manual", title, module, criticality: priority, stepsCount, targetUrl }
+        : { mode: "ai", module, criticality: priority, prompt: prompt || (targetUrl ? `Explore ${targetUrl}` : ""), count, targetUrl };
     const res = await run("create", "/api/dashboard/test-cases", { json });
     if (res) {
       router.refresh();
@@ -1029,12 +1035,22 @@ function NewTestCaseModal({ open, onClose, modules, readOnly }: { open: boolean;
           </div>
         ) : (
           <div className="space-y-3">
-            {(method === "ai" || method === "record") && (
-              <label className="block">
-                <span className={cqaLabel}>Target URL</span>
-                <input className={cqaInput} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a URLÔÇª" type="url" />
-              </label>
-            )}
+            <label className="block">
+              <span className={cqaLabel}>Target URL</span>
+              <input
+                className={cqaInput}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://www.cgi.com"
+                type="url"
+                required
+                autoComplete="url"
+                data-testid="test-case-target-url"
+              />
+              <span className="mt-1 block text-[11px] text-[#9ca3af]">
+                Every generated step and the <code className="rounded bg-[#f3f4f6] px-1">url</code> variable use this address. Pre-filled from your organisation.
+              </span>
+            </label>
             {method === "ai" && (
               <>
                 <label className="block">

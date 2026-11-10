@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "FAQs" };
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ const FAQS: Array<{ category: string; items: Array<{ q: string; a: string }> }> 
   {
     category: "General",
     items: [
-      { q: "What is ContextQA / QASyn?", a: "The agentic AI testing platform: one place to write, heal, and run tests across web, mobile, API, and AI agents." },
+      { q: "What is QASyn / QASyn?", a: "The agentic AI testing platform: one place to write, heal, and run tests across web, mobile, API, and AI agents." },
       { q: "How does self-healing work?", a: "Failed selectors are repaired by scoring DOM candidates (0.2 Tag + 0.4 Attributes + 0.3 Text + 0.1 Position). Above 0.45 the selector is rewritten and the step flagged HEALED." },
       { q: "Which browsers are supported?", a: "Chrome, Firefox, Safari (WebKit) and Edge on a parallel cloud grid." },
     ],
@@ -15,8 +15,8 @@ const FAQS: Array<{ category: string; items: Array<{ q: string; a: string }> }> 
   {
     category: "Security",
     items: [
-      { q: "How is tenant data isolated?", a: "Every row stores organisationId; every query is scoped server-side. API tokens resolve the organisation from a SHA-256 hash — never from client input." },
-      { q: "Are credentials encrypted?", a: "Yes — AES-256-GCM at rest; environment secrets are masked in logs and UI." },
+      { q: "How is tenant data isolated?", a: "Every row stores organisationId; every query is scoped server-side. API tokens resolve the organisation from a SHA-256 hash â€” never from client input." },
+      { q: "Are credentials encrypted?", a: "Yes â€” AES-256-GCM at rest; environment secrets are masked in logs and UI." },
     ],
   },
   {
@@ -29,8 +29,8 @@ const FAQS: Array<{ category: string; items: Array<{ q: string; a: string }> }> 
   {
     category: "Engine",
     items: [
-      { q: "How does the MCP server authenticate?", a: "Bearer cqa_… API tokens (SHA-256 stored, shown once) over SSE / JSON-RPC. Claude Code, Cursor and Windsurf supported." },
-      { q: "Can I export my tests?", a: "Yes — CodiTOS exports Playwright, Selenium, Cypress and WebdriverIO code with Page Objects and CI configs. No vendor lock-in." },
+      { q: "How does the MCP server authenticate?", a: "Bearer cqa_â€¦ API tokens (SHA-256 stored, shown once) over SSE / JSON-RPC. Claude Code, Cursor and Windsurf supported." },
+      { q: "Can I export my tests?", a: "Yes â€” CodiTOS exports Playwright, Selenium, Cypress and WebdriverIO code with Page Objects and CI configs. No vendor lock-in." },
     ],
   },
 ];
@@ -38,7 +38,7 @@ const FAQS: Array<{ category: string; items: Array<{ q: string; a: string }> }> 
 export default function FaqsPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
-      <p className="text-xs font-semibold tracking-[0.16em] text-brand-600 uppercase">Company · FAQ</p>
+      <p className="text-xs font-semibold tracking-[0.16em] text-brand-600 uppercase">Company Â· FAQ</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Frequently asked questions</h1>
       {FAQS.map((cat) => (
         <section key={cat.category} className="mt-10">

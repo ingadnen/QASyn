@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ export interface ApiTokenRow {
 }
 
 function fmt(date: string | null) {
-  if (!date) return "—";
+  if (!date) return "â€”";
   return new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -72,7 +72,7 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
 
       <div className="mb-5 flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3 py-2 text-[12.5px] text-[#4a5565]">
         <CqaIcon name="bolt" className="text-[17px] text-[#d97706]" />
-        Rate limit 120 req/min · Email send 10/hour
+        Rate limit 120 req/min Â· Email send 10/hour
       </div>
 
       {error && <p className="mb-3 text-[12.5px] text-red-600">{error}</p>}
@@ -81,7 +81,7 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
         <div className={cn(cqaCard, "px-5 py-12 text-center")}>
           <h3 className="text-[17px] font-semibold text-[#262626]">{tokens.length === 0 ? "No API tokens yet" : "No tokens match these filters"}</h3>
           <p className="mx-auto mt-2 max-w-xl text-[13px] leading-5 text-[#6b7280]">
-            Create a token to let a script, CI job, or integration call the ContextQA API on your behalf. You choose its scopes and expiry, and see the value once.
+            Create a token to let a script, CI job, or integration call the QASyn API on your behalf. You choose its scopes and expiry, and see the value once.
           </p>
           <Link href="/dashboard/settings/api-tokens/new" className={cn(cqaBtnPrimary, "mt-5", readOnly && "pointer-events-none opacity-50")}>
             <CqaIcon name="add" className="text-[17px]" /> Create token
@@ -106,7 +106,7 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
                         <CqaIcon name="key" className="text-[17px] text-[#5b4ee8]" />
                         {token.name}
                       </p>
-                      <p className="mt-0.5 font-mono text-[11.5px] text-[#6b7280]">{token.prefix}…</p>
+                      <p className="mt-0.5 font-mono text-[11.5px] text-[#6b7280]">{token.prefix}â€¦</p>
                     </td>
                     <td className="max-w-[290px] px-4 py-3">
                       <div className="flex flex-wrap gap-1">
@@ -142,7 +142,7 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
           </div>
           <div className="flex items-center justify-between border-t border-[#f0f1f3] px-4 py-2.5 text-[12px] text-[#6b7280]">
             <span>Rows per page</span>
-            <span className="tabular-nums">1–{rows.length} of {rows.length}</span>
+            <span className="tabular-nums">1â€“{rows.length} of {rows.length}</span>
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-/** Formatting helpers shared by server and client components (pure). */
+﻿/** Formatting helpers shared by server and client components (pure). */
 
 export const tableCls = {
   table: "w-full text-left text-sm",
@@ -9,14 +9,14 @@ export const tableCls = {
 
 /** Deterministic (UTC) so server and client render the same text. */
 export function formatDate(iso: string | Date | null | undefined) {
-  if (!iso) return "—";
+  if (!iso) return "â€”";
   const d = typeof iso === "string" ? new Date(iso) : iso;
   return `${d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" })} UTC`;
 }
 
-/** Deterministic UTC date-time in the live ContextQA style: "07 Nov 2026 4:07:16 PM". */
+/** Deterministic UTC date-time in the live QASyn style: "07 Nov 2026 4:07:16 PM". */
 export function formatDateTime(iso: string | Date | null | undefined) {
-  if (!iso) return "—";
+  if (!iso) return "â€”";
   const d = typeof iso === "string" ? new Date(iso) : iso;
   const day = String(d.getUTCDate()).padStart(2, "0");
   const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });

@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { EnvironmentData } from "@/components/dashboard/pages/EnvironmentData";
 import { prisma } from "@/lib/db";
@@ -20,7 +21,7 @@ function countArray(value: string): number {
 }
 
 export default async function EnvironmentsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("environments");
   const { tab: rawTab } = await searchParams;
   const tab = rawTab === "profiles" || rawTab === "global" || rawTab === "auth" ? rawTab : "environments";
 
@@ -58,7 +59,7 @@ export default async function EnvironmentsPage({ searchParams }: { searchParams:
     variablesCount: env.variables.length,
     profilesCount: parsedProfiles.filter((p) => p.environmentIds.includes(env.id)).length,
     updatedAt: env.createdAt.toISOString(),
-    variables: env.variables.map((v) => ({ id: v.id, key: v.key, value: v.isSecret ? "••••••••" : v.value, isSecret: v.isSecret })),
+    variables: env.variables.map((v) => ({ id: v.id, key: v.key, value: v.isSecret ? "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" : v.value, isSecret: v.isSecret })),
   }));
 
   return (

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi } from "@/lib/tenant";
+import { audit } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { importRequirementsSchema } from "@/lib/validation";
 
@@ -13,7 +14,7 @@ const LINE = /^\s*([A-Za-z][A-Za-z0-9]*-\d+)\s*[:\-–|]\s*(.{3,160})\s*$/;
  * One requirement per line: "CODE-12: Title" (also "-", "–" or "|" as separator). Existing codes are skipped.
  */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("requirementsEdit", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
 

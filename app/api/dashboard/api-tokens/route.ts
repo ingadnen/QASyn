@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { generateApiToken } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi } from "@/lib/tenant";
+import { audit } from "@/lib/tenant";
+import { guardAnyPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { apiTokenSchema } from "@/lib/validation";
 
@@ -10,7 +11,7 @@ const MAX_TOKENS = 10;
 
 /** GET /api/dashboard/api-tokens - list token metadata (never the secret). */
 export async function GET() {
-  const guard = await guardApi();
+  const guard = await guardAnyPermission(["apiTokens", "mcpTokens"]);
   if (!guard.ok) return guard.response;
   const tokens = await prisma.apiToken.findMany({
     where: { organisationId: guard.ctx.org.id },
@@ -22,7 +23,7 @@ export async function GET() {
 
 /** POST /api/dashboard/api-tokens { name } — the plain token is returned ONCE; only its SHA-256 is stored. */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardAnyPermission(["apiTokensManage", "mcpTokens"], { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
 

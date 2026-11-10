@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { buildStepsJson, generateTitles } from "@/lib/engine";
+import { buildStepsJson, generateTitles, resolveTargetUrl } from "@/lib/engine";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { createTestCaseSchema } from "@/lib/validation";
 
@@ -16,13 +17,14 @@ export async function GET() {
 
 /** POST /api/dashboard/test-cases — manual creation or (simulated) AI generation. */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("testCasesEdit", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
 
   const parsed = createTestCaseSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   const input = parsed.data;
+  const targetUrl = resolveTargetUrl(input.targetUrl, ctx.org.website);
   await delay(input.mode === "ai" ? MOCK_LATENCY_MS * 2 : MOCK_LATENCY_MS);
 
   const created = await prisma.$transaction(async (tx) => {
@@ -35,8 +37,8 @@ export async function POST(request: Request) {
           criticality: input.criticality,
           stepsCount: input.stepsCount,
           source: "manual",
-          stepsJson: buildStepsJson(ctx.org.website ?? "", input.stepsCount, input.module, input.title),
-          variablesJson: JSON.stringify({ url: ctx.org.website ?? "" }),
+          stepsJson: buildStepsJson(targetUrl, input.stepsCount, input.module, input.title),
+          variablesJson: JSON.stringify({ url: targetUrl }),
         },
       });
       await audit(tx, ctx, "test_case.created", tc.title);
@@ -58,8 +60,8 @@ export async function POST(request: Request) {
             criticality: input.criticality,
             stepsCount,
             source: "ai",
-            stepsJson: buildStepsJson(ctx.org.website ?? "", stepsCount, input.module, title),
-            variablesJson: JSON.stringify({ url: ctx.org.website ?? "" }),
+            stepsJson: buildStepsJson(targetUrl, stepsCount, input.module, title),
+            variablesJson: JSON.stringify({ url: targetUrl }),
           },
         }),
       );

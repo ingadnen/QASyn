@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { Card, EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "Reports" };
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("testCases");
   const [runs, cases] = await Promise.all([
     prisma.testRun.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" }, take: 60 }),
     prisma.testCase.findMany({ where: { organisationId: ctx.org.id }, take: 100, select: { title: true, module: true, status: true } }),
@@ -22,7 +23,7 @@ export default async function ReportsPage() {
       <PageHeader
         kicker="ANALYTICS"
         title="Reports"
-        description={`Pass-rate trend over ${runs.length} runs · average ${avg}% · ${flaky} flaky cases.`}
+        description={`Pass-rate trend over ${runs.length} runs Â· average ${avg}% Â· ${flaky} flaky cases.`}
         actions={
           <a href="/api/dashboard/reports?format=csv" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
             Export CSV
@@ -53,7 +54,7 @@ export default async function ReportsPage() {
                 const pct = inModule.length ? Math.round((passing / inModule.length) * 100) : 0;
                 return (
                   <li key={m} className="py-1.5">
-                    <div className="flex justify-between text-sm"><span className="font-medium">{m}</span><span className="text-slate-500">{passing}/{inModule.length} · {pct}%</span></div>
+                    <div className="flex justify-between text-sm"><span className="font-medium">{m}</span><span className="text-slate-500">{passing}/{inModule.length} Â· {pct}%</span></div>
                     <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-brand-500" style={{ width: `${pct}%` }} /></div>
                   </li>
                 );

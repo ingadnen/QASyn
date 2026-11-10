@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import {
   Overview,
@@ -31,7 +32,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   CLICKUP: "ClickUp",
   JENKINS: "Jenkins",
   CODESHIP: "CodeShip",
-  CONTEXTQA_LAB: "ContextQA Lab",
+  CONTEXTQA_LAB: "QASyn Lab",
   PRIVATE_GRID: "Private Grid",
 };
 
@@ -82,7 +83,7 @@ function sharePercentages(counts: number[]) {
 }
 
 export default async function OverviewPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("overview");
   const orgId = ctx.org.id;
   const [data, members, recentTests] = await Promise.all([
     getOverview(orgId),
@@ -118,7 +119,7 @@ export default async function OverviewPage() {
     events = [
       { time: timeOf(crawl.startedAt), tag: "CRAWL", message: `Crawling ${crawl.targetUrl}` },
       { time: timeOf(completed), tag: "CRAWL", message: "Crawl completed." },
-      { time: timeOf(new Date(completed.getTime() + 1_000)), tag: "CRAWL", message: "Crawl now starting to generate test cases…" },
+      { time: timeOf(new Date(completed.getTime() + 1_000)), tag: "CRAWL", message: "Crawl now starting to generate test casesâ€¦" },
       {
         time: timeOf(new Date(completed.getTime() + 88_000)),
         tag: "CRAWL",

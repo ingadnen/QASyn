@@ -161,11 +161,15 @@ model Integration {
   id             String       @id @default(cuid())
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  /// GITHUB | GITLAB | JIRA | LINEAR | SLACK
+  /// GITHUB | GITLAB | BITBUCKET | AZURE_DEVOPS | JIRA | LINEAR | SLACK | TEAMS | ...
   provider       String
   /// CONNECTED | INDEXING | FAILED
   status         String
   detail         String?
+  /// JSON configuration for the provider (URL, tokens, project/board keys, ...).
+  /// Tokens are only ever returned to the configuration modal of the same organisation.
+  configJson     String       @default("{}")
+  lastSyncAt     DateTime?
   connectedAt    DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -556,12 +560,28 @@ model PullRequestCheck {
   prNumber       Int
   title          String
   branch         String
+  /// Target/base branch of the pull request.
+  branchTarget   String       @default("main")
   author         String
+  /// GITHUB | GITLAB | BITBUCKET | AZURE_DEVOPS
+  provider       String?
+  /// e.g. cgi/digital-portal
+  repository     String?
+  externalUrl    String?
   /// passed_baseline | regression_caught | running
   status         String
   /// low | medium | high
   riskLevel      String
   filesChanged   Int
+  /// JSON array of changed file paths
+  changedFilesJson String     @default("[]")
+  /// JSON impact assessment: blast radius, impacted tests, executed runs
+  impactJson     String       @default("{}")
+  /// JSON execution log lines
+  logsJson       String       @default("[]")
+  /// Auto-posted provider comment
+  commentBody    String?
+  commentPosted  Boolean      @default(false)
   testsRun       Int          @default(0)
   regressions    Int          @default(0)
   createdAt      DateTime     @default(now())

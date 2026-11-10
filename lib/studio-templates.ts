@@ -1,7 +1,7 @@
-/** Action-step template catalogue captured from ContextQA Test Studio. */
+﻿/** Action-step template catalogue captured from QASyn Test Studio. */
 export const STUDIO_STEP_TEMPLATES: string[] = [
   "Wait until the current page is loaded completely",
-  "REST_API:  #{method}  -  #{title}",
+  "REST_API: Â #{method}Â  - Â #{title}",
   "Store the text of label in a variable name test-data",
   "Store URL of the current page in a variable test-data",
   "Switch to the window titled test-data",

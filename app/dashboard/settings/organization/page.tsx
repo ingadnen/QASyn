@@ -1,13 +1,15 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { OrganizationSettings } from "@/components/dashboard/pages/OrganizationSettings";
 import { prisma } from "@/lib/db";
-import { DEFAULT_ORGANIZATION_PREFERENCES, readSettings, requireOrgContext } from "@/lib/tenant";
+import { DEFAULT_ORGANIZATION_PREFERENCES, readSettings } from "@/lib/tenant";
+import { can } from "@/lib/rbac";
 
 export const metadata: Metadata = { title: "Organization Setting" };
 export const dynamic = "force-dynamic";
 
 export default async function OrgSettingsPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("settings");
   const [viewports, proxies, remotes, knowledge] = await Promise.all([
     prisma.viewportSetting.findMany({ where: { organisationId: ctx.org.id }, orderBy: [{ category: "asc" }, { width: "asc" }] }),
     prisma.proxyProfile.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" } }),
@@ -18,7 +20,7 @@ export default async function OrgSettingsPage() {
   const initial = { ...DEFAULT_ORGANIZATION_PREFERENCES, ...(settings.organization ?? {}) };
   return (
     <OrganizationSettings
-      readOnly={ctx.readOnly}
+      readOnly={ctx.readOnly || !can(ctx.user.role, "settingsManage")}
       orgName={ctx.org.name}
       logoUrl={ctx.org.logoUrl}
       initial={initial}

@@ -5,6 +5,7 @@
  */
 import { prisma } from "./db";
 import { analyzePrImpact, executeApiChain, reproduceBug, simulateMobileRun, simulateSteps, type ApiRequestStep } from "./engines";
+import { runTestCases } from "./engine";
 import { runMcpTool } from "./mcp";
 import type { NlpStep } from "./engines";
 
@@ -16,20 +17,23 @@ export interface McpTool {
 
 const obj = (properties: Record<string, unknown>, required: string[] = []) => ({ type: "object", properties, required });
 
+/** The six tools highlighted in the MCP page, plus advanced tools for agents. */
 export const QASYN_MCP_TOOLS: McpTool[] = [
+  { name: "qasyn_get_quality_summary", description: "Coverage, pass rate, regressions, bugs and cost avoided for the organisation.", inputSchema: obj({}) },
+  { name: "qasyn_list_test_cases", description: "List test cases with module, criticality and status.", inputSchema: obj({ module: { type: "string" }, status: { type: "string" } }) },
+  { name: "qasyn_run_test_case", description: "Execute one test case and return its status, logs and evidence.", inputSchema: obj({ testCaseId: { type: "string" } }, ["testCaseId"]) },
+  { name: "qasyn_start_crawl", description: "Start an autonomous crawl of the organisation website.", inputSchema: obj({ targetUrl: { type: "string" } }) },
+  { name: "qasyn_analyze_pr", description: "Analyze a PR: map changed files, select impacted tests and decide Go/No-Go.", inputSchema: obj({ prNumber: { type: "number" }, branch: { type: "string" }, title: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["prNumber", "branch", "title", "files"]) },
+  { name: "qasyn_list_bugs", description: "List reproduced bugs with root cause and severity.", inputSchema: obj({}) },
   { name: "qasyn_create_web_test", description: "Create a web test case with NLP steps for the organisation.", inputSchema: obj({ title: { type: "string" }, module: { type: "string" }, criticality: { type: "string" }, steps: { type: "array", items: { type: "object" } } }, ["title", "module"]) },
   { name: "qasyn_run_test_plan", description: "Execute a test plan step-by-step with AI auto-healing.", inputSchema: obj({ planId: { type: "string" } }, ["planId"]) },
   { name: "qasyn_get_execution_evidence", description: "Get execution evidence (stepsJson, logs, status) of a test case.", inputSchema: obj({ testCaseId: { type: "string" } }, ["testCaseId"]) },
-  { name: "qasyn_analyze_pr_impact", description: "Analyze a PR: map files, select regression scope, decide Go/No-Go.", inputSchema: obj({ prNumber: { type: "number" }, branch: { type: "string" }, title: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["prNumber", "branch", "title", "files"]) },
   { name: "qasyn_trigger_api_chain", description: "Execute a chained API test (real HTTP, variable extraction and injection).", inputSchema: obj({ testId: { type: "string" } }, ["testId"]) },
-  { name: "qasyn_list_test_cases", description: "List test cases of the organisation.", inputSchema: obj({}) },
-  { name: "qasyn_list_bugs", description: "List reproduced bugs with root cause.", inputSchema: obj({}) },
   { name: "qasyn_list_pull_requests", description: "List pull request verdicts and risk levels.", inputSchema: obj({}) },
-  { name: "qasyn_get_quality_summary", description: "Coverage, regressions, bugs and cost avoided.", inputSchema: obj({}) },
-  { name: "qasyn_start_crawl", description: "Start an autonomous crawl of the organisation website.", inputSchema: obj({ targetUrl: { type: "string" } }) },
   { name: "qasyn_run_mobile_test", description: "Run a mobile test on the device grid.", inputSchema: obj({ testId: { type: "string" } }, ["testId"]) },
   { name: "qasyn_ship_workflow", description: "Run the autonomous Ship pipeline and return the Go/No-Go verdict.", inputSchema: obj({ name: { type: "string" } }) },
   { name: "qasyn_reproduce_bug", description: "Reproduce a bug from a support ticket description.", inputSchema: obj({ title: { type: "string" }, description: { type: "string" } }, ["title", "description"]) },
+  { name: "qasyn_analyze_pr_impact", description: "Alias of qasyn_analyze_pr kept for existing agent skills.", inputSchema: obj({ prNumber: { type: "number" }, branch: { type: "string" }, title: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["prNumber", "branch", "title", "files"]) },
 ];
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -77,10 +81,37 @@ export async function callMcpTool(organisationId: string, name: string, args: Re
       if (!tc) throw new Error("Test case not found");
       return { id: tc.id, title: tc.title, status: tc.status, stepsJson: tc.stepsJson, lastRunAt: tc.lastRunAt };
     }
+    case "qasyn_analyze_pr":
     case "qasyn_analyze_pr_impact": {
       const files = Array.isArray(args.files) ? (args.files as string[]) : [];
       const testCases = await prisma.testCase.findMany({ where, select: { id: true, title: true, module: true, status: true } });
       return analyzePrImpact(files, testCases);
+    }
+    case "qasyn_run_test_case": {
+      const testCase = await prisma.testCase.findFirst({ where: { id: str(args.testCaseId), organisationId } });
+      if (!testCase) throw new Error("Test case not found");
+      const actor = {
+        org: await prisma.organisation.findUniqueOrThrow({ where: { id: organisationId } }),
+        user: await prisma.user.findFirstOrThrow({ where: { organisationId } }),
+      };
+      const result = await runTestCases(prisma, actor, [testCase]);
+      const updated = await prisma.testCase.findUnique({ where: { id: testCase.id } });
+      let steps: unknown = [];
+      try {
+        steps = JSON.parse(updated?.stepsJson || "[]");
+      } catch {
+        steps = [];
+      }
+      return {
+        testCaseId: testCase.id,
+        title: testCase.title,
+        status: updated?.status ?? testCase.status,
+        passed: result.passed,
+        failed: result.failed,
+        total: result.total,
+        lastRunAt: updated?.lastRunAt ?? null,
+        steps,
+      };
     }
     case "qasyn_trigger_api_chain": {
       const test = await prisma.apiTest.findFirst({ where: { id: str(args.testId), organisationId } });

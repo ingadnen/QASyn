@@ -1,20 +1,21 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { simulateSteps, type NlpStep } from "@/lib/engines";
 import { executeWebSteps } from "@/lib/web-executor";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { audit, spendCredits } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { testPlanRunSchema } from "@/lib/validation";
 
 /**
  * POST /api/dashboard/test-plans/run { planId }
- * Simulated ContextQA execution pipeline: for every test case of the plan,
- * run each NLP step, auto-heal UI drift (🩹), persist repaired stepsJson,
+ * Simulated QASyn execution pipeline: for every test case of the plan,
+ * run each NLP step, auto-heal UI drift (ðŸ©¹), persist repaired stepsJson,
  * and return detailed logs per step.
  */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("plansEdit", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   void ensureWal();
@@ -64,6 +65,6 @@ export async function POST(request: Request) {
     data: { testCasesCount: plan.testCases.length, passRate, lastRunAt: new Date() },
   });
   await spendCredits(prisma, ctx.org.id, 5 * plan.testCases.length);
-  await audit(prisma, ctx, "test_plan.run", `${plan.name} · ${plan.testCases.length} cases · ${browsers.join("/")} · ${passRate}%`);
+  await audit(prisma, ctx, "test_plan.run", `${plan.name} Â· ${plan.testCases.length} cases Â· ${browsers.join("/")} Â· ${passRate}%`);
   return NextResponse.json({ plan: updated, browsers, cases, passRate });
 }

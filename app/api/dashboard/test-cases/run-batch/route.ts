@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { runTestCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi } from "@/lib/tenant";
+import { audit } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { runBatchSchema } from "@/lib/validation";
 
@@ -10,7 +11,7 @@ const MAX_BATCH = 100;
 
 /** POST /api/dashboard/test-cases/run-batch { module? } — runs every (or one module's) test case. */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("testCasesEdit", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -124,7 +124,7 @@ export function Tunnels(props: TunnelsProps) {
       <div>
         <h1 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-[#111827]">Tunnels</h1>
         <p className="mt-1 max-w-4xl text-[13.5px] leading-5 text-[#6b7280]">
-          Publish an app running on your machine as a URL ContextQA can test. One agent per machine; one URL per route.
+          Publish an app running on your machine as a URL QASyn can test. One agent per machine; one URL per route.
         </p>
       </div>
 
@@ -133,7 +133,7 @@ export function Tunnels(props: TunnelsProps) {
       <div className="relative flex flex-wrap items-center justify-between gap-3">
         <span className="inline-flex items-center gap-2 rounded-full border border-[#e5e7eb] bg-white px-3 py-1 text-[12px] text-[#4b5563]">
           <CqaIcon name="lan" className="text-[15px] text-[#6b7280]" />
-          {activeMachines} of {maxMachines} machines · {routes} of {maxRoutes} routes
+          {activeMachines} of {maxMachines} machines Â· {routes} of {maxRoutes} routes
         </span>
         <div className="flex items-center gap-2">
           <button type="button" className={cqaBtnSecondary} onClick={() => setAlertsOpen((v) => !v)} aria-expanded={alertsOpen}>
@@ -170,7 +170,7 @@ export function Tunnels(props: TunnelsProps) {
               <div>
                 <p className={cqaLabel}>Delivery</p>
                 <div className="space-y-1.5">
-                  {["Immediate", "Daily digest · 09:00 CST"].map((label, i) => {
+                  {["Immediate", "Daily digest Â· 09:00 CST"].map((label, i) => {
                     const value = i === 0 ? "Immediate" : "Daily digest";
                     return (
                       <label key={value} className="flex items-center gap-2 text-[12.5px] text-[#374151]">
@@ -214,7 +214,7 @@ export function Tunnels(props: TunnelsProps) {
                 <div className="flex items-start gap-2 rounded-lg border border-[#fde68a] bg-[#fffbeb] px-3 py-2 text-[11.5px] leading-4 text-[#92400e]">
                   <CqaIcon name="warning" className="mt-0.5 text-[15px]" />
                   <p>
-                    <span className="font-semibold">No channel to post to.</span> Tunnel alerts are on, but nothing will be delivered until a channel is chosen here, or a default is set in Settings → Slack.{" "}
+                    <span className="font-semibold">No channel to post to.</span> Tunnel alerts are on, but nothing will be delivered until a channel is chosen here, or a default is set in Settings â†’ Slack.{" "}
                     <a href="/dashboard/integrations" className="font-semibold underline">Open Settings</a>
                   </p>
                 </div>
@@ -250,7 +250,7 @@ export function Tunnels(props: TunnelsProps) {
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-2">
           <h2 className="text-[20px] font-semibold text-[#111827]">Machines</h2>
-          <span className="text-[12px] text-[#9ca3af]">{machines.length} · worst first</span>
+          <span className="text-[12px] text-[#9ca3af]">{machines.length} Â· worst first</span>
         </div>
 
         {machines.length === 0 ? (
@@ -281,14 +281,14 @@ export function Tunnels(props: TunnelsProps) {
                       </div>
                       <p className="mt-0.5 text-[11.5px] text-[#9ca3af]">
                         {meta.hint}
-                        {machine.browserHost ? " · browser host" : ""}
-                        {machine.routeCount > 0 ? ` · ${machine.routeCount} route${machine.routeCount === 1 ? "" : "s"}` : ""}
+                        {machine.browserHost ? " Â· browser host" : ""}
+                        {machine.routeCount > 0 ? ` Â· ${machine.routeCount} route${machine.routeCount === 1 ? "" : "s"}` : ""}
                       </p>
                     </div>
                     <div className="ml-auto flex flex-wrap items-center gap-2">
                       <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending === `renew-${machine.id}`} onClick={() => void renew(machine)}>
                         <CqaIcon name="refresh" className="text-[16px]" />
-                        {pending === `renew-${machine.id}` ? "Creating…" : "Create new command"}
+                        {pending === `renew-${machine.id}` ? "Creatingâ€¦" : "Create new command"}
                       </button>
                       <details className="relative">
                         <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-medium text-[#374151] hover:bg-[#f9fafb] [&::-webkit-details-marker]:hidden">
@@ -296,7 +296,7 @@ export function Tunnels(props: TunnelsProps) {
                         </summary>
                         <div className="absolute right-0 z-30 mt-1 w-44 rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-lg">
                           <button type="button" disabled={readOnly} onClick={() => void remove(machine)} className="block w-full px-3 py-1.5 text-left text-[12.5px] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">
-                            Remove…
+                            Removeâ€¦
                           </button>
                         </div>
                       </details>
@@ -321,7 +321,7 @@ export function Tunnels(props: TunnelsProps) {
         <div className="flex flex-wrap items-center gap-2 border-t border-[#f0f1f3] pt-3 text-[12px] text-[#6b7280]">
           <span>Routes are checked every 2 min.</span>
           <button type="button" className="font-medium text-[#5b4ee8] hover:underline" onClick={() => setInstallGuide(true)}>Install guide</button>
-          <span className="text-[#d1d5db]">·</span>
+          <span className="text-[#d1d5db]">Â·</span>
           <button type="button" className="font-medium text-[#5b4ee8] hover:underline" onClick={() => setNetworkGuide(true)}>Network requirements</button>
         </div>
       </section>
@@ -415,21 +415,21 @@ export function Tunnels(props: TunnelsProps) {
         footer={<button type="button" className={cqaBtnSecondary} onClick={() => setInstallGuide(false)}>Done</button>}
       >
         <div className="space-y-3 text-[13px] leading-5 text-[#4b5563]">
-          <p>Install the ContextQA agent on a machine that can reach your app.</p>
+          <p>Install the QASyn agent on a machine that can reach your app.</p>
           <ol className="list-decimal space-y-2 pl-5">
             <li>Add the machine here. Click <span className="font-medium text-[#111827]">+ Add machine</span>, name it and pick its system. You get an install command and a one-time token that expires after a few minutes.</li>
-            <li>Run the command on that machine — in Terminal on macOS or Linux, or in PowerShell opened as administrator on Windows. It needs admin rights, and the machine must be allowed to connect out (see <span className="font-medium text-[#111827]">Network requirements</span>).</li>
+            <li>Run the command on that machine â€” in Terminal on macOS or Linux, or in PowerShell opened as administrator on Windows. It needs admin rights, and the machine must be allowed to connect out (see <span className="font-medium text-[#111827]">Network requirements</span>).</li>
             <li>Wait for it to enroll. It appears here as <span className="font-medium text-[#111827]">Enrolled</span>, usually within a minute.</li>
-            <li>Publish an app. On the machine, run <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px]">contextqa add-route web http://localhost:3000</code>. Your app gets an address like <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px]">https://web-{orgName.toLowerCase()}.tunl.contextqa.ai</code>.</li>
+            <li>Publish an app. On the machine, run <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px]">qasyn add-route web http://localhost:3000</code>. Your app gets an address like <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px]">https://web-{orgName.toLowerCase()}.tunl.qasyn.dev</code>.</li>
           </ol>
           <div className="rounded-lg border border-[#f0f1f3] bg-[#fafafa] p-3">
             <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[#9ca3af]">Useful commands on the machine</p>
             <dl className="mt-2 space-y-1.5 text-[12.5px]">
               {[
-                ["contextqa status", "Is the agent running and connected?"],
-                ["contextqa doctor", "Six health checks. Start here when something is wrong."],
-                ["contextqa remove-route web", "Stop publishing a route."],
-                ["contextqa uninstall", "Remove the agent. Run it with admin rights."],
+                ["qasyn status", "Is the agent running and connected?"],
+                ["qasyn doctor", "Six health checks. Start here when something is wrong."],
+                ["qasyn remove-route web", "Stop publishing a route."],
+                ["qasyn uninstall", "Remove the agent. Run it with admin rights."],
               ].map(([cmd, desc]) => (
                 <div key={cmd} className="flex flex-wrap items-baseline gap-2">
                   <dt><code className="rounded bg-white px-1.5 py-0.5 text-[11.5px] text-[#111827]">{cmd}</code></dt>
@@ -449,7 +449,7 @@ export function Tunnels(props: TunnelsProps) {
         footer={<button type="button" className={cqaBtnSecondary} onClick={() => setNetworkGuide(false)}>Done</button>}
       >
         <div className="space-y-3 text-[13px] leading-5 text-[#4b5563]">
-          <p>The agent only connects out from your machine. Nothing needs to reach in — no open ports, no VPN, no public IP.</p>
+          <p>The agent only connects out from your machine. Nothing needs to reach in â€” no open ports, no VPN, no public IP.</p>
           <p>Ask your IT team to allow these outbound connections from that machine:</p>
           <div className="overflow-hidden rounded-lg border border-[#e5e7eb]">
             <table className="w-full text-left text-[12.5px]">
@@ -462,11 +462,11 @@ export function Tunnels(props: TunnelsProps) {
               </thead>
               <tbody className="divide-y divide-[#f3f4f6]">
                 {[
-                  ["get.contextqa.com", "TCP 443", "Downloading the agent"],
-                  ["server.contextqa.com", "TCP 443", "Setup and publishing"],
-                  ["pang.tunl.contextqa.ai", "TCP 443", "Tunnel control"],
-                  ["tunl.contextqa.ai", "UDP 51820", "Your app's traffic (encrypted)"],
-                  ["tunl.contextqa.ai", "UDP 21820", "Keeping the connection open"],
+                  ["get.qasyn.com", "TCP 443", "Downloading the agent"],
+                  ["server.qasyn.com", "TCP 443", "Setup and publishing"],
+                  ["pang.tunl.qasyn.dev", "TCP 443", "Tunnel control"],
+                  ["tunl.qasyn.dev", "UDP 51820", "Your app's traffic (encrypted)"],
+                  ["tunl.qasyn.dev", "UDP 21820", "Keeping the connection open"],
                 ].map(([a, p, f]) => (
                   <tr key={`${a}-${p}`}>
                     <td className="px-3 py-2 font-mono text-[11.5px] text-[#374151]">{a}</td>
@@ -477,7 +477,7 @@ export function Tunnels(props: TunnelsProps) {
               </tbody>
             </table>
           </div>
-          <CopyButton value={"get.contextqa.com TCP 443\nserver.contextqa.com TCP 443\npang.tunl.contextqa.ai TCP 443\ntunl.contextqa.ai UDP 51820\ntunl.contextqa.ai UDP 21820"} label="Copy for IT" />
+          <CopyButton value={"get.qasyn.com TCP 443\nserver.qasyn.com TCP 443\npang.tunl.qasyn.dev TCP 443\ntunl.qasyn.dev UDP 51820\ntunl.qasyn.dev UDP 21820"} label="Copy for IT" />
           <p className="text-[12px] text-[#9ca3af]">Copies these rules plus the details a network team needs.</p>
           <div className="rounded-lg border border-[#fde68a] bg-[#fffbeb] p-3 text-[12.5px] text-[#92400e]">
             <p className="font-semibold">If the machine enrolls but your app doesn&apos;t load</p>
@@ -534,13 +534,13 @@ function AddMachineModal({
         <>
           <button type="button" className={cqaBtnSecondary} onClick={onClose}>Cancel</button>
           <button type="submit" form="machine-form" className={cqaBtnPrimary} disabled={readOnly || pending === "machine" || !valid}>
-            {pending === "machine" ? "Creating…" : "Create install command"}
+            {pending === "machine" ? "Creatingâ€¦" : "Create install command"}
           </button>
         </>
       }
     >
       <form id="machine-form" onSubmit={submit} className="space-y-4">
-        <p className="text-[12.5px] leading-5 text-[#6b7280]">Installs the ContextQA agent on a machine and connects it to {orgName}.</p>
+        <p className="text-[12.5px] leading-5 text-[#6b7280]">Installs the QASyn agent on a machine and connects it to {orgName}.</p>
         <label className="block">
           <span className={cqaLabel}>Machine name</span>
           <input
@@ -585,7 +585,7 @@ function AddMachineModal({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[12.5px] font-medium text-[#111827]">Enable browser host</p>
-                <p className="mt-0.5 text-[11.5px] leading-4 text-[#9ca3af]">Run ContextQA browsers on this machine for tests behind your firewall (about 1 GB)</p>
+                <p className="mt-0.5 text-[11.5px] leading-4 text-[#9ca3af]">Run QASyn browsers on this machine for tests behind your firewall (about 1 GB)</p>
               </div>
               <button
                 type="button"
@@ -615,7 +615,7 @@ function InstallCommandModal({
   onClose: () => void;
 }) {
   const command = machine
-    ? `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://get.contextqa.com/install.ps1 | iex; contextqa connect --name ${machine.name} --token ${machine.token}"`
+    ? `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://get.qasyn.com/install.ps1 | iex; qasyn connect --name ${machine.name} --token ${machine.token}"`
     : "";
   return (
     <Modal

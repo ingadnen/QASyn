@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/dashboard/ui";
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "Test Studio" };
 export const dynamic = "force-dynamic";
 
 export default async function TestStudioIndexPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("testCases");
   const cases = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id }, orderBy: { title: "asc" }, select: { id: true, title: true } });
   return (
     <div className="space-y-6">

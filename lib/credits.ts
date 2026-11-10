@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/db";
+﻿import { prisma } from "@/lib/db";
 
 /**
- * Credit ledger actions captured from the live ContextQA usage page. The order
+ * Credit ledger actions captured from the live QASyn usage page. The order
  * is the order shown in the "By action" filter.
  */
 export const CREDIT_ACTIONS = [

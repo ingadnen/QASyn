@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { SystemAuditsTable, type AuditRow } from "@/components/dashboard/pages/SystemAuditsTable";
 import { prisma } from "@/lib/db";
@@ -56,7 +57,7 @@ function formatStamp(date: Date) {
 }
 
 export default async function AuditsPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("audits");
   const [logs, users] = await Promise.all([
     prisma.systemAuditLog.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" } }),
     prisma.user.findMany({ where: { organisationId: ctx.org.id }, select: { name: true, email: true } }),

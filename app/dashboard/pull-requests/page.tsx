@@ -1,33 +1,32 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
-import { PullRequestRowActions } from "@/components/dashboard/pages/PullRequestRowActions";
-import { SimulatePrButton } from "@/components/dashboard/pages/PullRequestsClient";
-import { AutoRefresh } from "@/components/dashboard/AutoRefresh";
-import { CqaIcon, PageHeader, StatusPill, cqaBtnPrimary, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
+import { PullRequestsBoard } from "@/components/dashboard/pages/PullRequestsBoard";
+import { CqaIcon, PageHeader, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
-import { formatDateTime } from "@/lib/format";
+import { prDetail } from "@/lib/pr-catalog";
 import { requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "PR Impact Analysis" };
 export const dynamic = "force-dynamic";
 
 export default async function PullRequestsPage({ searchParams }: { searchParams: Promise<{ q?: string; risk?: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("pullRequests");
   const { q = "", risk = "all" } = await searchParams;
   const [allPrs, repo] = await Promise.all([
     prisma.pullRequestCheck.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } }),
-    prisma.integration.findFirst({ where: { organisationId: ctx.org.id, provider: { in: ["GITHUB", "GITLAB"] }, status: "CONNECTED" } }),
+    prisma.integration.findFirst({
+      where: { organisationId: ctx.org.id, provider: { in: ["GITHUB", "GITLAB", "BITBUCKET", "AZURE_DEVOPS"] }, status: "CONNECTED" },
+    }),
   ]);
-  const prs = allPrs.filter((p) => {
-    if (risk !== "all" && p.riskLevel !== risk) return false;
-    if (q && !`${p.title} ${p.branch} ${p.author} #${p.prNumber}`.toLowerCase().includes(q.toLowerCase())) return false;
+  const prs = allPrs.filter((pr) => {
+    if (risk !== "all" && pr.riskLevel !== risk) return false;
+    if (q && !`${pr.title} ${pr.branch} ${pr.author} #${pr.prNumber}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
-  const running = allPrs.some((p) => p.status === "running");
-  const nextNumber = (allPrs.reduce((m, p) => Math.max(m, p.prNumber), 0) || 100) + 1;
+  const nextNumber = (allPrs.reduce((max, pr) => Math.max(max, pr.prNumber), 0) || 100) + 1;
 
   return (
     <div className="space-y-4">
-      {running && <AutoRefresh intervalMs={3000} />}
       <PageHeader title="PR Impact Analysis" description="Pull requests analysed for impact, and the tests drafted for them" />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -52,85 +51,42 @@ export default async function PullRequestsPage({ searchParams }: { searchParams:
               { value: "low", label: "Low risk" },
               { value: "medium", label: "Medium risk" },
               { value: "high", label: "High risk" },
-            ].map((o) => (
-              <a key={o.value} href={`/dashboard/pull-requests?risk=${o.value}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="block px-3 py-1.5 text-[12.5px] text-[#374151] hover:bg-[#f9fafb]">
-                {o.label}
+            ].map((option) => (
+              <a
+                key={option.value}
+                href={`/dashboard/pull-requests?risk=${option.value}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                className="block px-3 py-1.5 text-[12.5px] text-[#374151] hover:bg-[#f9fafb]"
+              >
+                {option.label}
               </a>
             ))}
           </div>
         </details>
-        <a href="/dashboard/pull-requests" aria-label="Refresh" className="inline-flex size-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#6b7280] hover:bg-[#f9fafb]">
+        <a
+          href="/dashboard/pull-requests"
+          aria-label="Refresh"
+          className="inline-flex size-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#6b7280] hover:bg-[#f9fafb]"
+        >
           <CqaIcon name="refresh" className="text-[18px]" />
         </a>
-        <SimulatePrButton readOnly={ctx.readOnly} nextNumber={nextNumber} hasRepo={Boolean(repo)} compact />
       </div>
 
       {!repo && (
-        <p className="rounded-lg border border-[#fde68a] bg-[#fffbeb] px-3 py-2 text-[12.5px] text-[#92400e]">
-          Connect GitHub or GitLab in <a href="/dashboard/integrations" className="font-semibold underline">Integrations</a> to receive PR checks automatically on every push. Simulations remain available.
+        <p className={`${cqaCard} px-3 py-2 text-[12.5px] text-[#92400e]`}>
+          Connect GitHub, GitLab, Bitbucket or Azure DevOps in{" "}
+          <a href="/dashboard/integrations" className="font-semibold underline">
+            Integrations
+          </a>{" "}
+          to select real open pull requests. Manual / custom PR URLs remain available.
         </p>
       )}
 
-      <div className={cqaCard}>
-        {prs.length === 0 ? (
-          <div className="px-4 py-14 text-center">
-            <p className="text-[14px] font-medium text-[#374151]">No data available</p>
-            <p className="mt-1 text-[12.5px] text-[#9ca3af]">There is no data available to display.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-[#f0f1f3]">
-                  {["Pull request", "Risk", "Files", "Tests run", "Verdict", "Opened", "Action"].map((h) => (
-                    <th key={h} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {prs.map((p) => (
-                  <tr key={p.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
-                    <td className="max-w-[380px] px-4 py-3">
-                      <p className="truncate font-medium text-[#1f2937]">#{p.prNumber} {p.title}</p>
-                      <p className="truncate font-mono text-[11.5px] text-[#9ca3af]">{p.branch} · @{p.author}</p>
-                    </td>
-                    <td className="px-4 py-3"><StatusPill value={p.riskLevel} label={`${p.riskLevel.charAt(0).toUpperCase()}${p.riskLevel.slice(1)}`} /></td>
-                    <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{p.filesChanged}</td>
-                    <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{p.status === "running" ? "…" : p.testsRun}</td>
-                    <td className="px-4 py-3">
-                      <StatusPill
-                        value={p.status}
-                        label={p.status === "running" ? "Analysing" : p.status === "regression_caught" ? `${p.regressions} regression${p.regressions === 1 ? "" : "s"} caught` : "Passed baseline"}
-                      />
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]">{formatDateTime(p.createdAt)}</td>
-                    <td className="px-4 py-3">
-                      <PullRequestRowActions
-                        readOnly={ctx.readOnly}
-                        row={{
-                          id: p.id,
-                          prNumber: p.prNumber,
-                          title: p.title,
-                          branch: p.branch,
-                          author: p.author,
-                          filesChanged: p.filesChanged,
-                          riskLevel: p.riskLevel,
-                          status: p.status,
-                          testsRun: p.testsRun,
-                          regressions: p.regressions,
-                          createdAt: p.createdAt.toISOString(),
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <PullRequestsBoard initialRows={prs.map(prDetail)} readOnly={ctx.readOnly} nextNumber={nextNumber} />
+
       {prs.length > 0 && (
-        <p className="text-[12px] text-[#6b7280]">1–{prs.length} of {prs.length} pull requests</p>
+        <p className="text-[12px] text-[#6b7280]">
+          1â€“{prs.length} of {prs.length} pull requests
+        </p>
       )}
     </div>
   );

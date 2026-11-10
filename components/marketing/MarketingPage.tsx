@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Shared marketing page renderer: hero, capability grid, workflow steps,
- * FAQ and CTA — driven by a small typed content object.
+ * FAQ and CTA â€” driven by a small typed content object.
  * Used by every /platform, /solutions, /integrations and company page.
  */
 import Link from "next/link";
@@ -61,7 +61,7 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
       )}
 
       <div className="mt-14 rounded-2xl bg-navy-900 p-8 text-white">
-        <h2 className="text-xl font-semibold">See ContextQA test your application in 30 minutes</h2>
+        <h2 className="text-xl font-semibold">See QASyn test your application in 30 minutes</h2>
         <p className="mt-2 text-sm text-slate-300">The agentic AI testing platform. One place to write, heal, and run tests across web, mobile, API, and AI agents.</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/signup" className="rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-400">Start free</Link>

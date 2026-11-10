@@ -30,6 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         readOnly={ctx.readOnly}
         trialDaysLeft={trialDaysLeft(ctx.org)}
         plan={ctx.org.plan}
+        role={ctx.user.role}
         ownOrgName={ctx.ownOrg?.name ?? null}
         user={{ name: ctx.user.name, email: ctx.user.email, initials: ctx.user.avatarInitials || initialsOf(ctx.user.name, ctx.user.email) }}
       />

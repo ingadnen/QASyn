@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { Tunnels } from "@/components/dashboard/pages/TunnelsParity";
 import { prisma } from "@/lib/db";
@@ -7,7 +8,7 @@ export const metadata: Metadata = { title: "Tunnels" };
 export const dynamic = "force-dynamic";
 
 export default async function TunnelsPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("tunnels");
   const machines = await prisma.tunnelMachine.findMany({
     where: { organisationId: ctx.org.id },
     orderBy: { createdAt: "asc" },

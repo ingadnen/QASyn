@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -30,7 +30,7 @@ const RANGES = ["Last 7 days", "Last 30 days", "This billing period", "Custom ra
 type Range = (typeof RANGES)[number];
 
 const DAY = 86_400_000;
-const MINUS = "−";
+const MINUS = "âˆ’";
 
 function startOfDay(date: Date) {
   const copy = new Date(date);
@@ -167,11 +167,11 @@ export function BillingUsage(props: BillingUsageProps) {
   const isTrial = plan === "trial" || plan === "free";
   const planName = isTrial ? "Free trial" : plan.charAt(0).toUpperCase() + plan.slice(1);
   const planPrice = plan === "starter" ? "$49" : plan === "pro" ? "$249" : isTrial ? "$0" : "Custom";
-  const planLabel = isTrial ? `Trial · ${daysLeft} days left` : `${planName} plan`;
+  const planLabel = isTrial ? `Trial Â· ${daysLeft} days left` : `${planName} plan`;
 
   async function choosePlan(key: string) {
     if (key === "enterprise") {
-      window.location.href = "mailto:sales@contextqa.com";
+      window.location.href = "mailto:sales@qasyn.com";
       return;
     }
     await run(`plan-${key}`, "/api/dashboard/billing", { json: { action: "plan", plan: key } });
@@ -182,7 +182,7 @@ export function BillingUsage(props: BillingUsageProps) {
       <div>
         <h1 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-[#111827]">Billing &amp; usage</h1>
         <p className="mt-1 text-[13.5px] leading-5 text-[#6b7280]">
-          Credits for {orgName} · what you were granted, what was consumed, and what it was spent on.
+          Credits for {orgName} Â· what you were granted, what was consumed, and what it was spent on.
         </p>
       </div>
 
@@ -343,12 +343,12 @@ function BillingView({
             <div>
               <p className="text-[18px] font-semibold text-[#111827]">{available.toLocaleString("en-US")}</p>
               <p className="text-[11.5px] text-[#6b7280]">
-                plan credits · resets {shortDay(trialEnd)}
+                plan credits Â· resets {shortDay(trialEnd)}
               </p>
             </div>
             <div>
               <p className="text-[18px] font-semibold text-[#111827]">0</p>
-              <p className="text-[11.5px] text-[#6b7280]">additional · no expiry</p>
+              <p className="text-[11.5px] text-[#6b7280]">additional Â· no expiry</p>
             </div>
           </div>
           <p className="mt-3 border-t border-[#f0f1f3] pt-3 text-[11.5px] leading-4 text-[#9ca3af]">
@@ -373,8 +373,8 @@ function BillingView({
               <p className="text-[24px] font-semibold leading-8 text-[#111827]">{planPrice}</p>
               <p className="text-[11.5px] text-[#6b7280]">
                 {isTrial
-                  ? `${shortDay(trialStart)} – ${shortDay(trialEnd)} · no card required during the trial`
-                  : `Billed monthly · renews ${shortDay(trialEnd)}`}
+                  ? `${shortDay(trialStart)} â€“ ${shortDay(trialEnd)} Â· no card required during the trial`
+                  : `Billed monthly Â· renews ${shortDay(trialEnd)}`}
               </p>
             </div>
             <div className="rounded-lg bg-[#f5f3ff] px-3 py-2 text-center">
@@ -383,7 +383,7 @@ function BillingView({
             </div>
           </div>
           <p className="mt-2 text-[11.5px] text-[#9ca3af]">
-            Day {dayNumber} of {trialLength} · {daysLeft} days left · ends {shortDay(trialEnd)}
+            Day {dayNumber} of {trialLength} Â· {daysLeft} days left Â· ends {shortDay(trialEnd)}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <StatCell icon="account_balance_wallet" value={`${available.toLocaleString("en-US")} credits`} label="available now" />
@@ -414,7 +414,7 @@ function BillingView({
         <p className="mt-3 text-[13px] text-[#374151]">
           {paymentMethod ?? "No payment method yet. Not required during the trial."}
         </p>
-        <p className="mt-1 text-[11.5px] text-[#9ca3af]">ContextQA never stores card details. All payment data lives with Stripe.</p>
+        <p className="mt-1 text-[11.5px] text-[#9ca3af]">QASyn never stores card details. All payment data lives with Stripe.</p>
       </section>
 
       {plansOpen && (
@@ -455,7 +455,7 @@ function BillingView({
                   disabled={readOnly || planPending === `plan-${card.key}`}
                   onClick={() => onSelectPlan(card.key)}
                 >
-                  {planPending === `plan-${card.key}` ? "Selecting…" : card.cta}
+                  {planPending === `plan-${card.key}` ? "Selectingâ€¦" : card.cta}
                 </button>
               </article>
             ))}
@@ -488,15 +488,15 @@ function BillingView({
                 </td>
                 <td className="px-4 py-3 text-[#374151]">{trialCredits.toLocaleString("en-US")}</td>
                 <td className="px-4 py-3 text-[#374151]">{consumed.toLocaleString("en-US")}</td>
-                <td className="px-4 py-3 text-[#9ca3af]">—</td>
-                <td className="px-4 py-3 text-[#9ca3af]">—</td>
+                <td className="px-4 py-3 text-[#9ca3af]">â€”</td>
+                <td className="px-4 py-3 text-[#9ca3af]">â€”</td>
                 <td className="px-4 py-3 text-[#6b7280]">{longDay(trialStart)}</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[#f0f1f3] px-4 py-2.5 text-[11.5px] text-[#6b7280]">
-          <span className="mr-auto tabular-nums">1–1 of 1</span>
+          <span className="mr-auto tabular-nums">1â€“1 of 1</span>
           <span>Rows per page</span>
           <select
             aria-label="Credit history rows per page"
@@ -580,7 +580,7 @@ function UsageView({ available, entries, orgName }: { available: number; entries
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pages - 1);
   const paged = filtered.slice(safePage * pageSize, safePage * pageSize + pageSize);
-  const rangeLabel = `${shortDay(start)} – ${shortDay(end)}`;
+  const rangeLabel = `${shortDay(start)} â€“ ${shortDay(end)}`;
 
   const groups = useMemo(() => {
     const map = new Map<string, { count: number; total: number }>();
@@ -610,11 +610,11 @@ function UsageView({ available, entries, orgName }: { available: number; entries
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-[20px] font-semibold text-[#111827]">Usage</h2>
-          <p className="mt-0.5 text-[12.5px] text-[#6b7280]">Track how your workspace uses ContextQA credits.</p>
+          <p className="mt-0.5 text-[12.5px] text-[#6b7280]">Track how your workspace uses QASyn credits.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11.5px] text-[#9ca3af]">
-            {rangeLabel} · {inRange.length} {inRange.length === 1 ? "entry" : "entries"}
+            {rangeLabel} Â· {inRange.length} {inRange.length === 1 ? "entry" : "entries"}
           </span>
           <select
             aria-label="Usage date range"
@@ -650,15 +650,15 @@ function UsageView({ available, entries, orgName }: { available: number; entries
           </div>
           <p className="mt-2 text-[26px] font-semibold leading-8 text-[#111827]">{available.toLocaleString("en-US")}</p>
           <p className="text-[11.5px] text-[#9ca3af]">credits</p>
-          <p className="mt-1 text-[11px] text-[#9ca3af]">Workspace-wide · unaffected by the date filter</p>
+          <p className="mt-1 text-[11px] text-[#9ca3af]">Workspace-wide Â· unaffected by the date filter</p>
         </section>
         <section className={cn(cqaCard, "p-4")}>
-          <p className="text-[11.5px] font-medium text-[#6b7280]">Used · last 7 days</p>
+          <p className="text-[11.5px] font-medium text-[#6b7280]">Used Â· last 7 days</p>
           <p className="mt-2 text-[26px] font-semibold leading-8 text-[#111827]">{MINUS}{used.toLocaleString("en-US")}</p>
           <p className="text-[11.5px] text-[#9ca3af]">credits</p>
         </section>
         <section className={cn(cqaCard, "p-4")}>
-          <p className="text-[11.5px] font-medium text-[#6b7280]">Refunded · last 7 days</p>
+          <p className="text-[11.5px] font-medium text-[#6b7280]">Refunded Â· last 7 days</p>
           <p className="mt-2 text-[26px] font-semibold leading-8 text-[#00a63e]">+{refunded.toLocaleString("en-US")}</p>
           <p className="text-[11.5px] text-[#9ca3af]">credits</p>
         </section>
@@ -684,7 +684,7 @@ function UsageView({ available, entries, orgName }: { available: number; entries
               <div key={day.toISOString()} className="flex min-w-[52px] flex-1 flex-col items-center gap-1.5">
                 <span className="text-[10px] text-[#9ca3af]">{total ? `${MINUS}${total}` : ""}</span>
                 <div
-                  title={`${label} · ${total ? `${MINUS}${total} credits` : "no credits used"}`}
+                  title={`${label} Â· ${total ? `${MINUS}${total} credits` : "no credits used"}`}
                   className={cn("w-full max-w-[36px] rounded-t-[4px]", total ? "bg-[#5b4ee8]" : "bg-[#e5e7eb]")}
                   style={{ height }}
                 />
@@ -786,7 +786,7 @@ function UsageView({ available, entries, orgName }: { available: number; entries
               </div>
               <div className="flex items-center gap-2">
                 <span>
-                  {filtered.length === 0 ? "0" : `${safePage * pageSize + 1}–${Math.min(filtered.length, safePage * pageSize + pageSize)}`} of {filtered.length}
+                  {filtered.length === 0 ? "0" : `${safePage * pageSize + 1}â€“${Math.min(filtered.length, safePage * pageSize + pageSize)}`} of {filtered.length}
                 </span>
                 <button type="button" className={cqaIconBtn} aria-label="Previous page" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>
                   <CqaIcon name="chevron_left" className="text-[18px]" />
@@ -857,7 +857,7 @@ function PaymentForm({ current, readOnly, onDone }: { current: string | null; re
       <div className="flex justify-end gap-2 pt-1">
         <button type="button" className={cqaBtnSecondary} onClick={onDone}>Cancel</button>
         <button type="submit" className={cqaBtnPrimary} disabled={readOnly || pending === "payment"}>
-          {pending === "payment" ? "Saving…" : "Save payment method"}
+          {pending === "payment" ? "Savingâ€¦" : "Save payment method"}
         </button>
       </div>
     </form>

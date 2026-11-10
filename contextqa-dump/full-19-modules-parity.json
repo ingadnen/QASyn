@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T02:46:27.209Z",
+  "generatedAt": "2026-11-10T06:49:57.577Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -166,7 +166,7 @@
         {
           "check": "Sidebar shows the user card",
           "ok": true,
-          "detail": "Cgi"
+          "detail": "Claire Girard"
         }
       ],
       "pageErrors": [],
@@ -272,9 +272,39 @@
           "detail": ""
         },
         {
-          "check": "Pull requests empty state",
+          "check": "Pull requests column \"Pull request\"",
           "ok": true,
-          "detail": "no table — empty state shown"
+          "detail": "Pull request,Risk,Files,Tests run,Verdict,Opened,Action"
+        },
+        {
+          "check": "Pull requests column \"Risk\"",
+          "ok": true,
+          "detail": "Pull request,Risk,Files,Tests run,Verdict,Opened,Action"
+        },
+        {
+          "check": "Pull requests column \"Files\"",
+          "ok": true,
+          "detail": "Pull request,Risk,Files,Tests run,Verdict,Opened,Action"
+        },
+        {
+          "check": "Pull requests column \"Tests run\"",
+          "ok": true,
+          "detail": "Pull request,Risk,Files,Tests run,Verdict,Opened,Action"
+        },
+        {
+          "check": "Pull requests column \"Verdict\"",
+          "ok": true,
+          "detail": "Pull request,Risk,Files,Tests run,Verdict,Opened,Action"
+        },
+        {
+          "check": "Pull requests column \"Opened\"",
+          "ok": true,
+          "detail": "Pull request,Risk,Files,Tests run,Verdict,Opened,Action"
+        },
+        {
+          "check": "Pull requests column \"Action\"",
+          "ok": true,
+          "detail": "Pull request,Risk,Files,Tests run,Verdict,Opened,Action"
         },
         {
           "check": "Pull requests toolbar Filter",
@@ -287,27 +317,17 @@
           "detail": ""
         },
         {
-          "check": "Analyse modal contains \"PR #\"",
+          "check": "Analyse modal contains \"Connected provider · repository\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analyse modal contains \"Files changed\"",
+          "check": "Analyse modal contains \"Open pull requests\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analyse modal contains \"Title\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Analyse modal contains \"Branch\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "Analyse modal contains \"Author\"",
+          "check": "Analyse modal contains \"Manual / Custom PR URL\"",
           "ok": true,
           "detail": ""
         },
@@ -320,6 +340,71 @@
           "check": "Analyse modal contains \"Cancel\"",
           "ok": true,
           "detail": ""
+        },
+        {
+          "check": "PR modal selects a connected provider/repository",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PR modal lists connected repositories",
+          "ok": true,
+          "detail": "Azure DevOps · cgi/digital-portal (base main), GitHub · cgi/digital-portal (base main), GitLab · cgi/digital-portal (base main)"
+        },
+        {
+          "check": "PR modal loads real open pull requests",
+          "ok": true,
+          "detail": "8 open PR(s)"
+        },
+        {
+          "check": "Open PR shows number, title, branches, author and files",
+          "ok": true,
+          "detail": "#740Add wallet payments to checkout 6 files feat/wallet-payments → main · @priya · Nov 9, 2026 src/checkout/wallet.tsx · src/checkout/payment-form.tsx · src/checkout/checkout-sessi"
+        },
+        {
+          "check": "PR check opens the analysis drawer",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PR drawer names the analysed PR",
+          "ok": true,
+          "detail": "740"
+        },
+        {
+          "check": "PR drawer section \"Blast radius\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PR drawer section \"Changed files\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PR drawer section \"Impacted tests executed\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PR drawer section \"Execution logs\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PR drawer section \"Provider comment\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PR drawer computes a verdict",
+          "ok": true,
+          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close Passed baseline Low risk AZURE_DEVOPS · cgi/digital-portal Open in provider open_"
+        },
+        {
+          "check": "PR drawer posts a provider comment automatically",
+          "ok": true,
+          "detail": "Cancel a subscription - ✅ Retry a failed payment - ✅ Pay with a saved card - ✅ Pay with a wallet - ✅ Handle a declined card - ✅ Checkout session survives token refresh - ✅ Complete checkout _Posted automatically by QASyn for CGI._ refresh Re-run analysis Close"
         },
         {
           "check": "Pull requests shows no raw JSON",
@@ -818,9 +903,44 @@
           "detail": ""
         },
         {
+          "check": "Test case step 2 Target URL",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Test case Target URL field pre-filled from the org",
+          "ok": true,
+          "detail": ""
+        },
+        {
           "check": "UI-created test case persisted",
           "ok": true,
-          "detail": "8 cases"
+          "detail": "56 cases"
+        },
+        {
+          "check": "UI-created test case uses the entered Target URL in steps",
+          "ok": true,
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-64404\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
+        },
+        {
+          "check": "UI-created test case stores the Target URL variable",
+          "ok": true,
+          "detail": "{\"url\":\"https://www.cgi.com/parity-64404\"}"
+        },
+        {
+          "check": "AI-created test case uses the entered Target URL",
+          "ok": true,
+          "detail": "status 201"
+        },
+        {
+          "check": "Imported test case uses the entered Target URL",
+          "ok": true,
+          "detail": "status 201"
+        },
+        {
+          "check": "Record & Play opens with the entered Target URL",
+          "ok": true,
+          "detail": "https://www.cgi.com/parity-64404"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -884,7 +1004,7 @@
         {
           "check": "Step Group created and listed",
           "ok": true,
-          "detail": "1 groups"
+          "detail": "2 groups"
         },
         {
           "check": "Cleanup: Step Group deleted",
@@ -1177,7 +1297,7 @@
         {
           "check": "Suite created via wizard",
           "ok": true,
-          "detail": "2 suites"
+          "detail": "5 suites"
         },
         {
           "check": "Suite wizard dropdown propagation (cases fetched)",
@@ -1217,7 +1337,7 @@
         {
           "check": "Manage Test Cases modal content",
           "ok": true,
-          "detail": "Manage Test Cases close search TC-007 Complete checkout Checkout TC-006 Sign up with e-mail Core TC-005 Log in and reach the dashboard Core TC-004 Submit the co"
+          "detail": "Manage Test Cases close search TC-055 Update the payment method Billing TC-054 Download the latest invoice (PDF) Billing TC-053 Billing address validation Billi"
         },
         {
           "check": "Suite deleted via API (id gone)",
@@ -1296,7 +1416,7 @@
         {
           "check": "Plan wizard suite options listed",
           "ok": true,
-          "detail": "1 checkboxes"
+          "detail": "4 checkboxes"
         },
         {
           "check": "Plan wizard shows suite dropdown options",
@@ -1311,12 +1431,12 @@
         {
           "check": "Plan created via wizard",
           "ok": true,
-          "detail": "1 plans"
+          "detail": "4 plans"
         },
         {
           "check": "Plan wizard suite selection used",
           "ok": true,
-          "detail": "Parity Suite 67674 0 cases"
+          "detail": "www.cgi.com crawl suite 7 cases"
         },
         {
           "check": "Plan detail shows name",
@@ -1381,7 +1501,7 @@
         {
           "check": "Plan Run Now creates execution",
           "ok": true,
-          "detail": "C cgi Live menu_open add New Test Cases AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM descripti"
+          "detail": "C CGI Live menu_open add New Test Cases AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM descripti"
         },
         {
           "check": "Test Plans no page errors",
@@ -1450,7 +1570,7 @@
         {
           "check": "Environment created via modal",
           "ok": true,
-          "detail": "1 envs"
+          "detail": "4 envs"
         },
         {
           "check": "Auth Profiles shows Proxy Profiles",
@@ -1517,7 +1637,32 @@
           "detail": ""
         },
         {
-          "check": "Uploads empty state",
+          "check": "Uploads column \"File Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads column \"Type\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads column \"Size\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads column \"Uploaded by\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads column \"Created\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Uploads column \"Action\"",
           "ok": true,
           "detail": ""
         },
@@ -1800,6 +1945,11 @@
           "detail": ""
         },
         {
+          "check": "Roles role \"BA / FA\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
           "check": "Roles toggle what each role can access",
           "ok": true,
           "detail": ""
@@ -1851,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for par17fwq close Run this once on the machine, in PowerShell opened as administrator. The one-time token expires in ten minutes; create a new "
+          "detail": "Install command for par1dp09 close Run this once on the machine, in PowerShell opened as administrator. The one-time token expires in ten minutes; create a new "
         },
         {
           "check": "Install command one-time token",
@@ -1898,47 +2048,192 @@
           "detail": ""
         },
         {
-          "check": "Integrations card \"Jira\"",
+          "check": "Pro integration \"Azure DevOps Boards\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations card \"Slack\"",
+          "check": "Pro integration \"Azure Key Vault\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations card \"GitHub\"",
+          "check": "Pro integration \"Figma\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations card \"GitLab\"",
+          "check": "Pro integration \"YouTrack\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations card \"Linear\"",
+          "check": "Pro integration \"CodeShip CI\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations card \"Figma\"",
+          "check": "Pro integration \"Jenkins\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations card \"Trello\"",
+          "check": "Pro integration \"BugZilla\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations enterprise lock text",
+          "check": "Pro integration \"Trello\" is available",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Integrations Jira toggle persists",
+          "check": "Pro integration \"Private Grid\" is available",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pro integration \"Backlog\" is available",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pro integration \"Zepel\" is available",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pro integration \"Freshrelease\" is available",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Pro integration \"Mantis Bug Tracker\" is available",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Connectable integration \"GitHub\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Connectable integration \"GitLab\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Connectable integration \"Bitbucket\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Connectable integration \"Jira\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Connectable integration \"Linear\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Connectable integration \"Slack\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Connectable integration \"Microsoft Teams\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations show Pro · Available badges",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations have no enterprise lock text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations have actionable Connect buttons",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma integration card present",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma configuration modal opens",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma modal field \"Personal Access Token\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma modal field \"File URL\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma modal field \"File Key\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma modal field \"Pro · Available\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma modal Test Connection action",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma modal Save & Connect action",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma Test Connection returns real checks",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma Save & Connect persists the configuration",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma connected state exposes Sync Now",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma connected state exposes Disconnect",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma Sync Now runs",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Figma config persisted in SQLite",
+          "ok": true,
+          "detail": "{\"accessToken\":\"figd_parity_64404\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+        },
+        {
+          "check": "Figma Disconnect removes the connection",
           "ok": true,
           "detail": ""
         },
@@ -1949,6 +2244,11 @@
         },
         {
           "check": "Integrations Product Management filters",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations search filters cards",
           "ok": true,
           "detail": ""
         },
@@ -2051,52 +2351,32 @@
       "route": "/dashboard/mcp",
       "checks": [
         {
-          "check": "MCP heading Connect ContextQA",
+          "check": "MCP heading Connect QASyn",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "MCP Use ContextQA with your AI agent",
+          "check": "MCP server online",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "MCP Add the ContextQA connector",
+          "check": "MCP SSE endpoint is exact",
+          "ok": true,
+          "detail": "http://localhost:3000/api/mcp/sse"
+        },
+        {
+          "check": "MCP JSON-RPC fallback documented",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "MCP Download skill",
+          "check": "MCP client \"Claude Code\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "MCP View skill",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "MCP Copy agent prompt",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "MCP SKILL.md card",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "MCP client \"ChatGPT\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "MCP client \"Claude\"",
-          "ok": true,
-          "detail": ""
-        },
-        {
-          "check": "MCP client \"Codex\"",
+          "check": "MCP client \"Claude Desktop\"",
           "ok": true,
           "detail": ""
         },
@@ -2106,14 +2386,219 @@
           "detail": ""
         },
         {
-          "check": "MCP Copy configuration",
+          "check": "MCP client \"VS Code Copilot\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "MCP skill preview dialog",
+          "check": "MCP client \"Windsurf\"",
           "ok": true,
-          "detail": "draft SKILL.md Read-only · Platform-independent · No credentials included close This skill teaches your agent when and how to use the ContextQA tools available "
+          "detail": ""
+        },
+        {
+          "check": "MCP client \"OpenAI / ChatGPT\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP client \"Custom SSE\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP client \"claude-code\" snippet uses the local SSE endpoint",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article gro"
+        },
+        {
+          "check": "MCP client \"claude-desktop\" snippet uses the local SSE endpoint",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article gro"
+        },
+        {
+          "check": "MCP client \"cursor\" snippet uses the local SSE endpoint",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article gro"
+        },
+        {
+          "check": "MCP client \"vscode\" snippet uses the local SSE endpoint",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article gro"
+        },
+        {
+          "check": "MCP client \"windsurf\" snippet uses the local SSE endpoint",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article gro"
+        },
+        {
+          "check": "MCP client \"openai\" snippet uses the local SSE endpoint",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article gro"
+        },
+        {
+          "check": "MCP client \"custom\" snippet uses the local SSE endpoint",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article gro"
+        },
+        {
+          "check": "MCP token selector",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP token selector lists existing cqa tokens",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP Generate token action",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP generates a real cqa_ token",
+          "ok": true,
+          "detail": "cqa_4F8ByHMG"
+        },
+        {
+          "check": "MCP snippet embeds the generated token",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP token is shown once",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP initialize returns serverInfo qasyn",
+          "ok": true,
+          "detail": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2024-11-05\",\"serverInfo\":{\"name\":\"qasyn-mcp\",\"version\":\"1.0.0\"},\"capabilities\":{\"tools\":{}}}}"
+        },
+        {
+          "check": "MCP tools/list exposes the six required tools",
+          "ok": true,
+          "detail": "qasyn_get_quality_summary, qasyn_list_test_cases, qasyn_run_test_case, qasyn_start_crawl, qasyn_analyze_pr, qasyn_list_bugs, qasyn_create_web_test, qasyn_run_test_plan, qasyn_get_execution_evidence, qasyn_trigger_api_chain, qasyn_list_pull_requests, qasyn_run_mobile_test, qasyn_ship_workflow, qasyn_reproduce_bug, qasyn_analyze_pr_impact"
+        },
+        {
+          "check": "MCP role guide \"Admin\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide \"QA\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide \"Engineer / Dev\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide \"Manager / Simple user (BA / FA)\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide selector \"admin\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide \"admin\" shows recommended tools",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide selector \"qa\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide \"qa\" shows recommended tools",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide selector \"engineer\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide \"engineer\" shows recommended tools",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide selector \"ba\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP role guide \"ba\" shows recommended tools",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP tool selector \"qasyn_get_quality_summary\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
+          "ok": true,
+          "detail": "200 { \"testCases\": 55, \"passRate\": 75, \"bugsReproduced\": 8, \"regressionsCaught\": 18, \"costAvoi"
+        },
+        {
+          "check": "MCP tool selector \"qasyn_list_test_cases\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP tool \"qasyn_list_test_cases\" returns a real JSON-RPC result",
+          "ok": true,
+          "detail": "200 [ { \"id\": \"cmwa9t9v5000ex9wcgqotmfuj\", \"title\": \"Complete checkout\", \"module\": \"Checko"
+        },
+        {
+          "check": "MCP tool selector \"qasyn_run_test_case\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP tool \"qasyn_run_test_case\" returns a real JSON-RPC result",
+          "ok": true,
+          "detail": "200 { \"testCaseId\": \"cmwa9t9v5000ex9wcgqotmfuj\", \"title\": \"Complete checkout\", \"status\": \"passing\""
+        },
+        {
+          "check": "MCP tool selector \"qasyn_start_crawl\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
+          "ok": true,
+          "detail": "200 { \"id\": \"cmwabsd5f00jmx9wcv0032fub\", \"organisationId\": \"cmwa8rqs000azx974zz4w4wcl\", \"projectId"
+        },
+        {
+          "check": "MCP tool selector \"qasyn_analyze_pr\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP tool \"qasyn_analyze_pr\" returns a real JSON-RPC result",
+          "ok": true,
+          "detail": "200 { \"scopeTestCaseIds\": [ \"cmwa8rqsi00flx974jamxrjnk\", \"cmwa8rqsj00fnx9740i3gmosb\", \"cmw"
+        },
+        {
+          "check": "MCP tool selector \"qasyn_list_bugs\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
+          "ok": true,
+          "detail": "200 [ { \"id\": \"cmwab8qhh00bix9wcri23e1kn\", \"title\": \"Update the payment method fails\", \"se"
         },
         {
           "check": "MCP no page errors",
@@ -2405,7 +2890,32 @@
           "detail": ""
         },
         {
-          "check": "Tokens empty state",
+          "check": "Tokens column \"Name\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Scopes\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Created\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Expires\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Last used\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Tokens column \"Actions\"",
           "ok": true,
           "detail": ""
         },
@@ -2471,6 +2981,610 @@
         },
         {
           "check": "Settings overall no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "20-rebrand-chat-roles",
+      "name": "Rebrand, chat drag & four-role RBAC",
+      "route": "all dashboard routes",
+      "checks": [
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/overview",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/pull-requests",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/crawl",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/code-analysis",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/requirements",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/test-cases",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/plans/suites",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/plans/test-plans",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/environments",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/uploads",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/knowledge-base",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/team",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/tunnels",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/integrations",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/billing",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/mcp",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/settings/organization",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/settings/audits",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: no ContextQA on /dashboard/settings/analysis",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand: zero ContextQA occurrences across 19 dashboard pages",
+          "ok": true,
+          "detail": "0 occurrence(s)"
+        },
+        {
+          "check": "Rebrand: QASyn brand visible on dashboard",
+          "ok": true,
+          "detail": "Analysis Settings · QASyn"
+        },
+        {
+          "check": "Chat widget button visible",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Chat short click (<5px) opens the assistant",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Chat drag handle is labelled",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Chat window drags and persists qasyn_chat_pos",
+          "ok": true,
+          "detail": "{\"x\":816,\"y\":84}"
+        },
+        {
+          "check": "Chat window stays clamped inside the viewport",
+          "ok": true,
+          "detail": "{\"x\":816,\"y\":84}"
+        },
+        {
+          "check": "Chat position survives a reload",
+          "ok": true,
+          "detail": "{\"x\":816,\"y\":84}"
+        },
+        {
+          "check": "Chat reset control visible",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Chat reset restores the default position",
+          "ok": true,
+          "detail": "{\"x\":1036,\"y\":204}"
+        },
+        {
+          "check": "Admin sees \"Overview\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"Pull requests\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"Code Analysis\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"Team & access\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"Tunnels\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"Billing & usage\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"MCP\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"API Tokens\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin sees \"System Audits\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Admin create-test-case visibility",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Admin can open /dashboard/billing",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/billing"
+        },
+        {
+          "check": "Admin can open /dashboard/team",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/team"
+        },
+        {
+          "check": "Admin can open /dashboard/settings/api-tokens",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/settings/api-tokens"
+        },
+        {
+          "check": "Admin no page errors",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "QA sees \"Overview\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Crawl\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Requirements\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Test cases\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Plans\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Environment & Data\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Uploads\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Knowledge Base\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"Integrations\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA sees \"MCP\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA does not see \"Pull requests\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA does not see \"Code Analysis\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA does not see \"Team & access\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA does not see \"Tunnels\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA does not see \"Billing & usage\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA does not see \"API Tokens\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview travel_explore Crawl PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand_more cloud_upload Uploads article Know"
+        },
+        {
+          "check": "QA create-test-case visibility",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "QA can open /dashboard/test-cases",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/test-cases"
+        },
+        {
+          "check": "QA can open /dashboard/plans/test-plans",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/plans/test-plans"
+        },
+        {
+          "check": "QA is denied /dashboard/billing",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=billing"
+        },
+        {
+          "check": "QA is denied /dashboard/pull-requests",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=pullRequests"
+        },
+        {
+          "check": "QA is denied /dashboard/settings/api-tokens",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=apiTokens"
+        },
+        {
+          "check": "QA no page errors",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Engineer sees \"Overview\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer sees \"Pull requests\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer sees \"Code Analysis\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer sees \"Test cases\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer sees \"Tunnels\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer sees \"Integrations\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer sees \"MCP\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer sees \"Organization Setting\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer does not see \"Team & access\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer does not see \"Billing & usage\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer does not see \"API Tokens\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer does not see \"System Audits\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview merge Pull requests travel_explore Crawl code Code Analysis PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more database Environment & Data expand"
+        },
+        {
+          "check": "Engineer create-test-case visibility",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Engineer can open /dashboard/pull-requests",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/pull-requests"
+        },
+        {
+          "check": "Engineer can open /dashboard/tunnels",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/tunnels"
+        },
+        {
+          "check": "Engineer can open /dashboard/settings/organization",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/settings/organization"
+        },
+        {
+          "check": "Engineer is denied /dashboard/billing",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=billing"
+        },
+        {
+          "check": "Engineer is denied /dashboard/team",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=team"
+        },
+        {
+          "check": "Engineer is denied /dashboard/settings/api-tokens",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=apiTokens"
+        },
+        {
+          "check": "Engineer can read MCP tokens",
+          "ok": true,
+          "detail": "200"
+        },
+        {
+          "check": "Engineer cannot change billing",
+          "ok": true,
+          "detail": "403"
+        },
+        {
+          "check": "Engineer no page errors",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "BA / FA sees \"Overview\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA sees \"Requirements\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA sees \"Test cases\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA sees \"Plans\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA sees \"Knowledge Base\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA sees \"MCP\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Pull requests\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Code Analysis\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Crawl\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Environment & Data\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Uploads\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Team & access\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Tunnels\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Integrations\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Billing & usage\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"API Tokens\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA does not see \"Organization Setting\"",
+          "ok": true,
+          "detail": "AUTONOMOUS SDLC grid_view Overview PLATFORM description Requirements fact_check Test cases content_paste_go Plans expand_more article Knowledge Base WORK cable MCP"
+        },
+        {
+          "check": "BA / FA create-test-case visibility",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "BA / FA can open /dashboard/requirements",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/requirements"
+        },
+        {
+          "check": "BA / FA can open /dashboard/test-cases",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/test-cases"
+        },
+        {
+          "check": "BA / FA is denied /dashboard/pull-requests",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=pullRequests"
+        },
+        {
+          "check": "BA / FA is denied /dashboard/billing",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=billing"
+        },
+        {
+          "check": "BA / FA is denied /dashboard/integrations",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=integrations"
+        },
+        {
+          "check": "BA / FA is denied /dashboard/team",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=team"
+        },
+        {
+          "check": "BA / FA is denied /dashboard/settings/organization",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=settings"
+        },
+        {
+          "check": "BA / FA is denied /dashboard/settings/api-tokens",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview?denied=apiTokens"
+        },
+        {
+          "check": "BA / FA cannot read API tokens",
+          "ok": true,
+          "detail": "403"
+        },
+        {
+          "check": "BA / FA cannot create API tokens",
+          "ok": true,
+          "detail": "403"
+        },
+        {
+          "check": "BA / FA cannot change billing",
+          "ok": true,
+          "detail": "403"
+        },
+        {
+          "check": "BA / FA no page errors",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Rebrand/chat/RBAC no page errors",
           "ok": true,
           "detail": ""
         }
@@ -2551,7 +3665,7 @@
         {
           "check": "PART 4 RowMenu itself is inside the viewport",
           "ok": true,
-          "detail": "1175,247 208×253"
+          "detail": "1178,257 208×253"
         },
         {
           "check": "PART 4 RowMenu renders every action item",
@@ -2576,7 +3690,7 @@
         {
           "check": "PART 4 RowMenu flips upward when space below is short",
           "ok": true,
-          "detail": "trigger y 271 · menu 14–267"
+          "detail": "trigger y 330 · menu 73–326"
         },
         {
           "check": "PART 4 crawl table has no vertical scrollbar",
@@ -2586,7 +3700,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwa39288002zx9i08rk5zmoy"
+          "detail": "status 201 · cmwabx7ye00kcx9wca7ysqrgn"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -2621,7 +3735,7 @@
         {
           "check": "PART 4 filter keeps only completed crawls",
           "ok": true,
-          "detail": "3 row(s)"
+          "detail": "7 row(s)"
         },
         {
           "check": "PART 4 filter chip can be removed",
@@ -2691,7 +3805,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 56300? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 64404? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -2796,7 +3910,7 @@
         {
           "check": "Live/local parity — MCP sections",
           "ok": true,
-          "detail": "6 live label(s) matched"
+          "detail": "10 live label(s) matched"
         },
         {
           "check": "PART 4 side-by-side report written",
@@ -2828,5 +3942,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 527
+  "totalChecks": 748
 }

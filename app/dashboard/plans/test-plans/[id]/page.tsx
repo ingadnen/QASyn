@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
@@ -64,7 +65,7 @@ export default async function TestPlanDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("plans");
   const { id } = await params;
   const { tab } = await searchParams;
   const [plan, allPlans, allSuites, environments, knowledge, proxies, remotes] = await Promise.all([
@@ -142,7 +143,7 @@ export default async function TestPlanDetailPage({
 
   const cases: PlanCaseRow[] = planCases.map((c) => ({
     id: c.id,
-    code: caseCode.get(c.id) ?? "TC-—",
+    code: caseCode.get(c.id) ?? "TC-â€”",
     title: c.title,
     status: c.status,
     module: c.module,
@@ -168,7 +169,7 @@ export default async function TestPlanDetailPage({
       plan={planData}
       suites={plan.suites.map((s) => ({
         id: s.id,
-        code: suiteCode.get(s.id) ?? "TS-—",
+        code: suiteCode.get(s.id) ?? "TS-â€”",
         name: s.name,
         casesCount: s.testCasesCount,
         platform: s.platform,
@@ -185,7 +186,7 @@ export default async function TestPlanDetailPage({
       }))}
       allSuites={allSuites.map((s) => ({
         id: s.id,
-        code: suiteCode.get(s.id) ?? "TS-—",
+        code: suiteCode.get(s.id) ?? "TS-â€”",
         name: s.name,
         casesCount: s._count.testCases,
         platform: s.platform,

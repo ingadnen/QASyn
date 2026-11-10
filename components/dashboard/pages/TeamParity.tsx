@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 
-const ROLES = ["Admin", "Founder", "Eng manager", "Engineer", "QA"] as const;
+const ROLES = ["Admin", "Founder", "Eng manager", "Engineer", "QA", "BA / FA"] as const;
 
 export function InviteUserButton({ readOnly }: { readOnly: boolean }) {
   const router = useRouter();

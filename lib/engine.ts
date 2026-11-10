@@ -3,6 +3,7 @@ import { CREDIT_COSTS } from "./constants";
 import { buildCrawlLogs, crawlPlan, crawlProgress, hostFromUrl } from "./crawl";
 import { prisma } from "./db";
 import { audit, spendCredits, type OrgContext } from "./tenant";
+import { normalizeWebsite } from "./utils";
 
 /**
  * Simulated AQE engine. Everything is local: no request ever leaves the server
@@ -364,9 +365,92 @@ export interface NlpStepLike {
   selector: string;
 }
 
+const LEGACY_URL_PATTERN = /https?:\/\/(?:[a-z0-9-]+\.)*acme\.example(?::\d+)?(?:\/[^\s"',)\]]*)?|https?:\/\/(?:[a-z0-9-]+\.)*example\.com(?::\d+)?(?:\/[^\s"',)\]]*)?/gi;
+const LEGACY_HOST_PATTERN = /(?:[a-z0-9-]+\.)*acme\.example|(?:[a-z0-9-]+\.)*example\.com/gi;
+
+/**
+ * The Target URL used by every creation flow. An explicit target always wins;
+ * the organisation website is the fallback. "acme.example" is never injected.
+ */
+export function resolveTargetUrl(input: string | null | undefined, orgUrl: string | null | undefined): string {
+  return normalizeWebsite(input ?? "") ?? normalizeWebsite(orgUrl ?? "") ?? "http://localhost:3000";
+}
+
+function replaceLegacyUrls(value: string, base: string, host: string): string {
+  return value
+    .replace(LEGACY_URL_PATTERN, base)
+    .replace(LEGACY_HOST_PATTERN, host);
+}
+
+/**
+ * Repairs test cases created before the Target URL fix: any acme.example or
+ * example.com URL is replaced by the organisation's real website. Acme's own
+ * demo workspace is intentionally skipped.
+ */
+export async function repairLegacyTestUrls(organisationId: string, website: string | null | undefined): Promise<number> {
+  const base = normalizeWebsite(website ?? "");
+  if (!base) return 0;
+  const host = base.replace(/^https?:\/\//, "");
+  if (/acme\.example|example\.com/i.test(host)) return 0;
+
+  const candidates = await prisma.testCase.findMany({
+    where: {
+      organisationId,
+      OR: [
+        { stepsJson: { contains: "acme.example" } },
+        { stepsJson: { contains: "example.com" } },
+        { variablesJson: { contains: "acme.example" } },
+        { variablesJson: { contains: "example.com" } },
+        { description: { contains: "acme.example" } },
+        { description: { contains: "example.com" } },
+      ],
+    },
+    select: { id: true, stepsJson: true, variablesJson: true, description: true },
+  });
+  if (candidates.length === 0) return 0;
+
+  for (const testCase of candidates) {
+    let stepsJson = testCase.stepsJson;
+    try {
+      const steps = JSON.parse(testCase.stepsJson || "[]") as Array<Record<string, unknown>>;
+      if (Array.isArray(steps)) {
+        stepsJson = JSON.stringify(
+          steps.map((step) => ({
+            ...step,
+            target: typeof step.target === "string" ? replaceLegacyUrls(step.target, base, host) : step.target,
+            value: typeof step.value === "string" ? replaceLegacyUrls(step.value, base, host) : step.value,
+          })),
+        );
+      }
+    } catch {
+      stepsJson = replaceLegacyUrls(testCase.stepsJson, base, host);
+    }
+
+    let variablesJson = testCase.variablesJson;
+    try {
+      const variables = JSON.parse(testCase.variablesJson || "{}") as Record<string, unknown>;
+      if (!variables || typeof variables !== "object" || Array.isArray(variables)) throw new Error("invalid");
+      variables.url = base;
+      variablesJson = JSON.stringify(variables);
+    } catch {
+      variablesJson = JSON.stringify({ url: base });
+    }
+
+    await prisma.testCase.update({
+      where: { id: testCase.id },
+      data: {
+        stepsJson,
+        variablesJson,
+        ...(testCase.description ? { description: replaceLegacyUrls(testCase.description, base, host) } : {}),
+      },
+    });
+  }
+  return candidates.length;
+}
+
 /** Builds exactly `count` realistic NLP steps anchored on the organisation URL. */
 export function buildStepsJson(orgUrl: string, count: number, module: string, title = ""): string {
-  const base = (orgUrl || "").trim().replace(/\/$/, "");
+  const base = normalizeWebsite((orgUrl || "").trim()) ?? "";
   const host = base ? base.replace(/^https?:\/\//, "") : "the application";
   const goTo = base || "the application";
   const flows: Array<[string, string, string]> = [

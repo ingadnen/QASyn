@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { InviteUserButton } from "@/components/dashboard/pages/TeamParity";
 import { PermissionsMatrix } from "@/components/dashboard/pages/TeamClients";
@@ -12,17 +13,17 @@ export const metadata: Metadata = { title: "Team & access" };
 export const dynamic = "force-dynamic";
 
 const DEFAULT_PERMS = {
-  Crawl: { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: true },
-  "Test Studio": { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: true },
-  "Suites & Plans": { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: true },
-  "Environments & Data": { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: false },
-  "Billing & usage": { Admin: true, Founder: true, "Eng manager": false, Engineer: false, QA: false },
-  "API Tokens": { Admin: true, Founder: true, "Eng manager": false, Engineer: false, QA: false },
-  "System audits": { Admin: true, Founder: true, "Eng manager": true, Engineer: false, QA: false },
+  Crawl: { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: true, "BA / FA": false },
+  "Test Studio": { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: true, "BA / FA": true },
+  "Suites & Plans": { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: true, "BA / FA": true },
+  "Environments & Data": { Admin: true, Founder: true, "Eng manager": true, Engineer: true, QA: false, "BA / FA": false },
+  "Billing & usage": { Admin: true, Founder: true, "Eng manager": false, Engineer: false, QA: false, "BA / FA": false },
+  "API Tokens": { Admin: true, Founder: true, "Eng manager": false, Engineer: false, QA: false, "BA / FA": false },
+  "System audits": { Admin: true, Founder: true, "Eng manager": true, Engineer: false, QA: false, "BA / FA": false },
 } as Record<string, Record<string, boolean>>;
 
 export default async function TeamPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("team");
   const { tab = "users", q = "" } = await searchParams;
   const members = await prisma.user.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" } });
   const filtered = q ? members.filter((m) => `${m.name} ${m.email}`.toLowerCase().includes(q.toLowerCase())) : members;

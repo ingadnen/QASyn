@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { CrawlTable, type CrawlRow } from "@/components/dashboard/pages/CrawlTable";
 import { NewCrawlButton } from "@/components/dashboard/pages/NewCrawlButton";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Crawl" };
 export const dynamic = "force-dynamic";
 
 export default async function CrawlPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("crawl");
   const [crawls, requirements, plans] = await Promise.all([
     prisma.crawlSession.findMany({ where: { organisationId: ctx.org.id }, orderBy: { startedAt: "desc" } }),
     prisma.requirement.findMany({ where: { organisationId: ctx.org.id }, select: { id: true, code: true, linkedTestsCount: true, createdAt: true } }),

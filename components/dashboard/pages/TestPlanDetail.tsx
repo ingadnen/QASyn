@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -360,11 +360,11 @@ export function TestPlanDetail({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-[22px] font-bold leading-7 text-[#101828]">{plan.name}</h1>
-          <p className="mt-1 text-[12.5px] text-[#6b7280]">{plan.description || `${plan.browsers.join(", ")} · ${plan.environment}`}</p>
+          <p className="mt-1 text-[12.5px] text-[#6b7280]">{plan.description || `${plan.browsers.join(", ")} Â· ${plan.environment}`}</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => void runPlan()} disabled={readOnly || pending === "run"} className={cn(cqaBtnPrimary, "h-9 px-4")}>
-            <CqaIcon name="play_arrow" className="text-[17px]" /> {pending === "run" ? "Running…" : "Run Now"}
+            <CqaIcon name="play_arrow" className="text-[17px]" /> {pending === "run" ? "Runningâ€¦" : "Run Now"}
           </button>
           <div className="relative">
             <button type="button" aria-label="Plan actions" onClick={() => setMenuOpen((v) => !v)} className={cn(cqaIconBtn, "size-9 border border-[#e5e7eb] bg-white")}>
@@ -396,7 +396,7 @@ export function TestPlanDetail({
           <p className="mt-0.5 text-[11.5px] text-[#6b7280]">Latest run</p>
         </div>
         <div className="flex min-w-[144px] flex-col justify-center px-5 py-3">
-          <p className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#374151]"><CqaIcon name="auto_fix_high" className="text-[16px] text-[#6b7280]" /> {latest ? `#${runNumber}` : "—"}</p>
+          <p className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#374151]"><CqaIcon name="auto_fix_high" className="text-[16px] text-[#6b7280]" /> {latest ? `#${runNumber}` : "â€”"}</p>
           <p className="mt-0.5 text-[11.5px] text-[#6b7280]">Latest after auto-fix</p>
         </div>
         <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-[12.5px]">
@@ -443,10 +443,10 @@ export function TestPlanDetail({
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "START", value: latest ? fmtFull(latest.startedAt) : "—", sub: "Latest run" },
-                { label: "END", value: latest?.finishedAt ? fmtFull(latest.finishedAt) : "—", sub: "Latest run" },
-                { label: "CI/CD TRIGGER", value: latest ? latest.triggeredBy.charAt(0).toUpperCase() + latest.triggeredBy.slice(1) : "—", sub: "Latest run" },
-                { label: "VIEWPORT", value: settings.captureScreenshots === "None" ? "—" : settings.captureScreenshots, sub: "" },
+                { label: "START", value: latest ? fmtFull(latest.startedAt) : "â€”", sub: "Latest run" },
+                { label: "END", value: latest?.finishedAt ? fmtFull(latest.finishedAt) : "â€”", sub: "Latest run" },
+                { label: "CI/CD TRIGGER", value: latest ? latest.triggeredBy.charAt(0).toUpperCase() + latest.triggeredBy.slice(1) : "â€”", sub: "Latest run" },
+                { label: "VIEWPORT", value: settings.captureScreenshots === "None" ? "â€”" : settings.captureScreenshots, sub: "" },
               ].map((box) => (
                 <div key={box.label} className="rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-4 py-3">
                   <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9ca3af]">{box.label}</p>
@@ -490,7 +490,7 @@ export function TestPlanDetail({
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-[#4a5565]">{s.casesCount} cases</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-[#9ca3af]">—</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#9ca3af]">â€”</td>
                         <td className="whitespace-nowrap px-4 py-3">
                           <div className="flex items-center gap-3">
                             <CqaIcon name="schedule" className="text-[17px] text-[#9ca3af]" />
@@ -504,7 +504,7 @@ export function TestPlanDetail({
               </div>
               <div className="flex items-center justify-between border-t border-[#f0f1f3] px-4 py-2.5 text-[12px] text-[#6b7280]">
                 <span>Rows per page</span>
-                <span className="tabular-nums">1–{suites.length} of {suites.length}</span>
+                <span className="tabular-nums">1â€“{suites.length} of {suites.length}</span>
               </div>
             </div>
           </div>
@@ -640,7 +640,7 @@ export function TestPlanDetail({
                 {filteredReportExecutions.length === 0 && (
                   <div className={cn(cqaCard, "px-5 py-10 text-center")}>
                     <p className="text-[13.5px] font-medium text-[#374151]">No runs match this filter</p>
-                    <p className="mt-1 text-[12px] text-[#9ca3af]">Choose “All runs” in the filter menu to see every execution.</p>
+                    <p className="mt-1 text-[12px] text-[#9ca3af]">Choose â€œAll runsâ€ in the filter menu to see every execution.</p>
                   </div>
                 )}
                 {filteredReportExecutions.map((e) => {
@@ -684,7 +684,7 @@ export function TestPlanDetail({
                         </div>
                         <div className="mt-3 rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-3 py-2.5">
                           <p className="flex items-center gap-2 text-[12.5px] font-medium text-[#374151]"><CqaIcon name="auto_fix_high" className="text-[16px] text-[#5b4ee8]" /> Auto-fix <span className="font-normal text-[#6b7280]">{e.autoFixed} of {e.failed} recovered</span></p>
-                          <p className="mt-1 text-[11.5px] leading-5 text-[#6b7280]">Auto-fix finished · Analysed {e.failed} failed cases · {e.autoFixed} recovered by auto-fix · the other {Math.max(e.failed - e.autoFixed, 0)} need a person or the application team.</p>
+                          <p className="mt-1 text-[11.5px] leading-5 text-[#6b7280]">Auto-fix finished Â· Analysed {e.failed} failed cases Â· {e.autoFixed} recovered by auto-fix Â· the other {Math.max(e.failed - e.autoFixed, 0)} need a person or the application team.</p>
                         </div>
                       </div>
 
@@ -770,7 +770,7 @@ export function TestPlanDetail({
                     {[
                       ["Triggered By", latest.triggeredBy.charAt(0).toUpperCase() + latest.triggeredBy.slice(1)],
                       ["Start Time", fmtFull(latest.startedAt)],
-                      ["End Time", latest.finishedAt ? fmtFull(latest.finishedAt) : "—"],
+                      ["End Time", latest.finishedAt ? fmtFull(latest.finishedAt) : "â€”"],
                       ["Total Plan Duration", duration(latest.durationMs)],
                       ["Actual TC Execution Time", duration(latest.durationMs)],
                       ["Build No", "-"],
@@ -794,7 +794,7 @@ export function TestPlanDetail({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-[18px] font-semibold text-[#262626]">Schedules</h2>
-              <p className="mt-1 text-[13px] text-[#6b7280]">Run this plan automatically — one-time, recurring, or when a Jira sprint closes</p>
+              <p className="mt-1 text-[13px] text-[#6b7280]">Run this plan automatically â€” one-time, recurring, or when a Jira sprint closes</p>
             </div>
             <button type="button" onClick={() => setScheduleOpen(true)} disabled={readOnly} className={cn(cqaBtnPrimary, "h-9 px-3.5")}><CqaIcon name="add" className="text-[17px]" /> New Schedule</button>
           </div>
@@ -827,7 +827,7 @@ export function TestPlanDetail({
                     <CqaIcon name="schedule" className="text-[18px] text-[#5b4ee8]" />
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium text-[#1f2937]">{s.name}</p>
-                      <p className="mt-0.5 text-[11.5px] text-[#6b7280]">{s.cronExpression} · {s.timezone} · next {s.nextFireAt ? fmtFull(s.nextFireAt) : "—"}</p>
+                      <p className="mt-0.5 text-[11.5px] text-[#6b7280]">{s.cronExpression} Â· {s.timezone} Â· next {s.nextFireAt ? fmtFull(s.nextFireAt) : "â€”"}</p>
                     </div>
                     <StatusPill value={s.enabled ? "active" : "off"} label={s.enabled ? "Enabled" : "Disabled"} />
                     <button type="button" aria-label={`Delete ${s.name}`} disabled={readOnly} onClick={() => void deleteSchedule(s.id)} className={cqaIconBtn}><CqaIcon name="delete" className="text-[17px]" /></button>
@@ -916,7 +916,7 @@ export function TestPlanDetail({
                       <li key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-3 py-2 text-[12.5px]">
                         <CqaIcon name="schedule" className="text-[16px] text-[#5b4ee8]" />
                         <span className="font-medium text-[#1f2937]">{s.name}</span>
-                        <span className="text-[#6b7280]">{s.nextFireAt ? new Date(s.nextFireAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "—"}</span>
+                        <span className="text-[#6b7280]">{s.nextFireAt ? new Date(s.nextFireAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "â€”"}</span>
                         <StatusPill value={s.enabled ? "active" : "off"} label={s.enabled ? "Enabled" : "Disabled"} />
                       </li>
                     ))}
@@ -955,12 +955,12 @@ export function TestPlanDetail({
         <div className="mt-5 max-w-4xl space-y-5">
           <div className={cn(cqaCard, "p-5")}>
             <h2 className="text-[17px] font-semibold text-[#262626]">Trigger this plan from your pipeline</h2>
-            <p className="mt-2 text-[13.5px] leading-5 text-[#6b7280]">Pipelines run this plan through the ContextQA CI integration. Setup steps for every CI are in its repository.</p>
+            <p className="mt-2 text-[13.5px] leading-5 text-[#6b7280]">Pipelines run this plan through the QASyn CI integration. Setup steps for every CI are in its repository.</p>
             <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-4 py-3">
               <CqaIcon name="terminal" className="text-[18px] text-[#5b4ee8]" />
-              <span className="font-mono text-[13px] text-[#111827]">indivatools/contextqa-ci</span>
+              <span className="font-mono text-[13px] text-[#111827]">indivatools/qasyn-ci</span>
               <span className="text-[12px] text-[#6b7280]">Setup for GitHub Actions, GitLab, Jenkins, Azure Pipelines, CircleCI, Bitbucket, or any CI through the CLI</span>
-              <a href="https://github.com/indivatools/contextqa-ci" target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[12.5px] font-medium text-[#5b4ee8] hover:underline">Open setup guide <CqaIcon name="open_in_new" className="text-[15px]" /></a>
+              <a href="https://github.com/indivatools/qasyn-ci" target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[12.5px] font-medium text-[#5b4ee8] hover:underline">Open setup guide <CqaIcon name="open_in_new" className="text-[15px]" /></a>
             </div>
             <div className="mt-4 rounded-lg border border-[#f0f1f3] px-4 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9ca3af]">Test plan ID</p>
@@ -975,17 +975,17 @@ export function TestPlanDetail({
           <div className={cn(cqaCard, "p-5")}>
             <div className="flex flex-wrap items-center gap-2">
               <CqaIcon name="admin_panel_settings" className="text-[19px] text-[#5b4ee8]" />
-              <h3 className="text-[16px] font-semibold text-[#262626]">ContextQA token</h3>
+              <h3 className="text-[16px] font-semibold text-[#262626]">QASyn token</h3>
               <span className="ml-auto rounded border border-[#fde68a] bg-[#fffbeb] px-2 py-[2px] text-[10.5px] font-medium text-[#92400e]">Admin only</span>
             </div>
-            <p className="mt-2 text-[13px] leading-5 text-[#6b7280]">Store it as the CI secret <code className="rounded bg-[#f3f4f6] px-1 py-0.5 text-[11.5px] text-[#374151]">CONTEXTQA_TOKEN</code>. It needs these permissions:</p>
+            <p className="mt-2 text-[13px] leading-5 text-[#6b7280]">Store it as the CI secret <code className="rounded bg-[#f3f4f6] px-1 py-0.5 text-[11.5px] text-[#374151]">QASYN_TOKEN</code>. It needs these permissions:</p>
             <ul className="mt-3 space-y-1.5 text-[12.5px] text-[#374151]">
               {["TEST_PLAN_EXECUTE", "TEST_PLAN_RESULTS_READ", "TEST_CASE_RESULTS_READ optional"].map((scope) => (
                 <li key={scope} className="flex items-center gap-2"><CqaIcon name="check_circle" className="text-[16px] text-[#00a63e]" /> <span className="font-mono text-[11.5px]">{scope}</span></li>
               ))}
             </ul>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Link href="/dashboard/settings/api-tokens/new" className={cqaBtnPrimary}><CqaIcon name="key" className="text-[17px]" /> Generate ContextQA token</Link>
+              <Link href="/dashboard/settings/api-tokens/new" className={cqaBtnPrimary}><CqaIcon name="key" className="text-[17px]" /> Generate QASyn token</Link>
               <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6b7280]"><CqaIcon name="info" className="text-[15px]" /> Override the environment or mobile build with <code className="rounded bg-[#f3f4f6] px-1">environment</code>, <code className="rounded bg-[#f3f4f6] px-1">android-build</code> or <code className="rounded bg-[#f3f4f6] px-1">ios-build</code> in your pipeline.</span>
             </div>
           </div>
@@ -1155,7 +1155,7 @@ export function TestPlanDetail({
           <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[#e5e7eb] pt-5">
             {saved && <span className="mr-auto text-[12.5px] font-medium text-[#00a63e]">Settings saved</span>}
             <button type="button" className={cqaBtnSecondary} disabled={readOnly} onClick={() => { setSettings({ ...plan.settings, recovery: { ...DEFAULT_RECOVERY, ...plan.settings.recovery } }); setSaved(false); }}>Discard</button>
-            <button type="button" className={cqaBtnPrimary} disabled={readOnly || pending === "save"} onClick={() => void saveSettings()}>{pending === "save" ? "Saving…" : "Save Changes"}</button>
+            <button type="button" className={cqaBtnPrimary} disabled={readOnly || pending === "save"} onClick={() => void saveSettings()}>{pending === "save" ? "Savingâ€¦" : "Save Changes"}</button>
           </div>
         </div>
       )}
@@ -1198,13 +1198,13 @@ export function TestPlanDetail({
             <span>Pass rate <strong className="text-[#111827]">{latestPercent}%</strong></span>
             <span className="inline-flex items-center gap-1.5"><CqaIcon name="list_alt" className="text-[16px] text-[#6b7280]" /> {matrixCases.length} test cases</span>
             <span className="inline-flex items-center gap-1.5"><CqaIcon name="play_circle" className="text-[16px] text-[#6b7280]" /> {Math.min(executions.length, matrixWindow)} executions shown</span>
-            <span className="inline-flex items-center gap-1.5"><CqaIcon name="calendar_today" className="text-[16px] text-[#6b7280]" /> {executions.length ? `${fmtDay(executions[executions.length - 1].startedAt)} → ${fmtDay(executions[0].startedAt)}` : "—"}</span>
+            <span className="inline-flex items-center gap-1.5"><CqaIcon name="calendar_today" className="text-[16px] text-[#6b7280]" /> {executions.length ? `${fmtDay(executions[executions.length - 1].startedAt)} â†’ ${fmtDay(executions[0].startedAt)}` : "â€”"}</span>
             <span className="inline-flex items-center gap-1.5"><CqaIcon name="tag" className="text-[16px] text-[#6b7280]" /> Plan ID: {plan.planId}</span>
           </div>
 
           {matrixMode === "matrix" ? (
             <div className={cn(cqaCard, "mt-4 overflow-hidden")}>
-              <div className="border-b border-[#f0f1f3] bg-[#fcfcfd] px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">Execution matrix — each column = one test plan run</div>
+              <div className="border-b border-[#f0f1f3] bg-[#fcfcfd] px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">Execution matrix â€” each column = one test plan run</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] border-collapse text-left">
                   <thead>
@@ -1287,7 +1287,7 @@ export function TestPlanDetail({
         footer={
           <>
             <button type="button" className={cqaBtnSecondary} onClick={() => setSuiteOpen(false)}>Cancel</button>
-            <button type="button" className={cqaBtnPrimary} onClick={() => void saveSuites()} disabled={readOnly || pending === "suites"}>{pending === "suites" ? "Saving…" : "Save"}</button>
+            <button type="button" className={cqaBtnPrimary} onClick={() => void saveSuites()} disabled={readOnly || pending === "suites"}>{pending === "suites" ? "Savingâ€¦" : "Save"}</button>
           </>
         }
       >
@@ -1302,7 +1302,7 @@ export function TestPlanDetail({
                 <input type="checkbox" className="mt-1 size-4 accent-[#5b4ee8]" checked={suiteIds.includes(s.id)} onChange={() => setSuiteIds((prev) => (prev.includes(s.id) ? prev.filter((v) => v !== s.id) : [...prev, s.id]))} />
                 <span>
                   <span className="flex items-center gap-2 text-[13px] font-medium text-[#1f2937]"><span className="text-[10.5px] text-[#9ca3af]">{s.code}</span>{s.name}</span>
-                  <span className="mt-0.5 block text-[11.5px] text-[#6b7280]">{s.casesCount} cases · {s.platform}</span>
+                  <span className="mt-0.5 block text-[11.5px] text-[#6b7280]">{s.casesCount} cases Â· {s.platform}</span>
                 </span>
               </label>
             ))}
@@ -1331,7 +1331,7 @@ export function TestPlanDetail({
                       <span className="text-[13px] font-semibold text-[#111827]">Run #{index}</span>
                       <StatusPill value={runStatusLabel(run.status)} label={runStatusLabel(run.status)} />
                     </div>
-                    <p className="mt-1 text-[11.5px] text-[#6b7280]">{fmtFull(run.startedAt)} · {duration(run.durationMs)}</p>
+                    <p className="mt-1 text-[11.5px] text-[#6b7280]">{fmtFull(run.startedAt)} Â· {duration(run.durationMs)}</p>
                     <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] text-[#4a5565]">
                       <span>Passed <strong className="text-[#00a63e]">{run.passed}</strong></span>
                       <span>Failed <strong className="text-[#dc2626]">{run.failed}</strong></span>
@@ -1401,7 +1401,7 @@ export function TestPlanDetail({
           </label>
           <div className="flex justify-end gap-2 border-t border-[#f0f1f3] pt-4">
             <button type="button" className={cqaBtnSecondary} onClick={() => setScheduleOpen(false)}>Cancel</button>
-            <button type="submit" className={cqaBtnPrimary} disabled={pending === "schedule" || !scheduleName.trim() || !scheduleCron.trim()}>{pending === "schedule" ? "Saving…" : "Create schedule"}</button>
+            <button type="submit" className={cqaBtnPrimary} disabled={pending === "schedule" || !scheduleName.trim() || !scheduleCron.trim()}>{pending === "schedule" ? "Savingâ€¦" : "Create schedule"}</button>
           </div>
         </form>
       </Modal>

@@ -1,6 +1,6 @@
-/**
- * Learning catalog — structure extracted from https://learning.contextqa.com/
- * (ContextQA Documentation / Learning Hub, GitBook): sections, roles and workflows.
+﻿/**
+ * Learning catalog â€” structure extracted from https://learning.contextqa.com/
+ * (QASyn Documentation / Learning Hub, GitBook): sections, roles and workflows.
  * Each module maps to an in-app destination so it can be launched directly.
  */
 export interface LearningModule {
@@ -35,7 +35,7 @@ export const LEARNING_SECTIONS: LearningSection[] = [
   {
     name: "Getting Started",
     modules: [
-      m("gs-intro", "Introduction to ContextQA", "Getting Started", "guide", 8, "What ContextQA does: AI-powered test automation, crawl, PR checks and evidence.", "/dashboard/overview", "Open overview"),
+      m("gs-intro", "Introduction to QASyn", "Getting Started", "guide", 8, "What QASyn does: AI-powered test automation, crawl, PR checks and evidence.", "/dashboard/overview", "Open overview"),
       m("gs-quickstart", "Quickstart Guide", "Getting Started", "tutorial", 15, "Create your workspace, connect an environment and run your first crawl.", "/dashboard/crawl", "Start a crawl"),
       m("gs-video", "Video Walkthroughs", "Getting Started", "video", 20, "Watch the full product tour: test cases, execution, reporting and Ship.", "/learning", "Watch"),
       m("gs-demo", "Interactive Demo", "Getting Started", "demo", 10, "Hands-on interactive demo of crawl, generation and execution.", "/dashboard/test-cases", "Open test cases"),
@@ -89,7 +89,7 @@ export const LEARNING_SECTIONS: LearningSection[] = [
       m("ai-gen", "AI Test Generation", "AI Features", "demo", 12, "Generate test cases from a prompt, a crawl or requirements.", "/dashboard/test-cases?new=1", "Generate with AI"),
       m("ai-pr", "PR Impact Analysis", "AI Features", "demo", 10, "Risk-level diff analysis with baseline comparison on every PR.", "/dashboard/pull-requests", "Analyze a PR"),
       m("ai-kb", "Knowledge Base", "AI Features", "guide", 10, "Index website, docs and OpenAPI specs for the AQE engine.", "/dashboard/knowledge-base", "Open knowledge base"),
-      m("ai-agent", "Autonomous Agent Pipeline", "AI Features", "guide", 15, "Crawl → generate → execute → report, without human steps.", "/dashboard/crawl", "Start a crawl"),
+      m("ai-agent", "Autonomous Agent Pipeline", "AI Features", "guide", 15, "Crawl â†’ generate â†’ execute â†’ report, without human steps.", "/dashboard/crawl", "Start a crawl"),
     ],
   },
   {
@@ -101,13 +101,13 @@ export const LEARNING_SECTIONS: LearningSection[] = [
     ],
   },
   {
-    name: "Ship by ContextQA",
+    name: "Ship by QASyn",
     modules: [
-      m("ship-setup", "Set up a Ship Workspace", "Ship by ContextQA", "tutorial", 12, "Connect a repository, pick a baseline and enable PR impact analysis.", "/dashboard/integrations", "Open integrations"),
-      m("ship-dashboard", "Read the Ship Dashboard and Evidence", "Ship by ContextQA", "guide", 10, "Quality score, coverage, regressions and cost avoided per release.", "/dashboard/overview", "Open overview"),
-      m("ship-workflows", "Run Ship Workflows", "Ship by ContextQA", "tutorial", 14, "Autonomous pipeline: crawl, generate, execute, report — no human steps.", "/dashboard/crawl", "Start a crawl"),
-      m("ship-integrations", "Connect Ship Integrations and MCP", "Ship by ContextQA", "guide", 10, "GitHub, GitLab, Jira, Linear, Slack and the MCP server.", "/dashboard/mcp", "Open MCP"),
-      m("ship-security", "Operate Ship Safely", "Ship by ContextQA", "guide", 8, "Audit logs, API tokens, roles and usage controls.", "/dashboard/settings/audits", "Open audits"),
+      m("ship-setup", "Set up a Ship Workspace", "Ship by QASyn", "tutorial", 12, "Connect a repository, pick a baseline and enable PR impact analysis.", "/dashboard/integrations", "Open integrations"),
+      m("ship-dashboard", "Read the Ship Dashboard and Evidence", "Ship by QASyn", "guide", 10, "Quality score, coverage, regressions and cost avoided per release.", "/dashboard/overview", "Open overview"),
+      m("ship-workflows", "Run Ship Workflows", "Ship by QASyn", "tutorial", 14, "Autonomous pipeline: crawl, generate, execute, report â€” no human steps.", "/dashboard/crawl", "Start a crawl"),
+      m("ship-integrations", "Connect Ship Integrations and MCP", "Ship by QASyn", "guide", 10, "GitHub, GitLab, Jira, Linear, Slack and the MCP server.", "/dashboard/mcp", "Open MCP"),
+      m("ship-security", "Operate Ship Safely", "Ship by QASyn", "guide", 8, "Audit logs, API tokens, roles and usage controls.", "/dashboard/settings/audits", "Open audits"),
     ],
   },
   {
@@ -123,7 +123,7 @@ export const LEARNING_SECTIONS: LearningSection[] = [
     modules: [
       m("ref-roles", "Browse by Role", "Reference & Planning", "guide", 8, "Learning paths for Engineers, QA, Eng managers and Founders.", "/dashboard/learning", "Open learning"),
       m("ref-business", "Business Use Cases", "Reference & Planning", "guide", 12, "Requirements to release, regression risk, specialized quality gates.", "/dashboard/requirements", "Open requirements"),
-      m("ref-migrate", "Migrate from Playwright / Selenium / Tosca", "Reference & Planning", "tutorial", 16, "MCP-assisted migration of existing suites to ContextQA.", "/dashboard/knowledge-base", "Open knowledge base"),
+      m("ref-migrate", "Migrate from Playwright / Selenium / Tosca", "Reference & Planning", "tutorial", 16, "MCP-assisted migration of existing suites to QASyn.", "/dashboard/knowledge-base", "Open knowledge base"),
     ],
   },
 ];

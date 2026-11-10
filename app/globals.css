@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 @font-face {
   font-family: "Material Symbols Outlined";
@@ -9,7 +9,7 @@
 }
 
 /*
- * Design system QASyn — tokens relevés sur les pages publiques (inspection craft-anything / HTML) :
+ * Design system QASyn â€” tokens relevÃ©s sur les pages publiques (inspection craft-anything / HTML) :
  *  - site principal : indigo #3D2EE0 / #5B4EE8, encre #15151c, muted #6f7280, line #e8e8ef, navy #121226,
  *    Inter + Instrument Serif (accents italiques), rayons 10px / pill.
  *  - Ship : papier #f7f5f3, carte #eeeae6, ligne #d6d0c8, encre #262626, accent #f24100,
@@ -125,7 +125,7 @@
   background: rgba(255, 255, 255, 0.24);
 }
 
-/* ContextQA live workspace iconography */
+/* QASyn live workspace iconography */
 @layer base {
   .material-symbols-outlined {
     font-family: "Material Symbols Outlined";

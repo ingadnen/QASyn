@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { StudioWorkspace, type StudioStep, type StudioVersion } from "@/components/dashboard/pages/StudioWorkspace";
-import { buildStepsJson } from "@/lib/engine";
+import { buildStepsJson, repairLegacyTestUrls } from "@/lib/engine";
 import { prisma } from "@/lib/db";
 import {
   DEFAULT_ORGANIZATION_PREFERENCES,
@@ -30,6 +30,7 @@ function statusLabel(status: string) {
 /** Shared Test Studio page used by /dashboard/test-cases/[id] and /dashboard/test-studio/[id]. */
 export default async function StudioPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireOrgContext();
+  await repairLegacyTestUrls(ctx.org.id, ctx.org.website);
   const { id } = await params;
   const [tc, allCases, environment, knowledge, proxies, remotes, viewport] = await Promise.all([
     prisma.testCase.findFirst({

@@ -21,7 +21,7 @@ export interface TestCaseRow {
   lastRunAt: string | null;
 }
 
-export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow[]; readOnly: boolean; openNew: boolean }) {
+export function TestCasesClient({ rows, readOnly, openNew, orgUrl = "" }: { rows: TestCaseRow[]; readOnly: boolean; openNew: boolean; orgUrl?: string }) {
   const { run, pending, error } = useAction();
   const [q, setQ] = useState("");
   const [module, setModule] = useState("all");
@@ -202,7 +202,7 @@ export function TestCasesClient({ rows, readOnly, openNew }: { rows: TestCaseRow
       </Card>
       )}
 
-      <NewTestCasesModal open={modalOpen} onClose={() => setModalOpen(false)} modules={modules} onCreated={(n) => setNotice(`${n} test case${n === 1 ? "" : "s"} created`)} />
+      <NewTestCasesModal open={modalOpen} onClose={() => setModalOpen(false)} modules={modules} orgUrl={orgUrl} onCreated={(n) => setNotice(`${n} test case${n === 1 ? "" : "s"} created`)} />
     </div>
   );
 }
@@ -316,7 +316,7 @@ function ModularTree({ rows, module, setModule }: { rows: TestCaseRow[]; module:
   );
 }
 
-function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolean; onClose: () => void; modules: string[]; onCreated: (n: number) => void }) {
+function NewTestCasesModal({ open, onClose, modules, onCreated, orgUrl }: { open: boolean; onClose: () => void; modules: string[]; onCreated: (n: number) => void; orgUrl: string }) {
   const { run, pending, error, setError } = useAction();
   const [method, setMethod] = useState<"ai" | "import" | "record" | "manual">("ai");
   const [step, setStep] = useState(1);
@@ -325,21 +325,36 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
   const [criticality, setCriticality] = useState<Criticality>("medium");
   const [stepsCount, setSteps] = useState(3);
   const [prompt, setPrompt] = useState("");
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(orgUrl);
   const [requirementName, setRequirementName] = useState("");
   const [count, setCount] = useState(3);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const safeModule = !module.trim() || module.trim().toLowerCase() === "all" ? "Core" : module.trim();
+    const targetUrl = url.trim() || orgUrl;
     if (method === "record") {
-      window.location.href = `/dashboard/recorder${url ? `?url=${encodeURIComponent(url)}` : ""}`.replace("/dashboard/recorder", "/dashboard/recorder");
+      window.location.href = `/dashboard/recorder${targetUrl ? `?url=${encodeURIComponent(targetUrl)}` : ""}`;
+      return;
+    }
+    if (method === "import") {
+      const parsed = prompt
+        .split("\n")
+        .map((line) => line.split(","))
+        .filter((parts) => parts.length >= 2 && parts[0] && parts[1]);
+      for (const [t, m] of parsed) {
+        await run("import", "/api/dashboard/test-cases", {
+          json: { mode: "manual", title: t.trim(), module: (m || safeModule).trim(), criticality, stepsCount, targetUrl },
+        });
+      }
+      onCreated(parsed.length);
+      onClose();
       return;
     }
     const json =
       method === "manual"
-        ? { mode: "manual", title, module: safeModule, criticality, stepsCount }
-        : { mode: "ai", module: safeModule, criticality, prompt: prompt || (url ? `Explore ${url}` : ""), count };
+        ? { mode: "manual", title, module: safeModule, criticality, stepsCount, targetUrl }
+        : { mode: "ai", module: safeModule, criticality, prompt: prompt || (targetUrl ? `Explore ${targetUrl}` : ""), count, targetUrl };
     const res = await run<{ created: number }>("create", "/api/dashboard/test-cases", { json });
     if (res) {
       onCreated(res.created);
@@ -386,9 +401,9 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
           </div>
         ) : (
           <>
+            <Input label="Target URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.cgi.com" required />
             {method === "ai" && (
               <>
-                <Input label="Target URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.your-domain.com/login" />
                 <Input label="Prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} placeholder="Sign in, add a product, apply a coupon, complete checkout. Cover payment validation." />
                 <Input label="Requirement name (optional)" value={requirementName} onChange={(e) => setRequirementName(e.target.value)} placeholder="Requirement name (optional)" />
               </>
@@ -401,7 +416,7 @@ function NewTestCasesModal({ open, onClose, modules, onCreated }: { open: boolea
             )}
             {method === "record" && (
               <div className="space-y-3">
-                <Input label="Application URL to record" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://app.your-domain.com/login" />
+                <p className="text-xs text-slate-500">Record &amp; Play opens the recorder with the Target URL above pre-filled.</p>
                 <p className="text-xs text-slate-500">Record & Play opens the recorder with this URL pre-filled.</p>
               </div>
             )}

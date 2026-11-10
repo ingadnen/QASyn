@@ -1,7 +1,9 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { TestCasesParity, type ParityFolder, type ParityStep } from "@/components/dashboard/pages/TestCasesParity";
 import { prisma } from "@/lib/db";
-import { requireOrgContext } from "@/lib/tenant";
+import { repairLegacyTestUrls } from "@/lib/engine";
+import { can } from "@/lib/rbac";
 import { initialsOf } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Test cases" };
@@ -28,7 +30,8 @@ export default async function TestCasesPage({
 }: {
   searchParams: Promise<{ new?: string; tab?: string }>;
 }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("testCases");
+  await repairLegacyTestUrls(ctx.org.id, ctx.org.website);
   const { new: openNew, tab } = await searchParams;
   const [testCases, components, folderRows] = await Promise.all([
     prisma.testCase.findMany({
@@ -85,10 +88,11 @@ export default async function TestCasesPage({
       groups={groups}
       folders={folders}
       modules={modules.length ? modules : ["Core"]}
-      readOnly={ctx.readOnly}
+      readOnly={ctx.readOnly || !can(ctx.user.role, "testCasesEdit")}
       openNew={openNew === "1"}
       initialTab={tab === "groups" ? "groups" : "cases"}
       userName={ctx.user.name}
+      orgUrl={ctx.org.website ?? ""}
     />
   );
 }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -47,13 +47,13 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
           </svg>
         </span>
         <div>
-          <p className="text-sm font-semibold text-slate-900">Robot QA · Autonomous Crawl</p>
+          <p className="text-sm font-semibold text-slate-900">Robot QA Â· Autonomous Crawl</p>
           <p className="text-xs text-slate-600">Map your application and generate reviewed test cases automatically.</p>
         </div>
       </div>
       <button type="button" onClick={() => setConfigOpen((v) => !v)} aria-expanded={configOpen} className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-700">
-        <span>⚙ {configOpen ? "Hide Configuration Options" : "Show Configuration Options"}</span>
-        <span>{configOpen ? "▾" : "▸"}</span>
+        <span>âš™ {configOpen ? "Hide Configuration Options" : "Show Configuration Options"}</span>
+        <span>{configOpen ? "â–¾" : "â–¸"}</span>
       </button>
       {configOpen && (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -86,7 +86,7 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
                   }}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium ${types.has(t) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600"}`}
                 >
-                  {types.has(t) ? "✓ " : ""}{t}
+                  {types.has(t) ? "âœ“ " : ""}{t}
                 </button>
               ))}
             </div>
@@ -119,8 +119,8 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
             },
           });
           void res.then((r) => {
-            // Live behaviour (mirrors ContextQA): toast + redirect to the AQE live feed.
-            sessionStorage.setItem("qasyn_crawl_notice", r ? `Crawl started — crawling ${url || defaultUrl}` : "");
+            // Live behaviour (mirrors QASyn): toast + redirect to the AQE live feed.
+            sessionStorage.setItem("qasyn_crawl_notice", r ? `Crawl started â€” crawling ${url || defaultUrl}` : "");
             router.push("/dashboard/overview");
           });
         }}
@@ -137,7 +137,7 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
               value={explorePrompt}
               disabled={readOnly}
               onChange={(e) => setExplorePrompt(e.target.value)}
-              placeholder="Tell Robot QA what to explore, e.g. sign in, browse the catalog and add an item to the cart…"
+              placeholder="Tell Robot QA what to explore, e.g. sign in, browse the catalog and add an item to the cartâ€¦"
             />
           </span>
           <span className="mt-1 flex flex-wrap gap-1.5">
@@ -156,7 +156,7 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Requirement Name">
-            <input className={inputCls} value={requirementName} onChange={(e) => setRequirementName(e.target.value)} placeholder={defaultUrl ? `Crawl — ${defaultUrl.replace(/^https?:\/\//, "")}` : "Crawl requirement"} disabled={readOnly} />
+            <input className={inputCls} value={requirementName} onChange={(e) => setRequirementName(e.target.value)} placeholder={defaultUrl ? `Crawl â€” ${defaultUrl.replace(/^https?:\/\//, "")}` : "Crawl requirement"} disabled={readOnly} />
           </Field>
           <label className="block">
             <span className="block text-sm font-medium text-slate-700">Prerequisites</span>
@@ -174,15 +174,15 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
               value={additionalContext}
               disabled={readOnly}
               onChange={(e) => setAdditionalContext(e.target.value)}
-              placeholder="Any credentials, constraints or areas to avoid…"
+              placeholder="Any credentials, constraints or areas to avoidâ€¦"
             />
           </span>
         </label>
-        {publishMode === "Require approval" && <p className="text-xs text-slate-500">“Require Approval” keeps tests in a draft state until manually reviewed.</p>}
+        {publishMode === "Require approval" && <p className="text-xs text-slate-500">â€œRequire Approvalâ€ keeps tests in a draft state until manually reviewed.</p>}
         {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
         <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
           <Button type="button" variant="secondary" onClick={() => onCancel?.()} disabled={pending === "c"}>Cancel</Button>
-          <Button type="submit" loading={pending === "c"} loadingText="Starting…" disabled={readOnly}>Start Crawl</Button>
+          <Button type="submit" loading={pending === "c"} loadingText="Startingâ€¦" disabled={readOnly}>Start Crawl</Button>
         </div>
       </form>
     </div>
@@ -193,7 +193,7 @@ export function CodeAnalysisRun({ hasRepo, readOnly }: { hasRepo: boolean; readO
   const { run, pending, error } = useAction();
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button onClick={() => void run("a", "/api/dashboard/code-analysis")} loading={pending === "a"} loadingText="Analysing…" disabled={readOnly || !hasRepo}>
+      <Button onClick={() => void run("a", "/api/dashboard/code-analysis")} loading={pending === "a"} loadingText="Analysingâ€¦" disabled={readOnly || !hasRepo}>
         Run analysis
       </Button>
       {!hasRepo && <p className="text-xs text-slate-500">Connect GitHub or GitLab in Integrations first.</p>}
@@ -219,7 +219,7 @@ export function RequirementCreate({ readOnly }: { readOnly: boolean }) {
         }}
       >
         <Field label="Code"><input className={inputCls} value={code} onChange={(e) => setCode(e.target.value)} disabled={readOnly} /></Field>
-        <Field label="Title"><input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Users can …" disabled={readOnly} /></Field>
+        <Field label="Title"><input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Users can â€¦" disabled={readOnly} /></Field>
         <Select label="Source" value={source} onChange={setSource} options={["manual", "jira", "linear", "doc", "import"]} />
         <Button type="submit" loading={pending === "r"} disabled={readOnly}>Add</Button>
       </form>
@@ -317,7 +317,7 @@ export function UploadCreate({ readOnly }: { readOnly: boolean }) {
       }}
     >
       <div className="min-w-56 flex-1">
-        <Field label="File name (metadata only — simulated upload)"><input className={inputCls} value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder="build.apk" disabled={readOnly} /></Field>
+        <Field label="File name (metadata only â€” simulated upload)"><input className={inputCls} value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder="build.apk" disabled={readOnly} /></Field>
       </div>
       <Select label="Kind" value={kind} onChange={setKind} options={["apk", "ipa", "har", "postman", "video", "other"]} />
       <Button type="submit" loading={pending === "u"} disabled={readOnly}>Register upload</Button>
@@ -352,7 +352,7 @@ export function KnowledgeCreate({ readOnly }: { readOnly: boolean }) {
 export function TeamInvite({ readOnly }: { readOnly: boolean }) {
   const { run, pending, error } = useAction();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"Engineer" | "QA" | "Eng manager" | "Founder" | "Admin">("Engineer");
+  const [role, setRole] = useState<"Engineer" | "QA" | "Eng manager" | "Founder" | "Admin" | "BA / FA">("Engineer");
   return (
     <form
       className="flex flex-wrap items-end gap-2"
@@ -365,7 +365,7 @@ export function TeamInvite({ readOnly }: { readOnly: boolean }) {
       <div className="min-w-56 flex-1">
         <Field label="E-mail"><input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={readOnly} /></Field>
       </div>
-      <Select label="Role" value={role} onChange={setRole} options={["Engineer", "QA", "Eng manager", "Founder", "Admin"]} />
+      <Select label="Role" value={role} onChange={setRole} options={["Engineer", "QA", "Eng manager", "Founder", "Admin", "BA / FA"]} />
       <Button type="submit" loading={pending === "t"} disabled={readOnly}>Invite</Button>
       {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
     </form>
@@ -389,9 +389,9 @@ export function TunnelActions({ token, enrolled, port, readOnly }: { token: stri
         <Button variant="ghost" onClick={() => void act("disconnect")} loading={pending === "disconnect"} disabled={readOnly}>Disconnect</Button>
       </div>
       <p className="text-sm text-slate-600">
-        Status: {enrolled ? <strong className="text-emerald-600">Connected</strong> : "Not connected"} · Token: <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{shown ?? token ?? "—"}</code>
+        Status: {enrolled ? <strong className="text-emerald-600">Connected</strong> : "Not connected"} Â· Token: <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{shown ?? token ?? "â€”"}</code>
       </p>
-      <p className="text-xs text-slate-500">Install: <code>qa tunnel connect --port {p} --token {shown ?? token ?? "tnl_…"}</code></p>
+      <p className="text-xs text-slate-500">Install: <code>qa tunnel connect --port {p} --token {shown ?? token ?? "tnl_â€¦"}</code></p>
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
     </div>
   );
@@ -409,7 +409,7 @@ export function IntegrationsClient({ items, readOnly }: { items: Array<{ provide
           return (
             <li key={p} className="flex flex-wrap items-center gap-3 py-3">
               <span className="w-24 font-medium capitalize text-slate-800">{p.toLowerCase()}</span>
-              <span className="flex-1 text-sm text-slate-500">{it ? `${it.status}${it.detail ? ` · ${it.detail}` : ""}` : "Not connected"}</span>
+              <span className="flex-1 text-sm text-slate-500">{it ? `${it.status}${it.detail ? ` Â· ${it.detail}` : ""}` : "Not connected"}</span>
               {it ? (
                 <Button variant="danger" size="sm" loading={pending === p} disabled={readOnly} onClick={() => void run(p, `/api/onboarding/integrations/${p}`, { method: "DELETE" })}>Disconnect</Button>
               ) : (
@@ -548,7 +548,7 @@ export function ApiTokenCreate({ readOnly }: { readOnly: boolean }) {
       </form>
       {token && (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Copy it now — it is shown once: <code className="font-mono">{token}</code>
+          Copy it now â€” it is shown once: <code className="font-mono">{token}</code>
         </p>
       )}
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

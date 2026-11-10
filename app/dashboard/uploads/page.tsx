@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { CreateFolderButton, DeleteUploadButton } from "@/components/dashboard/pages/UploadsClient";
 import { CqaIcon, PageHeader, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Uploads" };
 export const dynamic = "force-dynamic";
 
 export default async function UploadsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("uploads");
   const { q = "" } = await searchParams;
   const uploads = await prisma.upload.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" } });
   const filtered = uploads.filter((u) => !q || `${u.fileName} ${u.kind} ${u.uploadedBy}`.toLowerCase().includes(q.toLowerCase()));
@@ -74,7 +75,7 @@ export default async function UploadsPage({ searchParams }: { searchParams: Prom
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[12.5px] capitalize text-[#4b5563]">{u.kind === "other" && u.sizeBytes === 0 ? "Folder" : u.kind}</td>
-                    <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{u.sizeBytes === 0 ? "—" : `${(u.sizeBytes / 1024).toFixed(0)} KB`}</td>
+                    <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{u.sizeBytes === 0 ? "â€”" : `${(u.sizeBytes / 1024).toFixed(0)} KB`}</td>
                     <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{u.uploadedBy}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]" title={formatDateTime(u.createdAt)}>
                       {timeAgo(u.createdAt)}

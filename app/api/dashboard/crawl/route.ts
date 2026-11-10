@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { startCrawl } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { guardApi } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay, normalizeWebsite } from "@/lib/utils";
 import { startCrawlSchema } from "@/lib/validation";
 
 /** GET /api/dashboard/crawl — crawl sessions of the displayed organisation. */
 export async function GET() {
-  const guard = await guardApi();
+  const guard = await guardPermission("crawl");
   if (!guard.ok) return guard.response;
   const crawls = await prisma.crawlSession.findMany({
     where: { organisationId: guard.ctx.org.id },
@@ -21,7 +21,7 @@ export async function GET() {
 
 /** POST /api/dashboard/crawl { targetUrl? } — starts a crawl (defaults to the organisation website). */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("crawlRun", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
 

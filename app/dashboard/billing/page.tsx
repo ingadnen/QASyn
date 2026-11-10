@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { BillingUsage } from "@/components/dashboard/pages/BillingUsage";
 import { prisma } from "@/lib/db";
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "Billing" };
 export const dynamic = "force-dynamic";
 
 export default async function BillingPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("billing");
   await ensureCreditLedger(ctx.org);
   const entries = await prisma.creditEntry.findMany({
     where: { organisationId: ctx.org.id },

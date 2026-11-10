@@ -1,36 +1,357 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CqaIcon, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaIconBtn } from "@/components/dashboard/ui";
+import { useEffect, useMemo, useState } from "react";
+import {
+  CqaIcon,
+  cqaBtnPrimary,
+  cqaBtnSecondary,
+  cqaCard,
+  cqaIconBtn,
+  cqaInput,
+  cqaLabel,
+} from "@/components/dashboard/ui";
+import { apiFetch, errorMessage } from "@/lib/api";
+import { can } from "@/lib/rbac";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
-const MCP_URL = "https://mcp.contextqa.com/mcp";
-const DOCS_URL = "https://mcp.contextqa.com/docs";
+/** Local MCP endpoints served by this QASyn instance. */
+const MCP_SSE = "http://localhost:3000/api/mcp/sse";
+const MCP_JSONRPC = "http://localhost:3000/api/mcp";
+const TOKEN_PLACEHOLDER = "cqa_REPLACE_WITH_YOUR_TOKEN";
 
-const AGENT_PROMPT =
-  "Install the ContextQA skills. If you're in Claude Code, run claude plugin marketplace add indivatools/contextqa-skills, then claude plugin install contextqa@contextqa — that installs all thirteen skills and wires up the hosted ContextQA MCP server in one step. If you're in another agent, run npx skills add indivatools/contextqa-skills and select your agent, then point your MCP client at https://mcp.contextqa.com/mcp (setup per client: https://mcp.contextqa.com/docs). Use one installation method. The first MCP tool call opens a browser to sign in — keep the redirect tab open until it finishes. You can read the master skill directly at https://github.com/indivatools/contextqa-skills/blob/main/skills/contextqa/SKILL.md (raw: https://raw.githubusercontent.com/indivatools/contextqa-skills/main/skills/contextqa/SKILL.md). Then use the ContextQA skill when working on tests for this project, and run /cqa-init once to confirm the connection and see what the tenant holds.";
+export interface McpTokenRow {
+  id: string;
+  name: string;
+  tokenPrefix: string;
+  scopes: string[];
+  createdAt: string;
+  lastUsedAt: string | null;
+}
 
-const CODEX_CONFIG = `[mcp_servers.contextqa]\nurl = "https://mcp.contextqa.com/mcp"`;
-const CLAUDE_CODE_CONFIG = `{\n  "mcpServers": {\n    "contextqa": {\n      "type": "http",\n      "url": "https://mcp.contextqa.com/mcp"\n    }\n  }\n}`;
-const CLAUDE_CODE_COMMAND = "claude mcp add --transport http contextqa https://mcp.contextqa.com/mcp";
-const CURSOR_CONFIG = `{\n  "mcpServers": {\n    "contextqa": {\n      "url": "https://mcp.contextqa.com/mcp"\n    }\n  }\n}`;
+type ClientKey =
+  | "claude-code"
+  | "claude-desktop"
+  | "cursor"
+  | "vscode"
+  | "windsurf"
+  | "openai"
+  | "custom";
 
-type ClientKey = "chatgpt" | "claude" | "codex" | "claude-code" | "cursor";
-
-interface Client {
+interface ClientDefinition {
   key: ClientKey;
   name: string;
   description: string;
   icon: string;
+  file: string;
+  steps: string[];
 }
 
-const CLIENTS: Client[] = [
-  { key: "chatgpt", name: "ChatGPT", description: "Chat assistant · Desktop & web", icon: "forum" },
-  { key: "claude", name: "Claude", description: "Chat assistant · Desktop & web", icon: "smart_toy" },
-  { key: "codex", name: "Codex", description: "Coding agent · Terminal", icon: "terminal" },
-  { key: "claude-code", name: "Claude Code", description: "Coding agent · Terminal", icon: "code" },
-  { key: "cursor", name: "Cursor", description: "Code editor · IDE", icon: "edit_square" },
+const CLIENTS: ClientDefinition[] = [
+  {
+    key: "claude-code",
+    name: "Claude Code",
+    description: "CLI coding agent — terminal",
+    icon: "code",
+    file: "Terminal / .mcp.json",
+    steps: [
+      "Run the command once in the project where Claude Code runs.",
+      "Open /mcp inside Claude Code and confirm qasyn is connected.",
+    ],
+  },
+  {
+    key: "claude-desktop",
+    name: "Claude Desktop",
+    description: "Chat assistant — desktop",
+    icon: "smart_toy",
+    file: "claude_desktop_config.json",
+    steps: [
+      "Open Settings → Developer → Edit Config.",
+      "Paste the configuration, save and restart Claude Desktop.",
+    ],
+  },
+  {
+    key: "cursor",
+    name: "Cursor",
+    description: "Code editor — IDE",
+    icon: "edit_square",
+    file: ".cursor/mcp.json",
+    steps: [
+      "Create .cursor/mcp.json at the project root (or ~/.cursor/mcp.json for every project).",
+      "Open Cursor Settings → MCP and enable the qasyn server.",
+    ],
+  },
+  {
+    key: "vscode",
+    name: "VS Code Copilot",
+    description: "Agent mode — VS Code",
+    icon: "terminal",
+    file: ".vscode/mcp.json",
+    steps: [
+      "Add .vscode/mcp.json to the workspace.",
+      "Run “MCP: List Servers” from the Command Palette and start qasyn.",
+    ],
+  },
+  {
+    key: "windsurf",
+    name: "Windsurf",
+    description: "Cascade agent — IDE",
+    icon: "air",
+    file: "~/.codeium/windsurf/mcp_config.json",
+    steps: [
+      "Open the Windsurf MCP configuration file.",
+      "Paste the JSON and click Refresh in the Cascade MCP panel.",
+    ],
+  },
+  {
+    key: "openai",
+    name: "OpenAI / ChatGPT",
+    description: "Connector — web & desktop",
+    icon: "forum",
+    file: "ChatGPT connector",
+    steps: [
+      "Open ChatGPT Settings → Connectors → Advanced → Developer mode.",
+      "Create a connector named QASyn and paste the SSE URL including the token query parameter.",
+    ],
+  },
+  {
+    key: "custom",
+    name: "Custom SSE",
+    description: "Any MCP-compatible client",
+    icon: "cable",
+    file: "JSON-RPC over HTTP",
+    steps: [
+      "Point the client at the SSE endpoint and send the bearer token.",
+      "Send initialize, then tools/list and tools/call as JSON-RPC 2.0.",
+    ],
+  },
 ];
+
+interface ToolDefinition {
+  name: string;
+  label: string;
+  description: string;
+  icon: string;
+  sample: Record<string, unknown>;
+}
+
+/** The six tools featured on this page; all are executable below. */
+const TOOLS: ToolDefinition[] = [
+  {
+    name: "qasyn_get_quality_summary",
+    label: "Quality summary",
+    description: "Coverage, pass rate, regressions, bugs and cost avoided.",
+    icon: "monitoring",
+    sample: {},
+  },
+  {
+    name: "qasyn_list_test_cases",
+    label: "List test cases",
+    description: "Test cases with module, criticality and status.",
+    icon: "fact_check",
+    sample: {},
+  },
+  {
+    name: "qasyn_run_test_case",
+    label: "Run a test case",
+    description: "Execute one test case and return its status and evidence.",
+    icon: "play_circle",
+    sample: { testCaseId: "" },
+  },
+  {
+    name: "qasyn_start_crawl",
+    label: "Start a crawl",
+    description: "Crawl the organisation website and map new flows.",
+    icon: "travel_explore",
+    sample: {},
+  },
+  {
+    name: "qasyn_analyze_pr",
+    label: "Analyze a PR",
+    description: "Map changed files, select impacted tests and decide Go/No-Go.",
+    icon: "merge",
+    sample: {
+      prNumber: 812,
+      branch: "feat/checkout-wallet",
+      title: "Add wallet payments to checkout",
+      files: ["src/checkout/wallet.tsx", "src/api/payments/route.ts", "src/billing/invoice.ts"],
+    },
+  },
+  {
+    name: "qasyn_list_bugs",
+    label: "List bugs",
+    description: "Reproduced bugs with root cause and severity.",
+    icon: "bug_report",
+    sample: {},
+  },
+];
+
+const ROLE_GUIDES: Array<{
+  key: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  tools: string[];
+  prompts: string[];
+}> = [
+  {
+    key: "admin",
+    title: "Admin",
+    subtitle: "Full workspace access",
+    icon: "shield_person",
+    tools: ["qasyn_get_quality_summary", "qasyn_list_test_cases", "qasyn_list_bugs", "qasyn_analyze_pr"],
+    prompts: [
+      "Summarise quality for this workspace and list the top three risks.",
+      "Which critical test cases are failing, and which bugs do they map to?",
+      "Analyse the latest open PR and tell me whether it is safe to merge.",
+    ],
+  },
+  {
+    key: "qa",
+    title: "QA",
+    subtitle: "Test lifecycle",
+    icon: "fact_check",
+    tools: ["qasyn_list_test_cases", "qasyn_run_test_case", "qasyn_list_bugs", "qasyn_start_crawl"],
+    prompts: [
+      "List the critical test cases in the Checkout module.",
+      "Run test case <id> and show me the failure evidence.",
+      "Crawl the website and list the flows that have no test yet.",
+    ],
+  },
+  {
+    key: "engineer",
+    title: "Engineer / Dev",
+    subtitle: "PR, code and tunnels",
+    icon: "code",
+    tools: ["qasyn_analyze_pr", "qasyn_run_test_case", "qasyn_get_quality_summary", "qasyn_list_bugs"],
+    prompts: [
+      "Analyse PR #812 and return the blast radius and impacted tests.",
+      "Run the impacted checkout tests and post the verdict.",
+      "Show me the open bugs with a root cause in auth/refresh.",
+    ],
+  },
+  {
+    key: "ba",
+    title: "Manager / Simple user (BA / FA)",
+    subtitle: "Requirements, review and reporting",
+    icon: "description",
+    tools: ["qasyn_get_quality_summary", "qasyn_list_test_cases", "qasyn_list_bugs"],
+    prompts: [
+      "Which requirements have no passing test coverage?",
+      "Summarise this release in business terms for the steering committee.",
+      "List the reproduced bugs that affect the checkout journey.",
+    ],
+  },
+];
+
+function jsonBlock(value: string) {
+  return value;
+}
+
+function clientSnippet(key: ClientKey, token: string): { title: string; body: string; language: string } {
+  const auth = `Bearer ${token}`;
+  switch (key) {
+    case "claude-code":
+      return {
+        title: "Register the server",
+        language: "bash",
+        body: `claude mcp add --transport sse qasyn ${MCP_SSE} \\\n  --header "Authorization: ${auth}"`,
+      };
+    case "claude-desktop":
+      return {
+        title: "claude_desktop_config.json",
+        language: "json",
+        body: JSON.stringify(
+          {
+            mcpServers: {
+              qasyn: {
+                url: MCP_SSE,
+                headers: { Authorization: auth },
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      };
+    case "cursor":
+      return {
+        title: ".cursor/mcp.json",
+        language: "json",
+        body: JSON.stringify(
+          {
+            mcpServers: {
+              qasyn: {
+                url: MCP_SSE,
+                headers: { Authorization: auth },
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      };
+    case "vscode":
+      return {
+        title: ".vscode/mcp.json",
+        language: "json",
+        body: JSON.stringify(
+          {
+            servers: {
+              qasyn: {
+                type: "sse",
+                url: MCP_SSE,
+                headers: { Authorization: auth },
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      };
+    case "windsurf":
+      return {
+        title: "mcp_config.json",
+        language: "json",
+        body: JSON.stringify(
+          {
+            mcpServers: {
+              qasyn: {
+                serverUrl: MCP_SSE,
+                headers: { Authorization: auth },
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      };
+    case "openai":
+      return {
+        title: "Connector URL",
+        language: "text",
+        body: `${MCP_SSE}?token=${token}`,
+      };
+    default:
+      return {
+        title: "JSON-RPC over HTTP",
+        language: "bash",
+        body: [
+          `# initialize`,
+          `curl -s ${MCP_JSONRPC} \\`,
+          `  -H "Authorization: ${auth}" \\`,
+          `  -H "Content-Type: application/json" \\`,
+          `  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'`,
+          ``,
+          `# list tools`,
+          `curl -s ${MCP_JSONRPC} \\`,
+          `  -H "Authorization: ${auth}" \\`,
+          `  -H "Content-Type: application/json" \\`,
+          `  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'`,
+        ].join("\n"),
+      };
+  }
+}
 
 function useCopy() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -46,311 +367,239 @@ function useCopy() {
   return { copied, copy };
 }
 
-function CodeLine({ value, copied, onCopy, id }: { value: string; copied: boolean; onCopy: () => void; id: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <pre className="min-w-0 flex-1 overflow-x-auto rounded-md bg-[#10141c] px-3 py-2 text-[11.5px] leading-5 text-[#e2e8f0]"><code>{value}</code></pre>
-      <button type="button" className={cn(cqaIconBtn, "mt-1 shrink-0")} aria-label="Copy" onClick={onCopy}>
-        <CqaIcon name={copied ? "check" : "content_copy"} className="text-[16px]" />
-      </button>
-    </div>
-  );
-}
-
-function SegmentTabs({
-  tabs,
-  active,
-  onChange,
-}: {
-  tabs: string[];
-  active: string;
-  onChange: (tab: string) => void;
-}) {
-  return (
-    <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#f3f4f6] p-[3px]">
-      {tabs.map((tab) => (
-        <button
-          key={tab}
-          type="button"
-          role="tab"
-          aria-selected={active === tab}
-          onClick={() => onChange(tab)}
-          className={cn(
-            "rounded-md px-2.5 py-[3px] text-[11px] font-medium transition",
-            active === tab ? "bg-[#5b4ee8] text-white" : "text-[#6b7280] hover:text-[#111827]",
-          )}
-        >
-          {tab}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ClientPanel({ client }: { client: Client }) {
+function CopyButton({ id, value, label }: { id: string; value: string; label?: string }) {
   const { copied, copy } = useCopy();
-  const [method, setMethod] = useState("Command");
+  return (
+    <button
+      type="button"
+      className={cn(cqaBtnSecondary, "h-8 shrink-0 px-2.5 text-[11.5px]")}
+      onClick={() => void copy(id, value)}
+      aria-label={label ?? "Copy"}
+    >
+      <CqaIcon name={copied === id ? "check" : "content_copy"} className="text-[15px]" />
+      {copied === id ? "Copied" : label ?? "Copy"}
+    </button>
+  );
+}
+
+function CodePanel({ title, body, id }: { title: string; body: string; id: string }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <p className="font-mono text-[11px] font-medium text-[#6b7280]">{title}</p>
+        <CopyButton id={id} value={body} />
+      </div>
+      <pre className="max-h-[340px] overflow-auto rounded-lg bg-[#10141c] p-3 text-[11.5px] leading-5 text-[#e2e8f0]">
+        <code>{jsonBlock(body)}</code>
+      </pre>
+    </div>
+  );
+}
+
+export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: McpTokenRow[]; role: string }) {
+  const [tokens, setTokens] = useState<McpTokenRow[]>(initialTokens);
+  const [activeTokenId, setActiveTokenId] = useState<string>(initialTokens[0]?.id ?? "");
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [activeClient, setActiveClient] = useState<ClientKey>("claude-code");
+  const [activeRole, setActiveRole] = useState("admin");
+  const [toolName, setToolName] = useState(TOOLS[0].name);
+  const [argsText, setArgsText] = useState(JSON.stringify(TOOLS[0].sample, null, 2));
+  const [response, setResponse] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
+  const canGenerate = can(userRole, "mcpTokens");
+
+  const token = generatedToken && activeTokenId === tokens[0]?.id ? generatedToken : TOKEN_PLACEHOLDER;
+  const client = CLIENTS.find((item) => item.key === activeClient) ?? CLIENTS[0];
+  const snippet = useMemo(() => clientSnippet(client.key, token), [client.key, token]);
+  const role = ROLE_GUIDES.find((item) => item.key === activeRole) ?? ROLE_GUIDES[0];
+  const tool = TOOLS.find((item) => item.name === toolName) ?? TOOLS[0];
 
   useEffect(() => {
-    setMethod("Command");
-  }, [client.key]);
+    setArgsText(JSON.stringify(tool.sample, null, 2));
+    setResponse(null);
+    setRunError(null);
+  }, [tool]);
 
-  const header = (
-    <div className="flex items-center gap-3">
-      <span className="flex size-10 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#5b4ee8]">
-        <CqaIcon name={client.icon} className="text-[21px]" />
-      </span>
-      <div>
-        <h2 className="text-[15px] font-semibold text-[#111827]">{client.name}</h2>
-        <p className="text-[11.5px] text-[#9ca3af]">{client.description} · about 2 minutes to set up</p>
-      </div>
-    </div>
-  );
-
-  if (client.key === "chatgpt" || client.key === "claude") {
-    const isClaude = client.key === "claude";
-    return (
-      <div className="space-y-4">
-        {header}
-        <div>
-          <h3 className="text-[13px] font-semibold text-[#111827]">Add the ContextQA connector</h3>
-          <p className="mt-1.5 text-[12.5px] leading-5 text-[#6b7280]">
-            Name the {isClaude ? "custom " : ""}connector ContextQA, paste the server URL and {isClaude ? "click Add" : "choose Connect"}.{" "}
-            {isClaude
-              ? "Claude opens the ContextQA sign-in; complete OAuth and return."
-              : "ChatGPT opens the ContextQA sign-in in your browser; complete OAuth and return."}
-          </p>
-        </div>
-        <CodeLine value={MCP_URL} id={`${client.key}-url`} copied={copied === `${client.key}-url`} onCopy={() => void copy(`${client.key}-url`, MCP_URL)} />
-        <button type="button" className={cqaBtnPrimary} onClick={() => void copy(`${client.key}-all`, MCP_URL)}>
-          <CqaIcon name="content_copy" className="text-[16px]" />
-          {copied === `${client.key}-all` ? "Copied" : "Copy configuration"}
-        </button>
-      </div>
-    );
-  }
-
-  if (client.key === "codex") {
-    const isProject = method === "Project";
-    const value = isProject ? CODEX_CONFIG : "codex mcp add contextqa --url https://mcp.contextqa.com/mcp";
-    return (
-      <div className="space-y-4">
-        {header}
-        <div>
-          <h3 className="text-[13px] font-semibold text-[#111827]">Register the ContextQA server</h3>
-          <div className="mt-2">
-            <SegmentTabs tabs={["Command", "Project"]} active={method} onChange={setMethod} />
-          </div>
-          <p className="mt-2 text-[12.5px] leading-5 text-[#6b7280]">
-            {isProject
-              ? "Applies only inside this trusted project. Do not put OAuth credentials in config.toml."
-              : "Run once in the terminal where Codex runs. This writes the server to your user-level Codex configuration."}
-          </p>
-          {isProject && <p className="mt-2 font-mono text-[11.5px] text-[#374151]">.codex/config.toml</p>}
-          <div className="mt-2">
-            <CodeLine value={value} id="codex" copied={copied === "codex"} onCopy={() => void copy("codex", value)} />
-          </div>
-          <p className="mt-2 text-[11.5px] leading-4 text-[#6b7280]">
-            {isProject ? (
-              <>After saving, run <code className="rounded bg-[#f3f4f6] px-1">codex mcp login contextqa</code> and restart the active Codex session.</>
-            ) : (
-              <>Verify and authenticate: <code className="rounded bg-[#f3f4f6] px-1">codex mcp get contextqa</code>, then <code className="rounded bg-[#f3f4f6] px-1">codex mcp login contextqa</code>, then <code className="rounded bg-[#f3f4f6] px-1">codex mcp list</code>.</>
-            )}
-          </p>
-        </div>
-        <button type="button" className={cqaBtnPrimary} onClick={() => void copy("codex-all", value)}>
-          <CqaIcon name="content_copy" className="text-[16px]" />
-          {copied === "codex-all" ? "Copied" : "Copy configuration"}
-        </button>
-      </div>
-    );
-  }
-
-  if (client.key === "claude-code") {
-    const isProject = method === "Project";
-    const value = isProject ? CLAUDE_CODE_CONFIG : CLAUDE_CODE_COMMAND;
-    return (
-      <div className="space-y-4">
-        {header}
-        <div>
-          <h3 className="text-[13px] font-semibold text-[#111827]">Register the ContextQA server</h3>
-          <div className="mt-2">
-            <SegmentTabs tabs={["Command", "Project"]} active={method} onChange={setMethod} />
-          </div>
-          <p className="mt-2 text-[12.5px] leading-5 text-[#6b7280]">
-            {isProject ? "Project-scoped servers may require workspace trust or approval." : "Run once in your project."}
-          </p>
-          {isProject && <p className="mt-2 font-mono text-[11.5px] text-[#374151]">.mcp.json</p>}
-          <div className="mt-2">
-            <CodeLine value={value} id="claude-code" copied={copied === "claude-code"} onCopy={() => void copy("claude-code", value)} />
-          </div>
-          <p className="mt-2 text-[11.5px] leading-4 text-[#6b7280]">
-            Use <code className="rounded bg-[#f3f4f6] px-1">/mcp</code> inside Claude Code to inspect status or complete authentication.
-          </p>
-        </div>
-        <button type="button" className={cqaBtnPrimary} onClick={() => void copy("claude-code-all", value)}>
-          <CqaIcon name="content_copy" className="text-[16px]" />
-          {copied === "claude-code-all" ? "Copied" : "Copy configuration"}
-        </button>
-      </div>
-    );
-  }
-
-  const isProject = method === "Project";
-  return (
-    <div className="space-y-4">
-      {header}
-      <div>
-        <h3 className="text-[13px] font-semibold text-[#111827]">Add the ContextQA configuration</h3>
-        <div className="mt-2">
-          <SegmentTabs tabs={["Global", "Project"]} active={method} onChange={setMethod} />
-        </div>
-        <p className="mt-2 text-[12.5px] leading-5 text-[#6b7280]">
-          {isProject ? "Applies only to this project." : "Applies to every Cursor project on this machine."}
-        </p>
-        <p className="mt-1 font-mono text-[11.5px] text-[#374151]">{isProject ? ".cursor/mcp.json" : "~/.cursor/mcp.json"}</p>
-        <div className="mt-2">
-          <CodeLine value={CURSOR_CONFIG} id="cursor" copied={copied === "cursor"} onCopy={() => void copy("cursor", CURSOR_CONFIG)} />
-        </div>
-        <p className="mt-2 text-[11.5px] leading-4 text-[#6b7280]">
-          Then open Cursor Settings → MCP, find ContextQA and choose Login or Connect to complete OAuth.
-        </p>
-      </div>
-      <button type="button" className={cqaBtnPrimary} onClick={() => void copy("cursor-all", CURSOR_CONFIG)}>
-        <CqaIcon name="content_copy" className="text-[16px]" />
-        {copied === "cursor-all" ? "Copied" : "Copy configuration"}
-      </button>
-    </div>
-  );
-}
-
-export function McpConnect() {
-  const [active, setActive] = useState<ClientKey>("chatgpt");
-  const [skillOpen, setSkillOpen] = useState(false);
-  const [skill, setSkill] = useState<string>("");
-  const [loadingSkill, setLoadingSkill] = useState(false);
-  const { copied, copy } = useCopy();
-  const client = CLIENTS.find((item) => item.key === active) ?? CLIENTS[0];
-
-  async function loadSkill() {
-    if (skill) return skill;
-    setLoadingSkill(true);
+  async function generateToken() {
+    setGenerating(true);
     try {
-      const response = await fetch("/contextqa-skill.md");
-      const text = await response.text();
-      setSkill(text);
-      return text;
-    } catch {
-      const fallback = "Skill preview is unavailable right now.";
-      setSkill(fallback);
-      return fallback;
+      const result = await apiFetch<{
+        token: string;
+        apiToken: { id: string; name: string; tokenPrefix: string; scopesJson: string; createdAt: string; lastUsedAt: string | null };
+      }>("/api/dashboard/api-tokens", {
+        method: "POST",
+        json: {
+          name: `MCP · ${new Date().toLocaleDateString()}`,
+          scopes: ["mcp:read", "mcp:run"],
+          expiresInDays: 90,
+          ipAllowlist: [],
+        },
+      });
+      const row: McpTokenRow = {
+        id: result.apiToken.id,
+        name: result.apiToken.name,
+        tokenPrefix: result.apiToken.tokenPrefix,
+        scopes: ["mcp:read", "mcp:run"],
+        createdAt: result.apiToken.createdAt,
+        lastUsedAt: null,
+      };
+      setTokens((prev) => [row, ...prev]);
+      setGeneratedToken(result.token);
+      setActiveTokenId(row.id);
+      toast("MCP token generated. Copy it now — it is shown only once.", "success");
+    } catch (error) {
+      toast(errorMessage(error), "error");
     } finally {
-      setLoadingSkill(false);
+      setGenerating(false);
     }
   }
 
-  async function downloadSkill() {
-    const content = await loadSkill();
-    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "SKILL.md";
-    anchor.click();
-    URL.revokeObjectURL(url);
+  async function runTool() {
+    setRunning(true);
+    setRunError(null);
+    setResponse(null);
+    try {
+      let args: Record<string, unknown> = {};
+      if (argsText.trim()) args = JSON.parse(argsText) as Record<string, unknown>;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (generatedToken && activeTokenId === tokens[0]?.id) headers.Authorization = `Bearer ${generatedToken}`;
+      const started = performance.now();
+      const res = await fetch("/api/mcp", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: Date.now(),
+          method: "tools/call",
+          params: { name: toolName, arguments: args },
+        }),
+      });
+      const payload = (await res.json()) as Record<string, unknown>;
+      const elapsed = Math.round(performance.now() - started);
+      setResponse(JSON.stringify({ status: res.status, elapsedMs: elapsed, ...payload }, null, 2));
+    } catch (error) {
+      setRunError(errorMessage(error));
+    } finally {
+      setRunning(false);
+    }
   }
+
+  const selectedToken = tokens.find((row) => row.id === activeTokenId);
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-[#111827]">Connect ContextQA</h1>
-        <p className="mt-1 max-w-3xl text-[13.5px] leading-5 text-[#6b7280]">
-          Use ContextQA from ChatGPT, Claude, Cursor, Codex or another MCP-compatible client.
-        </p>
-        <a
-          href={DOCS_URL}
-          target="_blank"
-          rel="noreferrer"
-          className={cn(cqaBtnSecondary, "mt-3")}
-        >
-          <CqaIcon name="description" className="text-[16px]" /> Documentation
-        </a>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-[#111827]">Connect QASyn</h1>
+          <p className="mt-1 max-w-3xl text-[13.5px] leading-5 text-[#6b7280]">
+            Use QASyn from Claude Code, Claude Desktop, Cursor, VS Code Copilot, Windsurf, OpenAI/ChatGPT or any
+            MCP-compatible client. All six QASyn tools execute against this workspace.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ecfdf3] px-3 py-1 text-[12px] font-semibold text-[#067647]">
+          <span className="size-1.5 rounded-full bg-[#17b26a]" /> MCP server online
+        </span>
       </div>
 
-      <section className={cn(cqaCard, "p-4")}>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+      <section className={cn(cqaCard, "p-4")} aria-label="MCP endpoint and token">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">Agent skill</p>
-            <h2 className="mt-1 text-[18px] font-semibold text-[#111827]">Use ContextQA with your AI agent</h2>
-            <p className="mt-2 max-w-2xl text-[12.5px] leading-5 text-[#6b7280]">
-              Download the ContextQA skill and give it to any compatible AI agent. It teaches the agent how and when to use
-              ContextQA to investigate test failures, reproduce bugs and work with your testing workflows.
+            <p className={cqaLabel}>SSE endpoint</p>
+            <div className="flex items-center gap-2">
+              <code
+                data-testid="mcp-endpoint"
+                className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3 py-2 font-mono text-[12px] text-[#374151]"
+              >
+                {MCP_SSE}
+              </code>
+              <CopyButton id="sse" value={MCP_SSE} />
+            </div>
+            <p className="mt-1.5 text-[11.5px] leading-4 text-[#9ca3af]">
+              JSON-RPC fallback: <span className="font-mono text-[#6b7280]">{MCP_JSONRPC}</span>. Authenticate with an
+              organisation-scoped <span className="font-mono">cqa_…</span> token.
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" className={cqaBtnPrimary} onClick={() => void downloadSkill()} disabled={!skill && loadingSkill}>
-                <CqaIcon name="download" className="text-[16px]" /> Download skill
-              </button>
+          </div>
+
+          <div>
+            <p className={cqaLabel}>API token</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                className={cn(cqaInput, "h-9 min-w-[190px] flex-1")}
+                value={activeTokenId}
+                onChange={(event) => setActiveTokenId(event.target.value)}
+                aria-label="MCP API token"
+              >
+                {tokens.length === 0 && <option value="">No token yet</option>}
+                {tokens.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name} · {row.tokenPrefix}…
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
-                className={cqaBtnSecondary}
-                onClick={() => {
-                  setSkillOpen(true);
-                  void loadSkill();
-                }}
+                data-testid="mcp-token-generate"
+                className={cqaBtnPrimary}
+                onClick={() => void generateToken()}
+                disabled={generating || !canGenerate}
+                title={canGenerate ? undefined : "Your role can use MCP but cannot create API tokens."}
               >
-                View skill
-              </button>
-              <button type="button" className={cqaBtnSecondary} onClick={() => void copy("agent-prompt", AGENT_PROMPT)}>
-                <CqaIcon name="content_copy" className="text-[16px]" />
-                {copied === "agent-prompt" ? "Agent prompt copied" : "Copy agent prompt"}
+                <CqaIcon name="key" className="text-[16px]" />
+                {generating ? "Generating…" : "Generate token"}
               </button>
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-[11.5px] text-[#6b7280]">
-              <CqaIcon name="encrypted" className="text-[15px] text-[#9ca3af]" />
-              No ContextQA credentials in the file
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSkillOpen(true)}
-            className="rounded-xl border border-[#e5e7eb] bg-[#fafafa] p-3 text-left transition hover:border-[#cbc6fb]"
-          >
-            <div className="flex items-center gap-2">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-white text-[#5b4ee8] shadow-sm">
-                <CqaIcon name="draft" className="text-[18px]" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[12px] font-semibold text-[#111827]">SKILL.md</p>
-                <p className="text-[10.5px] text-[#9ca3af]">Platform-independent</p>
-              </div>
-              <CqaIcon name="open_in_full" className="ml-auto text-[16px] text-[#9ca3af]" />
-            </div>
-            <p className="mt-2 line-clamp-3 text-[10.5px] leading-4 text-[#9ca3af]">
-              ---
-              <br />
-              name: contextqa
-              <br />
-              license: MIT
+            <p className="mt-1.5 text-[11.5px] leading-4 text-[#9ca3af]">
+              {!canGenerate
+                ? "Your role can use the MCP tools with this dashboard session; token creation is limited to Admin, QA and Engineer roles."
+                : generatedToken
+                  ? "Your new token is embedded in the snippets below. It is shown only once."
+                  : selectedToken
+                    ? `Using ${selectedToken.tokenPrefix}… — the secret is not stored. Generate a token to embed it.`
+                    : "Generate a token to embed it in the snippets below."}
             </p>
-          </button>
+          </div>
         </div>
+
+        {generatedToken && (
+          <div className="mt-3 rounded-lg border border-[#abefc6] bg-[#ecfdf3] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11.5px] font-semibold text-[#067647]">New token — copy it now</p>
+              <CopyButton id="token" value={generatedToken} label="Copy token" />
+            </div>
+            <code data-testid="mcp-token-value" className="mt-1.5 block break-all font-mono text-[12px] text-[#065f46]">
+              {generatedToken}
+            </code>
+          </div>
+        )}
       </section>
 
-      <section className={cn(cqaCard, "overflow-hidden")}>
-        <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
+      <section className={cn(cqaCard, "overflow-hidden")} aria-label="MCP client setup">
+        <div className="grid lg:grid-cols-[250px_minmax(0,1fr)]">
           <nav aria-label="MCP clients" className="border-b border-[#f0f1f3] bg-[#fafafa] p-2 lg:border-b-0 lg:border-r">
-            <p className="px-2 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">Clients</p>
+            <p className="px-2 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">
+              Clients
+            </p>
             {CLIENTS.map((item) => (
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setActive(item.key)}
+                data-client={item.key}
+                onClick={() => setActiveClient(item.key)}
                 className={cn(
                   "flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition",
-                  active === item.key ? "bg-white text-[#111827] shadow-sm ring-1 ring-[#e5e7eb]" : "text-[#4b5563] hover:bg-white/70",
+                  activeClient === item.key
+                    ? "bg-white text-[#111827] shadow-sm ring-1 ring-[#e5e7eb]"
+                    : "text-[#4b5563] hover:bg-white/70",
                 )}
               >
-                <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-md", active === item.key ? "bg-[#f5f3ff] text-[#5b4ee8]" : "bg-white text-[#6b7280]")}>
+                <span
+                  className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-md",
+                    activeClient === item.key ? "bg-[#f5f3ff] text-[#5b4ee8]" : "bg-white text-[#6b7280]",
+                  )}
+                >
                   <CqaIcon name={item.icon} className="text-[18px]" />
                 </span>
                 <span className="min-w-0">
@@ -360,50 +609,219 @@ export function McpConnect() {
               </button>
             ))}
           </nav>
-          <div className="p-4 lg:p-5">
-            <ClientPanel key={client.key} client={client} />
+
+          <div className="space-y-4 p-4 lg:p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#5b4ee8]">
+                <CqaIcon name={client.icon} className="text-[21px]" />
+              </span>
+              <div>
+                <h2 className="text-[15px] font-semibold text-[#111827]">{client.name}</h2>
+                <p className="text-[11.5px] text-[#9ca3af]">
+                  {client.file} · about 2 minutes to set up
+                </p>
+              </div>
+            </div>
+
+            <ol className="space-y-1.5">
+              {client.steps.map((step, index) => (
+                <li key={step} className="flex gap-2 text-[12.5px] leading-5 text-[#4b5563]">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#eef2ff] text-[10.5px] font-semibold text-[#4f46e5]">
+                    {index + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+
+            <CodePanel title={snippet.title} body={snippet.body} id={`client-${client.key}`} />
+
+            {client.key === "openai" && (
+              <p className="text-[11.5px] leading-4 text-[#6b7280]">
+                The token is passed as a query parameter because ChatGPT connectors cannot set custom headers.
+                Rotate the token from Settings → API Tokens if it is exposed.
+              </p>
+            )}
           </div>
         </div>
       </section>
 
-      {skillOpen && (
-        <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Skill preview">
-          <button type="button" aria-label="Close skill preview" className="flex-1 bg-[#0f172a]/40" onClick={() => setSkillOpen(false)} />
-          <aside className="flex h-full w-full max-w-[720px] flex-col bg-white shadow-[-24px_0_60px_rgba(15,23,42,0.18)]">
-            <header className="flex items-start justify-between gap-3 border-b border-[#e5e7eb] px-5 py-4">
-              <div className="flex items-center gap-2.5">
-                <span className="flex size-9 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#5b4ee8]">
-                  <CqaIcon name="draft" className="text-[19px]" />
-                </span>
-                <div>
-                  <p className="text-[13px] font-semibold text-[#111827]">SKILL.md</p>
-                  <p className="text-[11px] text-[#9ca3af]">Read-only · Platform-independent · No credentials included</p>
-                </div>
-              </div>
-              <button type="button" className={cqaIconBtn} aria-label="Close" onClick={() => setSkillOpen(false)}>
-                <CqaIcon name="close" className="text-[18px]" />
-              </button>
-            </header>
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <p className="text-[12px] leading-4 text-[#6b7280]">
-                This skill teaches your agent when and how to use the ContextQA tools available through your MCP connection.
-                It contains instructions only; it never includes credentials or workspace data.
-              </p>
-              <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3 text-[11.5px] leading-[18px] text-[#374151]">
-                {loadingSkill ? "Loading skill…" : skill}
-              </pre>
-            </div>
-            <footer className="flex items-center justify-between gap-3 border-t border-[#e5e7eb] px-5 py-3">
-              <p className="max-w-[360px] text-[11px] leading-4 text-[#9ca3af]">
-                Add this skill to any agent that supports the Agent Skills format.
-              </p>
-              <button type="button" className={cqaBtnPrimary} onClick={downloadSkill}>
-                <CqaIcon name="download" className="text-[16px]" /> Download skill
-              </button>
-            </footer>
-          </aside>
+      <section className={cn(cqaCard, "p-4")} aria-label="MCP tool runner">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-[15px] font-semibold text-[#111827]">Run a tool</h2>
+            <p className="mt-0.5 text-[12px] text-[#6b7280]">
+              Sends a real JSON-RPC <span className="font-mono">tools/call</span> request to this workspace.
+            </p>
+          </div>
+          <span className="rounded-full bg-[#f3f4f6] px-2.5 py-1 font-mono text-[10.5px] text-[#4b5563]">
+            {toolName}
+          </span>
         </div>
-      )}
+
+        <div className="mt-3 grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <div className="space-y-1.5">
+            {TOOLS.map((item) => (
+              <button
+                key={item.name}
+                type="button"
+                data-tool={item.name}
+                onClick={() => setToolName(item.name)}
+                className={cn(
+                  "flex w-full items-start gap-2 rounded-lg border px-3 py-2 text-left transition",
+                  toolName === item.name
+                    ? "border-[#a9a1f7] bg-[#f5f4ff]"
+                    : "border-transparent hover:border-[#e5e7eb] hover:bg-[#fafafa]",
+                )}
+              >
+                <CqaIcon
+                  name={item.icon}
+                  className={cn("mt-0.5 text-[17px]", toolName === item.name ? "text-[#5b4ee8]" : "text-[#9ca3af]")}
+                />
+                <span className="min-w-0">
+                  <span className="block text-[12.5px] font-medium text-[#111827]">{item.label}</span>
+                  <span className="block font-mono text-[10px] text-[#9ca3af]">{item.name}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <p className={cqaLabel}>
+                Arguments for <span className="font-mono text-[11.5px]">{tool.name}</span>
+              </p>
+              <textarea
+                className={cn(cqaInput, "h-28 resize-y py-2 font-mono text-[11.5px]")}
+                value={argsText}
+                onChange={(event) => setArgsText(event.target.value)}
+                aria-label="Tool arguments"
+                spellCheck={false}
+              />
+              <p className="mt-1 text-[11px] text-[#9ca3af]">{tool.description}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="mcp-tool-run"
+                className={cqaBtnPrimary}
+                onClick={() => void runTool()}
+                disabled={running}
+              >
+                <CqaIcon name="play_arrow" className="text-[17px]" />
+                {running ? "Running…" : "Run tool"}
+              </button>
+              <CopyButton
+                id="rpc"
+                value={JSON.stringify(
+                  {
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "tools/call",
+                    params: { name: tool.name, arguments: JSON.parse(argsText || "{}") },
+                  },
+                  null,
+                  2,
+                )}
+                label="Copy request"
+              />
+            </div>
+
+            {runError && (
+              <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[12px] text-[#b42318]">
+                {runError}
+              </div>
+            )}
+            {response && (
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9ca3af]">JSON-RPC response</p>
+                  <span className="rounded-full bg-[#ecfdf3] px-2 py-0.5 text-[10px] font-semibold text-[#067647]">
+                    live
+                  </span>
+                </div>
+                <pre
+                  data-testid="mcp-tool-response"
+                  className="max-h-[320px] overflow-auto rounded-lg bg-[#10141c] p-3 font-mono text-[11px] leading-5 text-[#e2e8f0]"
+                >
+                  {response}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className={cn(cqaCard, "p-4")} aria-label="Role guides">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-[15px] font-semibold text-[#111827]">Role guides</h2>
+            <p className="mt-0.5 text-[12px] text-[#6b7280]">
+              What each role should ask its agent to do with QASyn.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {ROLE_GUIDES.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                data-role={item.key}
+                onClick={() => setActiveRole(item.key)}
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-[11.5px] font-medium transition",
+                  activeRole === item.key
+                    ? "bg-[#5b4ee8] text-white"
+                    : "bg-[#f3f4f6] text-[#4b5563] hover:bg-[#e9eaee]",
+                )}
+              >
+                {item.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="rounded-lg border border-[#eef0f3] bg-[#fafafa] p-3">
+            <div className="flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-white text-[#5b4ee8] shadow-sm">
+                <CqaIcon name={role.icon} className="text-[18px]" />
+              </span>
+              <div>
+                <p className="text-[13px] font-semibold text-[#111827]">{role.title}</p>
+                <p className="text-[11px] text-[#9ca3af]">{role.subtitle}</p>
+              </div>
+            </div>
+            <p className="mt-3 text-[10.5px] font-semibold uppercase tracking-wide text-[#9ca3af]">
+              Recommended tools
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {role.tools.map((name) => (
+                <li key={name} className="flex items-center gap-1.5 font-mono text-[11px] text-[#4b5563]">
+                  <CqaIcon name="check_circle" className="text-[14px] text-[#17b26a]" filled />
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9ca3af]">Example prompts</p>
+            <ul className="mt-1.5 space-y-1.5">
+              {role.prompts.map((prompt) => (
+                <li
+                  key={prompt}
+                  className="flex items-start justify-between gap-2 rounded-lg border border-[#eef0f3] px-3 py-2 text-[12px] leading-5 text-[#374151]"
+                >
+                  <span>{prompt}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-[11px] leading-4 text-[#9ca3af]">
+              Admin can access every tool. QA owns the test lifecycle. Engineers focus on PRs, code and tunnels. Managers,
+              BAs and FAs use read-only reporting tools and never destructive billing or token actions.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

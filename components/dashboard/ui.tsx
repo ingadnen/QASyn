@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -42,7 +42,7 @@ export function useAction() {
 }
 
 /* ---------------------------------------------------------------------------
- * ContextQA design tokens (captured from gmailad.contextqa.com)
+ * QASyn design tokens (captured from gmailad.contextqa.com)
  * ------------------------------------------------------------------------- */
 
 export const cqa = {
@@ -277,7 +277,7 @@ export function Toggle({ checked, onChange, label, description }: { checked: boo
 
 export function ReadOnlyHint({ readOnly }: { readOnly: boolean }) {
   if (!readOnly) return null;
-  return <p className="text-xs text-amber-700">Demo workspace · read-only. Switch to your organisation to make changes.</p>;
+  return <p className="text-xs text-amber-700">Demo workspace Â· read-only. Switch to your organisation to make changes.</p>;
 }
 
 /** One-shot API action button usable from Server Components. */

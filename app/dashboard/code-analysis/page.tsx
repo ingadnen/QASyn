@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { CodeAnalysisRowActions } from "@/components/dashboard/pages/CodeAnalysisRowActions";
 import { RunAnalysisButton } from "@/components/dashboard/pages/RunAnalysisButton";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Code Analysis" };
 export const dynamic = "force-dynamic";
 
 export default async function CodeAnalysisPage({ searchParams }: { searchParams: Promise<{ q?: string; provider?: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("codeAnalysis");
   const { q = "", provider = "all" } = await searchParams;
   const [repos, modules] = await Promise.all([
     prisma.integration.findMany({ where: { organisationId: ctx.org.id, provider: { in: ["GITHUB", "GITLAB"] } } }),

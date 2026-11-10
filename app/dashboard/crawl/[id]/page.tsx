@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RequirementDetail, type RequirementDetailData } from "@/components/dashboard/pages/RequirementDetail";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Crawl details" };
 export const dynamic = "force-dynamic";
 
 export default async function CrawlDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("crawl");
   const { id } = await params;
   const [crawl, crawls, environment] = await Promise.all([
     prisma.crawlSession.findFirst({ where: { id, organisationId: ctx.org.id } }),

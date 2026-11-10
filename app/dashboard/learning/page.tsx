@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { LearningBrowser } from "@/components/dashboard/pages/LearningBrowser";
 import { Card, PageHeader } from "@/components/dashboard/ui";
@@ -17,7 +17,7 @@ export default async function DashboardLearningPage() {
       <PageHeader
         kicker="LEARNING HUB"
         title="Learning"
-        description={`Guides and tutorials from the ContextQA Learning Hub, launched directly in ${ctx.org.name}. Trial · ${trialDaysLeft(ctx.org)} days left.`}
+        description={`Guides and tutorials from the QASyn Learning Hub, launched directly in ${ctx.org.name}. Trial Â· ${trialDaysLeft(ctx.org)} days left.`}
         actions={
           <Link href="/learning" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
             Public portal
@@ -31,7 +31,7 @@ export default async function DashboardLearningPage() {
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-brand-500 transition-all" style={{ width: `${stats.pct}%` }} />
             </div>
-            <p className="mt-1 text-xs text-slate-500">{stats.done}/{stats.total} modules completed · {stats.inProgress} in progress</p>
+            <p className="mt-1 text-xs text-slate-500">{stats.done}/{stats.total} modules completed Â· {stats.inProgress} in progress</p>
           </div>
         </div>
       </Card>

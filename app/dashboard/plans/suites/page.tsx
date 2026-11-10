@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { SuitesClient, type SuiteRow } from "@/components/dashboard/pages/SuitesClient";
 import { PageHeader } from "@/components/dashboard/ui";
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "Test suites" };
 export const dynamic = "force-dynamic";
 
 export default async function SuitesPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("plans");
   const suites = await prisma.testSuite.findMany({
     where: { organisationId: ctx.org.id },
     orderBy: { createdAt: "desc" },

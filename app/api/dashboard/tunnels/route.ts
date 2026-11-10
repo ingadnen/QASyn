@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, readSettings, writeSettings } from "@/lib/tenant";
+import { audit, readSettings, writeSettings } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { randomToken } from "@/lib/crypto";
 
 const MACHINE_NAME = /^[a-z][a-z0-9-]{0,20}$/;
@@ -28,7 +29,7 @@ const patchSchema = z.discriminatedUnion("action", [
 
 /** GET /api/dashboard/tunnels — machine list (used by the client after mutations). */
 export async function GET() {
-  const guard = await guardApi();
+  const guard = await guardPermission("tunnels");
   if (!guard.ok) return guard.response;
   const machines = await prisma.tunnelMachine.findMany({
     where: { organisationId: guard.ctx.org.id },
@@ -39,7 +40,7 @@ export async function GET() {
 
 /** POST /api/dashboard/tunnels — reserve a machine and mint a one-time install token. */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("tunnelsManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const parsed = createSchema.safeParse(await readJson(request));
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 
 /** PATCH /api/dashboard/tunnels — renew an expired command, or save alert delivery. */
 export async function PATCH(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("tunnelsManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const parsed = patchSchema.safeParse(await readJson(request));
@@ -105,7 +106,7 @@ export async function PATCH(request: Request) {
 
 /** DELETE /api/dashboard/tunnels?id=… — remove a machine. */
 export async function DELETE(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("tunnelsManage", { write: true });
   if (!guard.ok) return guard.response;
   const id = new URL(request.url).searchParams.get("id") ?? "";
   if (!id) return jsonError("id is required.", 400);

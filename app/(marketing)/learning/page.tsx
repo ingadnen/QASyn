@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { LEARNING_SECTIONS } from "@/lib/learning";
 
-export const metadata: Metadata = { title: "Learning — QASyn" };
+export const metadata: Metadata = { title: "Learning â€” QASyn" };
 export const dynamic = "force-dynamic";
 
 const KIND_LABEL: Record<string, string> = { guide: "Guide", tutorial: "Tutorial", video: "Video", demo: "Interactive demo" };
@@ -10,7 +10,7 @@ const KIND_LABEL: Record<string, string> = { guide: "Guide", tutorial: "Tutorial
 export default function PublicLearningPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-10">
-      <p className="text-xs font-semibold tracking-[0.16em] text-brand-600">CONTEXTQA LEARNING HUB</p>
+      <p className="text-xs font-semibold tracking-[0.16em] text-brand-600">QASYN LEARNING HUB</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Learn AI-powered test automation</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
         Complete reference for AI-powered test automation: no-code / NLP test creation, agentic execution, AI
@@ -43,7 +43,7 @@ export default function PublicLearningPage() {
                   <h3 className="mt-2 text-sm font-semibold text-ink">{mod.title}</h3>
                   <p className="mt-1 flex-1 text-xs leading-relaxed text-muted">{mod.description}</p>
                   <Link href="/dashboard/learning" className="mt-3 text-xs font-semibold text-brand-600 hover:underline">
-                    {mod.cta} →
+                    {mod.cta} â†’
                   </Link>
                 </article>
               ))}
@@ -53,7 +53,7 @@ export default function PublicLearningPage() {
       </div>
 
       <div className="mt-12 rounded-2xl bg-navy-900 p-6 text-white">
-        <h2 className="text-lg font-semibold">See ContextQA test your application in 30 minutes</h2>
+        <h2 className="text-lg font-semibold">See QASyn test your application in 30 minutes</h2>
         <p className="mt-1 text-sm text-slate-300">Book a free demo or create your workspace and run your first crawl today.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/signup" className="rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-400">Start free</Link>

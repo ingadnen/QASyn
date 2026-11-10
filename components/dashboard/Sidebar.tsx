@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/dashboard/ui";
 import { OPEN_CHAT_EVENT } from "@/components/sections/FinQAWidget";
 import { apiFetch, errorMessage } from "@/lib/api";
+import { permissionsFor, type Permission } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -13,6 +14,7 @@ interface NavItem {
   label: string;
   icon: string;
   badge?: string;
+  permission?: Permission;
   children?: NavItem[];
 }
 
@@ -20,21 +22,22 @@ const NAV: Array<{ title: string; items: NavItem[] }> = [
   {
     title: "AUTONOMOUS SDLC",
     items: [
-      { href: "/dashboard/overview", label: "Overview", icon: "grid_view" },
-      { href: "/dashboard/pull-requests", label: "Pull requests", icon: "merge" },
-      { href: "/dashboard/crawl", label: "Crawl", icon: "travel_explore" },
-      { href: "/dashboard/code-analysis", label: "Code Analysis", icon: "code" },
+      { href: "/dashboard/overview", label: "Overview", icon: "grid_view", permission: "overview" },
+      { href: "/dashboard/pull-requests", label: "Pull requests", icon: "merge", permission: "pullRequests" },
+      { href: "/dashboard/crawl", label: "Crawl", icon: "travel_explore", permission: "crawl" },
+      { href: "/dashboard/code-analysis", label: "Code Analysis", icon: "code", permission: "codeAnalysis" },
     ],
   },
   {
     title: "PLATFORM",
     items: [
-      { href: "/dashboard/requirements", label: "Requirements", icon: "description" },
-      { href: "/dashboard/test-cases", label: "Test cases", icon: "fact_check" },
+      { href: "/dashboard/requirements", label: "Requirements", icon: "description", permission: "requirements" },
+      { href: "/dashboard/test-cases", label: "Test cases", icon: "fact_check", permission: "testCases" },
       {
         href: "/dashboard/plans",
         label: "Plans",
         icon: "content_paste_go",
+        permission: "plans",
         children: [
           { href: "/dashboard/plans/suites", label: "Test Suites", icon: "folder_copy" },
           { href: "/dashboard/plans/test-plans", label: "Test Plans", icon: "event_note" },
@@ -44,6 +47,7 @@ const NAV: Array<{ title: string; items: NavItem[] }> = [
         href: "/dashboard/environments",
         label: "Environment & Data",
         icon: "database",
+        permission: "environments",
         children: [
           { href: "/dashboard/environments", label: "Environments", icon: "dns" },
           { href: "/dashboard/environments?tab=profiles", label: "Test Data Profiles", icon: "table_chart" },
@@ -51,28 +55,28 @@ const NAV: Array<{ title: string; items: NavItem[] }> = [
           { href: "/dashboard/environments?tab=auth", label: "Auth Profiles", icon: "key" },
         ],
       },
-      { href: "/dashboard/uploads", label: "Uploads", icon: "cloud_upload" },
-      { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: "article" },
-      { href: "/dashboard/team", label: "Team & access", icon: "group" },
+      { href: "/dashboard/uploads", label: "Uploads", icon: "cloud_upload", permission: "uploads" },
+      { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: "article", permission: "knowledgeBase" },
+      { href: "/dashboard/team", label: "Team & access", icon: "group", permission: "team" },
     ],
   },
   {
     title: "WORK",
     items: [
-      { href: "/dashboard/tunnels", label: "Tunnels", icon: "lan" },
-      { href: "/dashboard/integrations", label: "Integrations", icon: "webhook" },
-      { href: "/dashboard/billing", label: "Billing & usage", icon: "credit_card" },
-      { href: "/dashboard/mcp", label: "MCP", icon: "cable" },
+      { href: "/dashboard/tunnels", label: "Tunnels", icon: "lan", permission: "tunnels" },
+      { href: "/dashboard/integrations", label: "Integrations", icon: "webhook", permission: "integrations" },
+      { href: "/dashboard/billing", label: "Billing & usage", icon: "credit_card", permission: "billing" },
+      { href: "/dashboard/mcp", label: "MCP", icon: "cable", permission: "mcp" },
     ],
   },
 ];
 
 const SETTINGS: NavItem[] = [
-  { href: "/dashboard/settings/organization", label: "Organization Setting", icon: "corporate_fare" },
-  { href: "/dashboard/settings/audits", label: "System Audits", icon: "history" },
-  { href: "/dashboard/settings/analysis", label: "Analysis Settings", icon: "analytics" },
-  { href: "/dashboard/settings/bug-reproduction", label: "Bug Reproduction", icon: "bug_report" },
-  { href: "/dashboard/settings/api-tokens", label: "API Tokens", icon: "vpn_key" },
+  { href: "/dashboard/settings/organization", label: "Organization Setting", icon: "corporate_fare", permission: "settings" },
+  { href: "/dashboard/settings/audits", label: "System Audits", icon: "history", permission: "audits" },
+  { href: "/dashboard/settings/analysis", label: "Analysis Settings", icon: "analytics", permission: "settings" },
+  { href: "/dashboard/settings/bug-reproduction", label: "Bug Reproduction", icon: "bug_report", permission: "settings" },
+  { href: "/dashboard/settings/api-tokens", label: "API Tokens", icon: "vpn_key", permission: "apiTokens" },
 ];
 
 function SymbolIcon({ name, className }: { name: string; className?: string }) {
@@ -90,13 +94,21 @@ export interface SidebarProps {
   readOnly: boolean;
   trialDaysLeft: number;
   plan: string;
+  role: string;
   user: { name: string; email: string; initials: string };
   ownOrgName: string | null;
 }
 
-export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDaysLeft, plan, user, ownOrgName }: SidebarProps) {
+export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDaysLeft, plan, role, user, ownOrgName }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const allowed = permissionsFor(role);
+  const navSections = NAV.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.permission || allowed.has(item.permission)),
+  })).filter((section) => section.items.length > 0);
+  const settings = SETTINGS.filter((item) => !item.permission || allowed.has(item.permission));
+  const canCreateTestCase = allowed.has("testCasesEdit");
   const [expanded, setExpanded] = useState(false);
   const [plansOpen, setPlansOpen] = useState(pathname.startsWith("/dashboard/plans"));
   const [envOpen, setEnvOpen] = useState(pathname.startsWith("/dashboard/environments"));
@@ -228,7 +240,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-white">{orgName}</p>
             <p className="flex items-center gap-1 text-[10.5px] text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-400" /> Live{isDemo ? <span className="text-amber-300"> · demo</span> : null}
+              <span className="size-1.5 rounded-full bg-emerald-400" /> Live{isDemo ? <span className="text-amber-300"> Â· demo</span> : null}
             </p>
           </div>
         )}
@@ -242,6 +254,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         </button>
       </div>
 
+      {canCreateTestCase && (
       <div className={cn("pb-3 pt-1", expanded ? "px-3" : "px-2")}>
         <Link
           href="/dashboard/test-cases?new=1"
@@ -256,9 +269,10 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           {expanded && <span>New Test Cases</span>}
         </Link>
       </div>
+      )}
 
       <nav aria-label="Dashboard" className={cn("dark-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pb-3", expanded ? "px-2" : "px-2")}>
-        {NAV.map((section) => (
+        {navSections.map((section) => (
           <div key={section.title}>
             {expanded ? (
               <p className="px-3 pb-1 text-[9.5px] font-semibold tracking-[0.14em] text-[#5f6b7d]">{section.title}</p>
@@ -268,6 +282,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
             <div className="space-y-0.5">{section.items.map((i) => item(i))}</div>
           </div>
         ))}
+        {settings.length > 0 && (
         <div>
           {expanded ? (
             <p className="px-3 pb-1 text-[9.5px] font-semibold tracking-[0.14em] text-[#5f6b7d]">SETTINGS</p>
@@ -299,7 +314,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           </button>
           {expanded && settingsOpen && (
             <div className="mt-0.5 space-y-0.5 pl-3">
-              {SETTINGS.map((s) => (
+              {settings.map((s) => (
                 <Link
                   key={s.href}
                   href={s.href}
@@ -314,6 +329,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
             </div>
           )}
         </div>
+        )}
       </nav>
 
       <div className={cn("space-y-0.5 border-t border-white/5 py-2", expanded ? "px-2" : "px-2")}>
@@ -339,13 +355,13 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         </button>
         <Link
           href="/dashboard/billing"
-          title={plan === "trial" ? `Trial · ${trialDaysLeft} days left` : `${plan} plan`}
+          title={plan === "trial" ? `Trial Â· ${trialDaysLeft} days left` : `${plan} plan`}
           className={cn("flex items-center gap-2 rounded-lg py-1.5 text-[11.5px] text-amber-300 hover:bg-white/5", expanded ? "px-3" : "justify-center px-0")}
         >
           <SymbolIcon name="workspace_premium" className="text-[18px]" />
           {expanded && (
             <span className="truncate">
-              {plan === "trial" ? `Trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` : `${plan.charAt(0).toUpperCase()}${plan.slice(1)} plan`}
+              {plan === "trial" ? `Trial Â· ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` : `${plan.charAt(0).toUpperCase()}${plan.slice(1)} plan`}
             </span>
           )}
         </Link>
@@ -384,7 +400,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
                   onClick={() => call("/api/auth/switch", { target: "own" })}
                   className="flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-200 hover:bg-white/5 disabled:cursor-default"
                 >
-                  {ownOrgName} {!readOnly && <span className="text-emerald-400">✓</span>}
+                  {ownOrgName} {!readOnly && <span className="text-emerald-400">âœ“</span>}
                 </button>
               ) : (
                 <button role="menuitem" type="button" disabled={busy} onClick={() => call("/api/auth/switch", { target: "own" })} className="block w-full px-3 py-1.5 text-left text-slate-200 hover:bg-white/5">
@@ -399,7 +415,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
                   onClick={() => call("/api/auth/switch", { target: "demo" })}
                   className="flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-200 hover:bg-white/5 disabled:cursor-default"
                 >
-                  Acme (demo) {readOnly && <span className="text-emerald-400">✓</span>}
+                  Acme (demo) {readOnly && <span className="text-emerald-400">âœ“</span>}
                 </button>
               )}
               <div className="my-1 border-t border-white/5" />
@@ -432,12 +448,12 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
 
       <Modal open={helpOpen} onClose={() => setHelpOpen(false)} title="Help & docs">
         <div className="space-y-3 text-sm text-slate-600">
-          <p>QASyn mirrors the ContextQA autonomous quality workspace on local SQLite data.</p>
+          <p>QASyn mirrors the QASyn autonomous quality workspace on local SQLite data.</p>
           <ul className="space-y-2">
-            <li><strong className="text-slate-800">Crawl</strong> — maps your app and turns flows into draft test cases.</li>
-            <li><strong className="text-slate-800">Pull requests</strong> — simulate a PR to see impact analysis and regressions.</li>
-            <li><strong className="text-slate-800">Tunnels</strong> — test localhost through a (simulated) secure tunnel.</li>
-            <li><strong className="text-slate-800">MCP</strong> — query your workspace from an AI assistant with an API token.</li>
+            <li><strong className="text-slate-800">Crawl</strong> â€” maps your app and turns flows into draft test cases.</li>
+            <li><strong className="text-slate-800">Pull requests</strong> â€” simulate a PR to see impact analysis and regressions.</li>
+            <li><strong className="text-slate-800">Tunnels</strong> â€” test localhost through a (simulated) secure tunnel.</li>
+            <li><strong className="text-slate-800">MCP</strong> â€” query your workspace from an AI assistant with an API token.</li>
           </ul>
           <p>
             Questions? Use{" "}

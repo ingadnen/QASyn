@@ -9,7 +9,7 @@ export type Provider = (typeof PROVIDERS)[number];
 export const INTEGRATION_STATUSES = ["CONNECTED", "INDEXING", "FAILED"] as const;
 export type IntegrationStatus = (typeof INTEGRATION_STATUSES)[number];
 
-export const USER_ROLES = ["Engineer", "QA", "Eng manager", "Founder", "Admin"] as const;
+export const USER_ROLES = ["Engineer", "QA", "Eng manager", "Founder", "Admin", "BA / FA"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const PLANS = ["trial", "free", "starter", "pro", "enterprise"] as const;

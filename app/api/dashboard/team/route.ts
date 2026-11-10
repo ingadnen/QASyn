@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { initialsOf } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi } from "@/lib/tenant";
+import { audit } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { inviteSchema } from "@/lib/validation";
 
 export async function GET() {
-  const guard = await guardApi();
+  const guard = await guardPermission("team");
   if (!guard.ok) return guard.response;
   const members = await prisma.user.findMany({
     where: { organisationId: guard.ctx.org.id },
@@ -19,7 +20,7 @@ export async function GET() {
 
 /** POST /api/dashboard/team { email, role } — invites a teammate (simulated e-mail). */
 export async function POST(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("teamManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
 

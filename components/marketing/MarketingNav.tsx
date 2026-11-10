@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -136,7 +136,7 @@ const MENUS: Menu[] = [
         title: "Company",
         links: [
           { href: "/about-us", label: "About Us" },
-          { href: "/why-contextqa", label: "Why ContextQA" },
+          { href: "/why-qasyn", label: "Why QASyn" },
           { href: "/careers", label: "Careers", badge: "Hiring" },
           { href: "/channel-partners", label: "Channel Partners" },
           { href: "/partner-program", label: "Become a Partner" },
@@ -163,7 +163,7 @@ function DesktopMenu({ menu, pathname }: { menu: Menu; pathname: string }) {
         onClick={() => setOpen((v) => !v)}
         className={cn("rounded-full px-3.5 py-1.5 text-sm font-medium transition", active || open ? "bg-brand-50 text-brand-700" : "text-muted hover:text-ink")}
       >
-        {menu.label} ▾
+        {menu.label} â–¾
       </button>
       {open && (
         <div className="absolute left-1/2 top-full z-50 mt-2 w-[640px] -translate-x-1/2 rounded-2xl border border-line bg-white p-6 shadow-2xl">
@@ -249,7 +249,7 @@ export function MarketingNav() {
           {MENUS.map((menu) => (
             <div key={menu.label} className="border-b border-slate-100 py-2">
               <button type="button" className="flex w-full items-center justify-between py-2 text-sm font-semibold text-ink" aria-expanded={mobileMenu === menu.label} onClick={() => setMobileMenu(mobileMenu === menu.label ? null : menu.label)}>
-                {menu.label} <span>{mobileMenu === menu.label ? "▾" : "▸"}</span>
+                {menu.label} <span>{mobileMenu === menu.label ? "â–¾" : "â–¸"}</span>
               </button>
               {mobileMenu === menu.label && (
                 <div className="space-y-3 pb-2 pl-2">

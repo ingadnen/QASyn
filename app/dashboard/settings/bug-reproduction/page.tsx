@@ -1,13 +1,15 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { BugReproductionSettingsForm } from "@/components/dashboard/pages/BugReproductionSettings";
 import { prisma } from "@/lib/db";
-import { DEFAULT_BUG_REPRODUCTION_SETTINGS, readSettings, requireOrgContext } from "@/lib/tenant";
+import { DEFAULT_BUG_REPRODUCTION_SETTINGS, readSettings } from "@/lib/tenant";
+import { can } from "@/lib/rbac";
 
 export const metadata: Metadata = { title: "Bug Reproduction Settings" };
 export const dynamic = "force-dynamic";
 
 export default async function BugReproSettingsPage() {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("settings");
   const [environments, profiles, linear, settings] = await Promise.all([
     prisma.environmentConfig.findMany({ where: { organisationId: ctx.org.id }, select: { id: true, name: true, isDefault: true }, orderBy: { name: "asc" } }),
     prisma.dataProfile.findMany({ where: { organisationId: ctx.org.id }, select: { id: true, name: true, environmentIds: true }, orderBy: { name: "asc" } }),
@@ -22,7 +24,7 @@ export default async function BugReproSettingsPage() {
   };
   return (
     <BugReproductionSettingsForm
-      readOnly={ctx.readOnly}
+      readOnly={ctx.readOnly || !can(ctx.user.role, "settingsManage")}
       initial={initial}
       environments={environments}
       dataProfiles={profiles.map((p) => {

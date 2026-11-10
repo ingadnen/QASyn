@@ -13,18 +13,26 @@ interface RecordedStep {
   selector: string;
 }
 
-const DEMO_PAGES = [
-  { url: "https://your-domain.com", title: "Your Application" },
-  { url: "https://jsonplaceholder.typicode.com/posts/1", title: "JSONPlaceholder post" },
-];
+const FALLBACK_URL = "https://your-domain.com";
+const DEMO_PAGE = { url: "https://jsonplaceholder.typicode.com/posts/1", title: "JSONPlaceholder post" };
 
 /** Simulated Chrome Extension recorder: sandbox viewport + event listener → NLP steps. */
-export function RecorderClient({ organisationName, readOnly }: { organisationName: string; readOnly: boolean }) {
+export function RecorderClient({
+  organisationName,
+  initialUrl,
+  readOnly,
+}: {
+  organisationName: string;
+  initialUrl: string;
+  readOnly: boolean;
+}) {
   const { run, pending, error } = useAction();
   const router = useRouter();
   const [pageIdx, setPageIdx] = useState(0);
   const [steps, setSteps] = useState<RecordedStep[]>([]);
   const [title, setTitle] = useState(`Recorded flow — ${organisationName}`);
+  const [targetUrl, setTargetUrl] = useState(initialUrl || FALLBACK_URL);
+  const [frameUrl, setFrameUrl] = useState(initialUrl || FALLBACK_URL);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const navCount = useRef(0);
@@ -33,14 +41,18 @@ export function RecorderClient({ organisationName, readOnly }: { organisationNam
     setSteps((s) => [...s, { id: `rec-${Date.now()}-${s.length}`, action, target, value, selector: "" }]);
   }
 
+  function pageUrl(index: number) {
+    return index === 0 ? frameUrl : DEMO_PAGE.url;
+  }
+
   // Record navigation when the sandbox page changes.
   useEffect(() => {
     if (navCount.current === 0) {
       navCount.current = 1;
-      push("Navigate", DEMO_PAGES[0].url);
+      push("Navigate", frameUrl || FALLBACK_URL);
       return;
     }
-    push("Navigate", DEMO_PAGES[pageIdx].url);
+    push("Navigate", pageUrl(pageIdx));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageIdx]);
 
@@ -59,7 +71,7 @@ export function RecorderClient({ organisationName, readOnly }: { organisationNam
 
   async function save() {
     const res = await run<{ testCases: Array<{ id: string }> }>("save", "/api/dashboard/test-cases", {
-      json: { mode: "manual", title, module: "Core", criticality: "medium", stepsCount: Math.max(1, steps.length) },
+      json: { mode: "manual", title, module: "Core", criticality: "medium", stepsCount: Math.max(1, steps.length), targetUrl },
     });
     const id = res?.testCases?.[0]?.id;
     if (!id) return;
@@ -71,6 +83,39 @@ export function RecorderClient({ organisationName, readOnly }: { organisationNam
   return (
     <div className="grid gap-6 xl:grid-cols-2">
       <div>
+        <label className="mb-3 block">
+          <span className="text-xs font-semibold text-slate-600">Target URL</span>
+          <div className="mt-1 flex gap-2">
+            <input
+              className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-2 text-sm"
+              value={targetUrl}
+              disabled={readOnly}
+              data-testid="recorder-target-url"
+              aria-label="Target URL"
+              onChange={(e) => setTargetUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setPageIdx(0);
+                  setFrameUrl(targetUrl);
+                  push("Navigate", targetUrl);
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="h-9 shrink-0 rounded-lg bg-brand-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
+              disabled={readOnly}
+              onClick={() => {
+                setPageIdx(0);
+                setFrameUrl(targetUrl);
+                push("Navigate", targetUrl);
+              }}
+            >
+              Load page
+            </button>
+          </div>
+          <span className="mt-1 block text-[11px] text-slate-400">Recorded test cases and their steps use this exact URL.</span>
+        </label>
         <div className="mb-3 flex items-center gap-2">
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">● REC</span>
           <span className="text-xs text-slate-500">Chrome Extension sandbox — interactions below are recorded as NLP steps</span>
@@ -85,25 +130,32 @@ export function RecorderClient({ organisationName, readOnly }: { organisationNam
             <span className="size-2.5 rounded-full bg-amber-400" />
             <span className="size-2.5 rounded-full bg-emerald-400" />
             <div className="flex flex-1 gap-1 pl-2">
-              {DEMO_PAGES.map((p, i) => (
-                <button
-                  key={p.url}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPageIdx(i);
-                  }}
-                  className={`rounded px-2 py-0.5 text-xs ${i === pageIdx ? "bg-white font-semibold text-slate-800 shadow-sm" : "text-slate-500"}`}
-                >
-                  {p.title}
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPageIdx(0);
+                }}
+                className={`max-w-[55%] truncate rounded px-2 py-0.5 text-xs ${pageIdx === 0 ? "bg-white font-semibold text-slate-800 shadow-sm" : "text-slate-500"}`}
+              >
+                Target · {frameUrl.replace(/^https?:\/\//, "").split("/")[0] || FALLBACK_URL}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPageIdx(1);
+                }}
+                className={`rounded px-2 py-0.5 text-xs ${pageIdx === 1 ? "bg-white font-semibold text-slate-800 shadow-sm" : "text-slate-500"}`}
+              >
+                {DEMO_PAGE.title}
+              </button>
             </div>
           </div>
           <iframe
             ref={frameRef}
-            key={pageIdx}
-            src={DEMO_PAGES[pageIdx].url}
+            key={`${pageIdx}-${frameUrl}`}
+            src={pageUrl(pageIdx)}
             title="Sandbox viewport"
             sandbox="allow-same-origin"
             className="h-80 w-full bg-white"

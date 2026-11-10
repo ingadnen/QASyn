@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RequirementDetail, type RequirementDetailData } from "@/components/dashboard/pages/RequirementDetail";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Requirement details" };
 export const dynamic = "force-dynamic";
 
 export default async function RequirementDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("requirements");
   const { id } = await params;
   const [requirement, environment] = await Promise.all([
     prisma.requirement.findFirst({

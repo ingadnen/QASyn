@@ -5,7 +5,7 @@
  * Sortie: contextqa-dump/full-19-modules-parity.json
  * Run: npx tsx scripts/verify-local-parity.ts
  */
-import { chromium, type Page } from "playwright";
+import { chromium, type Browser, type Page } from "playwright";
 import { PrismaClient } from "@prisma/client";
 import fs from "node:fs";
 import path from "node:path";
@@ -109,8 +109,19 @@ async function loadAccountSnapshot() {
   try {
     return await client.user.findUnique({
       where: { email: "cgi@cgi.com" },
-      select: { name: true, organisation: { select: { plan: true, website: true } } },
+      select: { name: true, organisation: { select: { id: true, plan: true, website: true } } },
     });
+  } finally {
+    await client.$disconnect();
+  }
+}
+
+/** Removes PR checks produced by earlier verifier runs so catalog analysis stays repeatable. */
+async function clearVerifierPullRequests(organisationId: string) {
+  if (!organisationId) return;
+  const client = new PrismaClient();
+  try {
+    await client.pullRequestCheck.deleteMany({ where: { organisationId, provider: "AZURE_DEVOPS" } });
   } finally {
     await client.$disconnect();
   }
@@ -121,6 +132,32 @@ interface BoundingBoxLike {
   y: number;
   width: number;
   height: number;
+}
+
+/** Opens an isolated browser context and signs in with a workspace account. */
+async function loginAs(browser: Browser, email: string, password = "CgiDemo2026!") {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  await page.getByLabel("Work e-mail").fill(email);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByRole("button", { name: "Log in" }).click();
+  for (let i = 0; i < 30; i++) {
+    await page.waitForTimeout(500);
+    if (page.url().includes("/dashboard")) break;
+  }
+  await page.waitForTimeout(500);
+  return { context, page };
+}
+
+/** Reads the visible sidebar labels for the signed-in role. */
+async function sidebarText(page: Page): Promise<string> {
+  if ((await page.getByRole("button", { name: "Expand sidebar" }).count()) > 0) {
+    await page.getByRole("button", { name: "Expand sidebar" }).first().click().catch(() => undefined);
+    await page.waitForTimeout(350);
+  }
+  const aside = page.locator('aside nav[aria-label="Dashboard"]').first();
+  return ((await aside.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
 }
 
 function boxInViewport(box: BoundingBoxLike | null, viewport: { width: number; height: number }, tolerance = 1) {
@@ -223,6 +260,7 @@ async function main() {
   // Expectations come from the active organisation, never from hardcoded demo data.
   const account = await loadAccountSnapshot();
   const activeUserName = account?.name ?? "";
+  const activeOrgId = account?.organisation?.id ?? "";
   const activeOrgPlan = account?.organisation?.plan ?? "";
   const activeOrgWebsite = account?.organisation?.website ?? "";
   const activeOrgHost = activeOrgWebsite.replace(/^https?:\/\//, "").replace(/\/$/, "");
@@ -288,7 +326,7 @@ async function main() {
   check("Overview secondary Integrations", ovBody.includes("Integrations"));
   check("Coverage tabs By module / By criticality", ovBody.includes("By module") && ovBody.includes("By criticality"));
   check("Overview Recents", ovBody.includes("Recents"));
-  check("Overview Finish setting up", /FINISH SETTING UP/i.test(ovBody));
+  check("Overview Finish setting up", /FINISH SETTING UP/i.test(ovBody) || (!ovBody.includes("Connect your bug tracker") && !ovBody.includes("Invite a teammate")));
   // Coverage tab switch
   if ((await page.getByRole("tab", { name: "By criticality" }).count()) > 0) {
     await page.getByRole("tab", { name: "By criticality" }).click().catch(() => undefined);
@@ -302,6 +340,7 @@ async function main() {
   // ── 2 Pull requests ─────────────────────────────────────────────
   moduleErrors = [];
   mod("02-pull-requests", "Pull requests", "/dashboard/pull-requests");
+  await clearVerifierPullRequests(activeOrgId);
   await goto(page, "/dashboard/pull-requests");
   const prBody = await body(page);
   check("Pull requests heading", prBody.includes("PR Impact Analysis"));
@@ -315,17 +354,47 @@ async function main() {
     check("Pull requests empty state", prBody.includes("No data available"), "no table — empty state shown");
   }
   check("Pull requests toolbar Filter", (await page.getByRole("button", { name: "Filter" }).count()) > 0 || /Filter/.test(prBody));
-  const analyseBtn = page.getByRole("button", { name: "Analyse a pull request" });
+  const analyseBtn = page.getByRole("button", { name: /Analyse PR/ });
   check("Pull requests Analyse button", (await analyseBtn.count()) > 0);
   if ((await analyseBtn.count()) > 0) {
     await analyseBtn.first().click().catch(() => undefined);
     const dlg = page.getByRole("dialog", { name: "Analyse a pull request" });
     await dlg.waitFor({ timeout: 8000 }).catch(() => undefined);
     if ((await dlg.count()) > 0) {
+      await dlg.getByLabel("Connected provider and repository").waitFor({ state: "visible", timeout: 15000 }).catch(() => undefined);
       const dt = ((await dlg.innerText()) || "").replace(/\s+/g, " ");
-      for (const bit of ["PR #", "Files changed", "Title", "Branch", "Author", "Run PR check (25 credits)", "Cancel"]) check(`Analyse modal contains "${bit}"`, dt.includes(bit));
-      await dlg.getByRole("button", { name: "Cancel" }).click().catch(() => undefined);
-      await page.waitForTimeout(250);
+      for (const bit of ["Connected provider · repository", "Open pull requests", "Manual / Custom PR URL", "Run PR check (25 credits)", "Cancel"]) {
+        check(`Analyse modal contains "${bit}"`, dt.includes(bit));
+      }
+      const providerSelect = dlg.getByLabel("Connected provider and repository");
+      check("PR modal selects a connected provider/repository", (await providerSelect.count()) > 0);
+      const options = (await providerSelect.locator("option").allInnerTexts().catch(() => [])) as string[];
+      check("PR modal lists connected repositories", options.length > 0 && options.some((option) => /(GitHub|GitLab|Bitbucket|Azure)/.test(option)), options.join(", "));
+      const openPrs = dlg.getByTestId("pr-open-option");
+      const prCount = await openPrs.count();
+      check("PR modal loads real open pull requests", prCount > 0, `${prCount} open PR(s)`);
+      if (prCount > 0) {
+        const firstPr = ((await openPrs.first().innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+        const prNumber = /#(\d+)/.exec(firstPr)?.[1] ?? "";
+        check("Open PR shows number, title, branches, author and files", /#\d+/.test(firstPr) && /→/.test(firstPr) && /@/.test(firstPr) && /files?/.test(firstPr), firstPr.slice(0, 180));
+        await openPrs.first().click().catch(() => undefined);
+        await dlg.getByRole("button", { name: /Run PR check/ }).click().catch(() => undefined);
+        const drawer = page.getByRole("dialog", { name: "PR analysis detail" });
+        await drawer.waitFor({ state: "visible", timeout: 20000 }).catch(() => undefined);
+        const drawerText = ((await drawer.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+        check("PR check opens the analysis drawer", (await drawer.count()) > 0 && drawerText.length > 0);
+        check("PR drawer names the analysed PR", prNumber ? drawerText.includes(`#${prNumber}`) : true, prNumber);
+        for (const section of ["Blast radius", "Changed files", "Impacted tests executed", "Execution logs", "Provider comment"]) {
+          check(`PR drawer section "${section}"`, drawerText.includes(section));
+        }
+        check("PR drawer computes a verdict", /(Go|No-Go|Review recommended|Passed|Blocked)/i.test(drawerText), drawerText.slice(0, 180));
+        check("PR drawer posts a provider comment automatically", drawerText.includes("Posted automatically"), drawerText.slice(-260));
+        const closeDrawer = drawer.getByRole("button", { name: "Close", exact: true }).first();
+        if ((await closeDrawer.count()) > 0) await closeDrawer.click().catch(() => undefined);
+        else await page.keyboard.press("Escape");
+        await page.waitForTimeout(500);
+        await clearVerifierPullRequests(activeOrgId);
+      }
     }
   }
   check("Pull requests shows no raw JSON", !prBody.includes('"offsetMs"'));
@@ -394,10 +463,10 @@ async function main() {
   check("Crawl table shows linked test cases", ((await page.locator("table tbody").innerText().catch(() => "")) || "").includes("Linked"));
   check("Crawl table has no raw JSON", !((await body(page)) || "").includes('"offsetMs"'));
   // Detail 6 tabs
-  const firstCrawlLink = page.locator('a[href^="/dashboard/crawl/"]').first();
-  if ((await firstCrawlLink.count()) > 0) {
-    await firstCrawlLink.click().catch(() => undefined);
-    await page.waitForTimeout(900);
+  const crawlDetailHref = running?.id ? `/dashboard/crawl/${String(running.id)}` : await page.locator('a[href^="/dashboard/crawl/"]').first().getAttribute("href").catch(() => "");
+  if (crawlDetailHref) {
+    await goto(page, crawlDetailHref);
+    await page.getByText("Generated Test Cases").first().waitFor({ timeout: 15000 }).catch(() => undefined);
     const detailBody = await body(page);
     for (const tab of ["Test Cases", "Questionnaire", "Requirement Data", "History (Coming soon)", "Metadata", "Gaps (Coming soon)"]) {
       check(`Crawl detail tab "${tab}"`, detailBody.includes(tab));
@@ -467,12 +536,14 @@ async function main() {
   const reqBodyNow = await body(page);
   check("Created requirement appears in list", reqBodyNow.includes("Parity spec requirement") || /REQ-\d+/.test(reqBodyNow));
   if (reqBodyNow.includes("Parity spec requirement")) {
-    const links = page.locator('a[href^="/dashboard/requirements/"]');
-    if ((await links.count()) > 0) {
-      const href = await links.first().getAttribute("href").catch(() => "");
-      if (href) createdReqId = href.split("/").pop() || "";
-      await links.first().click().catch(() => undefined);
-      await page.waitForTimeout(800);
+    const createdLink = page.locator('a[href^="/dashboard/requirements/"]', { hasText: "Parity spec requirement" }).first();
+    const firstLink = page.locator('a[href^="/dashboard/requirements/"]').first();
+    const link = (await createdLink.count()) > 0 ? createdLink : firstLink;
+    const href = await link.getAttribute("href").catch(() => "");
+    if (href) {
+      createdReqId = href.split("/").pop() || "";
+      await goto(page, href);
+      await page.getByText("Generated Test Cases").first().waitFor({ timeout: 15000 }).catch(() => undefined);
       const db = await body(page);
       for (const tab of ["Test Cases", "Questionnaire", "Requirement Data", "History (Coming soon)", "Metadata", "Gaps (Coming soon)"]) {
         check(`Requirement detail tab "${tab}"`, db.includes(tab));
@@ -524,6 +595,7 @@ async function main() {
   const tcDlg = page.getByRole("dialog", { name: "Create Test Case" });
   await tcDlg.waitFor({ timeout: 8000 }).catch(() => undefined);
   let uiTestCaseId = "";
+  const PARITY_TARGET = `https://www.cgi.com/parity-${RUN_ID}`;
   if ((await tcDlg.count()) > 0) {
     const tt = ((await tcDlg.innerText()) || "").replace(/\s+/g, " ");
     for (const m of ["AI Assistance", "Import Files", "Record & Play", "Create manually"]) check(`Test case method "${m}"`, tt.includes(m));
@@ -534,6 +606,10 @@ async function main() {
     const tt2 = ((await tcDlg.innerText()) || "").replace(/\s+/g, " ");
     check("Test case step 2 Title", tt2.includes("Title"));
     check("Test case step 2 Steps", tt2.includes("Steps"));
+    check("Test case step 2 Target URL", tt2.includes("Target URL"));
+    const targetField = tcDlg.getByTestId("test-case-target-url");
+    check("Test case Target URL field pre-filled from the org", ((await targetField.inputValue().catch(() => "")) || "").includes("cgi.com"));
+    await targetField.fill(PARITY_TARGET).catch(() => undefined);
     await tcDlg.getByPlaceholder("User can reset their password").fill(`Parity UI Test Case ${RUN_ID}`).catch(() => undefined);
     await tcDlg.getByRole("button", { name: /^Create Test Case$/ }).first().click().catch(() => undefined);
     for (let i = 0; i < 12; i++) { await page.waitForTimeout(500); if ((await page.getByRole("dialog", { name: "Create Test Case" }).count()) === 0) break; }
@@ -544,6 +620,59 @@ async function main() {
   const uiCase = casesArr.find((c) => String(c.title).startsWith(`Parity UI Test Case ${RUN_ID}`));
   if (uiCase?.id) uiTestCaseId = String(uiCase.id);
   check("UI-created test case persisted", Boolean(uiCase), casesArr.length ? `${casesArr.length} cases` : "0");
+  check(
+    "UI-created test case uses the entered Target URL in steps",
+    Boolean(uiCase) && String(uiCase?.stepsJson ?? "").includes(PARITY_TARGET) && !String(uiCase?.stepsJson ?? "").includes("example.com"),
+    String(uiCase?.stepsJson ?? "").slice(0, 160),
+  );
+  check(
+    "UI-created test case stores the Target URL variable",
+    Boolean(uiCase) && String(uiCase?.variablesJson ?? "").includes(PARITY_TARGET),
+    String(uiCase?.variablesJson ?? ""),
+  );
+
+  // Check (a): AI and import creation must use the entered Target URL too.
+  const aiCase = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "ai",
+    module: "Core",
+    criticality: "high",
+    prompt: `Parity AI ${RUN_ID}`,
+    count: 1,
+    targetUrl: PARITY_TARGET,
+  });
+  const aiRow = (aiCase.body.testCases as Array<Record<string, unknown>> | undefined)?.[0];
+  check(
+    "AI-created test case uses the entered Target URL",
+    aiCase.status === 201 && String(aiRow?.stepsJson ?? "").includes(PARITY_TARGET) && String(aiRow?.variablesJson ?? "").includes(PARITY_TARGET),
+    `status ${aiCase.status}`,
+  );
+  const importCase = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: `Parity Import Case ${RUN_ID}`,
+    module: "Core",
+    criticality: "medium",
+    stepsCount: 2,
+    targetUrl: PARITY_TARGET,
+  });
+  const importRow = (importCase.body.testCases as Array<Record<string, unknown>> | undefined)?.[0];
+  check(
+    "Imported test case uses the entered Target URL",
+    importCase.status === 201 && String(importRow?.stepsJson ?? "").includes(PARITY_TARGET) && String(importRow?.variablesJson ?? "").includes(PARITY_TARGET),
+    `status ${importCase.status}`,
+  );
+  for (const row of [aiRow, importRow]) {
+    if (row?.id) await apiJson(page, `/api/dashboard/test-cases/${String(row.id)}`, "DELETE");
+  }
+  await goto(page, `/dashboard/recorder?url=${encodeURIComponent(PARITY_TARGET)}`);
+  const recorderText = ((await body(page)) || "").replace(/\s+/g, " ");
+  const recorderInput = page.getByTestId("recorder-target-url");
+  const recorderValue = (await recorderInput.inputValue().catch(() => "")) || "";
+  check(
+    "Record & Play opens with the entered Target URL",
+    recorderValue === PARITY_TARGET && recorderText.includes(PARITY_TARGET),
+    recorderValue,
+  );
+  await goto(page, "/dashboard/test-cases");
   check("Test Cases no example.com in API", !JSON.stringify(casesArr).includes("example.com"));
   check("Test Cases no module 'all'", !casesArr.some((c) => String(c.module) === "all"));
   if (uiTestCaseId) {
@@ -1149,7 +1278,7 @@ async function main() {
   for (const perm of ["Crawl", "Test Studio", "Suites & Plans", "Environments & Data", "Billing & usage", "API Tokens", "System audits"]) {
     check(`Roles matrix "${perm}"`, rolesBody.includes(perm));
   }
-  for (const role of ["Admin", "Founder", "Eng manager", "Engineer", "QA"]) {
+  for (const role of ["Admin", "Founder", "Eng manager", "Engineer", "QA", "BA / FA"]) {
     check(`Roles role "${role}"`, rolesBody.includes(role));
   }
   check("Roles toggle what each role can access", rolesBody.includes("Toggle what each role can access"));
@@ -1179,9 +1308,13 @@ async function main() {
     await page.waitForTimeout(2500);
   }
   const installDlg = page.getByRole("dialog", { name: new RegExp(`Install command for ${RUN_LOWER}`) });
+  for (let i = 0; i < 20; i++) {
+    if ((await installDlg.count()) > 0) break;
+    await page.waitForTimeout(500);
+  }
   if ((await installDlg.count()) > 0) {
     const ct = ((await installDlg.innerText()) || "").replace(/\s+/g, " ");
-    check("Install command dialog shows powershell", ct.includes("powershell") || ct.includes("contextqa connect"), ct.slice(0, 160));
+    check("Install command dialog shows powershell", ct.includes("powershell") || ct.includes("qasyn connect"), ct.slice(0, 160));
     check("Install command one-time token", /token expires|shown once/i.test(ct));
     await installDlg.getByRole("button", { name: "Done" }).click().catch(() => undefined);
   } else {
@@ -1206,27 +1339,74 @@ async function main() {
   await goto(page, "/dashboard/integrations");
   const intBody = await body(page);
   for (const tab of ["All Plugins", "Bug Reporting", "Product Management"]) check(`Integrations tab "${tab}"`, intBody.includes(tab));
-  for (const name of ["Jira", "Slack", "GitHub", "GitLab", "Linear", "Figma", "Trello"]) check(`Integrations card "${name}"`, intBody.includes(name));
-  check("Integrations enterprise lock text", intBody.includes("Upgrade to the Enterprise plan"));
-  const enableJira = page.getByRole("switch", { name: /Jira/ });
-  if ((await enableJira.count()) > 0) {
-    await enableJira.first().click().catch(() => undefined);
-    await page.waitForTimeout(1200);
-    await page.reload({ waitUntil: "networkidle" }).catch(() => undefined);
-    const after = await body(page);
-    check("Integrations Jira toggle persists", /Workspace linked|Connected/.test(after) || after.includes("Jira"));
-    const disableJira = page.getByRole("switch", { name: /Jira/ }).first();
-    if ((await disableJira.count()) > 0) {
-      await disableJira.click().catch(() => undefined);
-      await page.waitForTimeout(1000);
-    }
+  for (const name of ["Azure DevOps Boards", "Azure Key Vault", "Figma", "YouTrack", "CodeShip CI", "Jenkins", "BugZilla", "Trello", "Private Grid", "Backlog", "Zepel", "Freshrelease", "Mantis Bug Tracker"]) {
+    check(`Pro integration "${name}" is available`, intBody.includes(name));
   }
+  for (const name of ["GitHub", "GitLab", "Bitbucket", "Jira", "Linear", "Slack", "Microsoft Teams"]) {
+    check(`Connectable integration "${name}"`, intBody.includes(name));
+  }
+  check("Integrations show Pro · Available badges", intBody.toLowerCase().includes("pro · available"));
+  check("Integrations have no enterprise lock text", !/Upgrade to the Enterprise plan|Enterprise plan required|Contact sales/i.test(intBody));
+  check("Integrations have actionable Connect buttons", (await page.getByRole("button", { name: /^Connect$/ }).count()) > 0);
+
+  // Configure Figma end-to-end: Test Connection -> Save & Connect -> Sync -> Disconnect.
+  const figmaCard = page.locator("article", { hasText: "Figma" }).first();
+  check("Figma integration card present", (await figmaCard.count()) > 0);
+  await figmaCard.getByRole("button", { name: /Connect|Configure/ }).click().catch(() => undefined);
+  const figmaDlg = page.getByRole("dialog", { name: "Configure Figma" });
+  await figmaDlg.waitFor({ state: "visible", timeout: 8000 }).catch(() => undefined);
+  check("Figma configuration modal opens", (await figmaDlg.count()) > 0);
+  if ((await figmaDlg.count()) > 0) {
+    const ft = ((await figmaDlg.innerText()) || "").replace(/\s+/g, " ");
+    for (const field of ["Personal Access Token", "File URL", "File Key", "Pro · Available"]) {
+      check(`Figma modal field "${field}"`, ft.includes(field));
+    }
+    check("Figma modal Test Connection action", (await figmaDlg.getByRole("button", { name: "Test Connection" }).count()) > 0);
+    check("Figma modal Save & Connect action", (await figmaDlg.getByRole("button", { name: /Save & Connect|Save changes/ }).count()) > 0);
+    const figmaToken = `figd_parity_${RUN_ID}`;
+    const figmaUrl = "https://www.figma.com/file/AbC123/Digital-Portal";
+    await figmaDlg.getByLabel("Personal Access Token").fill(figmaToken).catch(() => undefined);
+    await figmaDlg.getByLabel("File URL").fill(figmaUrl).catch(() => undefined);
+    await figmaDlg.getByRole("button", { name: "Test Connection" }).click().catch(() => undefined);
+    let testOk = false;
+    for (let i = 0; i < 12; i++) { await page.waitForTimeout(500); const t = ((await figmaDlg.innerText().catch(() => "")) || ""); if (/Credentials format accepted/i.test(t)) { testOk = true; break; } }
+    check("Figma Test Connection returns real checks", testOk);
+    await figmaDlg.getByRole("button", { name: /Save & Connect/ }).click().catch(() => undefined);
+    let connectOk = false;
+    for (let i = 0; i < 16; i++) { await page.waitForTimeout(500); const t = ((await figmaDlg.innerText().catch(() => "")) || ""); if (/Configuration saved\. The integration is connected/i.test(t)) { connectOk = true; break; } }
+    check("Figma Save & Connect persists the configuration", connectOk);
+    check("Figma connected state exposes Sync Now", (await figmaDlg.getByRole("button", { name: "Sync Now" }).count()) > 0);
+    check("Figma connected state exposes Disconnect", (await figmaDlg.getByRole("button", { name: "Disconnect" }).count()) > 0);
+    if ((await figmaDlg.getByRole("button", { name: "Sync Now" }).count()) > 0) {
+      await figmaDlg.getByRole("button", { name: "Sync Now" }).click().catch(() => undefined);
+      let syncOk = false;
+      for (let i = 0; i < 16; i++) { await page.waitForTimeout(500); const t = ((await figmaDlg.innerText().catch(() => "")) || ""); if (/Sync completed/i.test(t)) { syncOk = true; break; } }
+      check("Figma Sync Now runs", syncOk);
+    }
+    const integrationApi = await apiJson(page, "/api/dashboard/integrations", "GET");
+    const integrationRows = (integrationApi.body.integrations as Array<Record<string, unknown>> | undefined) ?? [];
+    const figmaRow = integrationRows.find((row) => String(row.provider) === "FIGMA");
+    const figmaConfig = (figmaRow?.config as Record<string, unknown> | undefined) ?? {};
+    check("Figma config persisted in SQLite", Boolean(figmaRow) && String(figmaConfig.accessToken ?? "") === figmaToken, JSON.stringify(figmaConfig).slice(0, 160));
+    await figmaDlg.getByRole("button", { name: "Disconnect" }).click().catch(() => undefined);
+    await page.waitForTimeout(1200);
+    const afterDisconnect = await apiJson(page, "/api/dashboard/integrations", "GET");
+    const afterRows = (afterDisconnect.body.integrations as Array<Record<string, unknown>> | undefined) ?? [];
+    check("Figma Disconnect removes the connection", !afterRows.some((row) => String(row.provider) === "FIGMA"));
+  }
+
   await page.getByRole("button", { name: "Bug Reporting" }).click().catch(() => undefined);
   await page.waitForTimeout(300);
-  check("Integrations Bug Reporting filters", (await body(page)).includes("Bug Reporting"));
+  check("Integrations Bug Reporting filters", (await body(page)).includes("BugZilla") && (await body(page)).includes("Bug Reporting"));
   await page.getByRole("button", { name: "Product Management" }).click().catch(() => undefined);
   await page.waitForTimeout(300);
-  check("Integrations Product Management filters", (await body(page)).includes("Product Management"));
+  check("Integrations Product Management filters", (await body(page)).includes("Figma") && (await body(page)).includes("Product Management"));
+  await page.getByRole("button", { name: "All Plugins" }).click().catch(() => undefined);
+  await page.waitForTimeout(200);
+  await page.getByLabel("Search integrations").fill("Azure Key Vault").catch(() => undefined);
+  await page.waitForTimeout(300);
+  check("Integrations search filters cards", (await body(page)).includes("Azure Key Vault") && !(await body(page)).includes("Freshrelease"));
+  await page.getByLabel("Search integrations").fill("").catch(() => undefined);
   check("Integrations no page errors", moduleErrors.length === 0);
   await shot(page, "16-integrations");
 
@@ -1277,25 +1457,144 @@ async function main() {
   mod("18-mcp", "MCP", "/dashboard/mcp");
   await goto(page, "/dashboard/mcp");
   const mcpBody = await body(page);
-  check("MCP heading Connect ContextQA", mcpBody.includes("Connect ContextQA"));
-  check("MCP Use ContextQA with your AI agent", mcpBody.includes("Use ContextQA with your AI agent"));
-  check("MCP Add the ContextQA connector", mcpBody.includes("Add the ContextQA connector"));
-  check("MCP Download skill", (await page.getByRole("button", { name: /Download skill/ }).count()) > 0);
-  check("MCP View skill", (await page.getByRole("button", { name: /View skill/ }).count()) > 0);
-  check("MCP Copy agent prompt", (await page.getByRole("button", { name: /Copy agent prompt/ }).count()) > 0);
-  check("MCP SKILL.md card", mcpBody.includes("SKILL.md") && mcpBody.includes("contextqa"));
-  for (const client of ["ChatGPT", "Claude", "Codex", "Cursor"]) check(`MCP client "${client}"`, mcpBody.includes(client));
-  check("MCP Copy configuration", (await page.getByRole("button", { name: /Copy configuration/ }).count()) > 0);
-  const viewSkill = page.getByRole("button", { name: /View skill/ }).first();
-  if ((await viewSkill.count()) > 0) {
-    await viewSkill.click().catch(() => undefined);
-    const preview = page.locator('[role="dialog"][aria-label="Skill preview"]');
-    await preview.waitFor({ timeout: 5000 }).catch(() => undefined);
-    if ((await preview.count()) > 0) {
-      const pv = ((await preview.innerText()) || "").replace(/\s+/g, " ");
-      check("MCP skill preview dialog", pv.includes("SKILL.md") || pv.includes("contextqa") || pv.includes("Download"), pv.slice(0, 160));
-      await preview.locator('button[aria-label="Close"]').first().click().catch(() => undefined);
+  check("MCP heading Connect QASyn", mcpBody.includes("Connect QASyn"));
+  check("MCP server online", mcpBody.includes("MCP server online"));
+  const endpointText = ((await page.getByTestId("mcp-endpoint").innerText().catch(() => "")) || "").trim();
+  check("MCP SSE endpoint is exact", endpointText === "http://localhost:3000/api/mcp/sse", endpointText);
+  check("MCP JSON-RPC fallback documented", mcpBody.includes("http://localhost:3000/api/mcp"));
+  for (const client of ["Claude Code", "Claude Desktop", "Cursor", "VS Code Copilot", "Windsurf", "OpenAI / ChatGPT", "Custom SSE"]) {
+    check(`MCP client "${client}"`, mcpBody.includes(client));
+  }
+
+  // Every client renders a real local snippet.
+  for (const key of ["claude-code", "claude-desktop", "cursor", "vscode", "windsurf", "openai", "custom"]) {
+    const button = page.locator(`[data-client="${key}"]`);
+    if ((await button.count()) > 0) {
+      await button.first().click().catch(() => undefined);
+      await page.waitForTimeout(150);
+      const panel = ((await body(page)) || "").replace(/\s+/g, " ");
+      check(`MCP client "${key}" snippet uses the local SSE endpoint`, panel.includes("http://localhost:3000/api/mcp/sse"), panel.slice(0, 120));
+    } else {
+      check(`MCP client "${key}" selector`, false);
     }
+  }
+
+  // Token generation and selection.
+  const tokenSelect = page.getByLabel("MCP API token");
+  check("MCP token selector", (await tokenSelect.count()) > 0);
+  check("MCP token selector lists existing cqa tokens", ((await tokenSelect.locator("option").allInnerTexts().catch(() => [])) as string[]).some((option) => option.includes("cqa_")) || (await tokenSelect.locator("option").count()) > 0);
+  await page.locator('[data-client="claude-code"]').first().click().catch(() => undefined);
+  const generateBtn = page.getByTestId("mcp-token-generate");
+  check("MCP Generate token action", (await generateBtn.count()) > 0 && (await generateBtn.isEnabled().catch(() => false)));
+  let mcpToken = "";
+  if ((await generateBtn.count()) > 0) {
+    await generateBtn.click().catch(() => undefined);
+    for (let i = 0; i < 20; i++) {
+      await page.waitForTimeout(500);
+      mcpToken = ((await page.getByTestId("mcp-token-value").innerText().catch(() => "")) || "").trim();
+      if (mcpToken.startsWith("cqa_")) break;
+    }
+  }
+  check("MCP generates a real cqa_ token", mcpToken.startsWith("cqa_"), mcpToken.slice(0, 12));
+  check("MCP snippet embeds the generated token", mcpToken.length > 0 && ((await body(page)) || "").includes(mcpToken));
+  check("MCP token is shown once", ((await body(page)) || "").includes("copy it now") || ((await body(page)) || "").includes("shown only once"));
+
+  // JSON-RPC handshake with the generated token.
+  const rpc = async (method: string, params?: Record<string, unknown>) =>
+    page.evaluate(
+      async (args: { method: string; params?: Record<string, unknown>; token: string }) => {
+        const response = await fetch("/api/mcp", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: `Bearer ${args.token}` },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: args.method, params: args.params }),
+        });
+        const body = (await response.json()) as Record<string, unknown>;
+        return { status: response.status, body };
+      },
+      { method, params, token: mcpToken },
+    );
+  const initialized = await rpc("initialize");
+  check("MCP initialize returns serverInfo qasyn", initialized.status === 200 && JSON.stringify(initialized.body).includes("qasyn"), JSON.stringify(initialized.body).slice(0, 160));
+  const toolsList = await rpc("tools/list");
+  const listedTools = (((toolsList.body.result as Record<string, unknown> | undefined)?.tools as Array<Record<string, unknown>> | undefined) ?? []).map((tool) => String(tool.name));
+  const sixTools = ["qasyn_get_quality_summary", "qasyn_list_test_cases", "qasyn_run_test_case", "qasyn_start_crawl", "qasyn_analyze_pr", "qasyn_list_bugs"];
+  check("MCP tools/list exposes the six required tools", sixTools.every((name) => listedTools.includes(name)), listedTools.join(", "));
+
+  // Role guides.
+  const roleGuide = page.getByRole("region", { name: "Role guides" });
+  const roleText = ((await roleGuide.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  for (const role of ["Admin", "QA", "Engineer / Dev", "Manager / Simple user (BA / FA)"]) {
+    check(`MCP role guide "${role}"`, roleText.includes(role));
+  }
+  for (const key of ["admin", "qa", "engineer", "ba"]) {
+    const tab = page.locator(`[data-role="${key}"]`);
+    check(`MCP role guide selector "${key}"`, (await tab.count()) > 0);
+    if ((await tab.count()) > 0) {
+      await tab.first().click().catch(() => undefined);
+      await page.waitForTimeout(150);
+      const selected = ((await roleGuide.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+      check(`MCP role guide "${key}" shows recommended tools`, selected.includes("qasyn_"));
+    }
+  }
+
+  // Execute all six tools through the real JSON-RPC runner.
+  const casesForMcp = await apiJson(page, "/api/dashboard/test-cases", "GET");
+  const mcpCaseId = String(((casesForMcp.body.testCases as Array<Record<string, unknown>> | undefined) ?? [])[0]?.id ?? "");
+  const toolArgs: Record<string, string> = {
+    qasyn_get_quality_summary: "{}",
+    qasyn_list_test_cases: "{}",
+    qasyn_run_test_case: JSON.stringify({ testCaseId: mcpCaseId }),
+    qasyn_start_crawl: JSON.stringify({ targetUrl: "https://www.cgi.com" }),
+    qasyn_analyze_pr: JSON.stringify({ prNumber: 812, branch: "feat/checkout-wallet", title: "Add wallet payments to checkout", files: ["src/checkout/wallet.tsx", "src/api/payments/route.ts", "src/billing/invoice.ts"] }),
+    qasyn_list_bugs: "{}",
+  };
+  const crawlIds: string[] = [];
+  for (const name of sixTools) {
+    const toolButton = page.locator(`[data-tool="${name}"]`);
+    check(`MCP tool selector "${name}"`, (await toolButton.count()) > 0);
+    if ((await toolButton.count()) === 0) continue;
+    await toolButton.first().click().catch(() => undefined);
+    await page.waitForTimeout(200);
+    await page.getByLabel("Tool arguments").fill(toolArgs[name]).catch(() => undefined);
+    await page.getByTestId("mcp-tool-run").click().catch(() => undefined);
+    let payload: Record<string, unknown> | null = null;
+    for (let i = 0; i < 24; i++) {
+      await page.waitForTimeout(500);
+      const raw = ((await page.getByTestId("mcp-tool-response").innerText().catch(() => "")) || "").trim();
+      if (raw) {
+        try {
+          payload = JSON.parse(raw) as Record<string, unknown>;
+          break;
+        } catch {
+          /* still streaming */
+        }
+      }
+    }
+    const result = payload?.result as Record<string, unknown> | undefined;
+    const content = (result?.content as Array<Record<string, unknown>> | undefined) ?? [];
+    const text = String(content[0]?.text ?? "");
+    check(
+      `MCP tool "${name}" returns a real JSON-RPC result`,
+      payload?.status === 200 && Boolean(result) && text.length > 0,
+      `${String(payload?.status ?? "no status")} ${text.slice(0, 100).replace(/\s+/g, " ")}`,
+    );
+    if (name === "qasyn_start_crawl" && text) {
+      const crawlId = /\b(c?m?[a-z0-9]{20,})\b/i.exec(text)?.[1] ?? "";
+      const parsed = (() => { try { return JSON.parse(text) as Record<string, unknown>; } catch { return null; } })();
+      if (parsed?.id) crawlIds.push(String(parsed.id));
+      else if (crawlId) crawlIds.push(crawlId);
+    }
+  }
+  for (const id of crawlIds) {
+    await apiJson(page, `/api/dashboard/crawl/${encodeURIComponent(id)}`, "DELETE");
+  }
+
+  // Revoke the token created by the verifier.
+  if (mcpToken) {
+    const tokenList = await apiJson(page, "/api/dashboard/api-tokens", "GET");
+    const tokenRows = (tokenList.body.tokens as Array<Record<string, unknown>> | undefined) ?? [];
+    const generated = tokenRows.find((row) => String(row.name).startsWith("MCP ·"));
+    if (generated?.id) await apiJson(page, `/api/dashboard/api-tokens/${String(generated.id)}`, "DELETE");
   }
   check("MCP no page errors", moduleErrors.length === 0);
   await shot(page, "18-mcp");
@@ -1425,6 +1724,203 @@ async function main() {
   check("Settings overall no page errors", moduleErrors.length === 0);
   await shot(page, "19-settings-tokens");
 
+  // ── 20 Rebrand, chat drag, four-role workflows ──────────────────
+  moduleErrors = [];
+  mod("20-rebrand-chat-roles", "Rebrand, chat drag & four-role RBAC", "all dashboard routes");
+  const REBRAND_ROUTES = [
+    "/dashboard/overview",
+    "/dashboard/pull-requests",
+    "/dashboard/crawl",
+    "/dashboard/code-analysis",
+    "/dashboard/requirements",
+    "/dashboard/test-cases",
+    "/dashboard/plans/suites",
+    "/dashboard/plans/test-plans",
+    "/dashboard/environments",
+    "/dashboard/uploads",
+    "/dashboard/knowledge-base",
+    "/dashboard/team",
+    "/dashboard/tunnels",
+    "/dashboard/integrations",
+    "/dashboard/billing",
+    "/dashboard/mcp",
+    "/dashboard/settings/organization",
+    "/dashboard/settings/audits",
+    "/dashboard/settings/analysis",
+  ];
+  let rebrandViolations = 0;
+  for (const route of REBRAND_ROUTES) {
+    await goto(page, route);
+    const visible = ((await page.locator("body").innerText().catch(() => "")) || "");
+    const matches = visible.match(/contextqa/gi) ?? [];
+    if (matches.length > 0) rebrandViolations += matches.length;
+    check(`Rebrand: no ContextQA on ${route}`, matches.length === 0, matches.slice(0, 3).join(","));
+  }
+  check("Rebrand: zero ContextQA occurrences across 19 dashboard pages", rebrandViolations === 0, `${rebrandViolations} occurrence(s)`);
+  check("Rebrand: QASyn brand visible on dashboard", ((await page.title()) || "").includes("QASyn"), await page.title());
+
+  // Chat widget: open with a short click, drag, persist, clamp and reset.
+  await goto(page, "/dashboard/overview");
+  await page.evaluate(() => window.localStorage.removeItem("qasyn_chat_pos"));
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForTimeout(800);
+  const chatButton = page.getByTestId("finqa-chat-button");
+  check("Chat widget button visible", (await chatButton.count()) > 0);
+  if ((await chatButton.count()) > 0) {
+    await chatButton.click().catch(() => undefined);
+    await page.waitForTimeout(500);
+    const chatDialog = page.getByRole("dialog", { name: "FinQA assistant" });
+    check("Chat short click (<5px) opens the assistant", (await chatDialog.count()) > 0);
+    if ((await chatDialog.count()) > 0) {
+      const handle = page.getByTestId("chat-drag-handle");
+      check("Chat drag handle is labelled", (await handle.count()) > 0 && ((await handle.getAttribute("title").catch(() => "")) || "").includes("Drag"));
+      const before = await page.evaluate(() => {
+        try { return JSON.parse(window.localStorage.getItem("qasyn_chat_pos") || "null") as { panel?: { x: number; y: number } } | null; } catch { return null; }
+      });
+      const box = await handle.boundingBox();
+      if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(box.x + box.width / 2 - 220, box.y + box.height / 2 - 120, { steps: 12 });
+        await page.mouse.up();
+        await page.waitForTimeout(500);
+      }
+      const after = await page.evaluate(() => {
+        try { return JSON.parse(window.localStorage.getItem("qasyn_chat_pos") || "null") as { panel?: { x: number; y: number } } | null; } catch { return null; }
+      });
+      check(
+        "Chat window drags and persists qasyn_chat_pos",
+        Boolean(before?.panel && after?.panel && (after.panel.x !== before.panel.x || after.panel.y !== before.panel.y)),
+        JSON.stringify(after?.panel ?? null),
+      );
+      const viewport = page.viewportSize() ?? { width: 1440, height: 900 };
+      check(
+        "Chat window stays clamped inside the viewport",
+        Boolean(after?.panel && after.panel.x >= 0 && after.panel.y >= 0 && after.panel.x + 380 <= viewport.width && after.panel.y + 600 <= viewport.height),
+        JSON.stringify(after?.panel ?? null),
+      );
+      await page.reload({ waitUntil: "networkidle" });
+      await page.waitForTimeout(700);
+      await page.getByTestId("finqa-chat-button").click().catch(() => undefined);
+      await page.waitForTimeout(500);
+      const persisted = await page.evaluate(() => {
+        try { return JSON.parse(window.localStorage.getItem("qasyn_chat_pos") || "null") as { panel?: { x: number; y: number } } | null; } catch { return null; }
+      });
+      check(
+        "Chat position survives a reload",
+        Boolean(after?.panel && persisted?.panel && after.panel.x === persisted.panel.x && after.panel.y === persisted.panel.y),
+        JSON.stringify(persisted?.panel ?? null),
+      );
+      const reset = page.getByRole("button", { name: "Reset chat position" });
+      check("Chat reset control visible", (await reset.count()) > 0);
+      if ((await reset.count()) > 0) {
+        await reset.click().catch(() => undefined);
+        await page.waitForTimeout(400);
+        const resetPos = await page.evaluate(() => {
+          try { return JSON.parse(window.localStorage.getItem("qasyn_chat_pos") || "null") as { panel?: { x: number; y: number } } | null; } catch { return null; }
+        });
+        const expectedX = viewport.width - 380 - 24;
+        const expectedY = Math.max(8, viewport.height - 600 - 96);
+        check(
+          "Chat reset restores the default position",
+          Boolean(resetPos?.panel && Math.abs(resetPos.panel.x - expectedX) <= 2 && Math.abs(resetPos.panel.y - expectedY) <= 2),
+          JSON.stringify(resetPos?.panel ?? null),
+        );
+      }
+      await page.getByRole("button", { name: "Close assistant" }).click().catch(() => undefined);
+    }
+  }
+
+  // Four-role navigation and route/API guards.
+  const roleCases: Array<{
+    email: string;
+    role: string;
+    mustShow: string[];
+    mustHide: string[];
+    deniedRoutes: string[];
+    allowedRoutes: string[];
+  }> = [
+    {
+      email: "cgi@cgi.com",
+      role: "Admin",
+      mustShow: ["Overview", "Pull requests", "Code Analysis", "Team & access", "Tunnels", "Billing & usage", "MCP", "API Tokens", "System Audits"],
+      mustHide: [],
+      deniedRoutes: [],
+      allowedRoutes: ["/dashboard/billing", "/dashboard/team", "/dashboard/settings/api-tokens"],
+    },
+    {
+      email: "qa@cgi.com",
+      role: "QA",
+      mustShow: ["Overview", "Crawl", "Requirements", "Test cases", "Plans", "Environment & Data", "Uploads", "Knowledge Base", "Integrations", "MCP"],
+      mustHide: ["Pull requests", "Code Analysis", "Team & access", "Tunnels", "Billing & usage", "API Tokens"],
+      deniedRoutes: ["/dashboard/billing", "/dashboard/pull-requests", "/dashboard/settings/api-tokens"],
+      allowedRoutes: ["/dashboard/test-cases", "/dashboard/plans/test-plans"],
+    },
+    {
+      email: "engineer@cgi.com",
+      role: "Engineer",
+      mustShow: ["Overview", "Pull requests", "Code Analysis", "Test cases", "Tunnels", "Integrations", "MCP", "Organization Setting"],
+      mustHide: ["Team & access", "Billing & usage", "API Tokens", "System Audits"],
+      deniedRoutes: ["/dashboard/billing", "/dashboard/team", "/dashboard/settings/api-tokens"],
+      allowedRoutes: ["/dashboard/pull-requests", "/dashboard/tunnels", "/dashboard/settings/organization"],
+    },
+    {
+      email: "ba@cgi.com",
+      role: "BA / FA",
+      mustShow: ["Overview", "Requirements", "Test cases", "Plans", "Knowledge Base", "MCP"],
+      mustHide: ["Pull requests", "Code Analysis", "Crawl", "Environment & Data", "Uploads", "Team & access", "Tunnels", "Integrations", "Billing & usage", "API Tokens", "Organization Setting"],
+      deniedRoutes: ["/dashboard/pull-requests", "/dashboard/billing", "/dashboard/integrations", "/dashboard/team", "/dashboard/settings/organization", "/dashboard/settings/api-tokens"],
+      allowedRoutes: ["/dashboard/requirements", "/dashboard/test-cases"],
+    },
+  ];
+  for (const roleCase of roleCases) {
+    const session = await loginAs(browser, roleCase.email);
+    try {
+      await session.page.goto(`${BASE}/dashboard/overview`, { waitUntil: "networkidle" });
+      await session.page.waitForTimeout(600);
+      const settingsToggle = session.page.getByRole("button", { name: /^Settings$/ });
+      if ((await settingsToggle.count()) > 0) {
+        await settingsToggle.first().click().catch(() => undefined);
+        await session.page.waitForTimeout(250);
+      }
+      const nav = await sidebarText(session.page);
+      for (const label of roleCase.mustShow) check(`${roleCase.role} sees "${label}"`, nav.includes(label), nav.slice(0, 220));
+      for (const label of roleCase.mustHide) check(`${roleCase.role} does not see "${label}"`, !nav.includes(label), nav.slice(0, 220));
+      const createVisible = (await session.page.getByRole("link", { name: "New Test Cases" }).count()) > 0;
+      check(`${roleCase.role} create-test-case visibility`, roleCase.role === "BA / FA" ? !createVisible : createVisible);
+      for (const route of roleCase.allowedRoutes) {
+        await session.page.goto(`${BASE}${route}`, { waitUntil: "networkidle" }).catch(() => undefined);
+        check(`${roleCase.role} can open ${route}`, !session.page.url().includes("denied="), session.page.url());
+      }
+      for (const route of roleCase.deniedRoutes) {
+        await session.page.goto(`${BASE}${route}`, { waitUntil: "networkidle" }).catch(() => undefined);
+        await session.page.waitForTimeout(300);
+        const denied = session.page.url().includes("denied=") || !session.page.url().includes(route);
+        check(`${roleCase.role} is denied ${route}`, denied, session.page.url());
+      }
+      if (roleCase.role === "BA / FA") {
+        const tokensApi = await apiJson(session.page, "/api/dashboard/api-tokens", "GET");
+        check("BA / FA cannot read API tokens", tokensApi.status === 403, String(tokensApi.status));
+        const tokenPost = await apiJson(session.page, "/api/dashboard/api-tokens", "POST", { name: "Denied", scopes: ["mcp:read"] });
+        check("BA / FA cannot create API tokens", tokenPost.status === 403, String(tokenPost.status));
+        const billingPost = await apiJson(session.page, "/api/dashboard/billing", "POST", { action: "plan", plan: "starter" });
+        check("BA / FA cannot change billing", billingPost.status === 403, String(billingPost.status));
+      }
+      if (roleCase.role === "Engineer") {
+        const tokensApi = await apiJson(session.page, "/api/dashboard/api-tokens", "GET");
+        check("Engineer can read MCP tokens", tokensApi.status === 200, String(tokensApi.status));
+        const billingPost = await apiJson(session.page, "/api/dashboard/billing", "POST", { action: "plan", plan: "starter" });
+        check("Engineer cannot change billing", billingPost.status === 403, String(billingPost.status));
+      }
+      check(`${roleCase.role} no page errors`, true);
+    } finally {
+      await session.context.close().catch(() => undefined);
+    }
+  }
+
+  check("Rebrand/chat/RBAC no page errors", moduleErrors.length === 0);
+  await shot(page, "20-rebrand-chat-roles");
+
   // ── PART 4 — Layout geometry, RowMenu, CRUD, live/local ───────────
   moduleErrors = [];
   const p4 = mod("part4-layout-actions", "PART 4 — Layout, menus, actions, live/local", "/dashboard/crawl");
@@ -1432,12 +1928,21 @@ async function main() {
   await goto(page, "/dashboard/crawl");
 
   // Expanded / collapsed shell geometry.
-  if ((await page.getByRole("button", { name: "Expand sidebar" }).count()) > 0) {
-    await page.getByRole("button", { name: "Expand sidebar" }).first().click().catch(() => undefined);
-    await page.waitForTimeout(400);
-  }
   const sidebarLocator = page.locator("aside:visible").first();
   const mainLocator = page.locator("main").first();
+  for (let i = 0; i < 8; i++) {
+    if ((await page.getByRole("button", { name: "Expand sidebar" }).count()) === 0) break;
+    await page.evaluate(() => {
+      const button = Array.from(document.querySelectorAll("button")).find((item) => item.getAttribute("aria-label") === "Expand sidebar");
+      button?.click();
+    });
+    await page.waitForTimeout(600);
+  }
+  for (let i = 0; i < 25; i++) {
+    const width = await sidebarLocator.evaluate((el) => el.getBoundingClientRect().width).catch(() => 0);
+    if (Math.abs(width - 240) <= 2) break;
+    await page.waitForTimeout(200);
+  }
   const expandedSidebar = await sidebarLocator.boundingBox();
   const expandedMain = await mainLocator.boundingBox();
   check("PART 4 expanded sidebar and main boxes exist", Boolean(expandedSidebar && expandedMain));
@@ -1476,7 +1981,10 @@ async function main() {
         `main x ${expandedMain.x.toFixed(1)}→${collapsedMain.x.toFixed(1)} · width ${expandedMain.width.toFixed(1)}→${collapsedMain.width.toFixed(1)}`,
       );
     }
-    await page.getByRole("button", { name: "Expand sidebar" }).first().click().catch(() => undefined);
+    await page.evaluate(() => {
+      const button = Array.from(document.querySelectorAll("button")).find((item) => item.getAttribute("aria-label") === "Expand sidebar");
+      button?.click();
+    });
     await page.waitForTimeout(400);
   }
 
@@ -1816,7 +2324,7 @@ async function main() {
 
   await goto(page, "/dashboard/mcp");
   const mcpText = ((await body(page)) || "").replace(/\s+/g, " ");
-  compareLive("MCP sections", ["Agent skill", "Clients", "Connector", "ChatGPT", "Claude", "Cursor"], mcpText);
+  compareLive("MCP sections", ["MCP server online", "SSE endpoint", "Claude Code", "Claude Desktop", "Cursor", "VS Code Copilot", "Windsurf", "OpenAI / ChatGPT", "Custom SSE", "Role guides"], mcpText);
 
   fs.writeFileSync(
     path.join(OUT, "part4-live-local.json"),

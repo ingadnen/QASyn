@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, writeSettings } from "@/lib/tenant";
+import { audit, writeSettings } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { organizationPreferencesSchema } from "@/lib/validation";
 
 /** PATCH /api/dashboard/settings/organization/preferences — all Organization Setting cards except company identity. */
 export async function PATCH(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("settingsManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const parsed = organizationPreferencesSchema.safeParse(await readJson(request));

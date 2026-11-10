@@ -1,354 +1,434 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CqaIcon, cqaCard, useAction } from "@/components/dashboard/ui";
+import { useEffect, useMemo, useState } from "react";
+import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel } from "@/components/dashboard/ui";
+import { apiFetch, errorMessage } from "@/lib/api";
+import {
+  INTEGRATION_PROVIDERS,
+  type IntegrationCategory,
+  type IntegrationDefinition,
+  type IntegrationField,
+} from "@/lib/integration-providers";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
-type Category = "All Plugins" | "Bug Reporting" | "Product Management";
-
-interface Plugin {
-  key: string;
-  name: string;
-  mark: string;
-  color: string;
-  fg?: string;
-  description: string;
-  categories: Category[];
-  enterprise?: boolean;
-  slack?: boolean;
+export interface IntegrationRow {
+  provider: string;
+  status: string;
+  detail: string | null;
+  config: Record<string, string>;
+  lastSyncAt: string | null;
+  connectedAt: string;
 }
 
-const PLUGINS: Plugin[] = [
-  {
-    key: "JIRA",
-    name: "Jira",
-    mark: "J",
-    color: "#2684ff",
-    description:
-      "Enable your team to stay connected to your favorite Atlassian Jira Product, to raise bugs, check status and rerun on closure of bugs, etc.",
-    categories: ["All Plugins", "Bug Reporting"],
-  },
-  {
-    key: "SLACK",
-    name: "Slack",
-    mark: "#",
-    color: "#611f69",
-    description: "Connect to Slack to get notifications for your run instantly.",
-    categories: ["All Plugins", "Bug Reporting"],
-    slack: true,
-  },
-  {
-    key: "CONTEXTQA_LAB",
-    name: "ContextQA Lab",
-    mark: "CQA",
-    color: "#5b4ee8",
-    description: "Connect to your ContextQA account as your test lab on cloud.",
-    categories: ["All Plugins"],
-    enterprise: true,
-  },
-  {
-    key: "LINEAR",
-    name: "Linear",
-    mark: "L",
-    color: "#5e6ad2",
-    description:
-      "Enable your team to report a bug on Linear, track status and rerun on closure of bug without leaving ContextQA from test case results page.",
-    categories: ["All Plugins", "Bug Reporting", "Product Management"],
-  },
-  {
-    key: "AZURE_DEVOPS",
-    name: "Azure DevOps Boards",
-    mark: "Az",
-    color: "#0078d4",
-    description:
-      "Enable your team to report a bug on Azure DevOps Boards, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting"],
-    enterprise: true,
-  },
-  {
-    key: "AZURE_VAULT",
-    name: "Azure Vault",
-    mark: "AV",
-    color: "#0ea5e9",
-    description: "Enable your team to securely store and access secrets using Azure Key Vault integration with ContextQA.",
-    categories: ["All Plugins"],
-    enterprise: true,
-  },
-  {
-    key: "GITHUB",
-    name: "GitHub",
-    mark: "GH",
-    color: "#111827",
-    description:
-      "Connect your GitHub account so ContextQA can read the repositories it analyses. Authorization happens on GitHub — no credentials are entered here.",
-    categories: ["All Plugins"],
-  },
-  {
-    key: "GITLAB",
-    name: "GitLab",
-    mark: "GL",
-    color: "#fc6d26",
-    description: "Connect GitLab to analyse merge requests and keep your tests in step with code changes.",
-    categories: ["All Plugins"],
-  },
-  {
-    key: "FIGMA",
-    name: "Figma",
-    mark: "F",
-    color: "#a259ff",
-    description:
-      "Enable your team to report a bug on Figma, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins"],
-    enterprise: true,
-  },
-  {
-    key: "FRESHRELEASE",
-    name: "Freshrelease",
-    mark: "Fr",
-    color: "#12b76a",
-    description:
-      "Enable your team to report a bug on Freshrelease, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting", "Product Management"],
-    enterprise: true,
-  },
-  {
-    key: "YOUTRACK",
-    name: "YouTrack",
-    mark: "Y",
-    color: "#5350f6",
-    description:
-      "Enable your team to report a bug on YouTrack, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting"],
-    enterprise: true,
-  },
-  {
-    key: "MANTIS",
-    name: "Mantis Bug Tracker",
-    mark: "M",
-    color: "#2f7d32",
-    description:
-      "Enable your team to report a bug on Mantis Bug Tracker, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting"],
-    enterprise: true,
-  },
-  {
-    key: "BACKLOG",
-    name: "Backlog",
-    mark: "B",
-    color: "#2d8cff",
-    description:
-      "Enable your team to report a bug on Backlog, track status and rerun on closue of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting"],
-    enterprise: true,
-  },
-  {
-    key: "ZEPEL",
-    name: "Zepel",
-    mark: "Z",
-    color: "#2563eb",
-    description:
-      "Enable your team to report a bug on Zepel, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting"],
-    enterprise: true,
-  },
-  {
-    key: "BUGZILLA",
-    name: "BugZilla",
-    mark: "Bz",
-    color: "#cc0000",
-    description:
-      "Enable your team to report a bug on BugZilla, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting"],
-    enterprise: true,
-  },
-  {
-    key: "TRELLO",
-    name: "Trello",
-    mark: "T",
-    color: "#0079bf",
-    description:
-      "Enable your team to report a bug on Trello, track status and rerun on closure of bug without leaving ContextQA from the test case results page.",
-    categories: ["All Plugins", "Bug Reporting", "Product Management"],
-    enterprise: true,
-  },
-  {
-    key: "CLICKUP",
-    name: "ClickUp",
-    mark: "C",
-    color: "#7b68ee",
-    description:
-      "Enable your team to report a bug on ClickUp, track status and rerun on closure of bug without leaving ContextQA from test case results page.",
-    categories: ["All Plugins", "Bug Reporting", "Product Management"],
-  },
-  {
-    key: "PRIVATE_GRID",
-    name: "Private Grid",
-    mark: "PG",
-    color: "#334155",
-    description: "Connect to your Appium Grid account as your test lab on cloud.",
-    categories: ["All Plugins"],
-    enterprise: true,
-  },
-  {
-    key: "JENKINS",
-    name: "Jenkins",
-    mark: "Jk",
-    color: "#d33833",
-    description:
-      "Integration of Jenkins with ContextQA helps you to run your scripts whenever there is a change in software code. Jenkins helps to schedule your build to run the test cases from a batch file, save your test reports and the execution history.",
-    categories: ["All Plugins"],
-    enterprise: true,
-  },
-  {
-    key: "CODESHIP",
-    name: "CodeShip CI",
-    mark: "CS",
-    color: "#1f2937",
-    description:
-      "Codeship helps to release software quickly, automatically and multiple times a day. It integrates with ContextQA, automatically deploying when tests pass and notifying you when tests or deployments have failed.",
-    categories: ["All Plugins"],
-    enterprise: true,
-  },
-];
+const TABS: IntegrationCategory[] = ["All Plugins", "Bug Reporting", "Product Management"];
 
-const TABS: Category[] = ["All Plugins", "Bug Reporting", "Product Management"];
-
-function BrandMark({ plugin }: { plugin: Plugin }) {
+function BrandMark({ definition }: { definition: IntegrationDefinition }) {
   return (
     <span
       aria-hidden
       className="flex size-10 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-bold tracking-[-0.02em] text-white"
-      style={{ backgroundColor: plugin.color, color: plugin.fg ?? "#fff" }}
+      style={{ backgroundColor: definition.color, color: definition.fg ?? "#fff" }}
     >
-      {plugin.mark}
+      {definition.mark}
     </span>
   );
 }
 
-function Toggle({
-  checked,
-  disabled,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  disabled: boolean;
-  label: string;
-  onChange: () => void;
-}) {
+function ConnectedPill({ connected }: { connected: boolean }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onChange}
+    <span
       className={cn(
-        "relative h-[22px] w-[40px] rounded-full transition",
-        checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]",
-        disabled && "cursor-not-allowed opacity-50",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
+        connected ? "bg-[#ecfdf3] text-[#067647]" : "bg-[#f3f4f6] text-[#6b7280]",
       )}
     >
-      <span
-        className={cn(
-          "absolute top-[3px] size-4 rounded-full bg-white shadow transition",
-          checked ? "left-[21px]" : "left-[3px]",
-        )}
-      />
-    </button>
+      <span className={cn("size-1.5 rounded-full", connected ? "bg-[#17b26a]" : "bg-[#9ca3af]")} />
+      {connected ? "Connected" : "Not connected"}
+    </span>
   );
 }
 
-export function Integrations({
-  connected,
-  readOnly,
-}: {
-  connected: string[];
-  readOnly: boolean;
-}) {
-  const [tab, setTab] = useState<Category>("All Plugins");
-  const { run, pending, error } = useAction();
-  const linked = useMemo(() => new Set(connected), [connected]);
-  const visible = PLUGINS.filter((plugin) => plugin.categories.includes(tab));
+function formatWhen(value: string | null) {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Never";
+  return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" });
+}
 
-  async function toggle(plugin: Plugin) {
-    const next = !linked.has(plugin.key);
-    await run(plugin.key, "/api/dashboard/integrations", {
-      json: { provider: plugin.key, connected: next },
+function fieldInput(field: IntegrationField, value: string, onChange: (value: string) => void, disabled: boolean) {
+  if (field.type === "textarea") {
+    return (
+      <textarea
+        className={cn(cqaInput, "h-20 resize-y py-2")}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={field.placeholder}
+        required={field.required}
+        disabled={disabled}
+        aria-label={field.label}
+      />
+    );
+  }
+  if (field.type === "select" && field.options) {
+    return (
+      <select
+        className={cqaInput}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required={field.required}
+        disabled={disabled}
+        aria-label={field.label}
+      >
+        <option value="">Select…</option>
+        {field.options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  return (
+    <input
+      className={cqaInput}
+      type={field.type === "password" ? "password" : field.type === "number" ? "number" : field.type === "url" ? "url" : "text"}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={field.placeholder}
+      required={field.required}
+      disabled={disabled}
+      autoComplete={field.type === "password" ? "new-password" : "off"}
+      aria-label={field.label}
+    />
+  );
+}
+
+function ConfigureModal({
+  definition,
+  row,
+  readOnly,
+  onClose,
+  onSaved,
+}: {
+  definition: IntegrationDefinition;
+  row: IntegrationRow | undefined;
+  readOnly: boolean;
+  onClose: () => void;
+  onSaved: (row: IntegrationRow) => void;
+}) {
+  const [form, setForm] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const field of definition.fields) {
+      initial[field.key] = row?.config?.[field.key] ?? field.defaultValue ?? "";
+    }
+    return initial;
+  });
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [checks, setChecks] = useState<Array<{ label: string; ok: boolean }> | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [effects, setEffects] = useState<string[] | null>(null);
+  const connected = row?.status === "CONNECTED" || row?.status === "INDEXING";
+
+  useEffect(() => {
+    const initial: Record<string, string> = {};
+    for (const field of definition.fields) {
+      initial[field.key] = row?.config?.[field.key] ?? field.defaultValue ?? "";
+    }
+    setForm(initial);
+    setChecks(null);
+    setMessage(null);
+    setEffects(null);
+    setError(null);
+  }, [definition]);
+
+  async function call(action: "test" | "connect" | "sync" | "disconnect") {
+    setPending(action);
+    setError(null);
+    setMessage(null);
+    setEffects(null);
+    try {
+      const result = await apiFetch<{
+        ok?: boolean;
+        message?: string;
+        checks?: Array<{ label: string; ok: boolean }>;
+        effects?: string[];
+        connected?: boolean;
+        integration?: IntegrationRow;
+      }>("/api/dashboard/integrations", {
+        method: "POST",
+        json: { provider: definition.key, action, config: form },
+      });
+      if (action === "test") {
+        setChecks(result.checks ?? []);
+        setMessage(result.message ?? "Connection tested.");
+        toast(result.ok ? `${definition.name} connection succeeded.` : `${definition.name} connection failed.`, result.ok ? "success" : "error");
+        return;
+      }
+      if (action === "disconnect") {
+        toast(`${definition.name} disconnected.`, "info");
+        onSaved({
+          provider: definition.key,
+          status: "DISCONNECTED",
+          detail: null,
+          config: form,
+          lastSyncAt: null,
+          connectedAt: row?.connectedAt ?? new Date().toISOString(),
+        });
+        onClose();
+        return;
+      }
+      if (result.integration) onSaved(result.integration);
+      if (action === "connect") {
+        toast(`${definition.name} connected.`, "success");
+        setMessage("Configuration saved. The integration is connected.");
+      } else {
+        setEffects(result.effects ?? []);
+        setMessage("Sync completed.");
+        toast(`${definition.name} synced.`, "success");
+      }
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setPending(null);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Configure ${definition.name}`}
+      size="lg"
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending !== null} onClick={() => call("test")}>
+              <CqaIcon name="cable" className="text-[16px]" />
+              {pending === "test" ? "Testing…" : "Test Connection"}
+            </button>
+            {connected && (
+              <>
+                <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending !== null} onClick={() => call("sync")}>
+                  <CqaIcon name="sync" className="text-[16px]" />
+                  {pending === "sync" ? "Syncing…" : "Sync Now"}
+                </button>
+                <button
+                  type="button"
+                  className={cn(cqaBtnSecondary, "text-[#b42318]")}
+                  disabled={readOnly || pending !== null}
+                  onClick={() => call("disconnect")}
+                >
+                  <CqaIcon name="link_off" className="text-[16px]" />
+                  Disconnect
+                </button>
+              </>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button type="button" className={cqaBtnSecondary} onClick={onClose}>
+              Cancel
+            </button>
+            <button type="button" className={cqaBtnPrimary} disabled={readOnly || pending !== null} onClick={() => call("connect")}>
+              {pending === "connect" ? "Saving…" : connected ? "Save changes" : "Save & Connect"}
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div className="flex items-start gap-3 rounded-lg border border-[#eef0f3] bg-[#fafafa] p-3">
+          <BrandMark definition={definition} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[13.5px] font-semibold text-[#111827]">{definition.name}</p>
+              <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">Pro · Available</span>
+              <ConnectedPill connected={connected} />
+            </div>
+            <p className="mt-1 text-[12px] leading-5 text-[#6b7280]">{definition.description}</p>
+            {row?.lastSyncAt && <p className="mt-1 text-[11px] text-[#9ca3af]">Last sync: {formatWhen(row.lastSyncAt)}</p>}
+          </div>
+        </div>
+
+        {error && (
+          <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[12px] text-[#b42318]">
+            {error}
+          </div>
+        )}
+        {message && (
+          <div className="rounded-lg border border-[#abefc6] bg-[#ecfdf3] px-3 py-2 text-[12px] text-[#067647]">
+            {message}
+            {effects && effects.length > 0 && (
+              <ul className="mt-1 list-inside list-disc text-[11px]">
+                {effects.map((effect) => (
+                  <li key={effect}>{effect}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        {checks && checks.length > 0 && (
+          <ul className="space-y-1 rounded-lg border border-[#eef0f3] p-3">
+            {checks.map((check) => (
+              <li key={check.label} className="flex items-center gap-2 text-[12px]">
+                <CqaIcon
+                  name={check.ok ? "check_circle" : "cancel"}
+                  className={cn("text-[15px]", check.ok ? "text-[#17b26a]" : "text-[#d92d20]")}
+                  filled
+                />
+                <span className={check.ok ? "text-[#374151]" : "text-[#b42318]"}>{check.label}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {definition.fields.map((field) => (
+            <label key={field.key} className={cn("block", field.type === "textarea" && "sm:col-span-2")}>
+              <span className={cqaLabel}>
+                {field.label}
+                {field.required && <span className="ml-0.5 text-[#d92d20]">*</span>}
+              </span>
+              {fieldInput(field, form[field.key] ?? "", (value) => setForm((prev) => ({ ...prev, [field.key]: value })), readOnly || pending !== null)}
+              {field.help && <span className="mt-1 block text-[11px] text-[#9ca3af]">{field.help}</span>}
+            </label>
+          ))}
+        </div>
+        <p className="text-[11px] leading-5 text-[#9ca3af]">
+          Configuration is stored per organisation and is only used by QASyn for this workspace. Tokens are never shared across tenants.
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
+export function Integrations({ integrations, readOnly }: { integrations: IntegrationRow[]; readOnly: boolean }) {
+  const [rows, setRows] = useState<IntegrationRow[]>(integrations);
+  const [tab, setTab] = useState<IntegrationCategory>("All Plugins");
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState<IntegrationDefinition | null>(null);
+
+  useEffect(() => setRows(integrations), [integrations]);
+
+  const byProvider = useMemo(() => new Map(rows.map((row) => [row.provider, row])), [rows]);
+  const connectedCount = rows.filter((row) => row.status === "CONNECTED" || row.status === "INDEXING").length;
+
+  const visible = INTEGRATION_PROVIDERS.filter((provider) => {
+    if (!provider.categories.includes(tab)) return false;
+    const needle = query.trim().toLowerCase();
+    if (!needle) return true;
+    return `${provider.name} ${provider.description}`.toLowerCase().includes(needle);
+  });
+
+  function saved(row: IntegrationRow) {
+    setRows((prev) => {
+      const next = prev.filter((item) => item.provider !== row.provider);
+      if (row.status !== "DISCONNECTED") next.unshift(row);
+      return next;
     });
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-1 border-b border-[#e5e7eb]">
-        {TABS.map((name) => (
-          <button
-            key={name}
-            type="button"
-            onClick={() => setTab(name)}
-            className={cn(
-              "-mb-px border-b-2 px-3 py-2.5 text-[13px] font-medium transition",
-              tab === name
-                ? "border-[#5b4ee8] text-[#5b4ee8]"
-                : "border-transparent text-[#6b7280] hover:text-[#111827]",
-            )}
-          >
-            {name}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-semibold tracking-[-0.01em] text-[#111827]">Integrations</h1>
+          <p className="mt-1 text-[13px] text-[#6b7280]">
+            Connect source control, issue trackers, CI/CD and secrets. All Pro integrations are available and configurable.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-[12px] text-[#6b7280]">
+          <span className="rounded-full bg-[#ecfdf3] px-2.5 py-1 font-semibold text-[#067647]">{connectedCount} connected</span>
+          <span className="rounded-full bg-[#f3f4f6] px-2.5 py-1 font-semibold text-[#374151]">{INTEGRATION_PROVIDERS.length} available</span>
+        </div>
       </div>
 
-      {error && (
-        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
-          {error}
-        </p>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5e7eb]">
+        <div className="flex flex-wrap items-center gap-1">
+          {TABS.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setTab(name)}
+              className={cn(
+                "-mb-px border-b-2 px-3 py-2.5 text-[12.5px] font-medium transition",
+                tab === name
+                  ? "border-[#5b4ee8] text-[#5b4ee8]"
+                  : "border-transparent text-[#6b7280] hover:text-[#111827]",
+              )}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+        <div className="relative mb-2">
+          <CqaIcon name="search" className="pointer-events-none absolute left-2.5 top-2 text-[17px] text-[#9ca3af]" />
+          <input
+            className={cn(cqaInput, "h-9 w-[230px] pl-8")}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search integrations…"
+            aria-label="Search integrations"
+          />
+        </div>
+      </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-        {visible.map((plugin) => {
-          const isOn = linked.has(plugin.key);
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {visible.map((definition) => {
+          const row = byProvider.get(definition.key);
+          const connected = row?.status === "CONNECTED" || row?.status === "INDEXING";
           return (
-            <article key={plugin.key} className={cn(cqaCard, "flex flex-col overflow-hidden")}>
+            <article key={definition.key} className={cn(cqaCard, "flex flex-col overflow-hidden")}>
               <div className="flex flex-1 flex-col gap-3 px-4 py-4">
                 <div className="flex items-center gap-3">
-                  <BrandMark plugin={plugin} />
-                  <h2 className="text-[14px] font-semibold text-[#111827]">{plugin.name}</h2>
+                  <BrandMark definition={definition} />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-[14px] font-semibold text-[#111827]">{definition.name}</h2>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full bg-[#eef2ff] px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-[#4f46e5]">
+                        Pro · Available
+                      </span>
+                      <ConnectedPill connected={connected} />
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[12.5px] leading-[19px] text-[#6b7280]">{plugin.description}</p>
-                {plugin.slack && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-[6px] px-2 py-[2px] text-[11px] leading-[17px]",
-                        isOn ? "bg-[#f0fdf4] text-[#00a63e]" : "bg-[#f3f4f6] text-[#374151]",
-                      )}
-                    >
-                      {isOn ? "Workspace linked" : "Workspace not linked"}
-                    </span>
-                    <span className="text-[11.5px] text-[#9ca3af]">for bug reproduction</span>
-                  </div>
-                )}
+                <p className="line-clamp-3 min-h-[48px] text-[12px] leading-5 text-[#6b7280]">{definition.description}</p>
+                <p className="truncate text-[11.5px] text-[#9ca3af]">
+                  {connected ? row?.detail || "Configured" : "Add credentials and project details to connect."}
+                </p>
               </div>
-              <div className="flex min-h-[52px] items-center justify-end border-t border-[#f3f4f6] px-4 py-2.5">
-                {plugin.enterprise ? (
-                  <div className="flex w-full items-start gap-2 text-[11.5px] leading-4 text-[#6b7280]">
-                    <CqaIcon name="lock" className="mt-px text-[15px] text-[#9ca3af]" />
-                    <span>Upgrade to the Enterprise plan to use this integration.</span>
-                  </div>
-                ) : (
-                  <Toggle
-                    checked={isOn}
-                    disabled={readOnly || pending === plugin.key}
-                    label={`${isOn ? "Disable" : "Enable"} ${plugin.name}`}
-                    onChange={() => void toggle(plugin)}
-                  />
-                )}
+              <div className="flex items-center justify-between gap-2 border-t border-[#f0f1f3] bg-[#fcfcfd] px-4 py-2.5">
+                <span className="text-[10.5px] text-[#9ca3af]">
+                  {connected ? `Last sync ${formatWhen(row?.lastSyncAt ?? null)}` : "Not configured"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActive(definition)}
+                  className="inline-flex h-7 items-center gap-1 rounded-md border border-[#e5e7eb] bg-white px-2.5 text-[11.5px] font-semibold text-[#5b4ee8] transition hover:bg-[#f5f4ff]"
+                >
+                  <CqaIcon name={connected ? "settings" : "link"} className="text-[14px]" />
+                  {connected ? "Configure" : "Connect"}
+                </button>
               </div>
             </article>
           );
         })}
       </div>
+
+      {visible.length === 0 && (
+        <div className={cn(cqaCard, "px-4 py-10 text-center text-[12.5px] text-[#6b7280]")}>No integration matches this search.</div>
+      )}
+
+      {active && (
+        <ConfigureModal
+          definition={active}
+          row={byProvider.get(active.key)}
+          readOnly={readOnly}
+          onClose={() => setActive(null)}
+          onSaved={saved}
+        />
+      )}
     </div>
   );
 }

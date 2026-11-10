@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import StudioPage, { metadata } from "@/components/dashboard/pages/StudioPage";
 
 export { metadata };

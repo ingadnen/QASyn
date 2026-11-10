@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { DeleteKnowledgeButton, KnowledgeCreateButton } from "@/components/dashboard/pages/KnowledgeCreateButton";
 import { CqaIcon, PageHeader, StatusPill, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Knowledge Base" };
 export const dynamic = "force-dynamic";
 
 export default async function KnowledgeBasePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("knowledgeBase");
   const { q = "" } = await searchParams;
   const items = await prisma.knowledgeItem.findMany({ where: { organisationId: ctx.org.id }, orderBy: { updatedAt: "desc" } });
   const filtered = items.filter((i) => !q || `${i.title} ${i.type} ${i.urlOrPath}`.toLowerCase().includes(q.toLowerCase()));

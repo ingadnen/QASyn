@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { CreateCollectionButton } from "@/components/dashboard/pages/CreateCollectionButton";
 import { PlansList, type PlanRow } from "@/components/dashboard/pages/PlansList";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Test plans" };
 export const dynamic = "force-dynamic";
 
 export default async function TestPlansPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const ctx = await requireOrgContext();
+  const ctx = await requirePermission("plans");
   const { tab = "plans" } = await searchParams;
   const [plans, schedules, suites] = await Promise.all([
     prisma.testPlan.findMany({
@@ -58,7 +59,7 @@ export default async function TestPlansPage({ searchParams }: { searchParams: Pr
       </div>
 
       {tab === "schedules" ? (
-        <TableShell headers={["Name", "Test Plan", "Cron", "Time zone", "Enabled", "Next fire"]} footer={<span className="tabular-nums">1–{schedules.length} of {schedules.length}</span>}>
+        <TableShell headers={["Name", "Test Plan", "Cron", "Time zone", "Enabled", "Next fire"]} footer={<span className="tabular-nums">1â€“{schedules.length} of {schedules.length}</span>}>
           {schedules.length === 0 && (
             <tr>
               <td colSpan={6} className="px-4 py-14 text-center">

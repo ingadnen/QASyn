@@ -3,13 +3,14 @@ import { z } from "zod";
 import { destroySession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi } from "@/lib/tenant";
+import { audit } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateOrganisationSchema } from "@/lib/validation";
 
 /** PATCH /api/dashboard/settings/organization — name, website, logo, KB flag. */
 export async function PATCH(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("settingsManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
 
@@ -43,7 +44,7 @@ const deleteSchema = z.object({ confirm: z.string().max(60) });
 
 /** DELETE /api/dashboard/settings/organization { confirm: slug } — irreversible; never allowed on the demo. */
 export async function DELETE(request: Request) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("settingsManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   if (ctx.org.isMockDemo) return jsonError("The demo workspace can't be deleted.", 403);

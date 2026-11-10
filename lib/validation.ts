@@ -133,6 +133,8 @@ export const createTestCaseSchema = z.discriminatedUnion("mode", [
     module: moduleName,
     criticality: z.enum(CRITICALITIES),
     stepsCount: z.number().int().min(1).max(50).default(3),
+    /** Explicit Target URL entered in the creation modal (wins over the org website). */
+    targetUrl: z.string().trim().max(300).optional(),
   }),
   z.object({
     mode: z.literal("ai"),
@@ -140,6 +142,8 @@ export const createTestCaseSchema = z.discriminatedUnion("mode", [
     criticality: z.enum(CRITICALITIES).default("medium"),
     prompt: z.string().trim().max(200).default(""),
     count: z.number().int().min(1).max(4).default(3),
+    /** Explicit Target URL entered in the creation modal (wins over the org website). */
+    targetUrl: z.string().trim().max(300).optional(),
   }),
 ]);
 
@@ -218,13 +222,31 @@ export const collectionUpdateSchema = z.object({
 });
 export const environmentUpdateSchema = z.object({ action: z.literal("default") });
 
-export const createPrSchema = z.object({
+const manualPrSchema = z.object({
   prNumber: z.number().int().min(1).max(999_999),
   title,
   branch: z.string().trim().min(1).max(100).regex(/^[\w./-]+$/, "Invalid branch name."),
   author: z.string().trim().min(1).max(60),
   filesChanged: z.number().int().min(1).max(5000),
+  /** Optional provider URL; when present its provider/repository are persisted. */
+  customUrl: z.string().trim().max(500).optional(),
 });
+
+export const createPrSchema = z.union([
+  // PR selected from a connected provider/repository.
+  z.object({
+    mode: z.literal("catalog"),
+    provider: z.string().trim().min(2).max(40),
+    repository: z.string().trim().min(2).max(160),
+    prNumber: z.number().int().min(1).max(999_999),
+  }),
+  // Manual / custom PR URL.
+  z.object({
+    mode: z.literal("custom"),
+    url: z.string().trim().min(8).max(500),
+  }),
+  manualPrSchema,
+]);
 
 export const requirementSchema = z.object({
   code: z.string().trim().toUpperCase().min(2).max(20).regex(/^[A-Z0-9-]+$/, "Use A-Z, 0-9 and '-'."),
@@ -277,7 +299,7 @@ export const inviteSchema = z.object({
   role: z.enum(USER_ROLES).default("Engineer"),
   name: z.string().trim().min(1).max(80).optional(),
   phone: z.string().trim().max(30).optional(),
-  roles: z.array(z.enum(USER_ROLES)).min(1).max(5).optional(),
+  roles: z.array(z.enum(USER_ROLES)).min(1).max(6).optional(),
 });
 export const updateMemberSchema = z.object({ role: z.enum(USER_ROLES) });
 

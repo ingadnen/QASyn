@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
-import { audit, guardApi } from "@/lib/tenant";
+import { audit } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { updateMemberSchema } from "@/lib/validation";
 
 type Params = { params: Promise<{ id: string }> };
 
 /** PATCH /api/dashboard/team/[id] — change a member's role (org-scoped). */
 export async function PATCH(request: Request, { params }: Params) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("teamManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   void ensureWal();
@@ -24,7 +25,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
 /** DELETE /api/dashboard/team/[id] — revoke a pending invitation (org-scoped). */
 export async function DELETE(_request: Request, { params }: Params) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("teamManage", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const { id } = await params;

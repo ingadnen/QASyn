@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { completeCrawl, reimportCrawl } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi } from "@/lib/tenant";
+import { audit } from "@/lib/tenant";
+import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { crawlActionSchema } from "@/lib/validation";
 
@@ -10,7 +11,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /** GET /api/dashboard/crawl/[id] — one crawl with its generated requirement. */
 export async function GET(_request: Request, { params }: Params) {
-  const guard = await guardApi();
+  const guard = await guardPermission("crawl");
   if (!guard.ok) return guard.response;
   const { id } = await params;
   const crawl = await prisma.crawlSession.findFirst({
@@ -23,7 +24,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 /** PATCH /api/dashboard/crawl/[id] { action: "complete" | "cancel" | "reimport" } */
 export async function PATCH(request: Request, { params }: Params) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("crawlRun", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const { id } = await params;
@@ -55,7 +56,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
 /** DELETE /api/dashboard/crawl/[id] — removes the crawl session (generated cases are preserved). */
 export async function DELETE(_request: Request, { params }: Params) {
-  const guard = await guardApi({ write: true });
+  const guard = await guardPermission("crawlRun", { write: true });
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
   const { id } = await params;
