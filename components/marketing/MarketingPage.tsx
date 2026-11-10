@@ -1,6 +1,6 @@
 ﻿/**
  * Shared marketing page renderer: hero, capability grid, workflow steps,
- * FAQ and CTA â€” driven by a small typed content object.
+ * FAQ and CTA — driven by a small typed content object.
  * Used by every /platform, /solutions, /integrations and company page.
  */
 import Link from "next/link";

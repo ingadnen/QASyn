@@ -5,6 +5,7 @@ import { PlansList, type PlanRow } from "@/components/dashboard/pages/PlansList"
 import { CqaIcon, PageHeader, StatusPill } from "@/components/dashboard/ui";
 import { TableShell, Td, Tr } from "@/components/contextqa/workspace";
 import { prisma } from "@/lib/db";
+import { syncPlanLinks } from "@/lib/plan-sync";
 import { requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Test plans" };
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TestPlansPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const ctx = await requirePermission("plans");
+  await syncPlanLinks(prisma, ctx.org.id);
   const { tab = "plans" } = await searchParams;
   const [plans, schedules, suites] = await Promise.all([
     prisma.testPlan.findMany({
@@ -59,7 +61,7 @@ export default async function TestPlansPage({ searchParams }: { searchParams: Pr
       </div>
 
       {tab === "schedules" ? (
-        <TableShell headers={["Name", "Test Plan", "Cron", "Time zone", "Enabled", "Next fire"]} footer={<span className="tabular-nums">1â€“{schedules.length} of {schedules.length}</span>}>
+        <TableShell headers={["Name", "Test Plan", "Cron", "Time zone", "Enabled", "Next fire"]} footer={<span className="tabular-nums">1–{schedules.length} of {schedules.length}</span>}>
           {schedules.length === 0 && (
             <tr>
               <td colSpan={6} className="px-4 py-14 text-center">

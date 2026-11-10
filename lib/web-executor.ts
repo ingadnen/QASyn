@@ -45,6 +45,7 @@ interface PwPage {
   fill(selector: string, value: string, opts?: { timeout?: number }): Promise<void>;
   textContent(selector: string, opts?: { timeout?: number }): Promise<string | null>;
   content(): Promise<string>;
+  evaluate<T>(fn: () => T): Promise<T>;
   screenshot(opts?: { type?: string; fullPage?: boolean }): Promise<Buffer>;
   on(event: string, handler: (arg: unknown) => void): void;
   close(): Promise<void>;
@@ -208,3 +209,433 @@ export async function executeWebSteps(steps: NlpStep[]): Promise<RealStepOutcome
   if (pw) return runWithPlaywright(steps, pw);
   return runWithHttp(steps);
 }
+
+/* ------------------------------------------------------------------ */
+/* DOM-grounded AI authoring                                           */
+/* ------------------------------------------------------------------ */
+
+export interface TargetFormField {
+  name: string;
+  type: string;
+  placeholder: string;
+  label: string;
+}
+
+export interface TargetForm {
+  action: string;
+  method: string;
+  fields: TargetFormField[];
+}
+
+export interface TargetDomSnapshot {
+  url: string;
+  source: "playwright" | "fetch";
+  title: string;
+  h1: string;
+  navLinks: Array<{ text: string; href: string }>;
+  buttons: string[];
+  forms: TargetForm[];
+  fetchedAt: string;
+}
+
+export interface GroundedFlow {
+  name: string;
+  module: string;
+  steps: number;
+  criticality: "critical" | "high" | "medium" | "low";
+  description: string;
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&amp;/gi, "&");
+}
+
+function textFromHtml(value: string): string {
+  return decodeHtml(value.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+function readAttr(tag: string, name: string): string {
+  const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"));
+  return match ? (match[2] ?? match[3] ?? match[4] ?? "") : "";
+}
+
+/** Fetch-only DOM inspection used when Playwright is not available. */
+async function inspectWithFetch(url: string): Promise<TargetDomSnapshot | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6_000);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      redirect: "follow",
+      headers: { "user-agent": "QASynBot/1.0 (+https://www.qasyn.com)" },
+    });
+    if (!response.ok) return null;
+    const html = await response.text();
+    const title = textFromHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
+    const h1 = textFromHtml(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? "");
+
+    const navBlocks = [...html.matchAll(/<(nav|header)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((match) => match[2]).join(" ");
+    const anchorSource = navBlocks || html;
+    const navLinks: Array<{ text: string; href: string }> = [];
+    for (const match of anchorSource.matchAll(/<a\b[^>]*href=("([^"]*)"|'([^']*)'|[^\s>]+)[^>]*>([\s\S]*?)<\/a>/gi)) {
+      const text = textFromHtml(match[4] ?? "");
+      if (!text) continue;
+      navLinks.push({ text: text.slice(0, 90), href: match[2] ?? match[3] ?? readAttr(match[0], "href") });
+      if (navLinks.length >= 20) break;
+    }
+
+    const buttons: string[] = [];
+    for (const match of html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/gi)) {
+      const text = textFromHtml(match[1] ?? "");
+      if (text) buttons.push(text.slice(0, 90));
+      if (buttons.length >= 25) break;
+    }
+    for (const match of html.matchAll(/<input\b[^>]*>/gi)) {
+      if (readAttr(match[0], "type").toLowerCase() !== "submit") continue;
+      const value = readAttr(match[0], "value") || "Submit";
+      if (!buttons.includes(value)) buttons.push(value);
+    }
+
+    const forms: TargetForm[] = [];
+    for (const match of html.matchAll(/<form\b[^>]*>([\s\S]*?)<\/form>/gi)) {
+      const fields: TargetFormField[] = [];
+      for (const field of match[1].matchAll(/<(input|select|textarea)\b[^>]*>/gi)) {
+        const tag = field[0];
+        const type = (readAttr(tag, "type") || field[1].toLowerCase()).toLowerCase();
+        if (type === "hidden" || type === "submit") continue;
+        fields.push({
+          name: readAttr(tag, "name"),
+          type,
+          placeholder: readAttr(tag, "placeholder"),
+          label: readAttr(tag, "aria-label") || readAttr(tag, "title"),
+        });
+      }
+      forms.push({ action: readAttr(match[0], "action"), method: (readAttr(match[0], "method") || "get").toLowerCase(), fields: fields.slice(0, 20) });
+      if (forms.length >= 10) break;
+    }
+
+    return {
+      url,
+      source: "fetch",
+      title,
+      h1,
+      navLinks,
+      buttons: [...new Set(buttons)],
+      forms,
+      fetchedAt: new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Playwright inspection: real rendered DOM (SPA-safe). */
+async function inspectWithPlaywright(url: string, pw: PwModule): Promise<TargetDomSnapshot | null> {
+  const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(url, { timeout: 8_000, waitUntil: "domcontentloaded" });
+    const data = await page.evaluate(() => {
+      const text = (element: Element | null) => (element?.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 90);
+      const attr = (element: Element, name: string) => element.getAttribute(name) ?? "";
+      const navLinks = Array.from(document.querySelectorAll("nav a, header a"))
+        .slice(0, 20)
+        .map((anchor) => ({ text: text(anchor), href: anchor.getAttribute("href") ?? "" }))
+        .filter((link) => link.text.length > 0);
+      const buttons = Array.from(document.querySelectorAll("button, input[type=submit], [role=button]"))
+        .map((element) => {
+          if (element instanceof HTMLInputElement) return element.value || "Submit";
+          return text(element);
+        })
+        .filter((label) => label.length > 0)
+        .slice(0, 25);
+      const forms = Array.from(document.querySelectorAll("form"))
+        .slice(0, 10)
+        .map((form) => ({
+          action: form.getAttribute("action") ?? "",
+          method: (form.getAttribute("method") ?? "get").toLowerCase(),
+          fields: Array.from(form.querySelectorAll("input, select, textarea"))
+            .filter((field) => {
+              const type = (field.getAttribute("type") ?? field.tagName).toLowerCase();
+              return type !== "hidden" && type !== "submit";
+            })
+            .slice(0, 20)
+            .map((field) => {
+              const labels = (field as HTMLInputElement).labels;
+              return {
+                name: attr(field, "name"),
+                type: (attr(field, "type") || field.tagName).toLowerCase(),
+                placeholder: attr(field, "placeholder"),
+                label: attr(field, "aria-label") || labels?.[0]?.textContent?.trim().slice(0, 90) || "",
+              };
+            }),
+        }));
+      return {
+        title: document.title ?? "",
+        h1: text(document.querySelector("h1")),
+        navLinks,
+        buttons: Array.from(new Set(buttons)),
+        forms,
+      };
+    });
+    return { url, source: "playwright", ...data, fetchedAt: new Date().toISOString() };
+  } catch {
+    return null;
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Inspects the real target DOM: title, h1, navigation links, buttons and forms.
+ * Playwright is preferred (rendered SPA DOM); fetch is the fallback. Private and
+ * loopback hosts are blocked by the same SSRF guard as real execution.
+ */
+export async function inspectTargetDom(targetUrl: string): Promise<TargetDomSnapshot | null> {
+  if (!isSafeUrl(targetUrl)) return null;
+  const pw = await loadPlaywright();
+  if (pw) {
+    try {
+      const snapshot = await inspectWithPlaywright(targetUrl, pw);
+      if (snapshot) return snapshot;
+    } catch {
+      /* fall through to fetch */
+    }
+  }
+  return inspectWithFetch(targetUrl);
+}
+
+function moduleForLabel(label: string): string {
+  const text = label.toLowerCase();
+  if (/billing|invoice|payment|pricing|price|plan|subscription|card/.test(text)) return "Billing";
+  if (/checkout|cart|order|shipping|purchase|pay/.test(text)) return "Checkout";
+  if (/setting|profile|account|team|notification|security|password|preference/.test(text)) return "Settings";
+  return "Core";
+}
+
+/** Local, deterministic test flows derived only from the inspected DOM. */
+export function groundedFlowsFromDom(snapshot: TargetDomSnapshot | null): GroundedFlow[] {
+  if (!snapshot) return [];
+  const host = (() => {
+    try {
+      return new URL(snapshot.url).host;
+    } catch {
+      return snapshot.url;
+    }
+  })();
+  const landing = snapshot.h1 || snapshot.title || host;
+  const flows: GroundedFlow[] = [
+    {
+      name: `Verify ${landing} landing page`,
+      module: "Core",
+      steps: 3,
+      criticality: "high",
+      description: `Grounded in ${snapshot.url}: title "${snapshot.title}", h1 "${snapshot.h1}", ${snapshot.navLinks.length} nav links, ${snapshot.buttons.length} buttons, ${snapshot.forms.length} forms.`,
+    },
+  ];
+  const seen = new Set(flows.map((flow) => flow.name.toLowerCase()));
+
+  for (const link of snapshot.navLinks.slice(0, 5)) {
+    const name = `Open ${link.text} from the main navigation`;
+    if (seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    flows.push({ name, module: moduleForLabel(link.text), steps: 4, criticality: "medium", description: `Navigation target ${link.href || "(no href)"} discovered in ${snapshot.url}.` });
+  }
+
+  for (const button of snapshot.buttons.slice(0, 5)) {
+    const name = `Click "${button}"`;
+    if (seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    flows.push({ name, module: moduleForLabel(button), steps: 4, criticality: "medium", description: `Button "${button}" discovered in ${snapshot.url}.` });
+  }
+
+  for (const [index, form] of snapshot.forms.slice(0, 4).entries()) {
+    const descriptors = form.fields.map((field) => field.label || field.placeholder || field.name || field.type).filter(Boolean);
+    const label = descriptors.slice(0, 3).join(", ") || form.action || `form ${index + 1}`;
+    const name = `Submit the ${label} form`;
+    if (seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    flows.push({
+      name,
+      module: moduleForLabel(label),
+      steps: Math.max(4, form.fields.length + 2),
+      criticality: form.fields.some((field) => field.type === "password") ? "critical" : "high",
+      description: `Form ${index + 1} on ${snapshot.url}: ${form.method.toUpperCase()} ${form.action || "(same page)"} with ${form.fields.length} fields (${descriptors.join(", ")}).`,
+    });
+  }
+
+  return flows.slice(0, 12);
+}
+
+function selectorForField(field: TargetFormField): string {
+  if (field.name) return `input[name="${field.name.replace(/"/g, '\\"')}"], select[name="${field.name.replace(/"/g, '\\"')}"], textarea[name="${field.name.replace(/"/g, '\\"')}"]`;
+  if (field.type === "email") return 'input[type="email"]';
+  if (field.type === "password") return 'input[type="password"]';
+  if (field.placeholder) return `input[placeholder="${field.placeholder.replace(/"/g, '\\"')}"]`;
+  return "input:not([type=hidden])";
+}
+
+function sampleValueForField(field: TargetFormField): string {
+  if (field.type === "email") return "qa@qasyn.dev";
+  if (field.type === "password") return "QASynTest2026!";
+  if (field.type === "tel") return "5550100";
+  if (/search|query/i.test(`${field.name} ${field.placeholder}`)) return "invoice";
+  return "QASyn";
+}
+
+/**
+ * Builds NLP steps anchored on the real DOM. Falls back to generic navigable
+ * steps when the target could not be inspected.
+ */
+export function groundedStepsForFlow(
+  snapshot: TargetDomSnapshot | null,
+  targetUrl: string,
+  title: string,
+  count: number,
+): NlpStep[] {
+  const steps: NlpStep[] = [{ id: "s1", action: "Navigate", target: targetUrl, value: "", selector: "" }];
+
+  if (snapshot) {
+    steps.push({
+      id: "s2",
+      action: "Verify Element",
+      target: `Verify the "${snapshot.h1 || snapshot.title || title}" heading is visible`,
+      value: "",
+      selector: "css:h1",
+    });
+
+    const normalized = title.toLowerCase();
+    const navMatch = snapshot.navLinks.find((link) => normalized.includes(link.text.toLowerCase()) || link.text.toLowerCase().includes(normalized));
+    if (navMatch) {
+      steps.push({ id: "s3", action: "Click", target: `Click "${navMatch.text}" in the main navigation`, value: "", selector: "css:nav a" });
+    } else {
+      const buttonMatch = snapshot.buttons.find((button) => normalized.includes(button.toLowerCase()) || button.toLowerCase().includes(normalized));
+      if (buttonMatch) steps.push({ id: "s3", action: "Click", target: `Click "${buttonMatch}"`, value: "", selector: "css:button" });
+    }
+
+    const form = snapshot.forms[0];
+    if (form) {
+      const field = form.fields.find((entry) => entry.type === "email") ?? form.fields.find((entry) => entry.type === "password") ?? form.fields[0];
+      if (field) {
+        steps.push({
+          id: "s4",
+          action: "Enter Text",
+          target: `Fill ${field.label || field.placeholder || field.name || "the first field"}`,
+          value: sampleValueForField(field),
+          selector: `css:${selectorForField(field)}`,
+        });
+      }
+      steps.push({
+        id: "s5",
+        action: "Click",
+        target: "Submit the form",
+        value: "",
+        selector: 'css:form button[type="submit"], button[type="submit"]',
+      });
+    }
+
+    steps.push({
+      id: "s6",
+      action: "AI Assertion",
+      target: `Verify "${title}" completes without console or network errors`,
+      value: "",
+      selector: "",
+    });
+  } else {
+    steps.push(
+      { id: "s2", action: "Verify Element", target: "Verify that the home page is displayed", value: "", selector: "css:h1" },
+      { id: "s3", action: "Click", target: "Click on the primary navigation link", value: "", selector: "css:nav a" },
+      { id: "s4", action: "AI Assertion", target: `Verify that ${title} is visible`, value: "", selector: "" },
+    );
+  }
+
+  const generic: Array<Omit<NlpStep, "id">> = [
+    { action: "Verify Element", target: "Verify that the current page URL is correct", value: "", selector: "" },
+    { action: "Click", target: "Click on the submit button", value: "", selector: "css:button" },
+    { action: "AI Assertion", target: "Verify that no error banner is displayed", value: "", selector: "" },
+  ];
+  let index = 0;
+  while (steps.length < Math.max(1, count)) {
+    const next = generic[index % generic.length];
+    steps.push({ id: `s${steps.length + 1}`, ...next });
+    index += 1;
+  }
+  return steps.slice(0, Math.max(1, count));
+}
+
+/**
+ * Optional free AI authoring through text.pollinations.ai (4 s timeout).
+ * Returns null on any failure so callers always fall back to DOM-grounded data.
+ */
+export async function askPollinations(prompt: string): Promise<string[] | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4_000);
+  try {
+    const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`, {
+      signal: controller.signal,
+      headers: { "user-agent": "QASyn/1.0" },
+    });
+    if (!response.ok) return null;
+    const text = await response.text();
+    const arrayMatch = text.match(/\[[\s\S]*\]/);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(arrayMatch ? arrayMatch[0] : text);
+    } catch {
+      return null;
+    }
+    if (!Array.isArray(parsed)) return null;
+    const titles = parsed
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.replace(/\s+/g, " ").trim())
+      .filter((entry) => entry.length >= 6 && entry.length <= 140);
+    return titles.length > 0 ? titles.slice(0, 12) : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Generates test-case titles grounded in the inspected DOM, enriched by
+ * Pollinations when reachable, and always falls back to local DOM titles.
+ */
+export async function generateGroundedTitles(
+  snapshot: TargetDomSnapshot | null,
+  module: string,
+  prompt: string,
+  count: number,
+  fallback: string[],
+): Promise<string[]> {
+  const domTitles = groundedFlowsFromDom(snapshot).map((flow) => flow.name);
+  const local = [...new Set([...domTitles, ...fallback])].filter(Boolean);
+
+  if (snapshot) {
+    const summary = [
+      `URL: ${snapshot.url}`,
+      `Title: ${snapshot.title || "(none)"}`,
+      `H1: ${snapshot.h1 || "(none)"}`,
+      `Nav links: ${snapshot.navLinks.map((link) => link.text).slice(0, 8).join(" | ") || "(none)"}`,
+      `Buttons: ${snapshot.buttons.slice(0, 8).join(" | ") || "(none)"}`,
+      `Forms: ${snapshot.forms.map((form) => form.fields.map((field) => field.label || field.placeholder || field.name || field.type).join(", ")).filter(Boolean).slice(0, 4).join(" | ") || "(none)"}`,
+    ].join("\n");
+    const aiTitles = await askPollinations(
+      `You are a senior QA engineer. Real page DOM:\n${summary}\n\nWrite ${count} short end-to-end test case titles for the ${module} module about "${prompt}". Ground every title in the elements above. Return ONLY a JSON array of strings.`,
+    );
+    if (aiTitles) return [...new Set([...aiTitles, ...local])].slice(0, Math.max(1, count));
+  }
+
+  return local.slice(0, Math.max(1, count));
+}
+

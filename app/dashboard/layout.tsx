@@ -7,6 +7,7 @@ import { FinQAWidget } from "@/components/sections/FinQAWidget";
 import { initialsOf } from "@/lib/auth";
 import { ensureWal, prisma } from "@/lib/db";
 import { settlePending } from "@/lib/engine";
+import { isSuperAdmin } from "@/lib/rbac";
 import { requireOrgContext, trialDaysLeft } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: { default: "Dashboard", template: "%s · QASyn" } };
@@ -20,6 +21,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
   await settlePending(ctx.org.id);
   void ensureWal();
+  const superAdmin = isSuperAdmin(ctx.user.role);
+  const organisations = superAdmin
+    ? await prisma.organisation.findMany({ select: { id: true, name: true, slug: true }, orderBy: { createdAt: "asc" } })
+    : [];
 
   return (
     <div className="min-h-screen bg-slate-50 lg:flex">
@@ -31,7 +36,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         trialDaysLeft={trialDaysLeft(ctx.org)}
         plan={ctx.org.plan}
         role={ctx.user.role}
-        ownOrgName={ctx.ownOrg?.name ?? null}
+        ownOrgName={ctx.ownOrg?.name ?? ctx.org.name}
+        organisations={organisations}
+        isSuperAdmin={superAdmin}
+        currentOrgId={ctx.org.id}
         user={{ name: ctx.user.name, email: ctx.user.email, initials: ctx.user.avatarInitials || initialsOf(ctx.user.name, ctx.user.email) }}
       />
       <div className="min-w-0 flex-1">

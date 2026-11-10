@@ -14,7 +14,7 @@ export default function Page() {
         lede: "Risk score engine & test case prioritization by failure probability.",
         features: [
   F("Commit churn analysis", "Available in the QASyn platform today."),
-  F("Risk score 0â€“100", "Available in the QASyn platform today."),
+  F("Risk score 0–100", "Available in the QASyn platform today."),
   F("Prioritized run triggers", "Available in the QASyn platform today."),
   F("Flakiness-weighted ordering", "Available in the QASyn platform today."),
         ],

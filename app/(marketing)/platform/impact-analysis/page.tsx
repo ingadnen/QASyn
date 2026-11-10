@@ -13,7 +13,7 @@ export default function Page() {
         title: "PR Impact Analysis",
         lede: "Change-to-test impact graphs: see exactly which tests to run on every git commit.",
         features: [
-  F("File â†’ module semantic mapping", "Available in the QASyn platform today."),
+  F("File → module semantic mapping", "Available in the QASyn platform today."),
   F("Minimal regression scope selection", "Available in the QASyn platform today."),
   F("Risk level (low/medium/high)", "Available in the QASyn platform today."),
   F("Go / No-Go merge verdict", "Available in the QASyn platform today."),

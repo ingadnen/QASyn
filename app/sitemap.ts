@@ -15,7 +15,7 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
       prisma.glossaryTerm.findMany({ select: { slug: true } }),
     ]);
   } catch {
-    // SQLite unavailable/locked during build â€” serve static paths only.
+    // SQLite unavailable/locked during build — serve static paths only.
     posts = [];
     studies = [];
     terms = [];

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T06:49:57.577Z",
+  "generatedAt": "2026-11-10T18:11:23.863Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -161,7 +161,7 @@
         {
           "check": "Sidebar footer shows the active plan or trial days",
           "ok": true,
-          "detail": "plan pro"
+          "detail": "plan enterprise"
         },
         {
           "check": "Sidebar shows the user card",
@@ -399,12 +399,12 @@
         {
           "check": "PR drawer computes a verdict",
           "ok": true,
-          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close Passed baseline Low risk AZURE_DEVOPS · cgi/digital-portal Open in provider open_"
+          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close 3 regressions caught High risk AZURE_DEVOPS · cgi/digital-portal Open in provider"
         },
         {
           "check": "PR drawer posts a provider comment automatically",
           "ok": true,
-          "detail": "Cancel a subscription - ✅ Retry a failed payment - ✅ Pay with a saved card - ✅ Pay with a wallet - ✅ Handle a declined card - ✅ Checkout session survives token refresh - ✅ Complete checkout _Posted automatically by QASyn for CGI._ refresh Re-run analysis Close"
+          "detail": " method - ✅ Upgrade from Starter to Pro - ✅ Cancel a subscription - ✅ Retry a failed payment - ✅ Pay with a saved card - ❌ Pay with a wallet - ❌ Handle a declined card - ❌ Complete checkout _Posted automatically by QASyn for CGI._ refresh Re-run analysis Close"
         },
         {
           "check": "Pull requests shows no raw JSON",
@@ -915,17 +915,17 @@
         {
           "check": "UI-created test case persisted",
           "ok": true,
-          "detail": "56 cases"
+          "detail": "68 cases"
         },
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-64404\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-16533\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-64404\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-16533\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -940,7 +940,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-64404"
+          "detail": "https://www.cgi.com/parity-16533"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -1297,7 +1297,7 @@
         {
           "check": "Suite created via wizard",
           "ok": true,
-          "detail": "5 suites"
+          "detail": "6 suites"
         },
         {
           "check": "Suite wizard dropdown propagation (cases fetched)",
@@ -1337,7 +1337,7 @@
         {
           "check": "Manage Test Cases modal content",
           "ok": true,
-          "detail": "Manage Test Cases close search TC-055 Update the payment method Billing TC-054 Download the latest invoice (PDF) Billing TC-053 Billing address validation Billi"
+          "detail": "Manage Test Cases close search TC-067 Update the payment method Billing TC-066 Download the latest invoice (PDF) Billing TC-065 Billing address validation Billi"
         },
         {
           "check": "Suite deleted via API (id gone)",
@@ -1416,7 +1416,7 @@
         {
           "check": "Plan wizard suite options listed",
           "ok": true,
-          "detail": "4 checkboxes"
+          "detail": "5 checkboxes"
         },
         {
           "check": "Plan wizard shows suite dropdown options",
@@ -1436,7 +1436,7 @@
         {
           "check": "Plan wizard suite selection used",
           "ok": true,
-          "detail": "www.cgi.com crawl suite 7 cases"
+          "detail": "www.cgi.com crawl suite 25 cases"
         },
         {
           "check": "Plan detail shows name",
@@ -2001,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for par1dp09 close Run this once on the machine, in PowerShell opened as administrator. The one-time token expires in ten minutes; create a new "
+          "detail": "Install command for parcr9k close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it "
         },
         {
           "check": "Install command one-time token",
@@ -2230,7 +2230,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_64404\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_16533\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2458,7 +2458,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_4F8ByHMG"
+          "detail": "cqa_n-ivyFWY"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2548,7 +2548,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 55, \"passRate\": 75, \"bugsReproduced\": 8, \"regressionsCaught\": 18, \"costAvoi"
+          "detail": "200 { \"testCases\": 67, \"passRate\": 57, \"bugsReproduced\": 8, \"regressionsCaught\": 39, \"costAvoi"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2558,7 +2558,7 @@
         {
           "check": "MCP tool \"qasyn_list_test_cases\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwa9t9v5000ex9wcgqotmfuj\", \"title\": \"Complete checkout\", \"module\": \"Checko"
+          "detail": "200 [ { \"id\": \"cmwazeh0c0016x90s34exzy7u\", \"title\": \"Complete checkout\", \"module\": \"Checko"
         },
         {
           "check": "MCP tool selector \"qasyn_run_test_case\"",
@@ -2568,7 +2568,7 @@
         {
           "check": "MCP tool \"qasyn_run_test_case\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCaseId\": \"cmwa9t9v5000ex9wcgqotmfuj\", \"title\": \"Complete checkout\", \"status\": \"passing\""
+          "detail": "200 { \"testCaseId\": \"cmwazeh0c0016x90s34exzy7u\", \"title\": \"Complete checkout\", \"status\": \"passing\""
         },
         {
           "check": "MCP tool selector \"qasyn_start_crawl\"",
@@ -2578,7 +2578,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwabsd5f00jmx9wcv0032fub\", \"organisationId\": \"cmwa8rqs000azx974zz4w4wcl\", \"projectId"
+          "detail": "200 { \"id\": \"cmwb0454b00mwx90ss0hswvhp\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2588,7 +2588,7 @@
         {
           "check": "MCP tool \"qasyn_analyze_pr\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"scopeTestCaseIds\": [ \"cmwa8rqsi00flx974jamxrjnk\", \"cmwa8rqsj00fnx9740i3gmosb\", \"cmw"
+          "detail": "200 { \"scopeTestCaseIds\": [ \"cmwayzzs100fsx9ukvvvdhkkj\", \"cmwayzzs100fux9ukgi2tlwcp\", \"cmw"
         },
         {
           "check": "MCP tool selector \"qasyn_list_bugs\"",
@@ -2598,7 +2598,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwab8qhh00bix9wcri23e1kn\", \"title\": \"Update the payment method fails\", \"se"
+          "detail": "200 [ { \"id\": \"cmwazz01g00i4x90sk9furvu0\", \"title\": \"Complete checkout fails\", \"severity\":"
         },
         {
           "check": "MCP no page errors",
@@ -3690,7 +3690,7 @@
         {
           "check": "PART 4 RowMenu flips upward when space below is short",
           "ok": true,
-          "detail": "trigger y 330 · menu 73–326"
+          "detail": "trigger y 428 · menu 171–424"
         },
         {
           "check": "PART 4 crawl table has no vertical scrollbar",
@@ -3700,7 +3700,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwabx7ye00kcx9wca7ysqrgn"
+          "detail": "status 201 · cmwb07jel00nox90s4ref9e7i"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3735,7 +3735,7 @@
         {
           "check": "PART 4 filter keeps only completed crawls",
           "ok": true,
-          "detail": "7 row(s)"
+          "detail": "5 row(s)"
         },
         {
           "check": "PART 4 filter chip can be removed",
@@ -3795,7 +3795,7 @@
         {
           "check": "PART 4 Re-import row action returns API 200",
           "ok": true,
-          "detail": "status 200 · {\"status\":\"completed\",\"created\":0,\"updated\":7,\"total\":7}"
+          "detail": "status 200 · {\"status\":\"completed\",\"created\":0,\"updated\":19,\"total\":19}"
         },
         {
           "check": "PART 4 Re-import shows a success toast",
@@ -3805,7 +3805,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 64404? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 16533? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -3921,6 +3921,400 @@
           "check": "PART 4 no page errors",
           "ok": true,
           "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "part5-repairs",
+      "name": "PART 5 — Repairs (UTF-8, plans, suites, installers, Super Admin)",
+      "route": "/dashboard/plans/test-plans",
+      "checks": [
+        {
+          "check": "No mojibake on /dashboard/overview",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/pull-requests",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/crawl",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/code-analysis",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/requirements",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/test-cases",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/plans/suites",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/plans/test-plans",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/environments",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/uploads",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/knowledge-base",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/team",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/tunnels",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/integrations",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/billing",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/mcp",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/settings/organization",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/settings/audits",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "No mojibake on /dashboard/settings/api-tokens",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite counts match linked cases (cgi)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Every plan has linked suites (cgi)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Suite counts match linked cases (acme)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Every plan has linked suites (acme)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Seeded Release 2.8 sign-off plan exists",
+          "ok": true,
+          "detail": "cmwayzzsr00ikx9ukkrjy9xt0"
+        },
+        {
+          "check": "Plan run from list returns 200",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "Plan run from list executes every linked case",
+          "ok": true,
+          "detail": "total 67 · counted 67 · passed 38 · failed 8 · not executed 21"
+        },
+        {
+          "check": "Plan run from list returns a viewport",
+          "ok": true,
+          "detail": "1440×900 · Chromium"
+        },
+        {
+          "check": "Plan run from list never sends a GET/HEAD body",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Plan run from list persists an execution",
+          "ok": true,
+          "detail": "2 → 3"
+        },
+        {
+          "check": "Plan run from list persists a TestRun",
+          "ok": true,
+          "detail": "16 → 17"
+        },
+        {
+          "check": "Plan detail lists every linked suite",
+          "ok": true,
+          "detail": "Smoke — critical paths, Billing regression, Settings & access, Checkout regression"
+        },
+        {
+          "check": "Plan detail shows the Suites in plan counter",
+          "ok": true,
+          "detail": "Suites in plan (4)"
+        },
+        {
+          "check": "Plan run from detail returns 200",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "Plan run from detail executes every linked case",
+          "ok": true,
+          "detail": "total 67 · passed 38 · failed 8"
+        },
+        {
+          "check": "Plan run from detail persists an execution",
+          "ok": true,
+          "detail": "3 → 4"
+        },
+        {
+          "check": "Plan run from detail persists a TestRun",
+          "ok": true,
+          "detail": "17 → 18"
+        },
+        {
+          "check": "Plan execution has START and END",
+          "ok": true,
+          "detail": "FAILED · 2026-11-10T18:10:59.756Z"
+        },
+        {
+          "check": "Plan execution persists the viewport",
+          "ok": true,
+          "detail": "{\"total\":67,\"passed\":38,\"failed\":8,\"notExecuted\":21,\"autoFixed\":50,\"durationMs\":65395,\"viewport\":\"1440×900 · Chromium\",\""
+        },
+        {
+          "check": "Plan counters refreshed after the run",
+          "ok": true,
+          "detail": "lastRunAt 2026-11-10T18:10:59.756Z · passRate 82.6"
+        },
+        {
+          "check": "Plan detail START card is populated",
+          "ok": true,
+          "detail": "START Nov 10, 2026, 1:10 PM Latest run"
+        },
+        {
+          "check": "Plan detail END card is populated",
+          "ok": true,
+          "detail": "END Nov 10, 2026, 1:10 PM Latest run"
+        },
+        {
+          "check": "Plan detail shows the latest viewport",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "GET /install.ps1 is public",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "install.ps1 defines global qasyn",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "install.ps1 parses connect --name/--token",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "install.ps1 reports hostname and Windows OS",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "install.ps1 uses the request origin",
+          "ok": true,
+          "detail": "http://localhost:3000"
+        },
+        {
+          "check": "install.ps1 prints the connected message",
+          "ok": true,
+          "detail": "success message present"
+        },
+        {
+          "check": "install.ps1 avoids get.qasyn.com",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "GET /install.sh is public",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "install.sh defines qasyn()",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "install.sh posts the connect payload",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "install.sh uses the request origin",
+          "ok": true,
+          "detail": "http://localhost:3000"
+        },
+        {
+          "check": "install.sh prints the connected message",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "install.sh avoids get.qasyn.com",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Cookie-less tunnel connect returns 200",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "Tunnel machine flipped Pending → Connected",
+          "ok": true,
+          "detail": "connected"
+        },
+        {
+          "check": "Tunnel connect persists hostname and OS",
+          "ok": true,
+          "detail": "QAMACHINE · win"
+        },
+        {
+          "check": "Tunnel connect persists connectedAt",
+          "ok": true,
+          "detail": "2026-11-10T18:11:04.611Z"
+        },
+        {
+          "check": "Super Admin account exists",
+          "ok": true,
+          "detail": "admin@qasyn.com"
+        },
+        {
+          "check": "Super Admin role sits above Admin",
+          "ok": true,
+          "detail": "Super Admin"
+        },
+        {
+          "check": "Super Admin owns an eternal enterprise workspace",
+          "ok": true,
+          "detail": "qasyn-hq · enterprise · 9999999 credits · 2099-12-31T23:59:59.000Z"
+        },
+        {
+          "check": "CGI is enterprise with no expiry",
+          "ok": true,
+          "detail": "enterprise · 2099-12-31T23:59:59.000Z"
+        },
+        {
+          "check": "CGI admin has full write access",
+          "ok": true,
+          "detail": "Admin"
+        },
+        {
+          "check": "Super Admin login reaches the dashboard",
+          "ok": true,
+          "detail": "http://localhost:3000/dashboard/overview"
+        },
+        {
+          "check": "Super-Admin Console is on Organization settings",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Console lists CGI",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Console lists QASyn HQ",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Super-Admin Console is on Team & access",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Super Admin switches to CGI from the Sidebar",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "Sidebar marks CGI as the active workspace",
+          "ok": true,
+          "detail": "disabled=true"
+        },
+        {
+          "check": "Super Admin writes into CGI",
+          "ok": true,
+          "detail": "status 201"
+        },
+        {
+          "check": "Super Admin write is scoped to CGI",
+          "ok": true,
+          "detail": "cmwayzzrj00b6x9ukmp3jjj92"
+        },
+        {
+          "check": "Super Admin switches to Acme",
+          "ok": true,
+          "detail": "status 200"
+        },
+        {
+          "check": "Super Admin writes into Acme",
+          "ok": true,
+          "detail": "status 201"
+        },
+        {
+          "check": "Super Admin write is scoped to Acme",
+          "ok": true,
+          "detail": "cmwayzzo3000xx9ukpwsgybi1"
+        },
+        {
+          "check": "PART 5 Super Admin has no page errors",
+          "ok": true,
+          "detail": ""
         },
         {
           "check": "Global: no example.com anywhere",
@@ -3942,5 +4336,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 748
+  "totalChecks": 825
 }

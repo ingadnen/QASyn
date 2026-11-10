@@ -83,7 +83,7 @@ export function MarketingFooter() {
               Join
             </button>
           </form>
-          <p className="mt-2 text-[11px] uppercase tracking-widest text-slate-500">The QA Brief Â· monthly</p>
+          <p className="mt-2 text-[11px] uppercase tracking-widest text-slate-500">The QA Brief · monthly</p>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30">
             <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
             All Systems Operational
@@ -114,8 +114,8 @@ export function MarketingFooter() {
       </div>
       <div className="border-t border-white/5">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-5 py-5 text-xs text-slate-500">
-          <span>Â© {new Date().getFullYear()} QASyn â€” local prototype, not affiliated with any vendor.</span>
-          <span>Next.js 15 Â· Prisma Â· SQLite</span>
+          <span>© {new Date().getFullYear()} QASyn — local prototype, not affiliated with any vendor.</span>
+          <span>Next.js 15 · Prisma · SQLite</span>
         </div>
       </div>
     </footer>

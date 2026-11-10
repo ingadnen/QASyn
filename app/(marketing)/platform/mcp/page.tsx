@@ -14,8 +14,8 @@ export default function Page() {
         lede: "Connect Cursor, Claude Code and Windsurf via SSE with 13 production tools.",
         features: [
   F("JSON-RPC tools/list + tools/call", "Available in the QASyn platform today."),
-  F("qasyn_create_web_test, qasyn_run_test_planâ€¦", "Available in the QASyn platform today."),
-  F("Bearer cqa_â€¦ token authentication", "Available in the QASyn platform today."),
+  F("qasyn_create_web_test, qasyn_run_test_plan…", "Available in the QASyn platform today."),
+  F("Bearer cqa_… token authentication", "Available in the QASyn platform today."),
   F("Organisation-scoped tool execution", "Available in the QASyn platform today."),
   F("SSE heartbeat streaming", "Available in the QASyn platform today."),
   F("External agent support", "Available in the QASyn platform today."),

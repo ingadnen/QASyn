@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { LEARNING_SECTIONS } from "@/lib/learning";
 
-export const metadata: Metadata = { title: "Learning â€” QASyn" };
+export const metadata: Metadata = { title: "Learning — QASyn" };
 export const dynamic = "force-dynamic";
 
 const KIND_LABEL: Record<string, string> = { guide: "Guide", tutorial: "Tutorial", video: "Video", demo: "Interactive demo" };
@@ -43,7 +43,7 @@ export default function PublicLearningPage() {
                   <h3 className="mt-2 text-sm font-semibold text-ink">{mod.title}</h3>
                   <p className="mt-1 flex-1 text-xs leading-relaxed text-muted">{mod.description}</p>
                   <Link href="/dashboard/learning" className="mt-3 text-xs font-semibold text-brand-600 hover:underline">
-                    {mod.cta} â†’
+                    {mod.cta} →
                   </Link>
                 </article>
               ))}

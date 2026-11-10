@@ -1,5 +1,5 @@
 ﻿/**
- * Learning catalog â€” structure extracted from https://learning.contextqa.com/
+ * Learning catalog — structure extracted from https://learning.contextqa.com/
  * (QASyn Documentation / Learning Hub, GitBook): sections, roles and workflows.
  * Each module maps to an in-app destination so it can be launched directly.
  */
@@ -89,7 +89,7 @@ export const LEARNING_SECTIONS: LearningSection[] = [
       m("ai-gen", "AI Test Generation", "AI Features", "demo", 12, "Generate test cases from a prompt, a crawl or requirements.", "/dashboard/test-cases?new=1", "Generate with AI"),
       m("ai-pr", "PR Impact Analysis", "AI Features", "demo", 10, "Risk-level diff analysis with baseline comparison on every PR.", "/dashboard/pull-requests", "Analyze a PR"),
       m("ai-kb", "Knowledge Base", "AI Features", "guide", 10, "Index website, docs and OpenAPI specs for the AQE engine.", "/dashboard/knowledge-base", "Open knowledge base"),
-      m("ai-agent", "Autonomous Agent Pipeline", "AI Features", "guide", 15, "Crawl â†’ generate â†’ execute â†’ report, without human steps.", "/dashboard/crawl", "Start a crawl"),
+      m("ai-agent", "Autonomous Agent Pipeline", "AI Features", "guide", 15, "Crawl → generate → execute → report, without human steps.", "/dashboard/crawl", "Start a crawl"),
     ],
   },
   {
@@ -105,7 +105,7 @@ export const LEARNING_SECTIONS: LearningSection[] = [
     modules: [
       m("ship-setup", "Set up a Ship Workspace", "Ship by QASyn", "tutorial", 12, "Connect a repository, pick a baseline and enable PR impact analysis.", "/dashboard/integrations", "Open integrations"),
       m("ship-dashboard", "Read the Ship Dashboard and Evidence", "Ship by QASyn", "guide", 10, "Quality score, coverage, regressions and cost avoided per release.", "/dashboard/overview", "Open overview"),
-      m("ship-workflows", "Run Ship Workflows", "Ship by QASyn", "tutorial", 14, "Autonomous pipeline: crawl, generate, execute, report â€” no human steps.", "/dashboard/crawl", "Start a crawl"),
+      m("ship-workflows", "Run Ship Workflows", "Ship by QASyn", "tutorial", 14, "Autonomous pipeline: crawl, generate, execute, report — no human steps.", "/dashboard/crawl", "Start a crawl"),
       m("ship-integrations", "Connect Ship Integrations and MCP", "Ship by QASyn", "guide", 10, "GitHub, GitLab, Jira, Linear, Slack and the MCP server.", "/dashboard/mcp", "Open MCP"),
       m("ship-security", "Operate Ship Safely", "Ship by QASyn", "guide", 8, "Audit logs, API tokens, roles and usage controls.", "/dashboard/settings/audits", "Open audits"),
     ],

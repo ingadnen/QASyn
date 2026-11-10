@@ -10,6 +10,7 @@ import {
   type Tab,
 } from "@/components/dashboard/pages/TestPlanDetail";
 import { prisma } from "@/lib/db";
+import { syncPlanLinks } from "@/lib/plan-sync";
 import { requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Test plan" };
@@ -68,6 +69,7 @@ export default async function TestPlanDetailPage({
   const ctx = await requirePermission("plans");
   const { id } = await params;
   const { tab } = await searchParams;
+  await syncPlanLinks(prisma, ctx.org.id, id);
   const [plan, allPlans, allSuites, environments, knowledge, proxies, remotes] = await Promise.all([
     prisma.testPlan.findFirst({
       where: { id, organisationId: ctx.org.id },
@@ -122,6 +124,7 @@ export default async function TestPlanDetailPage({
       notExecuted?: number;
       autoFixed?: number;
       durationMs?: number;
+      viewport?: string;
       cases?: Array<{ id: string; status: string }>;
     }>(e.resultsJson, {});
     const finished = e.finishedAt?.getTime() ?? e.startedAt.getTime();
@@ -138,12 +141,13 @@ export default async function TestPlanDetailPage({
       autoFixed: results.autoFixed ?? 0,
       durationMs: results.durationMs ?? Math.max(0, finished - e.startedAt.getTime()),
       cases: results.cases ?? [],
+      viewport: results.viewport,
     };
   });
 
   const cases: PlanCaseRow[] = planCases.map((c) => ({
     id: c.id,
-    code: caseCode.get(c.id) ?? "TC-â€”",
+    code: caseCode.get(c.id) ?? "TC-—",
     title: c.title,
     status: c.status,
     module: c.module,
@@ -169,7 +173,7 @@ export default async function TestPlanDetailPage({
       plan={planData}
       suites={plan.suites.map((s) => ({
         id: s.id,
-        code: suiteCode.get(s.id) ?? "TS-â€”",
+        code: suiteCode.get(s.id) ?? "TS-—",
         name: s.name,
         casesCount: s.testCasesCount,
         platform: s.platform,
@@ -186,7 +190,7 @@ export default async function TestPlanDetailPage({
       }))}
       allSuites={allSuites.map((s) => ({
         id: s.id,
-        code: suiteCode.get(s.id) ?? "TS-â€”",
+        code: suiteCode.get(s.id) ?? "TS-—",
         name: s.name,
         casesCount: s._count.testCases,
         platform: s.platform,

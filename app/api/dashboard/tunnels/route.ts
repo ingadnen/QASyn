@@ -17,6 +17,7 @@ const createSchema = z.object({
 
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("renew"), id: z.string().min(1).max(60) }),
+  z.object({ action: z.literal("connect"), id: z.string().min(1).max(60) }),
   z.object({
     action: z.literal("alerts"),
     sendAlerts: z.boolean(),
@@ -95,6 +96,23 @@ export async function PATCH(request: Request) {
 
   const machine = await prisma.tunnelMachine.findFirst({ where: { id: input.id, organisationId: ctx.org.id } });
   if (!machine) return jsonError("Machine not found.", 404);
+
+  if (input.action === "connect") {
+    const now = new Date();
+    const connected = await prisma.tunnelMachine.update({
+      where: { id: machine.id },
+      data: {
+        status: "connected",
+        hostname: machine.hostname || `${machine.name}.local`,
+        connectedAt: now,
+        lastSeenAt: now,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+    await audit(prisma, ctx, "tunnel.connected", `${machine.name} · ${connected.hostname}`);
+    return NextResponse.json({ machine: connected }, { headers: { "Cache-Control": "no-store" } });
+  }
+
   const token = `cqa_tun_${randomToken(18)}`;
   const updated = await prisma.tunnelMachine.update({
     where: { id: machine.id },

@@ -12,14 +12,21 @@ export class ApiError extends Error {
 }
 
 interface ApiOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PATCH" | "DELETE" | "HEAD";
   json?: unknown;
   signal?: AbortSignal;
 }
 
-export async function apiFetch<T>(url: string, { method = "GET", json, signal }: ApiOptions = {}): Promise<T> {
+export async function apiFetch<T>(url: string, { method, json, signal }: ApiOptions = {}): Promise<T> {
+  // A JSON payload implies a write: never emit a body on GET/HEAD (browsers
+  // throw "Request with GET/HEAD method cannot have body").
+  const resolvedMethod = method ?? (json !== undefined ? "POST" : "GET");
+  if ((resolvedMethod === "GET" || resolvedMethod === "HEAD") && json !== undefined) {
+    throw new ApiError(`A ${resolvedMethod} request to ${url} cannot include a JSON body.`, 0, {});
+  }
+
   const response = await fetch(url, {
-    method,
+    method: resolvedMethod,
     signal,
     cache: "no-store",
     headers: json !== undefined ? { "Content-Type": "application/json" } : undefined,

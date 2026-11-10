@@ -14,7 +14,7 @@ const PAGES = [
 export default function ComparisonIndexPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
-      <p className="text-xs font-semibold tracking-[0.16em] text-brand-600 uppercase">Resources Â· Comparison</p>
+      <p className="text-xs font-semibold tracking-[0.16em] text-brand-600 uppercase">Resources · Comparison</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Head-to-head comparisons</h1>
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {PAGES.map((p) => (

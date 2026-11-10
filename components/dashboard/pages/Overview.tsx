@@ -92,7 +92,7 @@ function Terminal({ events, running }: OverviewProps["terminal"]) {
         </span>
         <span className={cn("size-[7px] shrink-0 rounded-full", running ? "animate-pulse bg-[#22c55e]" : "bg-[#22c55e]")} />
         <span className="min-w-0 flex-1 truncate font-mono text-[12px] tabular-nums text-[#cbd5e1]">
-          Live Â· {events.length} {events.length === 1 ? "event" : "events"}
+          Live · {events.length} {events.length === 1 ? "event" : "events"}
         </span>
         <span className="shrink-0 text-[10px] text-white/40">{open ? "collapse" : "expand history"}</span>
         <CqaIcon name={open ? "expand_less" : "expand_more"} className="shrink-0 text-[14px] text-white/40" />
@@ -106,7 +106,7 @@ function Terminal({ events, running }: OverviewProps["terminal"]) {
           className="max-h-[160px] overflow-y-auto border-t border-white/[0.06] px-[15px] pb-[10px] pt-2"
         >
           {events.length === 0 ? (
-            <p className="py-2 font-mono text-[11px] text-[#475569]">Waiting for the autonomous quality engineerâ€¦</p>
+            <p className="py-2 font-mono text-[11px] text-[#475569]">Waiting for the autonomous quality engineer…</p>
           ) : (
             events.map((event, index) => (
               <div key={`${event.time}-${event.tag}-${index}`} className="flex gap-[9px] py-[3px] font-mono text-[11px] leading-4">
@@ -342,8 +342,8 @@ function SupportCard({ ownerEmail, readOnly }: { ownerEmail: string; readOnly: b
             disabled={readOnly || pending === "slack"}
             onClick={() => void run("slack", "/api/dashboard/dismiss", { json: { card: "slack", slackChannel: true } })}
           >
-            {pending === "slack" ? "Creatingâ€¦" : "Create Slack channel"}
-            <span className="sr-only"> â€” Join your QASyn support channel</span>
+            {pending === "slack" ? "Creating…" : "Create Slack channel"}
+            <span className="sr-only"> — Join your QASyn support channel</span>
           </button>
         </div>
       </div>
@@ -383,11 +383,11 @@ function SetupCard({
         <div className="flex shrink-0 items-center gap-3 pl-7">
           <Link href={href} className={setupCtaClass}>
             {cta}
-            <span className="sr-only"> â€” {title}</span>
+            <span className="sr-only"> — {title}</span>
           </Link>
           <button
             type="button"
-            aria-label={`Dismiss â€” ${title}`}
+            aria-label={`Dismiss — ${title}`}
             className={setupDismissClass}
             disabled={readOnly || pending === "dismiss"}
             onClick={() => void run("dismiss", "/api/dashboard/dismiss", { json: { card } })}
@@ -419,7 +419,7 @@ export function Overview(props: OverviewProps) {
                 <span>{stats.passing.toLocaleString("en-US")} passing</span>
                 {stats.failing > 0 && (
                   <>
-                    <span> Â· </span>
+                    <span> · </span>
                     <span className="text-[#dc2626]">{stats.failing.toLocaleString("en-US")} failing</span>
                   </>
                 )}
@@ -438,7 +438,7 @@ export function Overview(props: OverviewProps) {
           label="Time & cost saved"
           value={`$${Math.round(stats.saved).toLocaleString("en-US")}`}
           suffix="est."
-          footer="bugs Â· PR checks Â· regressions"
+          footer="bugs · PR checks · regressions"
           info="Estimated at $25 per bug found."
         />
         <StatCard label="Regressions caught" value={stats.regressions.toLocaleString("en-US")} />
@@ -484,7 +484,7 @@ export function Overview(props: OverviewProps) {
                     <span className="shrink-0 rounded-full bg-[#eef0ff] px-[7px] py-px text-[9px] font-semibold text-[#5b4ee8]">Test Case</span>
                   </span>
                   <span className="mt-px block truncate text-[11px] text-[#64748b]">
-                    baseline Â· {recent.steps} {recent.steps === 1 ? "step" : "steps"} Â· {recent.status}
+                    baseline · {recent.steps} {recent.steps === 1 ? "step" : "steps"} · {recent.status}
                   </span>
                 </span>
                 <span className="mt-[2px] shrink-0 text-[10.5px] text-[#94a3b8]">{recent.age}</span>

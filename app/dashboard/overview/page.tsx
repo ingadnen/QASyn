@@ -119,7 +119,7 @@ export default async function OverviewPage() {
     events = [
       { time: timeOf(crawl.startedAt), tag: "CRAWL", message: `Crawling ${crawl.targetUrl}` },
       { time: timeOf(completed), tag: "CRAWL", message: "Crawl completed." },
-      { time: timeOf(new Date(completed.getTime() + 1_000)), tag: "CRAWL", message: "Crawl now starting to generate test casesâ€¦" },
+      { time: timeOf(new Date(completed.getTime() + 1_000)), tag: "CRAWL", message: "Crawl now starting to generate test cases…" },
       {
         time: timeOf(new Date(completed.getTime() + 88_000)),
         tag: "CRAWL",

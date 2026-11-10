@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CqaIcon,
   Modal,
@@ -46,6 +46,15 @@ export interface TunnelsProps {
 const OS_ICON: Record<string, string> = { win: "desktop_windows", mac: "laptop_mac", linux: "terminal" };
 const OS_LABEL: Record<string, string> = { win: "Windows", mac: "macOS", linux: "Linux" };
 
+/** The origin the user is browsing, resolved after mount (no SSR mismatch). */
+function useOrigin() {
+  const [origin, setOrigin] = useState("");
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+  return origin;
+}
+
 function statusMeta(status: string) {
   if (status === "connected") return { hint: "connected", label: "Connected", tone: "active" };
   if (status === "pending") return { hint: "waiting for agent", label: "Pending", tone: "pending" };
@@ -78,12 +87,13 @@ function CopyButton({ value, label = "Copy" }: { value: string; label?: string }
 export function Tunnels(props: TunnelsProps) {
   const { readOnly, orgName, machines, alerts, maxMachines, maxRoutes } = props;
   const router = useRouter();
+  const origin = useOrigin();
   const { run, pending, error, setError } = useAction();
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [installGuide, setInstallGuide] = useState(false);
   const [networkGuide, setNetworkGuide] = useState(false);
-  const [commandMachine, setCommandMachine] = useState<{ name: string; token: string } | null>(null);
+  const [commandMachine, setCommandMachine] = useState<{ name: string; token: string; os: string } | null>(null);
   const [prefs, setPrefs] = useState<TunnelAlertPrefs>(alerts);
   const [testAlertSent, setTestAlertSent] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
@@ -92,6 +102,16 @@ export function Tunnels(props: TunnelsProps) {
 
   const activeMachines = useMemo(() => machines.filter((m) => m.status === "connected").length, [machines]);
   const routes = useMemo(() => machines.reduce((sum, m) => sum + m.routeCount, 0), [machines]);
+  const pendingMachine = useMemo(() => machines.some((m) => m.status === "pending"), [machines]);
+  const host = origin ? new URL(origin).host : "your QASyn host";
+
+  // While a one-time install command is waiting, poll the server every 3s so
+  // the machine flips to Connected without a manual reload.
+  useEffect(() => {
+    if (!pendingMachine) return;
+    const timer = window.setInterval(() => router.refresh(), 3000);
+    return () => window.clearInterval(timer);
+  }, [pendingMachine, router]);
 
   async function savePrefs(next: TunnelAlertPrefs) {
     setPrefs(next);
@@ -108,9 +128,17 @@ export function Tunnels(props: TunnelsProps) {
     });
     if (res) {
       const payload = res as { machine?: { token?: string } };
-      setCommandMachine({ name: machine.name, token: payload.machine?.token ?? machine.id });
+      setCommandMachine({ name: machine.name, token: payload.machine?.token ?? machine.id, os: machine.os });
       router.refresh();
     }
+  }
+
+  async function connectNow(machine: TunnelMachineRow) {
+    const res = await run(`connect-${machine.id}`, "/api/dashboard/tunnels", {
+      method: "PATCH",
+      json: { action: "connect", id: machine.id },
+    });
+    if (res) router.refresh();
   }
 
   async function remove(machine: TunnelMachineRow) {
@@ -133,7 +161,7 @@ export function Tunnels(props: TunnelsProps) {
       <div className="relative flex flex-wrap items-center justify-between gap-3">
         <span className="inline-flex items-center gap-2 rounded-full border border-[#e5e7eb] bg-white px-3 py-1 text-[12px] text-[#4b5563]">
           <CqaIcon name="lan" className="text-[15px] text-[#6b7280]" />
-          {activeMachines} of {maxMachines} machines Â· {routes} of {maxRoutes} routes
+          {activeMachines} of {maxMachines} machines · {routes} of {maxRoutes} routes
         </span>
         <div className="flex items-center gap-2">
           <button type="button" className={cqaBtnSecondary} onClick={() => setAlertsOpen((v) => !v)} aria-expanded={alertsOpen}>
@@ -170,7 +198,7 @@ export function Tunnels(props: TunnelsProps) {
               <div>
                 <p className={cqaLabel}>Delivery</p>
                 <div className="space-y-1.5">
-                  {["Immediate", "Daily digest Â· 09:00 CST"].map((label, i) => {
+                  {["Immediate", "Daily digest · 09:00 CST"].map((label, i) => {
                     const value = i === 0 ? "Immediate" : "Daily digest";
                     return (
                       <label key={value} className="flex items-center gap-2 text-[12.5px] text-[#374151]">
@@ -214,7 +242,7 @@ export function Tunnels(props: TunnelsProps) {
                 <div className="flex items-start gap-2 rounded-lg border border-[#fde68a] bg-[#fffbeb] px-3 py-2 text-[11.5px] leading-4 text-[#92400e]">
                   <CqaIcon name="warning" className="mt-0.5 text-[15px]" />
                   <p>
-                    <span className="font-semibold">No channel to post to.</span> Tunnel alerts are on, but nothing will be delivered until a channel is chosen here, or a default is set in Settings â†’ Slack.{" "}
+                    <span className="font-semibold">No channel to post to.</span> Tunnel alerts are on, but nothing will be delivered until a channel is chosen here, or a default is set in Settings → Slack.{" "}
                     <a href="/dashboard/integrations" className="font-semibold underline">Open Settings</a>
                   </p>
                 </div>
@@ -250,7 +278,7 @@ export function Tunnels(props: TunnelsProps) {
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-2">
           <h2 className="text-[20px] font-semibold text-[#111827]">Machines</h2>
-          <span className="text-[12px] text-[#9ca3af]">{machines.length} Â· worst first</span>
+          <span className="text-[12px] text-[#9ca3af]">{machines.length} · worst first</span>
         </div>
 
         {machines.length === 0 ? (
@@ -281,14 +309,24 @@ export function Tunnels(props: TunnelsProps) {
                       </div>
                       <p className="mt-0.5 text-[11.5px] text-[#9ca3af]">
                         {meta.hint}
-                        {machine.browserHost ? " Â· browser host" : ""}
-                        {machine.routeCount > 0 ? ` Â· ${machine.routeCount} route${machine.routeCount === 1 ? "" : "s"}` : ""}
+                        {machine.browserHost ? " · browser host" : ""}
+                        {machine.routeCount > 0 ? ` · ${machine.routeCount} route${machine.routeCount === 1 ? "" : "s"}` : ""}
                       </p>
                     </div>
                     <div className="ml-auto flex flex-wrap items-center gap-2">
+                      {machine.status === "pending" && (
+                        <button
+                          type="button"
+                          className={cqaBtnPrimary}
+                          disabled={readOnly || pending === `connect-${machine.id}`}
+                          onClick={() => void connectNow(machine)}
+                        >
+                          ⚡ {pending === `connect-${machine.id}` ? "Connecting…" : "Connect Now"}
+                        </button>
+                      )}
                       <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending === `renew-${machine.id}`} onClick={() => void renew(machine)}>
                         <CqaIcon name="refresh" className="text-[16px]" />
-                        {pending === `renew-${machine.id}` ? "Creatingâ€¦" : "Create new command"}
+                        {pending === `renew-${machine.id}` ? "Creating…" : "Create new command"}
                       </button>
                       <details className="relative">
                         <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-medium text-[#374151] hover:bg-[#f9fafb] [&::-webkit-details-marker]:hidden">
@@ -296,7 +334,7 @@ export function Tunnels(props: TunnelsProps) {
                         </summary>
                         <div className="absolute right-0 z-30 mt-1 w-44 rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-lg">
                           <button type="button" disabled={readOnly} onClick={() => void remove(machine)} className="block w-full px-3 py-1.5 text-left text-[12.5px] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">
-                            Removeâ€¦
+                            Remove…
                           </button>
                         </div>
                       </details>
@@ -321,7 +359,7 @@ export function Tunnels(props: TunnelsProps) {
         <div className="flex flex-wrap items-center gap-2 border-t border-[#f0f1f3] pt-3 text-[12px] text-[#6b7280]">
           <span>Routes are checked every 2 min.</span>
           <button type="button" className="font-medium text-[#5b4ee8] hover:underline" onClick={() => setInstallGuide(true)}>Install guide</button>
-          <span className="text-[#d1d5db]">Â·</span>
+          <span className="text-[#d1d5db]">·</span>
           <button type="button" className="font-medium text-[#5b4ee8] hover:underline" onClick={() => setNetworkGuide(true)}>Network requirements</button>
         </div>
       </section>
@@ -333,7 +371,7 @@ export function Tunnels(props: TunnelsProps) {
         onClose={() => setAddOpen(false)}
         onCreated={(machine) => {
           setAddOpen(false);
-          setCommandMachine({ name: machine.name, token: machine.token });
+          setCommandMachine({ name: machine.name, token: machine.token, os: machine.os });
           router.refresh();
         }}
       />
@@ -404,6 +442,7 @@ export function Tunnels(props: TunnelsProps) {
 
       <InstallCommandModal
         machine={commandMachine}
+        origin={origin}
         onClose={() => setCommandMachine(null)}
       />
 
@@ -418,7 +457,7 @@ export function Tunnels(props: TunnelsProps) {
           <p>Install the QASyn agent on a machine that can reach your app.</p>
           <ol className="list-decimal space-y-2 pl-5">
             <li>Add the machine here. Click <span className="font-medium text-[#111827]">+ Add machine</span>, name it and pick its system. You get an install command and a one-time token that expires after a few minutes.</li>
-            <li>Run the command on that machine â€” in Terminal on macOS or Linux, or in PowerShell opened as administrator on Windows. It needs admin rights, and the machine must be allowed to connect out (see <span className="font-medium text-[#111827]">Network requirements</span>).</li>
+            <li>Run the command on that machine — in Terminal on macOS or Linux, or in PowerShell opened as administrator on Windows. It needs admin rights, and the machine must be allowed to connect out (see <span className="font-medium text-[#111827]">Network requirements</span>).</li>
             <li>Wait for it to enroll. It appears here as <span className="font-medium text-[#111827]">Enrolled</span>, usually within a minute.</li>
             <li>Publish an app. On the machine, run <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px]">qasyn add-route web http://localhost:3000</code>. Your app gets an address like <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11.5px]">https://web-{orgName.toLowerCase()}.tunl.qasyn.dev</code>.</li>
           </ol>
@@ -449,7 +488,7 @@ export function Tunnels(props: TunnelsProps) {
         footer={<button type="button" className={cqaBtnSecondary} onClick={() => setNetworkGuide(false)}>Done</button>}
       >
         <div className="space-y-3 text-[13px] leading-5 text-[#4b5563]">
-          <p>The agent only connects out from your machine. Nothing needs to reach in â€” no open ports, no VPN, no public IP.</p>
+          <p>The agent only connects out from your machine. Nothing needs to reach in — no open ports, no VPN, no public IP.</p>
           <p>Ask your IT team to allow these outbound connections from that machine:</p>
           <div className="overflow-hidden rounded-lg border border-[#e5e7eb]">
             <table className="w-full text-left text-[12.5px]">
@@ -462,13 +501,10 @@ export function Tunnels(props: TunnelsProps) {
               </thead>
               <tbody className="divide-y divide-[#f3f4f6]">
                 {[
-                  ["get.qasyn.com", "TCP 443", "Downloading the agent"],
-                  ["server.qasyn.com", "TCP 443", "Setup and publishing"],
-                  ["pang.tunl.qasyn.dev", "TCP 443", "Tunnel control"],
-                  ["tunl.qasyn.dev", "UDP 51820", "Your app's traffic (encrypted)"],
-                  ["tunl.qasyn.dev", "UDP 21820", "Keeping the connection open"],
+                  [host, "TCP 443", "Downloading the agent and connecting this machine"],
+                  [host, "TCP 443", "Agent handshake and heartbeats"],
                 ].map(([a, p, f]) => (
-                  <tr key={`${a}-${p}`}>
+                  <tr key={`${a}-${p}-${f}`}>
                     <td className="px-3 py-2 font-mono text-[11.5px] text-[#374151]">{a}</td>
                     <td className="px-3 py-2 text-[#4b5563]">{p}</td>
                     <td className="px-3 py-2 text-[#6b7280]">{f}</td>
@@ -477,14 +513,14 @@ export function Tunnels(props: TunnelsProps) {
               </tbody>
             </table>
           </div>
-          <CopyButton value={"get.qasyn.com TCP 443\nserver.qasyn.com TCP 443\npang.tunl.qasyn.dev TCP 443\ntunl.qasyn.dev UDP 51820\ntunl.qasyn.dev UDP 21820"} label="Copy for IT" />
-          <p className="text-[12px] text-[#9ca3af]">Copies these rules plus the details a network team needs.</p>
+          <CopyButton value={`${host} TCP 443 — downloading the agent and connecting this machine\n${host} TCP 443 — agent handshake and heartbeats`} label="Copy for IT" />
+          <p className="text-[12px] text-[#9ca3af]">Only outbound HTTPS to the QASyn host you are using is required.</p>
           <div className="rounded-lg border border-[#fde68a] bg-[#fffbeb] p-3 text-[12.5px] text-[#92400e]">
             <p className="font-semibold">If the machine enrolls but your app doesn&apos;t load</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">
-              <li>Both UDP ports, 51820 and 21820, must be open.</li>
-              <li>The firewall must keep idle UDP connections for at least 10 minutes. Many default to 60 seconds.</li>
-              <li>A web proxy can&apos;t carry this traffic. The machine needs direct outbound UDP.</li>
+              <li>The machine must be able to reach <span className="font-mono">{host}</span> on TCP 443.</li>
+              <li>A web proxy that blocks long-lived connections can drop the agent; allowlist this host.</li>
+              <li>No inbound ports, VPN or public IP are needed on the machine.</li>
             </ul>
           </div>
         </div>
@@ -504,7 +540,7 @@ function AddMachineModal({
   readOnly: boolean;
   orgName: string;
   onClose: () => void;
-  onCreated: (machine: { name: string; token: string }) => void;
+  onCreated: (machine: { name: string; token: string; os: string }) => void;
 }) {
   const { run, pending, error, setError } = useAction();
   const [name, setName] = useState("");
@@ -517,8 +553,8 @@ function AddMachineModal({
     e.preventDefault();
     const res = await run("machine", "/api/dashboard/tunnels", { json: { name, os, browserHost } });
     if (res) {
-      const payload = res as { machine?: { name?: string; token?: string } };
-      onCreated({ name: payload.machine?.name ?? name, token: payload.machine?.token ?? "" });
+      const payload = res as { machine?: { name?: string; token?: string; os?: string } };
+      onCreated({ name: payload.machine?.name ?? name, token: payload.machine?.token ?? "", os: payload.machine?.os ?? os });
       setName("");
       setOs("win");
       setBrowserHost(false);
@@ -534,7 +570,7 @@ function AddMachineModal({
         <>
           <button type="button" className={cqaBtnSecondary} onClick={onClose}>Cancel</button>
           <button type="submit" form="machine-form" className={cqaBtnPrimary} disabled={readOnly || pending === "machine" || !valid}>
-            {pending === "machine" ? "Creatingâ€¦" : "Create install command"}
+            {pending === "machine" ? "Creating…" : "Create install command"}
           </button>
         </>
       }
@@ -609,14 +645,26 @@ function AddMachineModal({
 
 function InstallCommandModal({
   machine,
+  origin,
   onClose,
 }: {
-  machine: { name: string; token: string } | null;
+  machine: { name: string; token: string; os: string } | null;
+  origin: string;
   onClose: () => void;
 }) {
+  const [shell, setShell] = useState<"win" | "unix">("win");
+
+  useEffect(() => {
+    if (machine) setShell(machine.os === "win" ? "win" : "unix");
+  }, [machine]);
+
+  const base = origin || "http://localhost:3000";
   const command = machine
-    ? `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://get.qasyn.com/install.ps1 | iex; qasyn connect --name ${machine.name} --token ${machine.token}"`
+    ? shell === "win"
+      ? `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm ${base}/install.ps1 | iex; qasyn connect --name ${machine.name} --token ${machine.token}"`
+      : `curl -fsSL ${base}/install.sh | bash -s -- connect --name ${machine.name} --token ${machine.token}`
     : "";
+
   return (
     <Modal
       open={machine !== null}
@@ -627,8 +675,16 @@ function InstallCommandModal({
     >
       <div className="space-y-4">
         <p className="text-[12.5px] leading-5 text-[#6b7280]">
-          Run this once on the machine, in PowerShell opened as administrator. The one-time token expires in ten minutes; create a new command if it does.
+          Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it does.
         </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className={cn(cqaBtnSecondary, shell === "win" && "border-[#5b4ee8] text-[#4338ca]")} onClick={() => setShell("win")}>
+            Windows · PowerShell
+          </button>
+          <button type="button" className={cn(cqaBtnSecondary, shell === "unix" && "border-[#5b4ee8] text-[#4338ca]")} onClick={() => setShell("unix")}>
+            macOS / Linux · Terminal
+          </button>
+        </div>
         <pre className="overflow-x-auto rounded-lg bg-[#10141c] p-3 text-[11.5px] leading-5 text-[#cbd5e1]"><code>{command}</code></pre>
         <div className="flex flex-wrap items-center gap-2">
           <CopyButton value={command} label="Copy command" />
@@ -636,7 +692,7 @@ function InstallCommandModal({
         </div>
         <div className="flex items-start gap-2 rounded-lg border border-[#e0e7ff] bg-[#eef2ff] px-3 py-2 text-[11.5px] leading-4 text-[#4338ca]">
           <CqaIcon name="encrypted" className="mt-0.5 text-[15px]" />
-          The token is shown once. Nothing else changes if you create a new command.
+          The token is shown once. The machine flips to Connected as soon as the agent reaches {base}.
         </div>
       </div>
     </Modal>

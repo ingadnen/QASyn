@@ -19,7 +19,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
     return (
       <div className="space-y-6">
         <PageHeader title="Run not found" description="This execution does not belong to your organisation." />
-        <Link href="/dashboard/overview" className="text-sm font-medium text-brand-600 hover:underline">â† Back to overview</Link>
+        <Link href="/dashboard/overview" className="text-sm font-medium text-brand-600 hover:underline">← Back to overview</Link>
       </div>
     );
   }
@@ -34,20 +34,20 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="EXECUTION EVIDENCE Â· ROOT CAUSE ANALYSIS"
-        title={`Release #${run.release} Â· v${run.version}`}
-        description={`${run.title} Â· ${run.testsPassed}/${run.testsTotal} passed Â· ${run.durationMs} ms Â· ${timeAgo(run.createdAt)}`}
+        kicker="EXECUTION EVIDENCE · ROOT CAUSE ANALYSIS"
+        title={`Release #${run.release} · v${run.version}`}
+        description={`${run.title} · ${run.testsPassed}/${run.testsTotal} passed · ${run.durationMs} ms · ${timeAgo(run.createdAt)}`}
         actions={
           <>
             <StatusPill value={run.status === "SUCCESS" ? "passing" : "failing"} label={run.status} />
-            <Link href="/dashboard/overview" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">â† Overview</Link>
+            <Link href="/dashboard/overview" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">← Overview</Link>
           </>
         }
       />
       <Card title="Root cause analysis">
         <div className="space-y-3 px-5 py-4">
           <p className="text-sm">
-            Classification: <strong>{rca.classification}</strong> Â· confidence {Math.round(rca.confidence * 100)}%
+            Classification: <strong>{rca.classification}</strong> · confidence {Math.round(rca.confidence * 100)}%
           </p>
           <p className="text-sm text-slate-600">{rca.explanation}</p>
           <RcaExport runId={run.id} title={run.title} />
@@ -77,7 +77,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
           <ul className="px-5 py-3">
             {metrics.length === 0 && <li className="py-2 text-sm text-slate-500">No metrics recorded.</li>}
             {metrics.map((m) => (
-              <li key={m.id} className="flex justify-between py-1 text-sm"><span className="font-medium">{m.metric}</span><span className={m.passed ? "text-emerald-600" : "text-red-600"}>{m.value} {m.passed ? "âœ“" : "âœ—"}</span></li>
+              <li key={m.id} className="flex justify-between py-1 text-sm"><span className="font-medium">{m.metric}</span><span className={m.passed ? "text-emerald-600" : "text-red-600"}>{m.value} {m.passed ? "✓" : "✕"}</span></li>
             ))}
           </ul>
         </Card>
@@ -85,7 +85,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
           <ul className="px-5 py-3">
             {evidence.length === 0 && <li className="py-2 text-sm text-slate-500">No evidence artifacts (screenshots/traces) for this run.</li>}
             {evidence.map((e, i) => (
-              <li key={i} className="py-1 text-xs text-slate-600">{e.kind ?? "artifact"} â€” {e.message ?? "captured"}</li>
+              <li key={i} className="py-1 text-xs text-slate-600">{e.kind ?? "artifact"} — {e.message ?? "captured"}</li>
             ))}
           </ul>
         </Card>

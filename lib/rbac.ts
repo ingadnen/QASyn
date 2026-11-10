@@ -52,6 +52,7 @@ const ALL: readonly Permission[] = PERMISSIONS;
 
 /** Role → allowed permissions. Unknown roles fall back to the least-privileged set. */
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
+  "Super Admin": ALL,
   Admin: ALL,
   Founder: ALL,
   "Eng manager": [
@@ -126,6 +127,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
 };
 
 const ROLE_ALIASES: Record<string, UserRole> = {
+  "super admin": "Super Admin",
+  superadmin: "Super Admin",
+  "super-admin": "Super Admin",
   admin: "Admin",
   founder: "Founder",
   "eng manager": "Eng manager",
@@ -162,4 +166,9 @@ export function permissionsFor(role: string | null | undefined): Set<Permission>
 /** Human-readable role label for the sidebar / team table. */
 export function roleLabel(role: string | null | undefined): string {
   return normalizeRole(role);
+}
+
+/** Super Admin sits above Admin: every permission, every organisation, read/write. */
+export function isSuperAdmin(role: string | null | undefined): boolean {
+  return normalizeRole(role) === "Super Admin";
 }

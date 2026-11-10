@@ -30,7 +30,7 @@ export default async function NotificationsPage() {
               return (
                 <li key={r.id} className="px-5 py-3">
                   <p className="text-sm font-medium capitalize text-slate-800">{r.channel} <span className="text-xs text-slate-400">{r.enabled ? "enabled" : "disabled"}</span></p>
-                  <p className="text-xs text-slate-500">{events.join(", ") || "â€”"}</p>
+                  <p className="text-xs text-slate-500">{events.join(", ") || "—"}</p>
                   <p className="mt-1 truncate text-xs text-slate-400">Preview: {preview.slice(0, 120)}</p>
                 </li>
               );

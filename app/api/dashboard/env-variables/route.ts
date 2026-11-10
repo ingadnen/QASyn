@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   return NextResponse.json({ variable: { ...variable, value: isSecret ? "••••" : value } }, { status: 201 });
 }
 
-/** DELETE /api/dashboard/env-variables?id=� */
+/** DELETE /api/dashboard/env-variables?id={id} */
 export async function DELETE(request: Request) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;

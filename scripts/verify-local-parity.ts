@@ -5,7 +5,7 @@
  * Sortie: contextqa-dump/full-19-modules-parity.json
  * Run: npx tsx scripts/verify-local-parity.ts
  */
-import { chromium, type Browser, type Page } from "playwright";
+import { chromium, type Browser, type ConsoleMessage, type Page } from "playwright";
 import { PrismaClient } from "@prisma/client";
 import fs from "node:fs";
 import path from "node:path";
@@ -2332,8 +2332,328 @@ async function main() {
   );
   check("PART 4 side-by-side report written", fs.existsSync(path.join(OUT, "part4-live-local.json")));
   check("PART 4 no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
-  await db.$disconnect();
   await shot(page, "part4-final");
+
+  // ── PART 5 — Repairs: mojibake, plan execution, suites, installers, Super Admin
+  moduleErrors = [];
+  mod("part5-repairs", "PART 5 — Repairs (UTF-8, plans, suites, installers, Super Admin)", "/dashboard/plans/test-plans");
+
+  // 5.1 — Zero mojibake on the 19 product pages.
+  const parityRoutes = [
+    "/dashboard/overview",
+    "/dashboard/pull-requests",
+    "/dashboard/crawl",
+    "/dashboard/code-analysis",
+    "/dashboard/requirements",
+    "/dashboard/test-cases",
+    "/dashboard/plans/suites",
+    "/dashboard/plans/test-plans",
+    "/dashboard/environments",
+    "/dashboard/uploads",
+    "/dashboard/knowledge-base",
+    "/dashboard/team",
+    "/dashboard/tunnels",
+    "/dashboard/integrations",
+    "/dashboard/billing",
+    "/dashboard/mcp",
+    "/dashboard/settings/organization",
+    "/dashboard/settings/audits",
+    "/dashboard/settings/api-tokens",
+  ];
+  const mojibakeNeedles: Array<[string, string]> = [
+    ["\u00e2\u20ac", "â€"],
+    ["\u00c2\u00b7", "Â·"],
+    ["\u00c3", "Ã"],
+    ["\uFFFD", "U+FFFD"],
+  ];
+  for (const route of parityRoutes) {
+    await goto(page, route);
+    const pageText = await body(page);
+    const found = mojibakeNeedles.filter(([needle]) => pageText.includes(needle)).map(([, label]) => label);
+    check(`No mojibake on ${route}`, found.length === 0, found.join(" "));
+  }
+
+  // 5.2 — Suite counters equal the visible linked cases; every plan has suites.
+  const cgiOrg = await db.organisation.findUnique({ where: { slug: "cgi" }, select: { id: true, plan: true, trialEndsAt: true, trialCredits: true } });
+  const acmeOrg = await db.organisation.findUnique({ where: { slug: "acme" }, select: { id: true } });
+  const cgiId = cgiOrg?.id ?? activeOrgId;
+  for (const [slug, orgRow] of [["cgi", cgiOrg], ["acme", acmeOrg]] as const) {
+    if (!orgRow) {
+      check(`Workspace ${slug} exists`, false);
+      continue;
+    }
+    const suites = await db.testSuite.findMany({
+      where: { organisationId: orgRow.id },
+      include: { _count: { select: { testCases: true } } },
+    });
+    const mismatched = suites.filter((suite) => suite.testCasesCount !== suite._count.testCases);
+    check(
+      `Suite counts match linked cases (${slug})`,
+      mismatched.length === 0,
+      mismatched.map((suite) => `${suite.name}: stored ${suite.testCasesCount} / linked ${suite._count.testCases}`).slice(0, 3).join(" | "),
+    );
+    const plans = await db.testPlan.findMany({
+      where: { organisationId: orgRow.id },
+      select: { name: true, suites: { select: { id: true } } },
+    });
+    const unlinkedPlans = plans.filter((plan) => plan.suites.length === 0);
+    check(`Every plan has linked suites (${slug})`, unlinkedPlans.length === 0, unlinkedPlans.map((plan) => plan.name).slice(0, 3).join(" | "));
+  }
+
+  // 5.3 — Plan execution from the list (RowMenu) and from the detail page.
+  const seededPlan = await db.testPlan.findFirst({
+    where: { organisationId: cgiId, name: "Release 2.8 sign-off" },
+    include: { suites: { select: { id: true, name: true } } },
+  });
+  check("Seeded Release 2.8 sign-off plan exists", Boolean(seededPlan), seededPlan?.id ?? "missing");
+  if (seededPlan) {
+    const planId = seededPlan.id;
+    const listExecBefore = await db.testPlanExecution.count({ where: { testPlanId: planId } });
+    const listRunBefore = await db.testRun.count({ where: { organisationId: cgiId } });
+    await goto(page, "/dashboard/plans/test-plans");
+    const runConsoleErrors: string[] = [];
+    const consoleListener = (message: ConsoleMessage) => {
+      if (message.type() === "error") runConsoleErrors.push(message.text());
+    };
+    page.on("console", consoleListener);
+    let listStatus = 0;
+    let listResult: Record<string, unknown> = {};
+    try {
+      const trigger = page.getByRole("button", { name: `Actions for ${seededPlan.name}`, exact: true }).first();
+      await trigger.waitFor({ state: "visible", timeout: 10_000 });
+      await trigger.click();
+      const runItem = page.locator("[data-row-menu]").getByRole("menuitem", { name: /^Run Plan$/ });
+      await runItem.waitFor({ state: "visible", timeout: 5_000 });
+      const [response] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes("/api/dashboard/test-plans/run") && res.request().method() === "POST", { timeout: 30_000 }),
+        runItem.click(),
+      ]);
+      listStatus = response.status();
+      listResult = ((await response.json().catch(() => ({}))) as Record<string, unknown>) ?? {};
+      await page.waitForTimeout(1_200);
+    } catch (error) {
+      check("Plan run from list completed without UI error", false, String(error).slice(0, 180));
+    } finally {
+      page.off("console", consoleListener);
+    }
+    const listTotal = Number(listResult.total ?? 0);
+    const listCounted = Number(listResult.passed ?? 0) + Number(listResult.failed ?? 0) + Number(listResult.notExecuted ?? 0);
+    check("Plan run from list returns 200", listStatus === 200, `status ${listStatus}`);
+    check(
+      "Plan run from list executes every linked case",
+      listTotal > 0 && listCounted === listTotal,
+      `total ${listTotal} · counted ${listCounted} · passed ${String(listResult.passed)} · failed ${String(listResult.failed)} · not executed ${String(listResult.notExecuted)}`,
+    );
+    check("Plan run from list returns a viewport", typeof listResult.viewport === "string" && String(listResult.viewport).includes("1440×900"), String(listResult.viewport ?? "missing"));
+    check(
+      "Plan run from list never sends a GET/HEAD body",
+      !runConsoleErrors.some((message) => /GET\/HEAD|cannot have body/i.test(message)),
+      runConsoleErrors.filter((message) => /GET\/HEAD|cannot have body/i.test(message)).join(" | "),
+    );
+    const listExecAfter = await db.testPlanExecution.count({ where: { testPlanId: planId } });
+    const listRunAfter = await db.testRun.count({ where: { organisationId: cgiId } });
+    check("Plan run from list persists an execution", listExecAfter === listExecBefore + 1, `${listExecBefore} → ${listExecAfter}`);
+    check("Plan run from list persists a TestRun", listRunAfter === listRunBefore + 1, `${listRunBefore} → ${listRunAfter}`);
+
+    // Detail page: suites, counters, START/END, viewport and a second run.
+    await goto(page, `/dashboard/plans/test-plans/${planId}`);
+    const detailText = await body(page);
+    check("Plan detail lists every linked suite", seededPlan.suites.every((suite) => detailText.includes(suite.name)), seededPlan.suites.map((suite) => suite.name).join(", "));
+    check("Plan detail shows the Suites in plan counter", /Suites in plan \(\d+\)/.test(detailText), detailText.match(/Suites in plan \(\d+\)/)?.[0] ?? "missing");
+    const detailExecBefore = await db.testPlanExecution.count({ where: { testPlanId: planId } });
+    const detailRunBefore = await db.testRun.count({ where: { organisationId: cgiId } });
+    let detailStatus = 0;
+    let detailResult: Record<string, unknown> = {};
+    try {
+      const [response] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes("/api/dashboard/test-plans/run") && res.request().method() === "POST", { timeout: 30_000 }),
+        page.getByRole("button", { name: /^Run Now$/ }).first().click(),
+      ]);
+      detailStatus = response.status();
+      detailResult = ((await response.json().catch(() => ({}))) as Record<string, unknown>) ?? {};
+      await page.waitForTimeout(1_600);
+    } catch (error) {
+      check("Plan run from detail completed without UI error", false, String(error).slice(0, 180));
+    }
+    check("Plan run from detail returns 200", detailStatus === 200, `status ${detailStatus}`);
+    check(
+      "Plan run from detail executes every linked case",
+      Number(detailResult.total ?? 0) > 0 && Number(detailResult.passed ?? 0) + Number(detailResult.failed ?? 0) + Number(detailResult.notExecuted ?? 0) === Number(detailResult.total ?? 0),
+      `total ${String(detailResult.total)} · passed ${String(detailResult.passed)} · failed ${String(detailResult.failed)}`,
+    );
+    const detailExecAfter = await db.testPlanExecution.count({ where: { testPlanId: planId } });
+    const detailRunAfter = await db.testRun.count({ where: { organisationId: cgiId } });
+    check("Plan run from detail persists an execution", detailExecAfter === detailExecBefore + 1, `${detailExecBefore} → ${detailExecAfter}`);
+    check("Plan run from detail persists a TestRun", detailRunAfter === detailRunBefore + 1, `${detailRunBefore} → ${detailRunAfter}`);
+    const latestExecution = await db.testPlanExecution.findFirst({ where: { testPlanId: planId }, orderBy: { startedAt: "desc" } });
+    check("Plan execution has START and END", Boolean(latestExecution?.startedAt && latestExecution?.finishedAt) && latestExecution?.status !== "RUNNING", `${latestExecution?.status ?? "missing"} · ${latestExecution?.finishedAt?.toISOString() ?? "no end"}`);
+    check("Plan execution persists the viewport", String(latestExecution?.resultsJson ?? "").includes("1440×900"), String(latestExecution?.resultsJson ?? "").slice(0, 120));
+    const updatedPlan = await db.testPlan.findUnique({ where: { id: planId }, select: { lastRunAt: true, passRate: true } });
+    check("Plan counters refreshed after the run", Boolean(updatedPlan?.lastRunAt), `lastRunAt ${updatedPlan?.lastRunAt?.toISOString() ?? "missing"} · passRate ${updatedPlan?.passRate ?? "?"}`);
+    const startCardText = (await page.getByText("START", { exact: true }).first().locator("xpath=..").innerText().catch(() => "")) || "";
+    const endCardText = (await page.getByText("END", { exact: true }).first().locator("xpath=..").innerText().catch(() => "")) || "";
+    check("Plan detail START card is populated", startCardText.replace(/START/g, "").trim().length > 0 && !startCardText.includes("—"), startCardText.replace(/\s+/g, " ").slice(0, 100));
+    check("Plan detail END card is populated", endCardText.replace(/END/g, "").trim().length > 0 && !endCardText.includes("—"), endCardText.replace(/\s+/g, " ").slice(0, 100));
+    check("Plan detail shows the latest viewport", (await body(page)).includes("1440×900"));
+  }
+
+  // 5.4 — Real installers, public and origin-based; token-authenticated connect.
+  const anonContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  try {
+    const psResponse = await anonContext.request.get(`${BASE}/install.ps1`);
+    const psScript = await psResponse.text();
+    check("GET /install.ps1 is public", psResponse.status() === 200, `status ${psResponse.status()}`);
+    check("install.ps1 defines global qasyn", psScript.includes("function global:qasyn"));
+    check("install.ps1 parses connect --name/--token", psScript.includes("--name") && psScript.includes("--token") && psScript.includes("action   = \"connect\""));
+    check("install.ps1 reports hostname and Windows OS", psScript.includes("$env:COMPUTERNAME") && psScript.includes("os       = \"Windows\""));
+    check(
+      "install.ps1 uses the request origin",
+      psScript.includes(`${BASE}/install.ps1`) && psScript.includes(`$global:QASynOrigin = "${BASE}"`) && psScript.includes("/api/onboarding/tunnel"),
+      BASE,
+    );
+    check("install.ps1 prints the connected message", psScript.includes("QASyn Tunnel Agent connected! Machine '"), "success message present");
+    check("install.ps1 avoids get.qasyn.com", !psScript.includes("get.qasyn.com"));
+
+    const bashResponse = await anonContext.request.get(`${BASE}/install.sh`);
+    const bashScript = await bashResponse.text();
+    check("GET /install.sh is public", bashResponse.status() === 200, `status ${bashResponse.status()}`);
+    check("install.sh defines qasyn()", bashScript.includes("qasyn()"));
+    check("install.sh posts the connect payload", bashScript.includes("\"action\":\"connect\"") && bashScript.includes("/api/onboarding/tunnel"));
+    check(
+      "install.sh uses the request origin",
+      bashScript.includes(`${BASE}/install.sh`) && bashScript.includes(`QASYN_ORIGIN="${BASE}"`) && bashScript.includes("/api/onboarding/tunnel"),
+      BASE,
+    );
+    check("install.sh prints the connected message", bashScript.includes("QASyn Tunnel Agent connected! Machine '"));
+    check("install.sh avoids get.qasyn.com", !bashScript.includes("get.qasyn.com"));
+
+    const tunnelToken = `cqa_tun_parity_${RUN_ID}`;
+    await db.tunnelMachine.deleteMany({ where: { organisationId: cgiId, name: "qamachine" } });
+    const tunnel = await db.tunnelMachine.create({
+      data: {
+        organisationId: cgiId,
+        name: "qamachine",
+        os: "win",
+        status: "pending",
+        token: tunnelToken,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+      select: { id: true },
+    });
+    try {
+      const connectResponse = await anonContext.request.post(`${BASE}/api/onboarding/tunnel`, {
+        data: { action: "connect", name: "qamachine", token: tunnelToken, os: "Windows", hostname: "QAMACHINE" },
+      });
+      check("Cookie-less tunnel connect returns 200", connectResponse.status() === 200, `status ${connectResponse.status()}`);
+      const connected = await db.tunnelMachine.findUnique({ where: { id: tunnel.id } });
+      check("Tunnel machine flipped Pending → Connected", connected?.status === "connected", connected?.status ?? "missing");
+      check("Tunnel connect persists hostname and OS", connected?.hostname === "QAMACHINE" && connected?.os === "win", `${connected?.hostname ?? "?"} · ${connected?.os ?? "?"}`);
+      check("Tunnel connect persists connectedAt", Boolean(connected?.connectedAt), connected?.connectedAt?.toISOString() ?? "missing");
+    } finally {
+      await db.tunnelMachine.delete({ where: { id: tunnel.id } }).catch(() => undefined);
+    }
+  } finally {
+    await anonContext.close();
+  }
+
+  // 5.5 — Eternal Super Admin, console, multi-organisation read/write.
+  const superUser = await db.user.findUnique({
+    where: { email: "admin@qasyn.com" },
+    include: { organisation: { select: { slug: true, plan: true, trialCredits: true, creditsUsed: true, trialEndsAt: true } } },
+  });
+  check("Super Admin account exists", Boolean(superUser), superUser?.email ?? "missing");
+  check("Super Admin role sits above Admin", superUser?.role === "Super Admin", superUser?.role ?? "missing");
+  check(
+    "Super Admin owns an eternal enterprise workspace",
+    superUser?.organisation?.plan === "enterprise" && superUser?.organisation?.trialCredits === 9_999_999 && superUser?.organisation?.trialEndsAt?.getUTCFullYear() === 2099,
+    superUser?.organisation ? `${superUser.organisation.slug} · ${superUser.organisation.plan} · ${superUser.organisation.trialCredits} credits · ${superUser.organisation.trialEndsAt.toISOString()}` : "missing",
+  );
+  check(
+    "CGI is enterprise with no expiry",
+    cgiOrg?.plan === "enterprise" && cgiOrg?.trialEndsAt?.getUTCFullYear() === 2099,
+    cgiOrg ? `${cgiOrg.plan} · ${cgiOrg.trialEndsAt?.toISOString() ?? "no expiry"}` : "missing",
+  );
+  const cgiAdmin = await db.user.findUnique({ where: { email: "cgi@cgi.com" }, select: { role: true, status: true, emailVerifiedAt: true } });
+  check("CGI admin has full write access", cgiAdmin?.role === "Admin" && cgiAdmin?.status === "active" && Boolean(cgiAdmin?.emailVerifiedAt), cgiAdmin?.role ?? "missing");
+
+  const superSession = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
+  try {
+    check("Super Admin login reaches the dashboard", superSession.page.url().includes("/dashboard"), superSession.page.url());
+    await goto(superSession.page, "/dashboard/settings/organization");
+    await superSession.page.getByText("Super-Admin Console").first().waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+    const saOrgText = await body(superSession.page);
+    check("Super-Admin Console is on Organization settings", saOrgText.includes("Super-Admin Console"));
+    check("Console lists CGI", saOrgText.includes("CGI"));
+    check("Console lists QASyn HQ", saOrgText.includes("QASyn HQ"));
+    await goto(superSession.page, "/dashboard/team");
+    await superSession.page.getByText("Super-Admin Console").first().waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+    check("Super-Admin Console is on Team & access", (await body(superSession.page)).includes("Super-Admin Console"));
+
+    await goto(superSession.page, "/dashboard/overview");
+    const profileMenu = superSession.page.locator("aside button[aria-haspopup='menu']").first();
+    await profileMenu.evaluate((el) => (el as HTMLElement).click()).catch(() => undefined);
+    const cgiWorkspaceItem = superSession.page.getByRole("menuitem", { name: /CGI/ }).first();
+    await cgiWorkspaceItem.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+    let sidebarSwitchStatus = 0;
+    let sidebarSwitchError = "";
+    try {
+      const [switchResponse] = await Promise.all([
+        superSession.page.waitForResponse((res) => res.url().includes("/api/auth/switch") && res.request().method() === "POST", { timeout: 15_000 }),
+        cgiWorkspaceItem.click(),
+      ]);
+      sidebarSwitchStatus = switchResponse.status();
+    } catch (error) {
+      sidebarSwitchError = String(error).slice(0, 160);
+    }
+    check("Super Admin switches to CGI from the Sidebar", sidebarSwitchStatus === 200, sidebarSwitchError || `status ${sidebarSwitchStatus}`);
+    await superSession.page.waitForTimeout(1_500);
+    await profileMenu.evaluate((el) => (el as HTMLElement).click()).catch(() => undefined);
+    const cgiActiveItem = superSession.page.getByRole("menuitem", { name: /CGI/ }).first();
+    await cgiActiveItem.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+    const cgiActive = await cgiActiveItem.isDisabled().catch(() => false);
+    check("Sidebar marks CGI as the active workspace", cgiActive, `disabled=${cgiActive}`);
+    await profileMenu.evaluate((el) => (el as HTMLElement).click()).catch(() => undefined);
+
+    const superWrite = await apiJson(superSession.page, "/api/dashboard/test-cases", "POST", {
+      mode: "manual",
+      title: `SUPER ADMIN WRITE ${RUN_ID}`,
+      module: "Core",
+      criticality: "medium",
+      stepsCount: 3,
+    });
+    const superCaseId = String((superWrite.body as { testCases?: Array<{ id?: string }> }).testCases?.[0]?.id ?? "");
+    check("Super Admin writes into CGI", superWrite.status === 201, `status ${superWrite.status}`);
+    if (superCaseId) {
+      const superCase = await db.testCase.findUnique({ where: { id: superCaseId }, select: { organisationId: true } });
+      check("Super Admin write is scoped to CGI", superCase?.organisationId === cgiId, superCase?.organisationId ?? "missing");
+      await db.testCase.delete({ where: { id: superCaseId } }).catch(() => undefined);
+    }
+
+    if (acmeOrg) {
+      const switchAcme = await apiJson(superSession.page, "/api/auth/switch", "POST", { target: "org", organisationId: acmeOrg.id });
+      check("Super Admin switches to Acme", switchAcme.status === 200, `status ${switchAcme.status}`);
+      const acmeWrite = await apiJson(superSession.page, "/api/dashboard/test-cases", "POST", {
+        mode: "manual",
+        title: `SUPER ADMIN ACME ${RUN_ID}`,
+        module: "Core",
+        criticality: "medium",
+        stepsCount: 3,
+      });
+      const acmeCaseId = String((acmeWrite.body as { testCases?: Array<{ id?: string }> }).testCases?.[0]?.id ?? "");
+      check("Super Admin writes into Acme", acmeWrite.status === 201, `status ${acmeWrite.status}`);
+      if (acmeCaseId) {
+        const acmeCase = await db.testCase.findUnique({ where: { id: acmeCaseId }, select: { organisationId: true } });
+        check("Super Admin write is scoped to Acme", acmeCase?.organisationId === acmeOrg.id, acmeCase?.organisationId ?? "missing");
+        await db.testCase.delete({ where: { id: acmeCaseId } }).catch(() => undefined);
+      }
+    }
+    check("PART 5 Super Admin has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  } finally {
+    await superSession.context.close().catch(() => undefined);
+  }
+  await shot(page, "part5-repairs");
+
+  await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────
   const allCasesFinal = await apiJson(page, "/api/dashboard/test-cases", "GET");

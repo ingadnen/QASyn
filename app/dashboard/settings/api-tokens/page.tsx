@@ -24,7 +24,7 @@ export default async function ApiTokensPage() {
       <div className="mb-5">
         <h1 className="text-[20px] font-bold leading-7 text-[#101828]">API Tokens</h1>
         <p className="mt-2 max-w-4xl text-[13.5px] leading-5 text-[#4a5565]">
-          Scoped, long-lived credentials for scripts and integrations. You only see tokens you created â€” each carries a fixed permission set, an expiry, and an optional IP allowlist.
+          Scoped, long-lived credentials for scripts and integrations. You only see tokens you created — each carries a fixed permission set, an expiry, and an optional IP allowlist.
         </p>
       </div>
       <ApiTokensList

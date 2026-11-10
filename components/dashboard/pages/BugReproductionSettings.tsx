@@ -92,13 +92,13 @@ export function BugReproductionSettingsForm({ readOnly, initial, environments, d
     <div className="pb-10">
       <h1 className="text-[20px] font-bold leading-7 text-[#101828]">Bug Reproduction Settings</h1>
       <p className="mt-2 max-w-5xl text-[14px] leading-6 text-[#4a5565]">
-        Reproduce a bug from a plain-text report â€” a ticket, a Slack message, anything. The AI parses the report; these settings decide which Environment and Data Profile it reproduces with, and what to fall back to when neither is specified.
+        Reproduce a bug from a plain-text report — a ticket, a Slack message, anything. The AI parses the report; these settings decide which Environment and Data Profile it reproduces with, and what to fall back to when neither is specified.
       </p>
 
       <section className={cardCls}>
         <h3 className={h3Cls}>Defaults</h3>
         <p className="mt-2 max-w-4xl text-[13.5px] leading-5 text-[#6b7280]">
-          Used when a report doesn&apos;t name a specific Environment or Data Profile. Both are managed under Environments and Data Profiles â€” this only picks which one Bug Reproduction reaches for by default.
+          Used when a report doesn&apos;t name a specific Environment or Data Profile. Both are managed under Environments and Data Profiles — this only picks which one Bug Reproduction reaches for by default.
         </p>
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <label className="block">
@@ -123,7 +123,7 @@ export function BugReproductionSettingsForm({ readOnly, initial, environments, d
       <section className={cardCls}>
         <h3 className={h3Cls}>Recognized label formats</h3>
         <p className="mt-2 max-w-4xl text-[13.5px] leading-5 text-[#6b7280]">
-          Add either of these to a ticket to pick the exact Environment or Data Profile to reproduce with, instead of the defaults above â€” the AI matches the value after the colon by name.
+          Add either of these to a ticket to pick the exact Environment or Data Profile to reproduce with, instead of the defaults above — the AI matches the value after the colon by name.
         </p>
         <div className="mt-5 overflow-hidden rounded-lg border border-[#e5e7eb]">
           <table className="w-full text-left text-[13px]">
@@ -152,7 +152,7 @@ export function BugReproductionSettingsForm({ readOnly, initial, environments, d
         <div className="mt-5 grid gap-3 lg:grid-cols-2">
           {[
             { value: "label", title: "Only tickets with a trigger label", copy: "Recommended. Nothing runs unless a ticket carries one of the labels below." },
-            { value: "every", title: "Every new ticket", copy: "Labels are ignored. Every new ticket is reproduced â€” set a daily cap below." },
+            { value: "every", title: "Every new ticket", copy: "Labels are ignored. Every new ticket is reproduced — set a daily cap below." },
           ].map((option) => (
             <button
               key={option.value}
@@ -269,7 +269,7 @@ export function BugReproductionSettingsForm({ readOnly, initial, environments, d
         {saved && <span className="text-[12.5px] font-medium text-[#00a63e]">Settings saved</span>}
         <button type="button" className={cn(cqaBtnPrimary, "h-10 px-5 text-[14px]")} onClick={save} disabled={readOnly || pending === "save"}>
           <CqaIcon name="save" className="text-[18px]" />
-          {pending === "save" ? "Updatingâ€¦" : "Update"}
+          {pending === "save" ? "Updating…" : "Update"}
         </button>
       </div>
     </div>

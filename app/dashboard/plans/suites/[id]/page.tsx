@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SuiteDetail } from "@/components/dashboard/pages/SuiteDetail";
 import { prisma } from "@/lib/db";
+import { syncSuiteLinks } from "@/lib/plan-sync";
 import { requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Suite detail" };
@@ -20,6 +21,7 @@ function parseList(value: string): string[] {
 export default async function SuiteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requirePermission("plans");
   const { id } = await params;
+  await syncSuiteLinks(prisma, ctx.org.id, id);
   const [suite, allSuites, allPlans, allCases] = await Promise.all([
     prisma.testSuite.findFirst({
       where: { id, organisationId: ctx.org.id },
@@ -61,7 +63,7 @@ export default async function SuiteDetailPage({ params }: { params: Promise<{ id
       }}
       cases={suite.testCases.map((c) => ({
         id: c.id,
-        code: caseCode.get(c.id) ?? "TC-â€”",
+        code: caseCode.get(c.id) ?? "TC-—",
         title: c.title,
         status: c.status,
         module: c.module,
@@ -69,13 +71,13 @@ export default async function SuiteDetailPage({ params }: { params: Promise<{ id
       }))}
       plans={suite.plans.map((p) => ({
         id: p.id,
-        code: planCode.get(p.id) ?? "TP-â€”",
+        code: planCode.get(p.id) ?? "TP-—",
         name: p.name,
         platform: suite.platform,
         passRate: p.passRate,
         lastRunAt: p.lastRunAt?.toISOString() ?? null,
       }))}
-      allCases={allCases.map((c) => ({ id: c.id, code: caseCode.get(c.id) ?? "TC-â€”", title: c.title, module: c.module }))}
+      allCases={allCases.map((c) => ({ id: c.id, code: caseCode.get(c.id) ?? "TC-—", title: c.title, module: c.module }))}
     />
   );
 }

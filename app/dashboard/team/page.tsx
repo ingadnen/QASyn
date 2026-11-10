@@ -2,11 +2,13 @@
 import type { Metadata } from "next";
 import { InviteUserButton } from "@/components/dashboard/pages/TeamParity";
 import { PermissionsMatrix } from "@/components/dashboard/pages/TeamClients";
+import { SuperAdminConsole } from "@/components/dashboard/pages/SuperAdminConsole";
 import { TeamTable } from "@/components/dashboard/pages/TeamTable";
 import { CqaTabs } from "@/components/contextqa/workspace";
 import { CqaIcon, PageHeader, cqaCard } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
 import { initialsOf } from "@/lib/auth";
+import { isSuperAdmin } from "@/lib/rbac";
 import { readSettings, requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Team & access" };
@@ -83,6 +85,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
           </div>
         </div>
       )}
+      {isSuperAdmin(ctx.user.role) && <SuperAdminConsole />}
     </div>
   );
 }

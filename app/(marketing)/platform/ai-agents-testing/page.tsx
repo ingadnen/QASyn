@@ -11,7 +11,7 @@ export default function Page() {
       data={{
         kicker: "PLATFORM",
         title: "AI Agent Testing",
-        lede: "Hallucination, drift, tool-calls and guardrails â€” LLM-as-a-judge evaluation.",
+        lede: "Hallucination, drift, tool-calls and guardrails — LLM-as-a-judge evaluation.",
         features: [
   F("Multi-turn dialogue evaluation", "Available in the QASyn platform today."),
   F("Hallucination benchmarks vs knowledge base", "Available in the QASyn platform today."),

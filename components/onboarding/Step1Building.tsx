@@ -59,6 +59,7 @@ export function Step1Building() {
   const { save, pending, error } = useSaveStep();
 
   const [os, setOs] = useState<OsKey>("MACOS");
+  const [origin, setOrigin] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [tunnelBusy, setTunnelBusy] = useState<"rotate" | "enroll" | null>(null);
@@ -90,6 +91,10 @@ export function Step1Building() {
     if (reachMode === "localhost" && !state.tunnelToken && tunnelBusy === null) void tunnel("rotate");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reachMode, state.tunnelToken]);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   function selectReach(mode: ReachMode) {
     setCheck(null);
@@ -208,7 +213,7 @@ export function Step1Building() {
             </div>
             <div>
               <p className="mb-1.5 text-[11px] font-semibold tracking-[0.14em] text-slate-500">1 · COMMAND</p>
-              <CodeBlock title={OS_OPTIONS.find((o) => o.value === os)?.label} code={buildTunnelCommand(os, token, state.localPort)} />
+              <CodeBlock title={OS_OPTIONS.find((o) => o.value === os)?.label} code={buildTunnelCommand(os, token, state.localPort, origin)} />
             </div>
             <div>
               <div className="mb-1.5 flex items-center justify-between">

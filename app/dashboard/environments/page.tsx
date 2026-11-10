@@ -59,7 +59,7 @@ export default async function EnvironmentsPage({ searchParams }: { searchParams:
     variablesCount: env.variables.length,
     profilesCount: parsedProfiles.filter((p) => p.environmentIds.includes(env.id)).length,
     updatedAt: env.createdAt.toISOString(),
-    variables: env.variables.map((v) => ({ id: v.id, key: v.key, value: v.isSecret ? "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" : v.value, isSecret: v.isSecret })),
+    variables: env.variables.map((v) => ({ id: v.id, key: v.key, value: v.isSecret ? "••••••••" : v.value, isSecret: v.isSecret })),
   }));
 
   return (

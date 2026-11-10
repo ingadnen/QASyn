@@ -11,6 +11,7 @@
 import { PrismaClient } from "@prisma/client";
 import { generateApiToken, hashPassword } from "../lib/crypto";
 import { createDemoRuns } from "../lib/runs";
+import { ensureSuperAdmin } from "../lib/super-admin";
 
 const prisma = new PrismaClient();
 
@@ -373,19 +374,76 @@ async function seedWorkspace(cfg: Workspace) {
     });
   }
 
-  await prisma.testSuite.createMany({
-    data: [
-      { organisationId: id, name: "Smoke — critical paths", description: "Login, checkout and billing happy paths", schedule: "on_pr", module: "", testCasesCount: 48, passRate: 75, lastRunAt: ago(6 * 3_600_000) },
-      { organisationId: id, name: "Billing regression", description: "Every billing flow", schedule: "nightly", module: "Billing", testCasesCount: 14, passRate: 71, lastRunAt: ago(10 * 3_600_000) },
-      { organisationId: id, name: "Settings & access", schedule: "weekly", module: "Settings", testCasesCount: 10, passRate: 40, lastRunAt: ago(2 * DAY) },
-    ],
-  });
-  await prisma.testPlan.createMany({
-    data: [
-      { organisationId: id, name: "Release 2.8 sign-off", description: "Full regression before the 2.8 release", schedule: "manual", environment: "Staging", testCasesCount: 48, passRate: 75, lastRunAt: ago(DAY) },
-      { organisationId: id, name: "Nightly checkout", schedule: "nightly", module: "Checkout", environment: "QA", testCasesCount: 7, passRate: 86, lastRunAt: ago(14 * 3_600_000) },
-    ],
-  });
+  const suiteDefs = [
+    { name: "Smoke — critical paths", description: "Login, checkout and billing happy paths", schedule: "on_pr", module: "", cases: createdCases },
+    { name: "Billing regression", description: "Every billing flow", schedule: "nightly", module: "Billing", cases: createdCases.filter((t) => t.module === "Billing") },
+    { name: "Settings & access", description: "Workspace, team and token settings", schedule: "weekly", module: "Settings", cases: createdCases.filter((t) => t.module === "Settings") },
+    { name: "Checkout regression", description: "Cart, payments and checkout recovery", schedule: "nightly", module: "Checkout", cases: createdCases.filter((t) => t.module === "Checkout") },
+  ];
+  const seededSuites: Array<{ id: string; name: string; module: string }> = [];
+  for (const def of suiteDefs) {
+    const passing = def.cases.filter((t) => t.status === "passing").length;
+    const suite = await prisma.testSuite.create({
+      data: {
+        organisationId: id,
+        name: def.name,
+        description: def.description,
+        schedule: def.schedule,
+        module: def.module,
+        testCasesCount: def.cases.length,
+        passRate: def.cases.length ? Math.round((passing / def.cases.length) * 100) : 0,
+        lastRunAt: ago(6 * 3_600_000),
+        labelsJson: JSON.stringify([def.module ? def.module.toLowerCase() : "smoke"]),
+        testCases: { connect: def.cases.map((testCase) => ({ id: testCase.id })) },
+      },
+      select: { id: true, name: true, module: true },
+    });
+    seededSuites.push(suite);
+  }
+
+  const planDefs = [
+    {
+      name: "Release 2.8 sign-off",
+      description: "Full regression before the 2.8 release",
+      schedule: "manual",
+      module: "",
+      environment: "Staging",
+      suites: seededSuites,
+      cases: createdCases,
+      lastRunAt: ago(DAY),
+    },
+    {
+      name: "Nightly checkout",
+      description: "Every checkout and payment flow",
+      schedule: "nightly",
+      module: "Checkout",
+      environment: "QA",
+      suites: seededSuites.filter((suite) => suite.module === "Checkout"),
+      cases: createdCases.filter((testCase) => testCase.module === "Checkout"),
+      lastRunAt: ago(14 * 3_600_000),
+    },
+  ];
+  const seededPlans: Array<{ id: string }> = [];
+  for (const def of planDefs) {
+    const passing = def.cases.filter((testCase) => testCase.status === "passing").length;
+    const plan = await prisma.testPlan.create({
+      data: {
+        organisationId: id,
+        name: def.name,
+        description: def.description,
+        schedule: def.schedule,
+        module: def.module,
+        environment: def.environment,
+        testCasesCount: def.cases.length,
+        passRate: def.cases.length ? Math.round((passing / def.cases.length) * 100) : 0,
+        lastRunAt: def.lastRunAt,
+        testCases: { connect: def.cases.map((testCase) => ({ id: testCase.id })) },
+        suites: { connect: def.suites.map((suite) => ({ id: suite.id })) },
+      },
+      select: { id: true },
+    });
+    seededPlans.push(plan);
+  }
 
   await prisma.knowledgeItem.createMany({
     data: [
@@ -462,12 +520,12 @@ async function seedWorkspace(cfg: Workspace) {
     });
   }
 
-  const plan = await prisma.testPlan.findFirst({ where: { organisationId: id } });
-  if (plan) {
+  const schedulePlan = seededPlans[0];
+  if (schedulePlan) {
     await prisma.schedule.createMany({
       data: [
-        { organisationId: id, testPlanId: plan.id, name: "Nightly regression", cronExpression: "0 2 * * *", timezone: "UTC", enabled: true },
-        { organisationId: id, testPlanId: plan.id, name: "Hourly smoke", cronExpression: "0 * * * *", timezone: "Europe/Paris", enabled: false },
+        { organisationId: id, testPlanId: schedulePlan.id, name: "Nightly regression", cronExpression: "0 2 * * *", timezone: "UTC", enabled: true },
+        { organisationId: id, testPlanId: schedulePlan.id, name: "Hourly smoke", cronExpression: "0 * * * *", timezone: "Europe/Paris", enabled: false },
       ],
     });
   }
@@ -683,6 +741,7 @@ async function main() {
   for (const workspace of WORKSPACES) {
     await seedWorkspace(workspace);
   }
+  await ensureSuperAdmin();
 }
 
 main()

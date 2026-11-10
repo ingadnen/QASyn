@@ -87,6 +87,12 @@ function SymbolIcon({ name, className }: { name: string; className?: string }) {
   );
 }
 
+export interface SidebarOrg {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface SidebarProps {
   orgName: string;
   logoUrl: string | null;
@@ -97,9 +103,12 @@ export interface SidebarProps {
   role: string;
   user: { name: string; email: string; initials: string };
   ownOrgName: string | null;
+  organisations?: SidebarOrg[];
+  isSuperAdmin?: boolean;
+  currentOrgId?: string;
 }
 
-export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDaysLeft, plan, role, user, ownOrgName }: SidebarProps) {
+export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDaysLeft, plan, role, user, ownOrgName, organisations = [], isSuperAdmin = false, currentOrgId = "" }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const allowed = permissionsFor(role);
@@ -240,7 +249,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-white">{orgName}</p>
             <p className="flex items-center gap-1 text-[10.5px] text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-400" /> Live{isDemo ? <span className="text-amber-300"> Â· demo</span> : null}
+              <span className="size-1.5 rounded-full bg-emerald-400" /> Live{isDemo ? <span className="text-amber-300"> · demo</span> : null}
             </p>
           </div>
         )}
@@ -355,13 +364,13 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         </button>
         <Link
           href="/dashboard/billing"
-          title={plan === "trial" ? `Trial Â· ${trialDaysLeft} days left` : `${plan} plan`}
+          title={plan === "trial" ? `Trial · ${trialDaysLeft} days left` : `${plan} plan`}
           className={cn("flex items-center gap-2 rounded-lg py-1.5 text-[11.5px] text-amber-300 hover:bg-white/5", expanded ? "px-3" : "justify-center px-0")}
         >
           <SymbolIcon name="workspace_premium" className="text-[18px]" />
           {expanded && (
             <span className="truncate">
-              {plan === "trial" ? `Trial Â· ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` : `${plan.charAt(0).toUpperCase()}${plan.slice(1)} plan`}
+              {plan === "trial" ? `Trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` : `${plan.charAt(0).toUpperCase()}${plan.slice(1)} plan`}
             </span>
           )}
         </Link>
@@ -392,31 +401,59 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
               className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-xl border border-white/10 bg-[#161827] py-1 text-[13px] shadow-2xl"
             >
               <p className="px-3 pb-1 pt-2 text-[10px] font-semibold tracking-[0.14em] text-slate-500">WORKSPACES</p>
-              {ownOrgName ? (
-                <button
-                  role="menuitem"
-                  type="button"
-                  disabled={busy || !readOnly}
-                  onClick={() => call("/api/auth/switch", { target: "own" })}
-                  className="flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-200 hover:bg-white/5 disabled:cursor-default"
-                >
-                  {ownOrgName} {!readOnly && <span className="text-emerald-400">âœ“</span>}
-                </button>
+              {isSuperAdmin ? (
+                <>
+                  {organisations.map((org) => (
+                    <button
+                      key={org.id}
+                      role="menuitem"
+                      type="button"
+                      disabled={busy || org.id === currentOrgId}
+                      onClick={() => call("/api/auth/switch", { target: "org", organisationId: org.id })}
+                      className="flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-200 hover:bg-white/5 disabled:cursor-default"
+                    >
+                      <span className="truncate">{org.name}</span>
+                      {org.id === currentOrgId && <span className="text-emerald-400">✓</span>}
+                    </button>
+                  ))}
+                  <Link
+                    role="menuitem"
+                    href="/dashboard/settings/organization#super-admin"
+                    onClick={() => setMenuOpen(false)}
+                    className="mt-1 flex w-full items-center gap-2 border-t border-white/5 px-3 py-2 text-left text-amber-300 hover:bg-white/5"
+                  >
+                    👑 Super-Admin Console
+                  </Link>
+                </>
               ) : (
-                <button role="menuitem" type="button" disabled={busy} onClick={() => call("/api/auth/switch", { target: "own" })} className="block w-full px-3 py-1.5 text-left text-slate-200 hover:bg-white/5">
-                  + Create your organisation
-                </button>
-              )}
-              {!(isDemo && !readOnly) && (
-                <button
-                  role="menuitem"
-                  type="button"
-                  disabled={busy || readOnly}
-                  onClick={() => call("/api/auth/switch", { target: "demo" })}
-                  className="flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-200 hover:bg-white/5 disabled:cursor-default"
-                >
-                  Acme (demo) {readOnly && <span className="text-emerald-400">âœ“</span>}
-                </button>
+                <>
+                  {ownOrgName ? (
+                    <button
+                      role="menuitem"
+                      type="button"
+                      disabled={busy || !readOnly}
+                      onClick={() => call("/api/auth/switch", { target: "own" })}
+                      className="flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-200 hover:bg-white/5 disabled:cursor-default"
+                    >
+                      {ownOrgName} {!readOnly && <span className="text-emerald-400">✓</span>}
+                    </button>
+                  ) : (
+                    <button role="menuitem" type="button" disabled={busy} onClick={() => call("/api/auth/switch", { target: "own" })} className="block w-full px-3 py-1.5 text-left text-slate-200 hover:bg-white/5">
+                      + Create your organisation
+                    </button>
+                  )}
+                  {!(isDemo && !readOnly) && (
+                    <button
+                      role="menuitem"
+                      type="button"
+                      disabled={busy || readOnly}
+                      onClick={() => call("/api/auth/switch", { target: "demo" })}
+                      className="flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-200 hover:bg-white/5 disabled:cursor-default"
+                    >
+                      Acme (demo) {readOnly && <span className="text-emerald-400">✓</span>}
+                    </button>
+                  )}
+                </>
               )}
               <div className="my-1 border-t border-white/5" />
               <button role="menuitem" type="button" disabled={busy} onClick={() => call("/api/auth/logout")} className="block w-full px-3 py-1.5 text-left text-red-300 hover:bg-white/5">
@@ -450,10 +487,10 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         <div className="space-y-3 text-sm text-slate-600">
           <p>QASyn mirrors the QASyn autonomous quality workspace on local SQLite data.</p>
           <ul className="space-y-2">
-            <li><strong className="text-slate-800">Crawl</strong> â€” maps your app and turns flows into draft test cases.</li>
-            <li><strong className="text-slate-800">Pull requests</strong> â€” simulate a PR to see impact analysis and regressions.</li>
-            <li><strong className="text-slate-800">Tunnels</strong> â€” test localhost through a (simulated) secure tunnel.</li>
-            <li><strong className="text-slate-800">MCP</strong> â€” query your workspace from an AI assistant with an API token.</li>
+            <li><strong className="text-slate-800">Crawl</strong> — maps your app and turns flows into draft test cases.</li>
+            <li><strong className="text-slate-800">Pull requests</strong> — simulate a PR to see impact analysis and regressions.</li>
+            <li><strong className="text-slate-800">Tunnels</strong> — test localhost through a (simulated) secure tunnel.</li>
+            <li><strong className="text-slate-800">MCP</strong> — query your workspace from an AI assistant with an API token.</li>
           </ul>
           <p>
             Questions? Use{" "}

@@ -11,7 +11,7 @@ export default function Page() {
       data={{
         kicker: "COMPANY",
         title: "Why QASyn",
-        lede: "Autonomous SDLC vs legacy automation: agents that crawl, generate, heal and ship â€” not scripts that rot.",
+        lede: "Autonomous SDLC vs legacy automation: agents that crawl, generate, heal and ship — not scripts that rot.",
         features: [
           F("Agents vs recorders", "Healing vs maintenance toil"),
         ],

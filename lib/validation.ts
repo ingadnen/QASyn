@@ -56,7 +56,11 @@ export const logoField = z
 export const signupSchema = z.object({ email: emailField, password: passwordField });
 export const loginSchema = z.object({ email: emailField, password: z.string().min(1, "Enter your password.").max(128) });
 export const verifySchema = z.object({ code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code.") });
-export const switchOrgSchema = z.object({ target: z.enum(["own", "demo"]) });
+export const switchOrgSchema = z.discriminatedUnion("target", [
+  z.object({ target: z.literal("own") }),
+  z.object({ target: z.literal("demo") }),
+  z.object({ target: z.literal("org"), organisationId: z.string().min(1).max(60) }),
+]);
 
 // ---------- Organisation ----------
 export const createOrganisationSchema = z.object({
@@ -303,10 +307,19 @@ export const inviteSchema = z.object({
 });
 export const updateMemberSchema = z.object({ role: z.enum(USER_ROLES) });
 
-export const tunnelActionSchema = z.object({
-  action: z.enum(["rotate", "enroll", "disconnect"]),
-  localPort: z.number().int().min(1).max(65535).optional(),
-});
+export const tunnelActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("connect"),
+    name: z.string().trim().toLowerCase().regex(/^[a-z][a-z0-9-]{0,20}$/, "Invalid machine name."),
+    token: z.string().trim().min(8).max(120),
+    os: z.string().trim().max(20).optional(),
+    hostname: z.string().trim().max(120).optional(),
+  }),
+  z.object({
+    action: z.enum(["rotate", "enroll", "disconnect"]),
+    localPort: z.number().int().min(1).max(65535).optional(),
+  }),
+]);
 
 export const billingSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("plan"), plan: z.enum(PLANS) }),

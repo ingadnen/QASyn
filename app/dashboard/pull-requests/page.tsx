@@ -85,7 +85,7 @@ export default async function PullRequestsPage({ searchParams }: { searchParams:
 
       {prs.length > 0 && (
         <p className="text-[12px] text-[#6b7280]">
-          1â€“{prs.length} of {prs.length} pull requests
+          1–{prs.length} of {prs.length} pull requests
         </p>
       )}
     </div>

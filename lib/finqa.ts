@@ -142,7 +142,7 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
           `To test localhost, open Tunnels in the dashboard (or onboarding step 1), choose “Localhost, right now”, pick your OS tab and run the command below. The tunnel only opens an outbound connection authenticated by your tnl_ token${ctx.tunnel?.maskedToken ? " (masked here — reveal it on the Tunnels page)" : ""}. Then click “Check connection”.`,
           `Pour tester localhost, ouvrez Tunnels dans le dashboard (ou l'étape 1 de l'onboarding), choisissez « Localhost, right now », sélectionnez l'onglet de votre OS et lancez la commande ci-dessous. Le tunnel n'ouvre qu'une connexion sortante authentifiée par votre jeton tnl_${ctx.tunnel?.maskedToken ? " (masqué ici — affichez-le sur la page Tunnels)" : ""}. Cliquez ensuite sur « Check connection ».`,
         ),
-        code: buildTunnelCommand(os, token, port),
+        code: buildTunnelCommand(os, token, port, process.env.NEXT_PUBLIC_SITE_URL ?? ""),
         links: [{ label: t(lang, "Open Tunnels", "Ouvrir Tunnels"), href: "/dashboard/tunnels" }],
       };
     }

@@ -29,11 +29,11 @@ export function PodcastPlayer() {
           <li key={ep.id} className="rounded-xl border border-line bg-white p-4">
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" aria-label={playing === ep.id ? "Pause" : "Play"} onClick={() => toggle(ep.id, ep.minutes)} className="flex size-10 items-center justify-center rounded-full bg-brand-600 text-white">
-                {playing === ep.id ? "âšâš" : "â–¶"}
+                {playing === ep.id ? "❚❚" : "▶"}
               </button>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink">{ep.title}</p>
-                <p className="text-xs text-muted">{ep.guest} Â· {ep.minutes} min</p>
+                <p className="text-xs text-muted">{ep.guest} · {ep.minutes} min</p>
               </div>
               <span className="text-xs text-slate-400">{done}/{ep.minutes} min</span>
             </div>

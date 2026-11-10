@@ -2,6 +2,14 @@ import type { CrawlSession, Prisma, PrismaClient, TestCase } from "@prisma/clien
 import { CREDIT_COSTS } from "./constants";
 import { buildCrawlLogs, crawlPlan, crawlProgress, hostFromUrl } from "./crawl";
 import { prisma } from "./db";
+import {
+  generateGroundedTitles,
+  groundedFlowsFromDom,
+  groundedStepsForFlow,
+  inspectTargetDom,
+  type GroundedFlow,
+  type TargetDomSnapshot,
+} from "./web-executor";
 import { audit, spendCredits, type OrgContext } from "./tenant";
 import { normalizeWebsite } from "./utils";
 
@@ -55,10 +63,26 @@ export async function startCrawl(db: Db, actor: Actor, targetUrl: string, opts?:
   return crawl;
 }
 
+/** Blends the deterministic crawl plan with flows discovered in the real DOM. */
+async function groundedCrawlPlan(targetUrl: string): Promise<{ host: string; seed: number; pages: string[]; flows: Array<GroundedFlow & { pages: string[] }>; snapshot: TargetDomSnapshot | null }> {
+  const plan = crawlPlan(targetUrl);
+  const snapshot = await inspectTargetDom(targetUrl);
+  const grounded = groundedFlowsFromDom(snapshot).map((flow) => ({ ...flow, pages: ["/"] }));
+  const simulated = plan.flows.map((flow) => ({ ...flow, description: `Simulated flow mapped from ${targetUrl}.` }));
+  const seen = new Set<string>();
+  const flows = [...grounded, ...simulated].filter((flow) => {
+    const key = flow.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return { host: plan.host, seed: plan.seed, pages: plan.pages, flows, snapshot };
+}
+
 /** "Complete Crawl Now": finishes the crawl and turns mapped flows into the first test cases. */
 export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
   if (crawl.status !== "running") return { created: 0 };
-  const { pages, flows, host } = crawlPlan(crawl.targetUrl);
+  const { pages, flows, host, snapshot } = await groundedCrawlPlan(crawl.targetUrl);
 
   const existing = new Set(
     (await db.testCase.findMany({ where: { organisationId: actor.org.id }, select: { title: true } })).map((t) => t.title),
@@ -74,7 +98,7 @@ export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
           status: "draft",
           stepsCount: Math.max(1, flow.steps),
           source: "crawl",
-          stepsJson: buildStepsJson(crawl.targetUrl, Math.max(1, flow.steps), flow.module, flow.name),
+          stepsJson: JSON.stringify(groundedStepsForFlow(snapshot, crawl.targetUrl, flow.name, Math.max(1, flow.steps))),
           variablesJson: JSON.stringify({ url: crawl.targetUrl }),
         })),
       });
@@ -100,15 +124,25 @@ export async function completeCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
   const wantsPlan = crawl.createPlan || crawl.publishMode === "Auto publish";
   if ((wantsSuite || wantsPlan) && fresh.length > 0) {
     const created = await db.testCase.findMany({ where: { organisationId: actor.org.id, title: { in: fresh.map((c) => c.name) } } });
+    let suiteId: string | null = null;
     if (wantsSuite) {
       const suite = await db.testSuite.create({
-        data: { organisationId: actor.org.id, name: `${host} crawl suite`, description: `Generated from crawl ${crawl.targetUrl}`, testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
+        data: { organisationId: actor.org.id, name: `${host} crawl suite`, description: `Generated from crawl ${crawl.targetUrl}`, testCasesCount: created.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
       });
-      await audit(db, actor, "crawl.suite_created", `${suite.name} · ${fresh.length} cases`);
+      suiteId = suite.id;
+      await audit(db, actor, "crawl.suite_created", `${suite.name} · ${created.length} cases`);
     }
     if (wantsPlan) {
       const plan = await db.testPlan.create({
-        data: { organisationId: actor.org.id, name: `${host} crawl plan`, environment: "Staging", testCasesCount: fresh.length, passRate: 0, testCases: { connect: created.map((c) => ({ id: c.id })) } },
+        data: {
+          organisationId: actor.org.id,
+          name: `${host} crawl plan`,
+          environment: "Staging",
+          testCasesCount: created.length,
+          passRate: 0,
+          testCases: { connect: created.map((c) => ({ id: c.id })) },
+          ...(suiteId ? { suites: { connect: [{ id: suiteId }] } } : {}),
+        },
       });
       await audit(db, actor, "crawl.plan_created", plan.name);
     }
@@ -139,7 +173,7 @@ export function crawlLiveStats(crawl: CrawlSession) {
 
 /** Re-import: regenerate the crawl's mapped flows into test cases, updating existing ones. */
 export async function reimportCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
-  const { pages, flows, host } = crawlPlan(crawl.targetUrl);
+  const { pages, flows, host, snapshot } = await groundedCrawlPlan(crawl.targetUrl);
   const existing = await db.testCase.findMany({
     where: { organisationId: actor.org.id, title: { in: flows.map((flow) => flow.name) } },
   });
@@ -150,7 +184,7 @@ export async function reimportCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
 
   for (const flow of flows) {
     const steps = Math.max(1, flow.steps);
-    const stepsJson = buildStepsJson(crawl.targetUrl, steps, flow.module, flow.name);
+    const stepsJson = JSON.stringify(groundedStepsForFlow(snapshot, crawl.targetUrl, flow.name, steps));
     const current = byTitle.get(flow.name);
     if (current) {
       await db.testCase.update({
@@ -203,7 +237,10 @@ export async function reimportCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
 
 /** Generate requirement-derived test cases and link them to the requirement. */
 export async function generateRequirementCases(db: Db, actor: Actor, requirement: { id: string; title: string; code: string; source: string }, count = 3) {
-  const titles = generateTitles("Core", requirement.title, count);
+  const targetUrl = resolveTargetUrl(actor.org.website, null);
+  const snapshot = await inspectTargetDom(targetUrl);
+  const fallback = generateTitles("Core", requirement.title, count);
+  const titles = await generateGroundedTitles(snapshot, "Core", requirement.title, count, fallback);
   const existing = new Set((await db.testCase.findMany({ where: { organisationId: actor.org.id }, select: { title: true } })).map((t) => t.title));
   const created: TestCase[] = [];
   for (const base of titles) {
@@ -222,7 +259,7 @@ export async function generateRequirementCases(db: Db, actor: Actor, requirement
           status: "draft",
           stepsCount: steps,
           source: requirement.source === "crawl" ? "crawl" : "ai",
-          stepsJson: buildStepsJson(actor.org.website ?? "", steps, "Core", title),
+          stepsJson: JSON.stringify(groundedStepsForFlow(snapshot, targetUrl, title, steps)),
           variablesJson: JSON.stringify({ requirement: requirement.code }),
         },
       }),

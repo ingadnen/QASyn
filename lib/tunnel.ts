@@ -1,29 +1,32 @@
 ﻿import type { OsKey } from "./types";
 
 /**
- * Commandes d'installation du tunnel affichÃ©es Ã  l'Ã©tape 2 (localhost).
- * âš  Commandes FICTIVES : le domaine `.dev` n'est pas rÃ©solu sur Internet et
- * le tunnel est entiÃ¨rement simulÃ© par /api/onboarding/connection.
+ * Install commands shown at onboarding step 2 (localhost).
+ *
+ * They point at the real `/install.ps1` and `/install.sh` routes served by the
+ * deployment the user is browsing, so the agent always discovers the correct
+ * origin. The onboarding "enrol" action remains simulated.
  */
-export function buildTunnelCommand(os: OsKey, token: string, port: number): string {
+export function buildTunnelCommand(os: OsKey, token: string, port: number, origin: string): string {
+  const base = origin || "http://localhost:3000";
   switch (os) {
     case "WINDOWS":
       return [
         "# PowerShell",
-        "Invoke-WebRequest https://get.qasyn.dev/tunnel.ps1 -OutFile qasyn-tunnel.ps1",
-        `.\\qasyn-tunnel.ps1 -Token ${token} -Port ${port}`,
+        `irm ${base}/install.ps1 | iex`,
+        `qasyn connect --name qa --token ${token}`,
       ].join("\n");
     case "MACOS":
       return [
         "# Terminal (zsh)",
-        "curl -fsSL https://get.qasyn.dev/tunnel.sh -o qasyn-tunnel.sh",
-        `sh qasyn-tunnel.sh --token ${token} --port ${port}`,
+        `curl -fsSL ${base}/install.sh | bash -s -- connect --name qa --token ${token}`,
+        `# then publish localhost:${port}`,
       ].join("\n");
     case "LINUX":
       return [
         "# bash",
-        "curl -fsSL https://get.qasyn.dev/tunnel.sh -o qasyn-tunnel.sh",
-        `sh qasyn-tunnel.sh --token ${token} --port ${port}`,
+        `curl -fsSL ${base}/install.sh | bash -s -- connect --name qa --token ${token}`,
+        `# then publish localhost:${port}`,
       ].join("\n");
   }
 }

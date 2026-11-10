@@ -88,7 +88,7 @@ API routes (all validate input with zod; mutating routes add an 800 ms latency):
 
 ## Local security rules (do not break)
 
-1. **No outbound requests** from the server. Connection checks and the tunnel are simulated (SSRF-safe). Tunnel commands point to the fictional domain `get.qasyn.local`.
+1. **Outbound requests are SSRF-guarded.** Host reachability checks remain simulated; the AI engine may inspect a public target DOM and call `text.pollinations.ai` best-effort. Tunnel installers are served by this app at `/install.ps1` and `/install.sh` with the request origin, and the agent connects through `POST /api/onboarding/tunnel`.
 2. Session = httpOnly cookie `qasyn_org` (sameSite lax, secure in production, 30 days) via [lib/session.ts](../lib/session.ts). Never trust an `organisationId` sent by the client.
 3. zod on every API input. `normalizeWebsite` rejects non-http(s) URLs and URLs with credentials. Slugs are 3–40 chars; reserved slugs: admin, api, app, dashboard, onboard, onboarding, qasyn, settings, www.
 4. Data is always scoped to the session org (or the Acme demo, read-only). Never read another organisation's data.

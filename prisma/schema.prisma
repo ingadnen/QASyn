@@ -184,12 +184,15 @@ model TunnelMachine {
   name           String
   /// win | mac | linux
   os             String   @default("win")
+  /// Hostname reported by the installed agent (e.g. COMPUTERNAME)
+  hostname       String?
   /// pending | connected | expired | offline
   status         String   @default("expired")
   browserHost    Boolean  @default(false)
   token          String
   routeCount     Int      @default(0)
   lastSeenAt     DateTime?
+  connectedAt    DateTime?
   expiresAt      DateTime
   createdAt      DateTime @default(now())
 

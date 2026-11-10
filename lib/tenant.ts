@@ -4,6 +4,7 @@ import type { NextResponse } from "next/server";
 import { getSession } from "./auth";
 import { prisma } from "./db";
 import { jsonError } from "./http";
+import { isSuperAdmin } from "./rbac";
 
 export interface OrgContext {
   sessionId: string;
@@ -17,24 +18,33 @@ export interface OrgContext {
 
 /**
  * Resolves the organisation displayed for the current session.
- * Only two organisations are ever reachable: the user's own organisation and
- * the shared mock demo ("Acme", isMockDemo = true). Any other id is ignored.
+ *
+ * Normal users can reach their own organisation and the shared mock demo
+ * (read-only). Super Admin can reach every organisation read/write.
  */
 export async function resolveOrgContext(): Promise<OrgContext | null> {
   const session = await getSession();
   if (!session || !session.user.emailVerifiedAt) return null;
   const { user } = session;
+  const superAdmin = isSuperAdmin(user.role);
 
   const ownOrg = user.organisationId ? await prisma.organisation.findUnique({ where: { id: user.organisationId } }) : null;
 
   let org: Organisation | null = ownOrg;
-  if (session.activeOrganisationId && session.activeOrganisationId !== ownOrg?.id) {
+  if (superAdmin) {
+    org = null;
+    if (session.activeOrganisationId) {
+      org = await prisma.organisation.findUnique({ where: { id: session.activeOrganisationId } });
+    }
+    if (!org) org = ownOrg;
+    if (!org) org = await prisma.organisation.findFirst({ orderBy: { createdAt: "asc" } });
+  } else if (session.activeOrganisationId && session.activeOrganisationId !== ownOrg?.id) {
     const candidate = await prisma.organisation.findUnique({ where: { id: session.activeOrganisationId } });
     if (candidate?.isMockDemo) org = candidate;
   }
   if (!org) return null;
 
-  return { sessionId: session.sessionId, user, org, ownOrg, readOnly: org.id !== ownOrg?.id };
+  return { sessionId: session.sessionId, user, org, ownOrg, readOnly: superAdmin ? false : org.id !== ownOrg?.id };
 }
 
 /** Server Components (dashboard). */
