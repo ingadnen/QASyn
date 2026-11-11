@@ -3,7 +3,9 @@ import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma, ensureWal } from "@/lib/db";
 import { runTestCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { parseIntegrationConfig } from "@/lib/integration-providers";
+import { buildStepHealMetadata, healSelectorWithBivia, isHealableAction, syntheticDomSummary } from "@/lib/selector-healing";
+import { audit, guardApi, readSettings, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateTestCaseSchema } from "@/lib/validation";
@@ -148,6 +150,158 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     await audit(prisma, ctx, "test_case.steps_updated", `${updated.title} · ${input.steps.length} steps`);
     return NextResponse.json({ testCase: updated });
+  }
+
+  if (input.action === "simulate_self_heal") {
+    await delay(MOCK_LATENCY_MS);
+    let steps: Array<Record<string, unknown>> = [];
+    try {
+      const parsed = JSON.parse(tc.stepsJson || "[]") as unknown;
+      if (Array.isArray(parsed)) steps = parsed.filter((step): step is Record<string, unknown> => Boolean(step) && typeof step === "object");
+    } catch {
+      steps = [];
+    }
+
+    // Pick the requested/healable step, or append a Click step that is seeded
+    // with the deliberately broken legacy selector.
+    let index = input.stepId ? steps.findIndex((step) => String(step.id ?? "") === input.stepId) : -1;
+    if (index < 0) index = steps.findIndex((step) => isHealableAction(String(step.action ?? "")));
+    if (index < 0) {
+      steps.push({
+        id: `s${Date.now()}`,
+        action: "Click",
+        target: "Click the primary call-to-action",
+        value: "",
+        selector: "#broken-legacy-selector-999",
+      });
+      index = steps.length - 1;
+    }
+    const broken = steps[index];
+    if (!isHealableAction(String(broken.action ?? ""))) broken.action = "Click";
+    const oldSelector = "#broken-legacy-selector-999";
+    broken.selector = oldSelector;
+    const action = String(broken.action ?? "Click");
+    const target = String(broken.target ?? "the primary call-to-action");
+    const value = String(broken.value ?? "");
+
+    // Bivia sources resolved through the global client; this route is not in a transaction.
+    const analysisCode = readSettings(ctx.org).analysisCode ?? null;
+    let integrationConfig = null;
+    try {
+      const row = await prisma.integration.findUnique({
+        where: { organisationId_provider: { organisationId: ctx.org.id, provider: "BIVIA" } },
+        select: { configJson: true },
+      });
+      integrationConfig = row ? parseIntegrationConfig(row.configJson) : null;
+    } catch {
+      integrationConfig = null;
+    }
+    const navigateStep = steps.find((step) => String(step.action ?? "") === "Navigate");
+    const navigateTarget = String(navigateStep?.target ?? "");
+    const summarySteps = steps.map((step) => ({
+      action: String(step.action ?? ""),
+      target: String(step.target ?? ""),
+      value: String(step.value ?? ""),
+      selector: String(step.selector ?? ""),
+    }));
+    const decision = await healSelectorWithBivia({
+      step: { action, target, value, selector: oldSelector },
+      domSummary: syntheticDomSummary(tc.title, summarySteps),
+      url: navigateTarget || ctx.org.website || "",
+      organisationId: ctx.org.id,
+      sources: { integrationConfig, analysisCode },
+    });
+    if (decision.status !== "healed" || !decision.newSelector) {
+      return jsonError(decision.abstainReason || "Bivia could not calibrate a replacement selector.", 422);
+    }
+
+    const metadata = buildStepHealMetadata(decision);
+    broken.selector = decision.newSelector;
+    broken.status = "passed";
+    broken.biviaHeal = metadata;
+    const now = new Date();
+    const updated = await prisma.testCase.update({
+      where: { id: tc.id },
+      data: { status: "passing", lastRunAt: now, stepsJson: JSON.stringify(steps), stepsCount: Math.max(1, steps.length) },
+    });
+
+    const log = steps.map((step, stepIndex) => ({
+      step: stepIndex + 1,
+      action: String(step.action ?? ""),
+      target: String(step.target ?? ""),
+      status: "passed",
+      healed: stepIndex === index,
+      message:
+        stepIndex === index
+          ? `Selector re-resolved by Bivia (${decision.probabilityPct.toFixed(1)}% calibrated): ${oldSelector} → ${decision.newSelector}`
+          : "OK",
+    }));
+    const lastRun = await prisma.testCaseRun.findFirst({
+      where: { organisationId: ctx.org.id },
+      orderBy: { runNumber: "desc" },
+      select: { runNumber: true },
+    });
+    const run = await prisma.testCaseRun.create({
+      data: {
+        organisationId: ctx.org.id,
+        testCaseId: tc.id,
+        runNumber: (lastRun?.runNumber ?? 0) + 1,
+        status: "PASSED",
+        trigger: "Self-Healing",
+        mode: "Bivia Auto-Heal",
+        durationMs: 18_400 + steps.length * 1_900,
+        failedStep: index + 1,
+        failedStepText: `${action}: ${target} — ${oldSelector} not found`,
+        autoFix: true,
+        createdBy: "Articul8 Bivia",
+        logJson: JSON.stringify(log),
+      },
+    });
+    const versionCount = await prisma.testCaseVersion.count({ where: { testCaseId: tc.id } });
+    const version = await prisma.testCaseVersion.create({
+      data: {
+        organisationId: ctx.org.id,
+        testCaseId: tc.id,
+        version: versionCount + 1,
+        summary: `✨ Bivia self-healed selector: ${oldSelector} → ${decision.newSelector} (${decision.probabilityPct.toFixed(1)}% calibrated)`,
+        author: "Articul8 Bivia",
+        addedJson: JSON.stringify([decision.newSelector]),
+        removedJson: JSON.stringify([oldSelector]),
+        stepsJson: JSON.stringify(steps),
+      },
+    });
+    await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.testRun);
+    await audit(
+      prisma,
+      ctx,
+      "test_case.self_healed",
+      `${tc.title} · ${oldSelector} → ${decision.newSelector} · ${decision.probabilityPct.toFixed(1)}%`,
+    );
+    return NextResponse.json({
+      healed: true,
+      steps,
+      run,
+      version,
+      testCase: updated,
+      oldSelector,
+      newSelector: decision.newSelector,
+      probabilityPct: decision.probabilityPct,
+      probability: decision.probability,
+      provider: decision.provider,
+      strategy: decision.strategy,
+      grounding: decision.grounding,
+      decision: {
+        status: decision.status,
+        oldSelector: decision.oldSelector,
+        newSelector: decision.newSelector,
+        probability: decision.probability,
+        probabilityPct: decision.probabilityPct,
+        provider: decision.provider,
+        latencyMs: decision.latencyMs,
+        strategy: decision.strategy,
+        abstainReason: decision.abstainReason,
+      },
+    });
   }
 
   if (input.action === "run_steps") {

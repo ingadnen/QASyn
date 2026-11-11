@@ -14,3 +14,6 @@ prisma/*.db-journal
 # Local-only Playwright profile and parity screenshots
 .playwright-contextqa-profile/
 contextqa-dump/*.png
+
+# Local persistent telemetry ledger (Bivia token observatory)
+.qasyn-data/

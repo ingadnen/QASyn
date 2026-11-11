@@ -177,11 +177,12 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
           target: z.string().trim().max(200),
           value: z.string().trim().max(500).default(""),
           selector: z.string().trim().max(200).default(""),
-        }),
+        }).passthrough(),
       )
       .max(50),
   }),
   z.object({ action: z.literal("run_steps"), autoFix: z.boolean().optional() }),
+  z.object({ action: z.literal("simulate_self_heal"), stepId: z.string().max(60).optional() }),
   z.object({ action: z.literal("clone"), title: title.optional(), folderId: z.string().max(60).nullable().optional() }),
   z.object({ action: z.literal("move"), folderId: z.string().max(60).nullable() }),
 ]);

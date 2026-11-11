@@ -117,9 +117,48 @@ function PrDetailDrawer({
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [gatePending, setGatePending] = useState(false);
+  const [gateError, setGateError] = useState<string | null>(null);
+  const [gateMarkdown, setGateMarkdown] = useState<string | null>(null);
+  const [gateMeta, setGateMeta] = useState<{ bivia?: { riskScore: number; probabilityPct: number; riskLevel: string } | null; security?: { grade: string; score: number; findings: number } } | null>(null);
   const executed = row.impact.executed ?? [];
   const modules = row.impact.modules ?? [];
   const commentPosted = row.commentPosted && Boolean(row.commentBody);
+
+  async function generateGate() {
+    setGateOpen(true);
+    setGatePending(true);
+    setGateError(null);
+    setGateMarkdown(null);
+    setGateMeta(null);
+    try {
+      const result = await apiFetch<{
+        markdown: string;
+        bivia?: { riskScore: number; probabilityPct: number; riskLevel: string } | null;
+        security?: { grade: string; score: number; findings: number };
+      }>("/api/dashboard/pull-requests/gate", {
+        method: "POST",
+        json: { id: row.id },
+      });
+      setGateMarkdown(result.markdown);
+      setGateMeta({ bivia: result.bivia ?? null, security: result.security });
+    } catch (caught) {
+      setGateError(errorMessage(caught));
+    } finally {
+      setGatePending(false);
+    }
+  }
+
+  async function copyGate() {
+    if (!gateMarkdown) return;
+    try {
+      await navigator.clipboard.writeText(gateMarkdown);
+      toast("PR gate Markdown copied to clipboard.", "success");
+    } catch {
+      toast("Clipboard unavailable — select the Markdown to copy manually.", "error");
+    }
+  }
 
   async function rerun() {
     setPending(true);
@@ -272,16 +311,89 @@ function PrDetailDrawer({
           </section>
         </div>
 
-        <footer className="flex items-center justify-between gap-2 border-t border-[#eef0f3] px-5 py-3">
-          <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending} onClick={rerun}>
-            <CqaIcon name="refresh" className="text-[16px]" />
-            {pending ? "Re-running…" : "Re-run analysis"}
-          </button>
-          <button type="button" className={cqaBtnPrimary} onClick={onClose}>
+        <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-[#eef0f3] px-5 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending} onClick={rerun}>
+              <CqaIcon name="refresh" className="text-[16px]" />
+              {pending ? "Re-running…" : "Re-run analysis"}
+            </button>
+            <button
+              type="button"
+              className={cqaBtnPrimary}
+              data-testid="pr-gate-open"
+              disabled={gatePending}
+              onClick={() => void generateGate()}
+            >
+              <CqaIcon name="gavel" className="text-[16px]" />
+              {gatePending ? "Generating…" : "📋 Generate CI/CD PR Gate Comment"}
+            </button>
+          </div>
+          <button type="button" className={cqaBtnSecondary} onClick={onClose}>
             Close
           </button>
         </footer>
       </aside>
+
+      <Modal
+        open={gateOpen}
+        onClose={() => setGateOpen(false)}
+        title="📋 CI/CD PR Gate Comment"
+        size="xl"
+        footer={
+          <>
+            <button type="button" className={cqaBtnSecondary} onClick={() => setGateOpen(false)}>
+              Close
+            </button>
+            <button
+              type="button"
+              className={cqaBtnPrimary}
+              data-testid="pr-gate-copy"
+              disabled={!gateMarkdown}
+              onClick={() => void copyGate()}
+            >
+              <CqaIcon name="content_copy" className="text-[16px]" /> Copy Markdown Report
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-[12.5px] leading-5 text-[#6b7280]">
+            Copy-ready merge gate for GitHub, GitLab, Azure DevOps or Jenkins. It combines the calibrated Bivia verdict,
+            the <code className="rounded bg-[#f3f4f6] px-1 py-0.5 text-[11px]">/set</code> impacted-test table and the Strix security summary.
+          </p>
+          {gateError && (
+            <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[12px] text-[#b42318]">
+              {gateError}
+            </div>
+          )}
+          {gatePending && (
+            <div className="flex items-center gap-2 rounded-lg border border-[#c7d2fe] bg-[#eef2ff] px-3 py-2 text-[12px] text-[#4f46e5]">
+              <CqaIcon name="hourglass_top" className="animate-pulse text-[16px]" /> Calibrating Bivia risk and running Strix…
+            </div>
+          )}
+          {gateMeta && (
+            <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#5b4ee8]">
+                🧠 Bivia {gateMeta.bivia ? `${gateMeta.bivia.riskScore.toFixed(1)}/10 · ${gateMeta.bivia.probabilityPct.toFixed(1)}%` : "fallback"}
+              </span>
+              <span className="rounded-full bg-[#ecfdf3] px-2 py-0.5 text-[10.5px] font-semibold text-[#067647]">
+                🛡️ Strix {gateMeta.security?.grade ?? "?"} · {gateMeta.security?.score ?? 0}/100 · {gateMeta.security?.findings ?? 0} finding(s)
+              </span>
+            </div>
+          )}
+          {gateMarkdown ? (
+            <pre
+              data-testid="pr-gate-markdown"
+              className="max-h-[55vh] overflow-auto whitespace-pre-wrap rounded-lg border border-[#eef0f3] bg-[#0f172a] p-3 font-mono text-[11px] leading-5 text-[#e2e8f0]"
+            >
+              {gateMarkdown}
+            </pre>
+          ) : (
+            !gatePending &&
+            !gateError && <p className="text-[12px] text-[#9ca3af]">No gate report generated yet.</p>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

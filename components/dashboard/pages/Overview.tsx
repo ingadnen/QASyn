@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CqaIcon, ErrorNote, useAction } from "@/components/dashboard/ui";
+import { AutopilotButton } from "@/components/dashboard/pages/AutopilotButton";
+import { BiviaObservatory } from "@/components/dashboard/pages/BiviaObservatory";
+import type { BiviaObservatorySummary } from "@/lib/bivia-telemetry";
 import { cn } from "@/lib/utils";
 
 export interface OverviewEvent {
@@ -48,6 +51,8 @@ export interface OverviewProps {
   showSlack: boolean;
   showBugTracker: boolean;
   showInvite: boolean;
+  biviaSummary: BiviaObservatorySummary;
+  autopilotTarget: string;
 }
 
 function SlackLogo({ className }: { className?: string }) {
@@ -407,6 +412,18 @@ export function Overview(props: OverviewProps) {
     <div className="space-y-3 pb-2">
       <Terminal events={terminal.events} running={terminal.running} />
 
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#c7d2fe] bg-gradient-to-r from-[#eef2ff] via-white to-[#faf5ff] px-4 py-3 shadow-[0_1px_3px_rgba(15,23,42,0.04)]" data-testid="autopilot-banner">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-[13px] font-bold text-[#312e81]">
+            <CqaIcon name="rocket_launch" className="text-[17px] text-[#5b4ee8]" /> Quality Autopilot
+          </p>
+          <p className="mt-0.5 text-[11.5px] leading-4 text-[#4b5563]">
+            Crawl, Strix-scan, Graphify, author Bivia-calibrated test cases and execute them in Studio — in one click.
+          </p>
+        </div>
+        <AutopilotButton defaultTarget={props.autopilotTarget} readOnly={props.readOnly} />
+      </section>
+
       {props.showSlack && <SupportCard ownerEmail={props.ownerEmail} readOnly={props.readOnly} />}
 
       <section aria-label="Dashboard metrics" className="grid gap-[10px] [grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr))]">
@@ -445,6 +462,8 @@ export function Overview(props: OverviewProps) {
       </section>
 
       <QuickStrip prsChecked={props.strip.prsChecked} integrations={props.strip.integrations} />
+
+      <BiviaObservatory summary={props.biviaSummary} />
 
       <CoverageCard
         title="Modules mapped & coverage"

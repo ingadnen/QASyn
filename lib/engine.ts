@@ -14,6 +14,13 @@ import {
   type TargetDomSnapshot,
 } from "./web-executor";
 import { audit, readSettings, spendCredits, type OrgContext } from "./tenant";
+import {
+  buildStepHealMetadata,
+  healSelectorWithBivia,
+  isCorruptSelector,
+  isHealableAction,
+  syntheticDomSummary,
+} from "./selector-healing";
 import { normalizeWebsite } from "./utils";
 
 /**
@@ -294,6 +301,7 @@ const ROOT_CAUSES = [
 export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) {
   let passed = 0;
   let failed = 0;
+  let healedCases = 0;
   const now = new Date();
   const logLines: Array<{ timestamp: Date; stream: string; tag: string; message: string }> = [];
 
@@ -316,7 +324,7 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
   for (const tc of testCases) {
     const roll = Math.random();
     const failRate = tc.status === "flaky" ? 0.35 : tc.criticality === "low" ? 0.08 : 0.14;
-    const status = roll < failRate ? "failing" : roll < failRate + 0.04 ? "flaky" : "passing";
+    let status = roll < failRate ? "failing" : roll < failRate + 0.04 ? "flaky" : "passing";
     if (status === "failing") failed++;
     else passed++;
 
@@ -331,6 +339,55 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
     } catch {
       steps = [];
     }
+
+    // Phase 8 — closed-loop autonomous self-healing. A corrupt selector is
+    // re-grounded with Bivia `/choice` + `/ground`, the step is repaired and
+    // the run becomes a passing auto-fix run documented in Version History.
+    const healedDetails: Array<{ oldSelector: string; newSelector: string; probabilityPct: number }> = [];
+    if (steps.length > 0) {
+      const summarySteps = steps.map((step) => ({
+        action: String(step.action ?? ""),
+        target: String(step.target ?? ""),
+        value: String(step.value ?? ""),
+        selector: String(step.selector ?? ""),
+      }));
+      const navigateTarget = summarySteps.find((step) => step.action === "Navigate")?.target ?? "";
+      for (const step of steps) {
+        const action = String(step.action ?? "");
+        const oldSelector = String(step.selector ?? "");
+        if (!isHealableAction(action) || !isCorruptSelector(oldSelector)) continue;
+        const target = String(step.target ?? "");
+        const decision = await healSelectorWithBivia({
+          step: { action, target, value: String(step.value ?? ""), selector: oldSelector },
+          domSummary: syntheticDomSummary(tc.title, summarySteps),
+          url: navigateTarget,
+          organisationId: actor.org.id,
+          sources: biviaSources,
+        });
+        if (decision.status !== "healed" || !decision.newSelector) continue;
+        step.selector = decision.newSelector;
+        step.status = "passed";
+        step.biviaHeal = buildStepHealMetadata(decision, now.toISOString());
+        healedDetails.push({
+          oldSelector: oldSelector || "(empty)",
+          newSelector: decision.newSelector,
+          probabilityPct: decision.probabilityPct,
+        });
+        stepsChanged = true;
+        biviaNotes.push(
+          `✨ Healed by Bivia ${decision.probabilityPct.toFixed(1)}% calibrated · ${oldSelector || "(empty)"} → ${decision.newSelector}`,
+        );
+      }
+    }
+    if (healedDetails.length > 0) {
+      if (status === "failing") {
+        failed--;
+        passed++;
+      }
+      status = "passing";
+      healedCases++;
+    }
+
     if (biviaAiEnabled) {
       for (const step of steps) {
         if (String(step.action ?? "") !== "AI Assertion") continue;
@@ -373,6 +430,22 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
       where: { id: tc.id },
       data: { status, lastRunAt: now, ...(stepsChanged ? { stepsJson: JSON.stringify(steps) } : {}) },
     });
+    if (healedDetails.length > 0) {
+      const versionCount = await db.testCaseVersion.count({ where: { testCaseId: tc.id } });
+      const first = healedDetails[0];
+      await db.testCaseVersion.create({
+        data: {
+          organisationId: actor.org.id,
+          testCaseId: tc.id,
+          version: versionCount + 1,
+          summary: `✨ Bivia self-healed selector: ${first.oldSelector} → ${first.newSelector} (${first.probabilityPct.toFixed(1)}% calibrated)`,
+          author: "Articul8 Bivia",
+          addedJson: JSON.stringify(healedDetails.map((entry) => entry.newSelector)),
+          removedJson: JSON.stringify(healedDetails.map((entry) => entry.oldSelector)),
+          stepsJson: JSON.stringify(steps),
+        },
+      });
+    }
     logLines.push({
       timestamp: now,
       stream: status === "failing" ? "stderr" : "stdout",
@@ -410,7 +483,7 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
       organisationId: actor.org.id,
       release,
       version: `2.${release % 10}.0`,
-      title: `Manual run — ${total} cases`,
+      title: healedCases > 0 ? `✨ Auto-fix rerun — ${total} case${total === 1 ? "" : "s"}` : `Manual run — ${total} cases`,
       status: failed > 0 ? "FAILED" : "SUCCESS",
       qualityScore: passRate,
       coverage: passRate,
@@ -422,6 +495,9 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
       testsAdded: 0,
       testsTotal: total,
       testsPassed: passed,
+      evidenceJson: JSON.stringify(
+        healedCases > 0 ? [{ type: "bivia-auto-fix", autoFixed: true, healedCases, at: now.toISOString() }] : [],
+      ),
       durationMs: logLines.length * 120,
       logsJson: JSON.stringify(logLines),
       passRate,

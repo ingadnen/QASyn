@@ -1,6 +1,7 @@
 ﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { Integrations, type IntegrationRow } from "@/components/dashboard/pages/IntegrationsParity";
+import { getBiviaObservatory } from "@/lib/bivia-telemetry";
 import { prisma } from "@/lib/db";
 import { parseIntegrationConfig } from "@/lib/integration-providers";
 import { can } from "@/lib/rbac";
@@ -29,6 +30,7 @@ export default async function IntegrationsPage() {
       integrations={integrations}
       readOnly={ctx.readOnly || !can(ctx.user.role, "integrationsManage")}
       biviaReady={Boolean(process.env.BIVIA_API_KEY?.trim())}
+      biviaSummary={await getBiviaObservatory(ctx.org.id)}
     />
   );
 }

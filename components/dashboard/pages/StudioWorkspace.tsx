@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   CqaIcon,
   Modal,
@@ -15,6 +15,10 @@ import {
 import { STUDIO_STEP_TEMPLATES } from "@/lib/studio-templates";
 import { RowMenu } from "@/components/contextqa/workspace";
 import { MagicLocatorInspector } from "@/components/dashboard/pages/MagicLocatorInspector";
+import { BiviaGroundingCanvas, type GroundingBoxView } from "@/components/dashboard/pages/BiviaGroundingCanvas";
+import type { StepBiviaHealMetadata } from "@/lib/selector-healing";
+import { apiFetch, errorMessage } from "@/lib/api";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 export interface StudioStep {
@@ -36,6 +40,8 @@ export interface StudioStep {
     verifiedAt?: string;
     abstainReason?: string;
   };
+  /** Closed-loop self-healing evidence written by Articul8 Bivia. */
+  biviaHeal?: StepBiviaHealMetadata;
 }
 
 export interface StudioVersion {
@@ -111,6 +117,16 @@ interface RunLogLine {
   status: string;
   healed?: boolean;
   message: string;
+}
+
+interface SelfHealResponse {
+  steps: StudioStep[];
+  oldSelector: string;
+  newSelector: string;
+  probabilityPct: number;
+  probability: number;
+  provider: string;
+  grounding?: GroundingBoxView;
 }
 
 type Tab = "steps" | "relationships" | "versions";
@@ -345,6 +361,12 @@ export function StudioWorkspace({
   const [runPhase, setRunPhase] = useState<RunPhase>("preparing");
   const [runLog, setRunLog] = useState<RunLogLine[]>([]);
   const [runAutoFix, setRunAutoFix] = useState(false);
+  const [selfHealing, setSelfHealing] = useState(false);
+  const [groundBox, setGroundBox] = useState<GroundingBoxView | null>(null);
+  const [groundImage, setGroundImage] = useState<string | null>(null);
+  const [groundMeta, setGroundMeta] = useState("");
+  const [groundError, setGroundError] = useState<string | null>(null);
+  const [groundBusy, setGroundBusy] = useState(false);
   const [usedQuery, setUsedQuery] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     execution: true,
@@ -401,6 +423,14 @@ export function StudioWorkspace({
 
   const detailStep = detailIndex !== null ? steps[detailIndex] : null;
   const selectedVersion = data.versions.find((version) => version.id === versionId) ?? data.versions[0] ?? null;
+
+  // A grounding overlay is only meaningful for the step that produced it.
+  useEffect(() => {
+    setGroundBox(null);
+    setGroundImage(null);
+    setGroundMeta("");
+    setGroundError(null);
+  }, [detailStep?.id]);
 
   function toggleSection(key: string) {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -538,6 +568,57 @@ export function StudioWorkspace({
     if (result?.log) setRunLog(result.log);
     setRunPhase("done");
     router.refresh();
+  }
+
+  async function simulateSelfHeal() {
+    if (selfHealing) return;
+    setSelfHealing(true);
+    try {
+      const result = await apiFetch<SelfHealResponse>(`/api/dashboard/test-cases/${data.id}`, {
+        method: "PATCH",
+        json: { action: "simulate_self_heal", stepId: detailStep?.id },
+      });
+      if (Array.isArray(result.steps)) setSteps(result.steps);
+      toast(
+        `✨ Self-healed by Bivia · ${result.oldSelector} → ${result.newSelector} · ${result.probabilityPct.toFixed(1)}% calibrated`,
+        "success",
+      );
+      router.refresh();
+    } catch (caught) {
+      toast(errorMessage(caught), "error");
+    } finally {
+      setSelfHealing(false);
+    }
+  }
+
+  async function runGrounding() {
+    if (!detailStep || groundBusy) return;
+    setGroundBusy(true);
+    setGroundError(null);
+    try {
+      const response = await apiFetch<{
+        screenshotBase64: string | null;
+        screenshotCaptured: boolean;
+        domCaptured: boolean;
+        result: GroundingBoxView & { confidencePct: number; latencyMs: number };
+      }>("/api/dashboard/bivia/ground", {
+        method: "POST",
+        json: {
+          targetDescription: detailStep.target?.trim() || `${detailStep.action} target`,
+        },
+      });
+      setGroundBox(response.result);
+      setGroundImage(response.screenshotBase64 ? `data:image/png;base64,${response.screenshotBase64}` : null);
+      setGroundMeta(
+        `${response.result.provider} · ${response.result.latencyMs} ms · ${response.domCaptured ? "DOM captured" : "synthetic DOM"} · ${
+          response.screenshotCaptured ? "screenshot captured" : "visual preview"
+        }`,
+      );
+    } catch (caught) {
+      setGroundError(errorMessage(caught));
+    } finally {
+      setGroundBusy(false);
+    }
   }
 
   async function savePriority(value: string) {
@@ -725,6 +806,17 @@ export function StudioWorkspace({
           >
             <CqaIcon name="refresh" className="text-[18px]" />
           </button>
+          <button
+            type="button"
+            onClick={() => void simulateSelfHeal()}
+            disabled={readOnly || selfHealing}
+            title="Corrupt a selector and let Bivia re-ground it"
+            data-testid="studio-simulate-self-heal"
+            className={cn(cqaBtnSecondary, "h-9 px-3")}
+          >
+            <CqaIcon name={selfHealing ? "hourglass_top" : "science"} className="text-[17px]" />
+            {selfHealing ? "Healing…" : "🧪 Simulate Self-Healing"}
+          </button>
           <button type="button" onClick={() => void executeRun(false)} disabled={readOnly || pending === "run" || pending === "save"} className={cn(cqaBtnPrimary, "h-9 px-4")} data-testid="studio-run">
             <CqaIcon name="play_arrow" className="text-[18px]" /> Run
           </button>
@@ -868,6 +960,15 @@ export function StudioWorkspace({
                             {step.action === "AI Assertion" ? (
                               <span className="mb-1 inline-flex items-center gap-1 rounded border border-[#ddd6fe] bg-[#f5f3ff] px-1.5 py-[1px] text-[10.5px] font-medium text-[#5b4ee8]">
                                 <CqaIcon name="auto_awesome" className="text-[12px]" /> AI Verification
+                              </span>
+                            ) : null}
+                            {step.biviaHeal?.healed ? (
+                              <span
+                                data-testid="studio-step-healed"
+                                title={`${step.biviaHeal.oldSelector} → ${step.biviaHeal.newSelector} · ${step.biviaHeal.probabilityPct.toFixed(1)}% calibrated`}
+                                className="mb-1 ml-1 inline-flex items-center gap-1 rounded border border-[#d8b4fe] bg-[#faf5ff] px-1.5 py-[1px] text-[10.5px] font-semibold text-[#7e22ce]"
+                              >
+                                ✨ Healed by Bivia
                               </span>
                             ) : null}
                             <p className="flex flex-wrap items-center gap-1.5 text-[13px] leading-5 text-[#1f2937]">
@@ -1388,8 +1489,11 @@ export function StudioWorkspace({
                           <span className="text-[#c0c5cd]">·</span>
                           <span>👤 {runItem.createdBy || "System"}</span>
                           {runItem.autoFix && (
-                            <span className="inline-flex items-center gap-1 rounded bg-[#f5f3ff] px-1.5 py-[1px] text-[10px] font-medium text-[#5b4ee8]">
-                              <CqaIcon name="auto_awesome" className="text-[11px]" /> Auto-fix rerun
+                            <span
+                              data-testid="studio-auto-fix-badge"
+                              className="inline-flex items-center gap-1 rounded border border-[#e9d5ff] bg-[#faf5ff] px-1.5 py-[1px] text-[10px] font-semibold text-[#7e22ce]"
+                            >
+                              <CqaIcon name="auto_awesome" className="text-[11px]" /> ✨ Auto-fix rerun
                             </span>
                           )}
                         </div>
@@ -1478,6 +1582,15 @@ export function StudioWorkspace({
                   🧠 Bivia {detailStep.bivia.probability.toFixed(1)}% calibrated · {detailStep.bivia.status}
                 </span>
               )}
+              {detailStep.biviaHeal?.healed && (
+                <span
+                  data-testid="studio-healed-step"
+                  title={`${detailStep.biviaHeal.oldSelector} → ${detailStep.biviaHeal.newSelector}`}
+                  className="inline-flex items-center gap-1 rounded border border-[#d8b4fe] bg-[#faf5ff] px-1.5 py-[1px] text-[10.5px] font-semibold text-[#7e22ce]"
+                >
+                  ✨ Healed by Bivia · {detailStep.biviaHeal.probabilityPct.toFixed(1)}%
+                </span>
+              )}
             </div>
             <label className="block">
               <span className={labelCls}>Action type</span>
@@ -1540,6 +1653,73 @@ export function StudioWorkspace({
                 setSteps((current) => current.map((step, index) => (index === detailIndex ? { ...step, selector } : step)));
               }}
             />
+            {detailStep.biviaHeal?.healed && (
+              <div
+                data-testid="studio-heal-evidence"
+                className="rounded-lg border border-[#e9d5ff] bg-[#faf5ff] px-3 py-2.5 text-[12px] text-[#6b21a8]"
+              >
+                <p className="font-semibold">✨ Healed by Bivia · {detailStep.biviaHeal.probabilityPct.toFixed(1)}% calibrated</p>
+                <p className="mt-1 break-all font-mono text-[11px] text-[#7e22ce]">
+                  <span className="text-[#9d174d] line-through">{detailStep.biviaHeal.oldSelector || "(empty)"}</span>
+                  {" → "}
+                  <span className="font-semibold">{detailStep.biviaHeal.newSelector}</span>
+                </p>
+                <p className="mt-1 text-[10.5px] text-[#9333ea]">
+                  {detailStep.biviaHeal.provider} · {detailStep.biviaHeal.strategy ?? "Bivia"} · {detailStep.biviaHeal.screenshotCaptured ? "screenshot captured" : "visual preview"} ·{" "}
+                  {detailStep.biviaHeal.domCaptured ? "DOM captured" : "synthetic DOM"}
+                </p>
+              </div>
+            )}
+            <div className="rounded-lg border border-[#e5e7eb] p-3" data-testid="studio-step-grounding">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">
+                    <CqaIcon name="my_location" className="text-[15px] text-[#5b4ee8]" /> Bivia visual grounding
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-[#6b7280]">
+                    Grounds this step on the live page and returns a normalized 0–1000 bounding box.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void runGrounding()}
+                  disabled={groundBusy}
+                  data-testid="studio-step-ground-run"
+                  className={cn(cqaBtnSecondary, "h-8 px-3 text-[12px]")}
+                >
+                  <CqaIcon name={groundBusy ? "hourglass_top" : "my_location"} className="text-[15px]" />
+                  {groundBusy ? "Grounding…" : "🎯 Run Bivia Visual Grounding"}
+                </button>
+              </div>
+              {groundError && <p className="mt-2 text-[11.5px] text-[#b42318]">{groundError}</p>}
+              {groundBox ? (
+                <div className="mt-3">
+                  <BiviaGroundingCanvas
+                    box={groundBox}
+                    confidence={groundBox.confidence}
+                    imageSrc={groundImage}
+                    title={`${detailStep.action} target`}
+                  />
+                  {groundMeta && (
+                    <p data-testid="studio-ground-meta" className="mt-2 rounded-md bg-[#f8fafc] px-2.5 py-2 text-[10.5px] leading-4 text-[#475569]">
+                      {groundMeta}
+                    </p>
+                  )}
+                </div>
+              ) : detailStep.biviaHeal?.grounding ? (
+                <div className="mt-3">
+                  <BiviaGroundingCanvas
+                    box={detailStep.biviaHeal.grounding}
+                    confidence={detailStep.biviaHeal.grounding.confidence}
+                    title={`${detailStep.action} healed target`}
+                  />
+                </div>
+              ) : (
+                <div className="mt-2 flex h-20 items-center justify-center rounded-md border border-dashed border-[#d1d5db] bg-[#fafafa] text-[11px] text-[#9ca3af]">
+                  Run grounding to preview the neon bounding-box overlay
+                </div>
+              )}
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3">
                 <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">

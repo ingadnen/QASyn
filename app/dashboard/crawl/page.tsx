@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { CrawlTable, type CrawlRow } from "@/components/dashboard/pages/CrawlTable";
 import { NewCrawlButton } from "@/components/dashboard/pages/NewCrawlButton";
+import { AutopilotButton } from "@/components/dashboard/pages/AutopilotButton";
 import { PageHeader } from "@/components/dashboard/ui";
 import { formatDateTime } from "@/lib/format";
 import { prisma } from "@/lib/db";
@@ -36,7 +37,16 @@ export default async function CrawlPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Crawl" description="Every crawl of your application and the test cases it produced" />
-      <CrawlTable rows={rows} readOnly={ctx.readOnly} actions={<NewCrawlButton defaultUrl={ctx.org.website ?? ""} readOnly={ctx.readOnly} />} />
+      <CrawlTable
+        rows={rows}
+        readOnly={ctx.readOnly}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <AutopilotButton defaultTarget={ctx.org.website ?? "https://www.cgi.com"} readOnly={ctx.readOnly} variant="secondary" />
+            <NewCrawlButton defaultUrl={ctx.org.website ?? ""} readOnly={ctx.readOnly} />
+          </div>
+        }
+      />
     </div>
   );
 }

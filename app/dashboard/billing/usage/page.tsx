@@ -1,6 +1,7 @@
 ﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { BillingUsage } from "@/components/dashboard/pages/BillingUsage";
+import { getBiviaObservatory } from "@/lib/bivia-telemetry";
 import { prisma } from "@/lib/db";
 import { ensureCreditLedger } from "@/lib/credits";
 import { requireOrgContext } from "@/lib/tenant";
@@ -35,6 +36,7 @@ export default async function BillingUsagePage() {
         kind: entry.kind,
         note: entry.note,
       }))}
+      biviaSummary={await getBiviaObservatory(ctx.org.id)}
     />
   );
 }

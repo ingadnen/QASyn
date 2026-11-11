@@ -10,6 +10,7 @@ import { PrismaClient } from "@prisma/client";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { normalizeGroundBox } from "../lib/bivia-box";
 
 const BASE = process.env.QASYN_BASE ?? "http://localhost:3000";
 const RUN_LOWER = `par${(Date.now() % 100000).toString(36)}${Math.floor(Math.random() * 36).toString(36)}`.slice(0, 10);
@@ -3243,6 +3244,609 @@ async function main() {
   } finally {
     await db.tunnelMachine.delete({ where: { id: part7Machine.id } }).catch(() => undefined);
   }
+
+  // ── PART 8 — Enterprise Architect Upgrade ───────────────────────────────
+  const p8 = mod(
+    "part8-enterprise",
+    "PART 8 - Self-healing, grounding, Bivia telemetry, Autopilot, PR gate",
+    "/dashboard/overview",
+  );
+  moduleErrors = [];
+  void p8;
+
+  // 8.1 — Bounding-box normalisation in every coordinate space Bivia returns.
+  const unitBox = normalizeGroundBox([0.25, 0.2, 0.75, 0.6]);
+  const milliBox = normalizeGroundBox([320, 180, 960, 420]);
+  const pixelBox = normalizeGroundBox([320, 180, 1280, 720]);
+  const near = (actual: number, expected: number) => Math.abs(actual - expected) < 0.11;
+  check(
+    "PART 8 normalises 0..1 boxes into the 0–1000 overlay canvas",
+    unitBox.space === "normalized" && near(unitBox.x, 250) && near(unitBox.y, 200) && near(unitBox.width, 500) && near(unitBox.height, 400),
+    `${unitBox.space} · ${unitBox.x},${unitBox.y},${unitBox.width},${unitBox.height}`,
+  );
+  check(
+    "PART 8 keeps 0..1000 milli boxes and preserves the raw corner box",
+    milliBox.space === "milli" && near(milliBox.x, 320) && near(milliBox.y, 180) && near(milliBox.width, 640) && near(milliBox.height, 240) && JSON.stringify(milliBox.rawBox) === JSON.stringify([320, 180, 960, 420]),
+    `${milliBox.space} · ${JSON.stringify(milliBox.rawBox)}`,
+  );
+  check(
+    "PART 8 scales pixel boxes from the nominal 1280×720 viewport",
+    pixelBox.space === "pixels" && near(pixelBox.x, 250) && near(pixelBox.y, 250) && near(pixelBox.width, 750) && near(pixelBox.height, 750) && JSON.stringify(pixelBox.rawBox) === JSON.stringify([320, 180, 1280, 720]),
+    `${pixelBox.space} · ${pixelBox.x},${pixelBox.y},${pixelBox.width},${pixelBox.height}`,
+  );
+
+  // 8.2 — Closed-loop self-healing through the real Test Studio API.
+  const healCase = await db.testCase.findFirst({
+    where: { organisationId: cgiId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, title: true },
+  });
+  check("PART 8 a test case is available for self-healing", Boolean(healCase), healCase?.title ?? "none");
+  if (healCase) {
+    const versionsBefore = await db.testCaseVersion.count({ where: { testCaseId: healCase.id } });
+    const healRes = await apiJson(page, `/api/dashboard/test-cases/${healCase.id}`, "PATCH", {
+      action: "simulate_self_heal",
+    });
+    interface HealStep {
+      id?: string;
+      selector?: string;
+      status?: string;
+      biviaHeal?: {
+        healed?: boolean;
+        oldSelector?: string;
+        newSelector?: string;
+        probabilityPct?: number;
+        probability?: number;
+        grounding?: { rawBox?: number[]; confidence?: number; space?: string };
+      };
+    }
+    const healBody = healRes.body as unknown as {
+      healed?: boolean;
+      steps?: HealStep[];
+      oldSelector?: string;
+      newSelector?: string;
+      probabilityPct?: number;
+      provider?: string;
+      run?: { autoFix?: boolean; status?: string; trigger?: string; failedStepText?: string };
+      version?: { summary?: string };
+    };
+    const healSteps = healBody.steps ?? [];
+    const healedStep = healSteps.find((step) => Boolean(step.biviaHeal?.healed)) ?? null;
+    check(
+      "PART 8 Simulate Self-Healing re-grounds the broken selector with Bivia",
+      healRes.status === 200 &&
+        Boolean(healBody.healed) &&
+        Boolean(healedStep) &&
+        healedStep?.biviaHeal?.oldSelector === "#broken-legacy-selector-999" &&
+        Boolean(healedStep?.biviaHeal?.newSelector) &&
+        healedStep?.selector === healedStep?.biviaHeal?.newSelector &&
+        Number(healedStep?.biviaHeal?.probabilityPct ?? 0) > 0,
+      `${healBody.oldSelector ?? "?"} → ${healBody.newSelector ?? "?"} · ${healBody.probabilityPct ?? "?"}%`,
+    );
+    check(
+      "PART 8 healed step keeps the raw grounding box and confidence",
+      Array.isArray(healedStep?.biviaHeal?.grounding?.rawBox) &&
+        healedStep?.biviaHeal?.grounding?.rawBox?.length === 4 &&
+        Number(healedStep?.biviaHeal?.grounding?.confidence ?? 0) > 0,
+      JSON.stringify(healedStep?.biviaHeal?.grounding ?? null).slice(0, 160),
+    );
+    const storedHealCase = await db.testCase.findUnique({
+      where: { id: healCase.id },
+      select: { stepsJson: true, status: true },
+    });
+    let storedHealSteps: HealStep[] = [];
+    try {
+      const parsed = JSON.parse(String(storedHealCase?.stepsJson ?? "[]")) as unknown;
+      if (Array.isArray(parsed)) {
+        storedHealSteps = parsed.filter((step): step is HealStep => Boolean(step) && typeof step === "object");
+      }
+    } catch {
+      storedHealSteps = [];
+    }
+    const persistedHealedStep = storedHealSteps.find((step) => Boolean(step.biviaHeal?.healed)) ?? null;
+    check(
+      "PART 8 healed selector is persisted in SQLite",
+      storedHealCase?.status === "passing" &&
+        Boolean(persistedHealedStep) &&
+        persistedHealedStep?.selector === healBody.newSelector &&
+        persistedHealedStep?.biviaHeal?.oldSelector === "#broken-legacy-selector-999" &&
+        !storedHealSteps.some((step) => step.selector === "#broken-legacy-selector-999"),
+      `${storedHealCase?.status ?? "?"} · ${String(persistedHealedStep?.selector ?? "missing").slice(0, 120)}`,
+    );
+    const autoRun = await db.testCaseRun.findFirst({
+      where: { testCaseId: healCase.id },
+      orderBy: { createdAt: "desc" },
+      select: { autoFix: true, status: true, trigger: true, mode: true, failedStepText: true },
+    });
+    check(
+      "PART 8 self-heal creates an ✨ Auto-fix rerun",
+      autoRun?.autoFix === true &&
+        autoRun?.status === "PASSED" &&
+        autoRun?.trigger === "Self-Healing" &&
+        autoRun?.mode === "Bivia Auto-Heal" &&
+        String(autoRun?.failedStepText ?? "").includes("#broken-legacy-selector-999"),
+      `${autoRun?.trigger ?? "?"} · autoFix=${autoRun?.autoFix ?? "?"} · ${autoRun?.status ?? "?"}`,
+    );
+    const latestVersion = await db.testCaseVersion.findFirst({
+      where: { testCaseId: healCase.id },
+      orderBy: { version: "desc" },
+      select: { version: true, summary: true, removedJson: true, addedJson: true },
+    });
+    const versionsAfter = await db.testCaseVersion.count({ where: { testCaseId: healCase.id } });
+    const parseSelectorList = (value: string | undefined): string[] => {
+      try {
+        const parsed = JSON.parse(value ?? "[]") as unknown;
+        return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+      } catch {
+        return [];
+      }
+    };
+    const versionRemoved = parseSelectorList(latestVersion?.removedJson);
+    const versionAdded = parseSelectorList(latestVersion?.addedJson);
+    check(
+      "PART 8 Version History documents the old → new selector",
+      versionsAfter > versionsBefore &&
+        Boolean(latestVersion?.summary.includes("#broken-legacy-selector-999")) &&
+        Boolean(latestVersion?.summary.includes(String(healBody.newSelector ?? ""))) &&
+        versionRemoved.includes("#broken-legacy-selector-999") &&
+        Boolean(healBody.newSelector) &&
+        versionAdded.includes(String(healBody.newSelector)),
+      latestVersion?.summary ?? "missing",
+    );
+
+    await goto(page, `/dashboard/test-studio/${healCase.id}`);
+    const simulateHeal = page.locator('[data-testid="studio-simulate-self-heal"]').first();
+    check(
+      "PART 8 Studio exposes 🧪 Simulate Self-Healing",
+      (await simulateHeal.count()) > 0 && ((await simulateHeal.innerText().catch(() => "")) || "").includes("Simulate Self-Healing"),
+    );
+    const healedBadge = page.locator('[data-testid="studio-step-healed"]').first();
+    check("PART 8 Studio step list shows ✨ Healed by Bivia", (await healedBadge.count()) > 0);
+    if ((await healedBadge.count()) > 0) {
+      await healedBadge.locator("xpath=ancestor::li[1]").click({ position: { x: 12, y: 12 } }).catch(() => undefined);
+    } else if ((await page.locator('[data-testid="studio-step-row"]').count()) > 0) {
+      await page.locator('[data-testid="studio-step-row"]').first().click().catch(() => undefined);
+    }
+    const stepDetail = page.getByRole("dialog", { name: "Step Details" });
+    await stepDetail.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+    const stepDetailText = ((await stepDetail.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    check(
+      "PART 8 Step Details shows the healed selector evidence",
+      (await stepDetail.locator('[data-testid="studio-heal-evidence"]').count()) > 0 &&
+        stepDetailText.includes("Healed by Bivia") &&
+        stepDetailText.includes("#broken-legacy-selector-999"),
+      stepDetailText.slice(0, 180),
+    );
+    check(
+      "PART 8 Step Details renders the neon bounding-box overlay",
+      (await stepDetail.locator('[data-testid="bivia-grounding-canvas"]').count()) > 0 &&
+        (await stepDetail.locator('[data-testid="bivia-grounding-badge"]').count()) > 0 &&
+        stepDetailText.includes("🎯 Bivia Grounded") &&
+        stepDetailText.includes("confidence"),
+      stepDetailText.slice(0, 180),
+    );
+    const stepGroundRun = stepDetail.locator('[data-testid="studio-step-ground-run"]').first();
+    check(
+      "PART 8 Step Details exposes 🎯 Run Bivia Visual Grounding",
+      (await stepGroundRun.count()) > 0 && ((await stepGroundRun.innerText().catch(() => "")) || "").includes("Run Bivia Visual Grounding"),
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    const versionTab = page.getByRole("button", { name: /Version History/ }).first();
+    check("PART 8 Studio exposes the Version History tab", (await versionTab.count()) > 0);
+    if ((await versionTab.count()) > 0) {
+      await versionTab.click().catch(() => undefined);
+      await page.waitForTimeout(400);
+      const versionText = ((await body(page)) || "").replace(/\s+/g, " ");
+      check(
+        "PART 8 Version History shows the Bivia self-heal entry",
+        versionText.includes("✨ Bivia self-healed selector") &&
+          versionText.includes("#broken-legacy-selector-999") &&
+          versionText.includes(String(healBody.newSelector ?? "")),
+        versionText.slice(0, 220),
+      );
+    }
+  }
+
+  // 8.3 — `/dashboard/visual-testing` neon overlay + real grounding action.
+  await goto(page, "/dashboard/visual-testing");
+  const groundLab = page.locator('[data-testid="bivia-grounding-lab"]').first();
+  check(
+    "PART 8 visual testing embeds the Bivia grounding canvas",
+    (await groundLab.count()) > 0 && ((await groundLab.innerText().catch(() => "")) || "").includes("Bivia visual grounding canvas"),
+  );
+  const groundBadge = page.locator('[data-testid="bivia-grounding-badge"]').first();
+  const groundBadgeText = ((await groundBadge.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 8 overlay exposes 🎯 Bivia Grounded · [x1, y1, x2, y2] · confidence",
+    (await page.locator('[data-testid="bivia-grounding-overlay"]').count()) > 0 &&
+      /🎯 Bivia Grounded · \[\d+, \d+, \d+, \d+\] · [\d.]+% confidence/.test(groundBadgeText),
+    groundBadgeText,
+  );
+  const groundRun = page.locator('[data-testid="bivia-ground-run"]').first();
+  check(
+    "PART 8 visual testing exposes 🎯 Run Bivia Visual Grounding",
+    (await groundRun.count()) > 0 && ((await groundRun.innerText().catch(() => "")) || "").includes("Run Bivia Visual Grounding"),
+  );
+
+  // 8.4 — Real Quality Autopilot POST: crawl + Strix + Graphify + authoring + execution.
+  const autopilotRes = await apiJson(page, "/api/dashboard/autopilot", "POST", {
+    targetUrl: "https://www.cgi.com",
+  });
+  interface AutopilotPhaseLike {
+    id?: string;
+    status?: string;
+    metric?: string;
+    href?: string;
+  }
+  interface AutopilotCaseLike {
+    id?: string;
+    title?: string;
+    steps?: number;
+    verifySteps?: number;
+    calibratedLocators?: number;
+    confidencePct?: number;
+    status?: string;
+    href?: string;
+  }
+  const autopilot = autopilotRes.body as unknown as {
+    targetUrl?: string;
+    crawlId?: string;
+    phases?: AutopilotPhaseLike[];
+    security?: { scanId?: string; grade?: string; score?: number; findings?: number; href?: string };
+    graph?: { nodes?: number; edges?: number; href?: string };
+    testCases?: AutopilotCaseLike[];
+    execution?: { passed?: number; failed?: number; total?: number; autoFix?: boolean };
+    links?: { crawl?: string; security?: string; graphify?: string; studio?: string | null };
+  };
+  const phaseIds = (autopilot.phases ?? []).map((phase) => String(phase.id));
+  check(
+    "PART 8 Quality Autopilot runs the five live phases",
+    autopilotRes.status === 200 &&
+      ["crawl", "security", "graph", "authoring", "execution"].every((id) => phaseIds.includes(id)) &&
+      (autopilot.phases?.length ?? 0) === 5,
+    `${autopilotRes.status} · ${phaseIds.join(", ")}`,
+  );
+  const autopilotCrawl = autopilot.crawlId
+    ? await db.crawlSession.findUnique({
+        where: { id: autopilot.crawlId },
+        select: { status: true, pagesVisited: true, flowsMapped: true, targetUrl: true },
+      })
+    : null;
+  check(
+    "PART 8 Autopilot persists a completed live crawl",
+    autopilotCrawl?.status === "completed" && (autopilotCrawl?.flowsMapped ?? 0) > 0 && (autopilotCrawl?.pagesVisited ?? 0) > 0,
+    `${autopilotCrawl?.status ?? "?"} · ${autopilotCrawl?.pagesVisited ?? 0} pages · ${autopilotCrawl?.flowsMapped ?? 0} flows`,
+  );
+  const autopilotScan = autopilot.security?.scanId
+    ? await db.securityScan.findUnique({
+        where: { id: autopilot.security.scanId },
+        select: { scanType: true, status: true, findingsJson: true },
+      })
+    : null;
+  check(
+    "PART 8 Autopilot persists the Strix OWASP/header scan",
+    Boolean(autopilotScan) &&
+      String(autopilotScan?.scanType ?? "").includes("Strix") &&
+      autopilotScan?.status === "completed" &&
+      typeof autopilot.security?.score === "number" &&
+      /^[A-F]$/.test(String(autopilot.security?.grade ?? "")),
+    `${autopilotScan?.scanType ?? "missing"} · grade ${autopilot.security?.grade ?? "?"} · ${autopilot.security?.score ?? "?"}/100`,
+  );
+  check(
+    "PART 8 Autopilot builds the Graphify topology",
+    (autopilot.graph?.nodes ?? 0) > 0 && (autopilot.graph?.edges ?? 0) > 0 && String(autopilot.graph?.href ?? "").includes("code-analysis"),
+    `${autopilot.graph?.nodes ?? 0} nodes · ${autopilot.graph?.edges ?? 0} edges`,
+  );
+  const autopilotCase = autopilot.testCases?.[0];
+  check(
+    "PART 8 Autopilot authors a Context7 + Bivia-calibrated test case",
+    (autopilot.testCases?.length ?? 0) > 0 &&
+      String(autopilotCase?.title ?? "").includes("Autopilot") &&
+      (autopilotCase?.verifySteps ?? 0) > 0 &&
+      (autopilotCase?.calibratedLocators ?? 0) > 0 &&
+      (autopilotCase?.confidencePct ?? 0) > 0,
+    `${autopilotCase?.title ?? "missing"} · ${autopilotCase?.verifySteps ?? 0} AI verification · ${autopilotCase?.calibratedLocators ?? 0} calibrated · ${autopilotCase?.confidencePct ?? 0}%`,
+  );
+  const storedAutopilotCase = autopilotCase?.id
+    ? await db.testCase.findUnique({
+        where: { id: autopilotCase.id },
+        select: { stepsJson: true, variablesJson: true, source: true },
+      })
+    : null;
+  check(
+    "PART 8 authored case persists AI Verification, Context7 and scored locators",
+    String(storedAutopilotCase?.stepsJson ?? "").includes('"AI Assertion"') &&
+      String(storedAutopilotCase?.stepsJson ?? "").includes("calibratedProbability") &&
+      String(storedAutopilotCase?.stepsJson ?? "").includes("context7") &&
+      String(storedAutopilotCase?.variablesJson ?? "").includes("cgi.com"),
+    `${storedAutopilotCase?.source ?? "?"} · ${String(storedAutopilotCase?.stepsJson ?? "").length} chars`,
+  );
+  check(
+    "PART 8 Autopilot executes the new cases immediately in Studio",
+    (autopilot.execution?.total ?? 0) === (autopilot.testCases?.length ?? -1) &&
+      (autopilot.execution?.total ?? 0) > 0 &&
+      (autopilot.execution?.passed ?? 0) + (autopilot.execution?.failed ?? 0) === autopilot.execution?.total,
+    `${autopilot.execution?.passed ?? 0}/${autopilot.execution?.total ?? 0} passed`,
+  );
+  check(
+    "PART 8 Autopilot returns Crawl, Strix, Graphify and Studio links",
+    String(autopilot.links?.crawl ?? "").includes("/dashboard/crawl") &&
+      String(autopilot.links?.security ?? "").includes("security-testing") &&
+      String(autopilot.links?.graphify ?? "").includes("code-analysis") &&
+      String(autopilot.links?.studio ?? "").includes("/dashboard/test-studio/"),
+    JSON.stringify(autopilot.links ?? {}),
+  );
+
+  await goto(page, "/dashboard/overview");
+  const autopilotBanner = page.locator('[data-testid="autopilot-banner"]').first();
+  check(
+    "PART 8 Overview surfaces the Quality Autopilot banner",
+    (await autopilotBanner.count()) > 0 &&
+      ((await autopilotBanner.innerText().catch(() => "")) || "").includes("Quality Autopilot") &&
+      (await autopilotBanner.locator('[data-testid="autopilot-open"]').count()) > 0,
+  );
+  const autopilotOpen = page.locator('[data-testid="autopilot-open"]').first();
+  if ((await autopilotOpen.count()) > 0) {
+    await autopilotOpen.click().catch(() => undefined);
+    const autopilotDialog = page.getByRole("dialog", { name: /Quality Autopilot/ }).first();
+    await autopilotDialog.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+    const phaseCount = await autopilotDialog.locator('[data-testid^="autopilot-phase-"]').count();
+    const targetValue = await autopilotDialog.locator('[data-testid="autopilot-target"]').inputValue().catch(() => "");
+    check(
+      "PART 8 Autopilot modal keeps the five phases visible and prefills the target URL",
+      (await autopilotDialog.count()) > 0 && phaseCount === 5 && /^https?:\/\//.test(targetValue),
+      `${phaseCount} phase(s) · ${targetValue || "no target"}`,
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+  } else {
+    check("PART 8 Autopilot modal keeps the five phases visible and prefills the target URL", false, "autopilot button missing");
+  }
+  await goto(page, "/dashboard/crawl");
+  check(
+    "PART 8 Crawl page exposes 🚀 Launch Quality Autopilot",
+    (await page.locator('[data-testid="autopilot-open"]').count()) > 0,
+  );
+
+  // 8.5 — CI/CD PR Gate Markdown from a real pull-request row.
+  const gateCases = await db.testCase.findMany({
+    where: { organisationId: cgiId },
+    take: 2,
+    orderBy: { createdAt: "desc" },
+    select: { id: true, title: true, module: true, criticality: true },
+  });
+  const gateCaseA = gateCases[0];
+  const gateCaseB = gateCases[1] ?? gateCases[0];
+  const gatePrNumber = 900000 + (Date.now() % 90000);
+  await db.pullRequestCheck.deleteMany({ where: { organisationId: cgiId, prNumber: gatePrNumber } });
+  const gatePr = await db.pullRequestCheck.create({
+    data: {
+      organisationId: cgiId,
+      prNumber: gatePrNumber,
+      title: "Auth + checkout migration gate",
+      branch: "feature/auth-checkout-migration",
+      branchTarget: "main",
+      author: "qa-bot",
+      provider: "GITHUB",
+      repository: "cgi/digital-portal",
+      externalUrl: `https://github.com/cgi/digital-portal/pull/${gatePrNumber}`,
+      status: "regression_caught",
+      riskLevel: "high",
+      filesChanged: 16,
+      changedFilesJson: JSON.stringify([
+        "src/auth/session.ts",
+        "src/auth/login.ts",
+        "src/payments/checkout.ts",
+        "src/billing/invoice.ts",
+        "src/security/token.ts",
+        "prisma/migrations/20261110_gate/migration.sql",
+        "src/db/schema.ts",
+        "src/api/checkout/route.ts",
+        "src/api/auth/route.ts",
+        "src/components/PaymentForm.tsx",
+        "src/components/LoginForm.tsx",
+        "src/lib/session.ts",
+        "src/lib/billing.ts",
+        "src/lib/auth.ts",
+        "src/app/checkout/page.tsx",
+        "src/app/login/page.tsx",
+      ]),
+      impactJson: JSON.stringify({
+        files: ["src/auth/session.ts", "src/payments/checkout.ts", "src/billing/invoice.ts", "src/security/token.ts"],
+        modules: ["Authentication", "Checkout", "Billing"],
+        blastRadius: "wide",
+        impacted: gateCases.map((testCase, index) => ({
+          id: testCase.id,
+          title: testCase.title,
+          module: testCase.module,
+          criticality: testCase.criticality,
+          status: index === 1 ? "failing" : "passing",
+        })),
+        executed: gateCases.map((testCase, index) => ({
+          id: testCase.id,
+          title: testCase.title,
+          module: testCase.module,
+          status: index === 1 ? "failing" : "passing",
+        })),
+        passed: gateCases.length > 1 ? 1 : gateCases.length,
+        failed: gateCases.length > 1 ? 1 : 0,
+        total: gateCases.length,
+        testsSelected: gateCases.length,
+      }),
+      logsJson: "[]",
+      testsRun: gateCases.length,
+      regressions: gateCases.length > 1 ? 1 : 0,
+    },
+    select: { id: true },
+  });
+  const gateRes = await apiJson(page, "/api/dashboard/pull-requests/gate", "POST", { id: gatePr.id });
+  const gateBody = gateRes.body as unknown as {
+    markdown?: string;
+    bivia?: { riskScore?: number; probabilityPct?: number; riskLevel?: string; provider?: string } | null;
+    security?: { grade?: string; score?: number; findings?: number };
+  };
+  const gateMarkdown = String(gateBody.markdown ?? "");
+  const gateRisk = Number(gateBody.bivia?.riskScore ?? -1);
+  const gateConfidence = Number(gateBody.bivia?.probabilityPct ?? -1);
+  check(
+    "PART 8 PR Gate API returns a calibrated Markdown report",
+    gateRes.status === 200 && gateMarkdown.length > 200 && Boolean(gateBody.bivia),
+    `${gateRes.status} · ${gateMarkdown.length} chars · ${gateBody.bivia?.provider ?? "no provider"}`,
+  );
+  check(
+    "PART 8 PR Gate emits the Bivia verdict + risk score + confidence",
+    /(✅ APPROVED FOR MERGE|🛑 BLOCKED — HIGH BLAST RADIUS)/.test(gateMarkdown) &&
+      gateMarkdown.includes("🛑 BLOCKED — HIGH BLAST RADIUS") &&
+      /Calibrated risk score:\*\* \d+(\.\d+)? \/ 10 · \*\*confidence \d+(\.\d+)?%/.test(gateMarkdown) &&
+      gateRisk >= 0 &&
+      gateRisk <= 10 &&
+      gateConfidence > 0,
+    `${gateRisk}/10 · ${gateConfidence}% · ${gateBody.bivia?.riskLevel ?? "?"}`,
+  );
+  check(
+    "PART 8 PR Gate lists the Bivia /set impacted tests with Passed/Failed",
+    gateMarkdown.includes("### 🧠 Bivia /set impacted tests") &&
+      gateMarkdown.includes("| Test case | Module | Result |") &&
+      gateMarkdown.includes("✅ Passed") &&
+      gateMarkdown.includes("❌ Failed") &&
+      Boolean(gateCaseA) &&
+      gateMarkdown.includes(gateCaseA.title) &&
+      Boolean(gateCaseB) &&
+      gateMarkdown.includes(gateCaseB.title),
+    gateMarkdown.split("\n").filter((line) => line.startsWith("| ")).slice(0, 4).join(" / "),
+  );
+  check(
+    "PART 8 PR Gate includes the Strix security summary",
+    gateMarkdown.includes("### 🛡️ Strix security summary") &&
+      /Grade:\*\* [A-F]/.test(gateMarkdown) &&
+      typeof gateBody.security?.score === "number",
+    `Strix ${gateBody.security?.grade ?? "?"} · ${gateBody.security?.score ?? "?"}/100 · ${gateBody.security?.findings ?? "?"} finding(s)`,
+  );
+
+  await goto(page, "/dashboard/pull-requests");
+  const gateRow = page.getByRole("button", { name: new RegExp(`#${gatePrNumber}`) }).first();
+  check("PART 8 PR list shows the gate pull request", (await gateRow.count()) > 0, `#${gatePrNumber}`);
+  if ((await gateRow.count()) > 0) {
+    await gateRow.click().catch(() => undefined);
+    const prDrawer = page.getByRole("dialog", { name: "PR analysis detail" }).first();
+    await prDrawer.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+    const gateOpen = prDrawer.locator('[data-testid="pr-gate-open"]').first();
+    check(
+      "PART 8 PR drawer exposes 📋 Generate CI/CD PR Gate Comment",
+      (await gateOpen.count()) > 0 && ((await gateOpen.innerText().catch(() => "")) || "").includes("Generate CI/CD PR Gate Comment"),
+    );
+    if ((await gateOpen.count()) > 0) {
+      await gateOpen.click().catch(() => undefined);
+      const gateModal = page.getByRole("dialog", { name: "📋 CI/CD PR Gate Comment" }).first();
+      await gateModal.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+      const copyGate = gateModal.locator('[data-testid="pr-gate-copy"]').first();
+      check(
+        "PART 8 PR gate modal offers Copy Markdown Report",
+        (await copyGate.count()) > 0 && ((await copyGate.innerText().catch(() => "")) || "").includes("Copy Markdown Report"),
+      );
+      const gatePreview = gateModal.locator('[data-testid="pr-gate-markdown"]').first();
+      await gatePreview.waitFor({ state: "visible", timeout: 90_000 }).catch(() => undefined);
+      const previewText = ((await gatePreview.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+      check(
+        "PART 8 PR gate modal renders the generated Markdown",
+        previewText.includes("QASyn CI/CD PR Gate") &&
+          previewText.includes("BLOCKED — HIGH BLAST RADIUS") &&
+          previewText.includes("Bivia /set impacted tests"),
+        previewText.slice(0, 180),
+      );
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    }
+    await prDrawer.getByRole("button", { name: "Close", exact: true }).first().click().catch(() => undefined);
+    await page.waitForTimeout(300);
+  }
+  await db.pullRequestCheck.delete({ where: { id: gatePr.id } }).catch(() => undefined);
+
+  // 8.6 — Persistent 1B token ledger + observatory surfaces.
+  const ledgerPath = path.join(process.cwd(), ".qasyn-data", "bivia-telemetry.json");
+  const ledgerRaw = fs.existsSync(ledgerPath) ? fs.readFileSync(ledgerPath, "utf8") : "";
+  interface LedgerLine {
+    kind?: string;
+    status?: string;
+    probability?: number;
+    latencyMs?: number;
+    inputTokens?: number;
+    organisationId?: string;
+  }
+  const ledgerEntries = ledgerRaw
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .flatMap((line) => {
+      try {
+        return [JSON.parse(line) as LedgerLine];
+      } catch {
+        return [];
+      }
+    });
+  const orgLedger = ledgerEntries.filter((entry) => entry.organisationId === cgiId);
+  const ledgerKinds = new Set(orgLedger.map((entry) => String(entry.kind)));
+  check(
+    "PART 8 Bivia telemetry ledger meters boolean/choice/ground/score/set",
+    orgLedger.length > 0 &&
+      ["boolean", "choice", "ground", "score", "set"].every((kind) => ledgerKinds.has(kind)) &&
+      orgLedger.every(
+        (entry) =>
+          typeof entry.probability === "number" &&
+          typeof entry.latencyMs === "number" &&
+          typeof entry.inputTokens === "number" &&
+          (entry.status === "answered" || entry.status === "abstained"),
+      ),
+    `${orgLedger.length} entry(ies) · ${[...ledgerKinds].join(", ")}`,
+  );
+
+  await goto(page, "/dashboard/billing/usage");
+  const observatory = page.locator('[data-testid="bivia-observatory"]').first();
+  const observatoryText = ((await observatory.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 8 billing usage renders the 1B token grant observatory",
+    (await observatory.count()) > 0 &&
+      observatoryText.includes("Articul8 Bivia 1B Token Grant Observatory") &&
+      observatoryText.includes("Tokens Grant") &&
+      observatoryText.includes("1,000,000,000") &&
+      observatoryText.includes("Tokens Used") &&
+      observatoryText.includes("Tokens Remaining"),
+    observatoryText.slice(0, 220),
+  );
+  check(
+    "PART 8 observatory reports confidence, abstention, latency and cost saved",
+    /avg calibration confidence/i.test(observatoryText) &&
+      /abstention rate/i.test(observatoryText) &&
+      /avg latency/i.test(observatoryText) &&
+      /estimated llm cost saved/i.test(observatoryText) &&
+      (await page.locator('[data-testid="bivia-kind-boolean"]').count()) > 0 &&
+      (await page.locator('[data-testid="bivia-kind-choice"]').count()) > 0 &&
+      (await page.locator('[data-testid="bivia-kind-ground"]').count()) > 0 &&
+      (await page.locator('[data-testid="bivia-kind-score"]').count()) > 0 &&
+      (await page.locator('[data-testid="bivia-kind-set"]').count()) > 0,
+    observatoryText.slice(-220),
+  );
+  await goto(page, "/dashboard/integrations");
+  const biviaIntegrationCard = page.locator('[data-testid="bivia-card-observatory"]').first();
+  check(
+    "PART 8 Integrations Bivia card embeds the token observatory",
+    (await biviaIntegrationCard.count()) > 0 &&
+      (await page.locator('[data-testid="bivia-grant"]').count()) > 0 &&
+      ((await biviaIntegrationCard.innerText().catch(() => "")) || "").includes("Tokens Remaining"),
+  );
+  await goto(page, "/dashboard/overview");
+  const overviewObservatory = page.locator('[data-testid="bivia-observatory"]').first();
+  const overviewObservatoryText = ((await overviewObservatory.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 8 Overview embeds the token observatory",
+    (await overviewObservatory.count()) > 0 &&
+      /avg calibration confidence/i.test(overviewObservatoryText) &&
+      /tokens remaining/i.test(overviewObservatoryText),
+    overviewObservatoryText.slice(0, 140),
+  );
+
+  check("PART 8 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part8-enterprise");
 
   await db.$disconnect();
 

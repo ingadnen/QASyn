@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel } from "@/components/dashboard/ui";
+import { BiviaObservatory } from "@/components/dashboard/pages/BiviaObservatory";
 import { apiFetch, errorMessage } from "@/lib/api";
+import type { BiviaObservatorySummary } from "@/lib/bivia-telemetry";
 import {
   INTEGRATION_PROVIDERS,
   type IntegrationCategory,
@@ -326,10 +328,12 @@ export function Integrations({
   integrations,
   readOnly,
   biviaReady = false,
+  biviaSummary,
 }: {
   integrations: IntegrationRow[];
   readOnly: boolean;
   biviaReady?: boolean;
+  biviaSummary: BiviaObservatorySummary;
 }) {
   const [rows, setRows] = useState<IntegrationRow[]>(integrations);
   const [tab, setTab] = useState<IntegrationCategory>("All Plugins");
@@ -433,9 +437,14 @@ export function Integrations({
                 </div>
                 <p className="line-clamp-3 min-h-[48px] text-[12px] leading-5 text-[#6b7280]">{definition.description}</p>
                 {definition.key === "BIVIA" && (
-                  <p data-testid="bivia-grant" className="inline-flex w-fit rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
-                    1,000,000,000 Bivia tokens grant
-                  </p>
+                  <div className="space-y-2">
+                    <p data-testid="bivia-grant" className="inline-flex w-fit rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
+                      1,000,000,000 Bivia tokens grant
+                    </p>
+                    <div data-testid="bivia-card-observatory">
+                      <BiviaObservatory summary={biviaSummary} compact />
+                    </div>
+                  </div>
                 )}
                 <p className="truncate text-[11.5px] text-[#9ca3af]">
                   {connected

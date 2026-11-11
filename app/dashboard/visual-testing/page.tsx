@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { BiviaGroundingLab } from "@/components/dashboard/pages/BiviaGroundingLab";
 import { Card, EmptyState, PageHeader, StatusPill, ActionButton } from "@/components/dashboard/ui";
+import { normalizeGroundBox } from "@/lib/bivia";
 import { prisma } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
 import { requireOrgContext } from "@/lib/tenant";
@@ -10,9 +12,26 @@ export const dynamic = "force-dynamic";
 export default async function VisualTestingPage() {
   const ctx = await requireOrgContext();
   const baselines = await prisma.visualBaseline.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" }, include: { diffs: true } });
+  // Illustrative normalized box on a nominal 1280×720 viewport (pixels → 0–1000).
+  const initial = normalizeGroundBox([320, 180, 960, 420]);
   return (
     <div className="space-y-6">
       <PageHeader kicker="TESTING STUDIO" title="Visual testing" description="Baseline gallery and diff review: pending diffs need approval (threshold ≤ 1% auto-approved, > 5% auto-rejected)." />
+      <BiviaGroundingLab
+        defaultTarget={ctx.org.website ?? "https://www.cgi.com"}
+        initialBox={{
+          x: initial.x,
+          y: initial.y,
+          width: initial.width,
+          height: initial.height,
+          rawBox: initial.rawBox,
+          space: initial.space,
+          label: "Primary call-to-action button",
+          confidence: 0.88,
+          provider: "fallback",
+          status: "answered",
+        }}
+      />
       <Card title={`${baselines.length} baselines`}>
         {baselines.length === 0 ? <EmptyState title="No baselines" description="Baselines are captured when a visual step runs with a screenshot." /> : (
           <ul className="divide-y divide-slate-100">

@@ -10,6 +10,14 @@
 import { biviaBoolean, type BiviaConfigSources, type BiviaMode } from "./bivia";
 import { healSelector, parseDom } from "./healing";
 import type { NlpStep } from "./engines";
+import {
+  buildStepHealMetadata,
+  healSelectorWithBivia,
+  isHealableAction,
+  selectorToPlaywright,
+  syntheticDomSummary,
+  type StepBiviaHealMetadata,
+} from "./selector-healing";
 
 const GLOBAL_TIMEOUT_MS = 30_000;
 
@@ -55,6 +63,8 @@ export interface RealStepOutcome {
     verifiedAt: string;
     abstainReason?: string;
   };
+  /** Closed-loop Bivia selector-healing metadata persisted on the step. */
+  biviaHeal?: StepBiviaHealMetadata;
   consoleLogs?: string[];
   networkErrors?: string[];
   screenshotBase64?: string | null;
@@ -64,6 +74,7 @@ interface PwPage {
   goto(url: string, opts?: { timeout?: number; waitUntil?: string }): Promise<unknown>;
   click(selector: string, opts?: { timeout?: number }): Promise<void>;
   fill(selector: string, value: string, opts?: { timeout?: number }): Promise<void>;
+  selectOption(selector: string, value: string, opts?: { timeout?: number }): Promise<string[]>;
   textContent(selector: string, opts?: { timeout?: number }): Promise<string | null>;
   content(): Promise<string>;
   evaluate<T>(fn: () => T): Promise<T>;
@@ -79,9 +90,13 @@ interface PwModule {
   chromium: { launch(opts?: { headless?: boolean; args?: string[] }): Promise<PwBrowser> };
 }
 
-/** Our stored selectors use "css:…" style; Playwright CSS engine wants bare CSS. */
+/**
+ * Our stored selectors use `css:…` or readable Studio locators such as
+ * `page.getByRole("button", { name: "Sign in" })`; Playwright needs the
+ * equivalent engine selector.
+ */
 function toPlaywrightSelector(selector: string): string {
-  return selector.startsWith("css:") ? selector.slice(4) : selector;
+  return selectorToPlaywright(selector);
 }
 
 async function loadPlaywright(): Promise<PwModule | null> {  try {
@@ -119,111 +134,185 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
     });
 
     let currentUrl = "";
+
+    /** Captures the rendered DOM and a Playwright screenshot for Bivia healing. */
+    async function captureFailureContext(): Promise<{ screenshotBase64: string | null; domSummary: string }> {
+      let screenshotBase64: string | null = null;
+      try {
+        const shot = await page.screenshot({ type: "png", fullPage: true });
+        screenshotBase64 = shot.toString("base64");
+      } catch {
+        screenshotBase64 = null;
+      }
+      let domSummary = "";
+      try {
+        domSummary = (await page.content()).slice(0, 8_000);
+      } catch {
+        domSummary = "";
+      }
+      return { screenshotBase64, domSummary };
+    }
+
+    /** Executes one non-AI step; `overrideSelector` is the healed locator. */
+    async function performStep(step: NlpStep, overrideSelector?: string): Promise<string> {
+      switch (step.action) {
+        case "Navigate": {
+          if (!isSafeUrl(step.target)) throw new Error("URL blocked (invalid scheme or private host)");
+          currentUrl = step.target;
+          await page.goto(currentUrl, { timeout: GLOBAL_TIMEOUT_MS, waitUntil: "domcontentloaded" });
+          return `Navigated to ${currentUrl}`;
+        }
+        case "Click": {
+          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? `text=${step.target}`);
+          await page.click(selector, { timeout: 10_000 });
+          return `Clicked ${selector}`;
+        }
+        case "Enter Text":
+        case "Type":
+        case "Fill": {
+          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? "input");
+          await page.fill(selector, step.value || step.target, { timeout: 10_000 });
+          return `Filled ${selector}`;
+        }
+        case "Select": {
+          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? "select");
+          const value = step.value || step.target;
+          await page.selectOption(selector, value, { timeout: 10_000 });
+          return `Selected "${value}" in ${selector}`;
+        }
+        case "Verify":
+        case "Verify Element": {
+          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? `:text("${step.target.replace(/"/g, '\\"')}")`);
+          const text = await page.textContent(selector, { timeout: 10_000 });
+          const expected = (step.value || "").trim();
+          if (expected && !(text ?? "").includes(expected)) {
+            throw new Error(`Expected "${expected}" inside ${selector}`);
+          }
+          return text ? `Verified "${text.trim().slice(0, 60)}"` : "Element found";
+        }
+        default:
+          return `Step executed: ${step.action}`;
+      }
+    }
+
     for (const step of steps) {
       if (Date.now() - started > GLOBAL_TIMEOUT_MS) {
         outcomes.push({ step, fetched: false, status: null, healed: false, newSelector: null, score: 0, message: "Global 30s timeout reached", consoleLogs: [...consoleLogs], networkErrors: [...networkErrors], screenshotBase64: null });
         continue;
       }
-      try {
-        if (step.action === "Navigate") {
-          if (!isSafeUrl(step.target)) throw new Error("URL blocked (invalid scheme or private host)");
-          currentUrl = step.target;
-          await page.goto(currentUrl, { timeout: GLOBAL_TIMEOUT_MS, waitUntil: "domcontentloaded" });
-          outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message: `Navigated to ${currentUrl}` });
-        } else if (step.action === "Click") {
-          const selector = toPlaywrightSelector(step.selector || `text=${step.target}`);
-          await page.click(selector, { timeout: 10_000 });
-          outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message: `Clicked ${selector}` });
-        } else if (step.action === "Enter Text") {
-          const selector = toPlaywrightSelector(step.selector || "input");
-          await page.fill(selector, step.value || step.target, { timeout: 10_000 });
-          outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message: `Filled ${selector}` });
-        } else if (step.action === "Verify Element") {
-          const selector = step.selector ? toPlaywrightSelector(step.selector) : `:text("${step.target.replace(/"/g, '\\"')}")`;
-          const text = await page.textContent(selector, { timeout: 10_000 });
-          outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message: text ? `Verified "${text.trim().slice(0, 60)}"` : "Element found" });
-        } else if (step.action === "AI Assertion") {
-          // Multimodal verification through Articul8 Bivia: DOM excerpt plus a
-          // screenshot, then a calibrated answer with an explicit abstain path.
-          let screenshotBase64: string | null = null;
-          try {
-            const shot = await page.screenshot({ type: "png", fullPage: true });
-            screenshotBase64 = shot.toString("base64");
-          } catch {
-            screenshotBase64 = null;
-          }
-          let domSummary = "";
-          try {
-            domSummary = (await page.content()).slice(0, 8_000);
-          } catch {
-            domSummary = "";
-          }
-          const question = step.target || `Verify that ${currentUrl || "the page"} rendered correctly`;
-          const decision = await biviaBoolean({
+      if (step.action === "AI Assertion") {
+        // Multimodal verification through Articul8 Bivia: DOM excerpt plus a
+        // screenshot, then a calibrated answer with an explicit abstain path.
+        const captured = await captureFailureContext();
+        const question = step.target || `Verify that ${currentUrl || "the page"} rendered correctly`;
+        const decision = await biviaBoolean({
+          question,
+          context: [
+            `URL: ${currentUrl || "(not navigated)"}`,
+            `DOM excerpt: ${captured.domSummary}`,
+            `Selector: ${step.selector || "(auto-resolved)"}`,
+          ].join("\n"),
+          screenshotBase64: captured.screenshotBase64,
+          organisationId: options.organisationId,
+          sources: options.sources,
+          mode: options.mode,
+          allowAbstain: true,
+        });
+        const probabilityPct = Math.round(decision.probability * 1000) / 10;
+        const stepStatus = decision.status === "abstained" ? "abstained" : decision.value ? "passed" : "failed";
+        outcomes.push({
+          step,
+          fetched: true,
+          status: 200,
+          healed: false,
+          newSelector: null,
+          score: decision.probability,
+          stepStatus,
+          bivia: {
+            status: stepStatus,
+            probability: probabilityPct,
+            probabilityRaw: decision.probability,
+            provider: decision.provider,
             question,
-            context: [
-              `URL: ${currentUrl || "(not navigated)"}`,
-              `DOM excerpt: ${domSummary}`,
-              `Selector: ${step.selector || "(auto-resolved)"}`,
-            ].join("\n"),
-            screenshotBase64,
-            organisationId: options.organisationId,
-            sources: options.sources,
-            mode: options.mode,
-            allowAbstain: true,
-          });
-          const probabilityPct = Math.round(decision.probability * 1000) / 10;
-          const stepStatus = decision.status === "abstained" ? "abstained" : decision.value ? "passed" : "failed";
-          outcomes.push({
-            step,
-            fetched: true,
-            status: 200,
-            healed: false,
-            newSelector: null,
-            score: decision.probability,
-            stepStatus,
-            bivia: {
-              status: stepStatus,
-              probability: probabilityPct,
-              probabilityRaw: decision.probability,
-              provider: decision.provider,
-              question,
-              latencyMs: decision.latencyMs,
-              verifiedAt: new Date().toISOString(),
-              ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
-            },
-            message: `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
-              decision.abstainReason ? ` · ${decision.abstainReason}` : ""
-            } · screenshot ${screenshotBase64 ? "captured" : "unavailable"}`,
-            consoleLogs: [...consoleLogs],
-            networkErrors: [...networkErrors],
-            screenshotBase64,
-          });
-        } else {
-          outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message: `Step executed: ${step.action}` });
-        }
+            latencyMs: decision.latencyMs,
+            verifiedAt: new Date().toISOString(),
+            ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
+          },
+          message: `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
+            decision.abstainReason ? ` · ${decision.abstainReason}` : ""
+          } · screenshot ${captured.screenshotBase64 ? "captured" : "unavailable"}`,
+          consoleLogs: [...consoleLogs],
+          networkErrors: [...networkErrors],
+          screenshotBase64: captured.screenshotBase64,
+        });
+        continue;
+      }
+
+      try {
+        const message = await performStep(step);
+        outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message });
       } catch (e) {
-        // Failure → screenshot + DOM similarity healing
-        let screenshotBase64: string | null = null;
+        // Failure → capture DOM + screenshot, then let Bivia choose and
+        // calibrate a new locator before falling back to similarity healing.
+        const captured = await captureFailureContext();
         let healScore = 0;
         let newSelector: string | null = null;
         let healed = false;
-        try {
-          const shot = await page.screenshot({ type: "png", fullPage: true });
-          screenshotBase64 = shot.toString("base64");
-        } catch {
-          screenshotBase64 = null;
+        let biviaHeal: StepBiviaHealMetadata | undefined;
+
+        if (isHealableAction(step.action)) {
+          try {
+            const decision = await healSelectorWithBivia({
+              step: { id: step.id, action: step.action, target: step.target, value: step.value, selector: step.selector },
+              domSummary: captured.domSummary || syntheticDomSummary(step.target || step.action, steps),
+              url: currentUrl,
+              screenshotBase64: captured.screenshotBase64,
+              organisationId: options.organisationId,
+              sources: options.sources,
+              mode: options.mode,
+            });
+            biviaHeal = buildStepHealMetadata(decision);
+            healScore = decision.probability;
+            newSelector = decision.newSelector;
+            if (decision.status === "healed" && decision.newSelector) {
+              try {
+                const retryMessage = await performStep(step, decision.newSelector);
+                step.selector = decision.newSelector;
+                healed = true;
+                outcomes.push({
+                  step,
+                  fetched: true,
+                  status: 200,
+                  healed: true,
+                  newSelector: decision.newSelector,
+                  score: decision.probability,
+                  biviaHeal,
+                  message: `✨ Healed by Bivia · ${decision.oldSelector || "(empty)"} → ${decision.newSelector} · ${decision.probabilityPct.toFixed(1)}% calibrated · ${retryMessage}`,
+                  consoleLogs: [...consoleLogs],
+                  networkErrors: [...networkErrors],
+                  screenshotBase64: captured.screenshotBase64,
+                });
+                continue;
+              } catch {
+                if (biviaHeal) biviaHeal = { ...biviaHeal, healed: false };
+              }
+            }
+          } catch {
+            /* Bivia healing unavailable — keep the similarity fallback below */
+          }
         }
-        try {
-          const html = await page.content();
-          const dom = parseDom(html);
-          const heal = healSelector({ tag: "button", selector: step.selector || step.target, text: step.target }, dom);
-          healScore = heal.score;
-          newSelector = heal.newSelector;
-          healed = heal.healed;
-        } catch {
-          /* healing unavailable */
+
+        if (!healed) {
+          try {
+            const dom = parseDom(captured.domSummary);
+            const heal = healSelector({ tag: "button", selector: step.selector || step.target, text: step.target }, dom);
+            if (healScore === 0) healScore = heal.score;
+            if (!newSelector) newSelector = heal.newSelector;
+          } catch {
+            /* similarity healing unavailable */
+          }
         }
+
         outcomes.push({
           step,
           fetched: false,
@@ -231,10 +320,11 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
           healed,
           newSelector,
           score: healScore,
-          message: `Step failed (${e instanceof Error ? e.message : "error"}) · screenshot ${screenshotBase64 ? "captured" : "unavailable"} · healing score ${healScore.toFixed(2)}${healed ? ` → repaired: ${newSelector}` : ""} · Context7 applied`,
+          ...(biviaHeal ? { biviaHeal } : {}),
+          message: `Step failed (${e instanceof Error ? e.message : "error"}) · screenshot ${captured.screenshotBase64 ? "captured" : "unavailable"} · healing score ${healScore.toFixed(2)}${healed ? ` → repaired: ${newSelector}` : ""}${biviaHeal ? ` · Bivia ${biviaHeal.probabilityPct.toFixed(1)}% calibrated` : ""} · Context7 applied`,
           consoleLogs: [...consoleLogs],
           networkErrors: [...networkErrors],
-          screenshotBase64,
+          screenshotBase64: captured.screenshotBase64,
         });
       }
     }
@@ -536,6 +626,41 @@ export async function inspectTargetDom(targetUrl: string): Promise<TargetDomSnap
     }
   }
   return inspectWithFetch(targetUrl);
+}
+
+export interface TargetCapture {
+  url: string;
+  title: string;
+  screenshotBase64: string;
+  domSummary: string;
+}
+
+/**
+ * Captures a rendered viewport screenshot plus DOM excerpt for Bivia visual
+ * grounding. Returns null when Playwright is unavailable or the URL is blocked;
+ * callers degrade to the deterministic grounding fallback.
+ */
+export async function captureTargetScreenshot(targetUrl: string): Promise<TargetCapture | null> {
+  if (!isSafeUrl(targetUrl)) return null;
+  const pw = await loadPlaywright();
+  if (!pw) return null;
+  const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(targetUrl, { timeout: 8_000, waitUntil: "domcontentloaded" });
+    const shot = await page.screenshot({ type: "png", fullPage: false });
+    const html = await page.content();
+    return {
+      url: targetUrl,
+      title: html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim().slice(0, 120) ?? "",
+      screenshotBase64: shot.toString("base64"),
+      domSummary: html.slice(0, 8_000),
+    };
+  } catch {
+    return null;
+  } finally {
+    await browser.close();
+  }
 }
 
 function moduleForLabel(label: string): string {

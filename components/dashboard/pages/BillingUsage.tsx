@@ -15,6 +15,8 @@ import {
   useAction,
 } from "@/components/dashboard/ui";
 import { CREDIT_ACTIONS } from "@/lib/credits";
+import type { BiviaObservatorySummary } from "@/lib/bivia-telemetry";
+import { BiviaObservatory } from "@/components/dashboard/pages/BiviaObservatory";
 import { cn } from "@/lib/utils";
 
 export interface CreditLedgerRow {
@@ -153,6 +155,7 @@ export function BillingUsage(props: BillingUsageProps) {
     trialEndsAt,
     entries,
     view,
+    biviaSummary,
   } = props;
   const { run, pending, error, setError } = useAction();
   const [plansOpen, setPlansOpen] = useState(false);
@@ -241,7 +244,7 @@ export function BillingUsage(props: BillingUsageProps) {
           }}
         />
       ) : (
-        <UsageView available={available} entries={entries} orgName={orgName} />
+        <UsageView available={available} entries={entries} orgName={orgName} biviaSummary={biviaSummary} />
       )}
 
       <Modal
@@ -272,6 +275,7 @@ interface BillingUsageProps {
   trialEndsAt: string;
   entries: CreditLedgerRow[];
   view: "billing" | "usage";
+  biviaSummary: BiviaObservatorySummary;
 }
 
 function BillingView({
@@ -514,7 +518,17 @@ function BillingView({
   );
 }
 
-function UsageView({ available, entries, orgName }: { available: number; entries: CreditLedgerRow[]; orgName: string }) {
+function UsageView({
+  available,
+  entries,
+  orgName,
+  biviaSummary,
+}: {
+  available: number;
+  entries: CreditLedgerRow[];
+  orgName: string;
+  biviaSummary: BiviaObservatorySummary;
+}) {
   const [range, setRange] = useState<Range>("Last 7 days");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -607,6 +621,7 @@ function UsageView({ available, entries, orgName }: { available: number; entries
 
   return (
     <div className="space-y-4">
+      <BiviaObservatory summary={biviaSummary} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-[20px] font-semibold text-[#111827]">Usage</h2>

@@ -7,6 +7,7 @@ import {
   type OverviewRecent,
 } from "@/components/dashboard/pages/Overview";
 import { getOverview, parseCrawlLogs } from "@/lib/dashboard";
+import { getBiviaObservatory } from "@/lib/bivia-telemetry";
 import { prisma } from "@/lib/db";
 import { readSettings, requireOrgContext } from "@/lib/tenant";
 
@@ -85,7 +86,7 @@ function sharePercentages(counts: number[]) {
 export default async function OverviewPage() {
   const ctx = await requirePermission("overview");
   const orgId = ctx.org.id;
-  const [data, members, recentTests] = await Promise.all([
+  const [data, members, recentTests, biviaSummary] = await Promise.all([
     getOverview(orgId),
     prisma.user.count({ where: { organisationId: orgId } }),
     prisma.testCase.findMany({
@@ -94,6 +95,7 @@ export default async function OverviewPage() {
       take: 5,
       select: { id: true, title: true, stepsCount: true, status: true, lastRunAt: true, createdAt: true },
     }),
+    getBiviaObservatory(orgId),
   ]);
 
   const settings = readSettings(ctx.org);
@@ -214,6 +216,8 @@ export default async function OverviewPage() {
       showSlack={showSlack}
       showBugTracker={showBugTracker}
       showInvite={showInvite}
+      biviaSummary={biviaSummary}
+      autopilotTarget={ctx.org.website ?? "https://www.cgi.com"}
     />
   );
 }

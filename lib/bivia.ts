@@ -10,10 +10,14 @@
  * The API key is never logged, returned to the browser or written to a tracked
  * file.
  */
+import { normalizeGroundBox, type NormalisedBox } from "./bivia-box";
+import { recordBiviaDecision } from "./bivia-telemetry";
 import { prisma } from "./db";
 import { parseIntegrationConfig, type IntegrationConfig } from "./integration-providers";
 import { impactedModules } from "./pr-catalog";
 import { readSettings, type AnalysisCodeSettings } from "./tenant";
+
+export { normalizeGroundBox, type NormalisedBox } from "./bivia-box";
 
 export type BiviaMode = "fast" | "deep";
 export type BiviaStatus = "answered" | "abstained";
@@ -87,10 +91,16 @@ export interface BiviaGroundInput {
 }
 
 export interface BiviaGroundResult {
+  /** Normalised coordinates in a 0–1000 canvas. */
   x: number;
   y: number;
   width: number;
   height: number;
+  /** Corner box exactly as returned by the model: [x1, y1, x2, y2]. */
+  rawBox: [number, number, number, number];
+  /** Input coordinate space detected before normalisation. */
+  space: "normalized" | "milli" | "pixels";
+  label?: string;
   confidence: number;
   status: BiviaStatus;
   abstainReason?: string;
@@ -509,29 +519,27 @@ function normalizeChoice(body: unknown, options: string[]): number | null {
  */
 function normalizeGround(
   body: unknown,
-): { box: { x: number; y: number; width: number; height: number }; label: string; count: number; found: boolean } | null {
+): { box: NormalisedBox; label: string; count: number; found: boolean } | null {
   const foundRaw = firstDefined(body, ["found", "grounded"]);
   const found = foundRaw === true;
   const raw = firstDefined(body, ["value", "boxes", "results", "matches"]);
   const values = Array.isArray(raw) ? raw : raw === undefined || raw === null ? [] : [raw];
-  const parsed: Array<{ box: { x: number; y: number; width: number; height: number }; label: string }> = [];
+  const parsed: Array<{ box: NormalisedBox; label: string }> = [];
   for (const value of values) {
     const record = asRecord(value);
     if (!record) continue;
     const label = String(record.label ?? record.name ?? record.text ?? record.target ?? "").trim();
     const boxRaw = record.box ?? record.bbox ?? record.bbox_2d ?? record.rect ?? record.bounding_box;
     if (!Array.isArray(boxRaw) || boxRaw.length < 4) continue;
-    const [a, b, c, d] = boxRaw.map(Number);
-    if (![a, b, c, d].every(Number.isFinite)) continue;
-    // Corner format: [x1, y1, x2, y2]. Fall back to [x, y, w, h] if inverted.
-    const x = a;
-    const y = b;
-    const width = c > a ? c - a : c;
-    const height = d > b ? d - b : d;
-    if (width <= 0 || height <= 0) continue;
-    parsed.push({ box: { x, y, width, height }, label });
+    const numeric = boxRaw.slice(0, 4).map(Number);
+    if (!numeric.every(Number.isFinite)) continue;
+    const box = normalizeGroundBox(numeric);
+    if (box.width <= 0 || box.height <= 0) continue;
+    parsed.push({ box, label });
   }
-  if (parsed.length === 0) return { box: { x: 0, y: 0, width: 0, height: 0 }, label: "", count: 0, found };
+  if (parsed.length === 0) {
+    return { box: { x: 0, y: 0, width: 0, height: 0, rawBox: [0, 0, 0, 0], space: "milli" }, label: "", count: 0, found };
+  }
   return { ...parsed[0], count: parsed.length, found: found || parsed.length > 0 };
 }
 
@@ -650,7 +658,13 @@ function fallbackGround(
   const y = 120 + ((seed >>> 5) % 420);
   const base = screenshotBase64 || domSummary ? 0.68 : 0.52;
   const confidence = round3(base + (seed % 2800) / 10_000);
-  return { x, y, width, height, confidence, status: "answered" };
+  const box = normalizeGroundBox([x, y, x + width, y + height]);
+  return {
+    ...box,
+    label: targetDescription.trim().slice(0, 120),
+    confidence,
+    status: "answered",
+  };
 }
 
 function fallbackScore(
@@ -722,6 +736,22 @@ export async function biviaBoolean(input: BiviaBooleanInput): Promise<BiviaBoole
     abstention_threshold: config.abstentionThreshold,
   };
 
+  const telemetry = (result: BiviaBooleanResult) => {
+    recordBiviaDecision({
+      kind: "boolean",
+      provider: result.provider,
+      status: result.status,
+      probability: result.probability,
+      latencyMs: result.latencyMs,
+      question: input.question,
+      context,
+      screenshotBase64: input.screenshotBase64,
+      organisationId: input.organisationId,
+      mode,
+    });
+    return result;
+  };
+
   const imagePayload = input.screenshotBase64 ? { images: [{ b64: input.screenshotBase64 }] } : {};
   const first = await remoteRequest(config, "/boolean", {
     ...common,
@@ -743,32 +773,32 @@ export async function biviaBoolean(input: BiviaBooleanInput): Promise<BiviaBoole
     const value = normalizeBoolean(remote.body);
     const probability = normalizeProbability(remote.body);
     if (status === "abstained") {
-      return {
+      return telemetry({
         status: "abstained",
         value: false,
         probability: probability ?? 0.2,
         abstainReason: normalizeReason(remote.body) ?? "Bivia abstained on this visual decision.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
-      };
+      });
     }
     if (value !== null && probability !== null) {
-      return {
+      return telemetry({
         status: "answered",
         value,
         probability,
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
-      };
+      });
     }
   }
 
   const fallback = fallbackBoolean(input.question, context, input.screenshotBase64, allowAbstain, config.abstentionThreshold);
-  return {
+  return telemetry({
     ...fallback,
     latencyMs: fallbackLatency(started),
     provider: "bivia-calibrated-fallback",
-  };
+  });
 }
 
 /** Selects the best Playwright selector / option with a calibrated probability. */
@@ -778,6 +808,20 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
   const mode = input.mode ?? config.mode;
   const context = input.context ?? "";
   const allowAbstain = input.allowAbstain !== false;
+  const telemetry = (result: BiviaChoiceResult) => {
+    recordBiviaDecision({
+      kind: "choice",
+      provider: result.provider,
+      status: result.status,
+      probability: result.probability,
+      latencyMs: result.latencyMs,
+      question: input.question,
+      context: [context, `Options: ${input.options.join(" | ")}`].join("\n"),
+      organisationId: input.organisationId,
+      mode,
+    });
+    return result;
+  };
   const remote = await remoteRequest(config, "/choice", {
     question: input.question,
     // Live Bivia expects `choices`; `options` is kept for older deployments.
@@ -795,7 +839,7 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
     const probability = normalizeProbability(remote.body);
     const index = normalizeChoice(remote.body, input.options);
     if (status === "abstained") {
-      return {
+      return telemetry({
         status: "abstained",
         value: null,
         optionIndex: index ?? -1,
@@ -803,32 +847,48 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
         abstainReason: normalizeReason(remote.body) ?? "Bivia abstained on this choice.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
-      };
+      });
     }
     if (index !== null) {
-      return {
+      return telemetry({
         status: "answered",
         value: input.options[index],
         optionIndex: index,
         probability: probability ?? 0.75,
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
-      };
+      });
     }
   }
 
   const fallback = fallbackChoice(input.question, input.options, context, allowAbstain, config.abstentionThreshold);
-  return {
+  return telemetry({
     ...fallback,
     latencyMs: fallbackLatency(started),
     provider: "bivia-calibrated-fallback",
-  };
+  });
 }
 
 /** Grounds a target description to screenshot coordinates. */
 export async function biviaGround(input: BiviaGroundInput): Promise<BiviaGroundResult> {
   const started = Date.now();
   const config = await resolveBiviaConfig(input.organisationId, input.sources);
+  const mode = input.mode ?? config.mode;
+  const telemetry = (result: BiviaGroundResult) => {
+    recordBiviaDecision({
+      kind: "ground",
+      provider: result.provider,
+      status: result.status,
+      probability: result.confidence,
+      latencyMs: result.latencyMs,
+      question: input.targetDescription,
+      context: input.domSummary ?? "",
+      screenshotBase64: input.screenshotBase64,
+      organisationId: input.organisationId,
+      mode,
+    });
+    return result;
+  };
   // /ground is image-grounded: without a screenshot the deterministic fallback
   // still returns usable coordinates from the DOM context.
   const remote = input.screenshotBase64
@@ -847,43 +907,44 @@ export async function biviaGround(input: BiviaGroundInput): Promise<BiviaGroundR
     const status = normalizeStatus(remote.body);
     if (status === "abstained") {
       const fallback = fallbackGround(input.targetDescription, input.domSummary ?? "", input.screenshotBase64);
-      return {
+      return telemetry({
         ...fallback,
         status: "abstained",
         confidence: 0.2,
         abstainReason: normalizeReason(remote.body) ?? "Bivia could not ground this target.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
-      };
+      });
     }
     if (ground && ground.count > 0) {
-      return {
+      return telemetry({
         ...ground.box,
+        label: ground.label || input.targetDescription,
         confidence: round3(clamp(0.72 + ground.count * 0.04, 0.72, 0.92)),
         status: "answered",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
-      };
+      });
     }
     if (ground && !ground.found) {
       const fallback = fallbackGround(input.targetDescription, input.domSummary ?? "", input.screenshotBase64);
-      return {
+      return telemetry({
         ...fallback,
         status: "abstained",
         confidence: 0.2,
         abstainReason: "Bivia did not find the requested target in the screenshot.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
-      };
+      });
     }
   }
 
   const fallback = fallbackGround(input.targetDescription, input.domSummary ?? "", input.screenshotBase64);
-  return {
+  return telemetry({
     ...fallback,
     latencyMs: fallbackLatency(started),
     provider: "bivia-calibrated-fallback",
-  };
+  });
 }
 
 /**
@@ -924,13 +985,41 @@ export async function biviaScoreAndSet(input: BiviaScoreInput): Promise<BiviaSco
 
   const riskScore = scoreRemote?.ok ? normalizeRiskScore(scoreRemote.body) : null;
   const selectedIds = setRemote?.ok ? normalizeSetSelection(setRemote.body, input.candidateTests) : [];
+  const telemetry = (result: BiviaScoreResult) => {
+    recordBiviaDecision({
+      kind: "score",
+      provider: result.provider,
+      status: result.status,
+      probability: result.probability,
+      latencyMs: scoreRemote?.latencyMs ?? result.latencyMs,
+      question: `Regression risk (0–1) for PR: ${input.prTitle}`,
+      context,
+      organisationId: input.organisationId,
+      mode,
+    });
+    if (testOptions.length > 0) {
+      recordBiviaDecision({
+        kind: "set",
+        provider: setRemote?.ok ? "bivia-api" : "bivia-calibrated-fallback",
+        status: result.selectedTests.length > 0 ? "answered" : "abstained",
+        probability: result.probability,
+        latencyMs: setRemote?.latencyMs ?? result.latencyMs,
+        question: `Impacted tests for PR: ${input.prTitle}`,
+        context: [context, `Options: ${testOptions.join(" | ")}`].join("\n"),
+        organisationId: input.organisationId,
+        mode,
+      });
+    }
+    return result;
+  };
+
   if (riskScore !== null) {
     const selectedSet = new Set(selectedIds);
     const selectedTests =
       selectedIds.length > 0
         ? input.candidateTests.filter((test) => selectedSet.has(test.id))
         : fallbackScore(input.prTitle, input.changedFiles, input.candidateTests).selectedTests;
-    return {
+    return telemetry({
       status: "answered",
       riskScore,
       riskLevel: riskLevelFor(riskScore),
@@ -941,15 +1030,15 @@ export async function biviaScoreAndSet(input: BiviaScoreInput): Promise<BiviaSco
         round3(clamp(0.66 + riskScore / 28, 0.66, 0.97)),
       latencyMs: (scoreRemote?.latencyMs ?? 0) + (setRemote?.latencyMs ?? 0),
       provider: "bivia-api",
-    };
+    });
   }
 
   const fallback = fallbackScore(input.prTitle, input.changedFiles, input.candidateTests);
-  return {
+  return telemetry({
     ...fallback,
     latencyMs: fallbackLatency(started),
     provider: "bivia-calibrated-fallback",
-  };
+  });
 }
 
 /* ------------------------------------------------------------------ */
