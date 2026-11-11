@@ -13,7 +13,10 @@ import {
   useAction,
 } from "@/components/dashboard/ui";
 import { STUDIO_STEP_TEMPLATES } from "@/lib/studio-templates";
+import { TEST_TYPES } from "@/lib/constants";
+import { resolveGroundingUrl } from "@/lib/grounding-url";
 import { RowMenu } from "@/components/contextqa/workspace";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { MagicLocatorInspector } from "@/components/dashboard/pages/MagicLocatorInspector";
 import { BiviaGroundingCanvas, type GroundingBoxView } from "@/components/dashboard/pages/BiviaGroundingCanvas";
 import type { StepBiviaHealMetadata } from "@/lib/selector-healing";
@@ -42,6 +45,10 @@ export interface StudioStep {
   };
   /** Closed-loop self-healing evidence written by Articul8 Bivia. */
   biviaHeal?: StepBiviaHealMetadata;
+  /** Visual evidence persisted after execution (PNG or generated SVG). */
+  screenshotBase64?: string | null;
+  screenshotMime?: string;
+  message?: string;
 }
 
 export interface StudioVersion {
@@ -70,6 +77,8 @@ export interface StudioData {
   labels: string[];
   createdAt: string;
   steps: StudioStep[];
+  /** Exact test type selected at creation/edit time (Functional, Regression…). */
+  testType: string;
   variables: Record<string, string>;
   caseOptions: Array<{ id: string; title: string; module: string }>;
   prerequisites: Array<{ id: string; title: string; module: string }>;
@@ -88,6 +97,7 @@ export interface StudioData {
     autoFix: boolean;
     createdBy: string;
     createdAt: string;
+    log: RunLogLine[];
   }>;
   versions: StudioVersion[];
   settings: {
@@ -117,6 +127,8 @@ interface RunLogLine {
   status: string;
   healed?: boolean;
   message: string;
+  screenshotBase64?: string | null;
+  screenshotMime?: string;
 }
 
 interface SelfHealResponse {
@@ -127,6 +139,9 @@ interface SelfHealResponse {
   probability: number;
   provider: string;
   grounding?: GroundingBoxView;
+  screenshotBase64?: string | null;
+  screenshotMime?: string;
+  groundingUrl?: string;
 }
 
 type Tab = "steps" | "relationships" | "versions";
@@ -238,6 +253,12 @@ function formatDuration(ms: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${seconds.toFixed(2).padStart(5, "0")}`;
+}
+
+/** Data URL for persisted PNG or generated SVG step evidence. */
+function evidenceDataUrl(base64?: string | null, mime?: string) {
+  if (!base64) return null;
+  return `data:${mime || (base64.startsWith("PHN2Zy") ? "image/svg+xml" : "image/png")};base64,${base64}`;
 }
 
 function sentenceForStep(step: StudioStep, variables: Record<string, string>, orgUrl: string) {
@@ -362,12 +383,23 @@ export function StudioWorkspace({
   const [runLog, setRunLog] = useState<RunLogLine[]>([]);
   const [runAutoFix, setRunAutoFix] = useState(false);
   const [selfHealing, setSelfHealing] = useState(false);
+  const [selfHealEvidence, setSelfHealEvidence] = useState<{ stepId: string; dataUrl: string } | null>(null);
   const [groundBox, setGroundBox] = useState<GroundingBoxView | null>(null);
   const [groundImage, setGroundImage] = useState<string | null>(null);
   const [groundMeta, setGroundMeta] = useState("");
   const [groundError, setGroundError] = useState<string | null>(null);
   const [groundBusy, setGroundBusy] = useState(false);
   const [usedQuery, setUsedQuery] = useState("");
+  const [planColumnFilters, setPlanColumnFilters] = useState<Record<string, string>>({});
+  const [prereqColumnFilters, setPrereqColumnFilters] = useState<Record<string, string>>({});
+  const visiblePlans = useMemo(
+    () => data.plans.filter((plan) => matchesColumnFilters(planColumnFilters, { Name: plan.name, Status: plan.status })),
+    [data.plans, planColumnFilters],
+  );
+  const visiblePrereqs = useMemo(
+    () => data.prerequisiteOf.filter((item) => matchesColumnFilters(prereqColumnFilters, { Name: item.title, Status: item.status })),
+    [data.prerequisiteOf, prereqColumnFilters],
+  );
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     execution: true,
     ai: true,
@@ -383,6 +415,7 @@ export function StudioWorkspace({
   const [editModule, setEditModule] = useState(data.module);
   const [editStatus, setEditStatus] = useState(data.rawStatus);
   const [editPriority, setEditPriority] = useState(data.criticality);
+  const [editTestType, setEditTestType] = useState(data.testType);
   const [editEnvironment, setEditEnvironment] = useState(data.environment);
   const [editVersion, setEditVersion] = useState(data.version);
   const [editPlatform, setEditPlatform] = useState<"web" | "mobile" | "api">(
@@ -423,6 +456,22 @@ export function StudioWorkspace({
 
   const detailStep = detailIndex !== null ? steps[detailIndex] : null;
   const selectedVersion = data.versions.find((version) => version.id === versionId) ?? data.versions[0] ?? null;
+
+  // Deliverable 1: Step Details always shows the latest persisted evidence,
+  // falling back from the step payload to the most recent run log entry.
+  const detailRunEvidence = useMemo(() => {
+    if (detailIndex === null) return null;
+    for (const runItem of data.runs) {
+      const line = runItem.log?.find((entry) => entry.step === detailIndex + 1 && entry.screenshotBase64);
+      if (line?.screenshotBase64) return { base64: line.screenshotBase64, mime: line.screenshotMime };
+    }
+    return null;
+  }, [data.runs, detailIndex]);
+  const detailScreenshot =
+    evidenceDataUrl(detailStep?.screenshotBase64, detailStep?.screenshotMime) ??
+    evidenceDataUrl(detailStep?.biviaHeal?.screenshotBase64, detailStep?.biviaHeal?.screenshotMime) ??
+    evidenceDataUrl(detailRunEvidence?.base64, detailRunEvidence?.mime) ??
+    (detailStep && selfHealEvidence?.stepId === detailStep.id ? selfHealEvidence.dataUrl : null);
 
   // A grounding overlay is only meaningful for the step that produced it.
   useEffect(() => {
@@ -579,6 +628,8 @@ export function StudioWorkspace({
         json: { action: "simulate_self_heal", stepId: detailStep?.id },
       });
       if (Array.isArray(result.steps)) setSteps(result.steps);
+      const healedUrl = evidenceDataUrl(result.screenshotBase64, result.screenshotMime);
+      if (healedUrl && detailStep) setSelfHealEvidence({ stepId: detailStep.id, dataUrl: healedUrl });
       toast(
         `✨ Self-healed by Bivia · ${result.oldSelector} → ${result.newSelector} · ${result.probabilityPct.toFixed(1)}% calibrated`,
         "success",
@@ -605,6 +656,14 @@ export function StudioWorkspace({
         method: "POST",
         json: {
           targetDescription: detailStep.target?.trim() || `${detailStep.action} target`,
+          // Deliverable 2: ground the test case's real URL, not the org default.
+          targetUrl:
+            resolveGroundingUrl({
+              stepText: `${detailStep.target} ${detailStep.value}`,
+              variables: data.variables,
+              steps,
+              orgUrl,
+            }) || undefined,
         },
       });
       setGroundBox(response.result);
@@ -644,6 +703,7 @@ export function StudioWorkspace({
         description: editDescription,
         module: editModule.trim(),
         criticality: editPriority,
+        testType: editTestType,
         environment: editEnvironment,
         version: editVersion,
         platform: editPlatform,
@@ -1046,16 +1106,16 @@ export function StudioWorkspace({
                   <table className="w-full min-w-[640px] border-collapse text-left">
                     <thead>
                       <tr className="border-b border-[#f0f1f3] bg-white">
-                        {["Name", "Status", ""].map((header) => (
-                          <th key={header || "actions"} className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]">{header}</th>
-                        ))}
+                        <th className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={planColumnFilters.Name ?? ""} onChange={(value) => setPlanColumnFilters((current) => ({ ...current, Name: value }))} /></th>
+                        <th className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={planColumnFilters.Status ?? ""} onChange={(value) => setPlanColumnFilters((current) => ({ ...current, Status: value }))} options={[...new Set(data.plans.map((plan) => plan.status))]} /></th>
+                        <th className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]" />
                       </tr>
                     </thead>
                     <tbody className="text-[13px] text-[#374151]">
-                      {data.plans.length === 0 ? (
+                      {visiblePlans.length === 0 ? (
                         <tr><td colSpan={3} className="px-4 py-12 text-center text-[12.5px] text-[#9ca3af]">Not used in any test plan.</td></tr>
                       ) : (
-                        data.plans.map((plan) => (
+                        visiblePlans.map((plan) => (
                           <tr key={plan.id} className="border-b border-[#f3f4f6] last:border-0 hover:bg-[#fafafa]">
                             <td className="px-4 py-3">
                               <div className="flex items-start gap-2">
@@ -1092,16 +1152,16 @@ export function StudioWorkspace({
                   <table className="w-full min-w-[640px] border-collapse text-left">
                     <thead>
                       <tr className="border-b border-[#f0f1f3] bg-white">
-                        {["Name", "Status", ""].map((header) => (
-                          <th key={header || "actions"} className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]">{header}</th>
-                        ))}
+                        <th className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={prereqColumnFilters.Name ?? ""} onChange={(value) => setPrereqColumnFilters((current) => ({ ...current, Name: value }))} /></th>
+                        <th className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={prereqColumnFilters.Status ?? ""} onChange={(value) => setPrereqColumnFilters((current) => ({ ...current, Status: value }))} options={[...new Set(data.prerequisiteOf.map((item) => item.status))]} /></th>
+                        <th className="px-4 py-2.5 text-[12px] font-medium text-[#6b7280]" />
                       </tr>
                     </thead>
                     <tbody className="text-[13px] text-[#374151]">
-                      {data.prerequisiteOf.length === 0 ? (
+                      {visiblePrereqs.length === 0 ? (
                         <tr><td colSpan={3} className="px-4 py-10 text-center text-[12.5px] text-[#9ca3af]">No test cases use this as a prerequisite.</td></tr>
                       ) : (
-                        data.prerequisiteOf.map((item) => (
+                        visiblePrereqs.map((item) => (
                           <tr key={item.id} className="border-b border-[#f3f4f6] last:border-0 hover:bg-[#fafafa]">
                             <td className="px-4 py-3">
                               <Link href={`/dashboard/test-studio/${item.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{item.title}</Link>
@@ -1318,8 +1378,8 @@ export function StudioWorkspace({
                   <SectionTitle icon="play_circle" title="Execution" open={expanded.execution} onToggle={() => toggleSection("execution")} />
                   {expanded.execution && (
                     <div className="pb-2">
+                      <SettingRow label="Type" value={data.testType} />
                       <SettingRow label="Environment" value={data.settings.environment} />
-                      <SettingRow label="Type" value="Not set" />
                     </div>
                   )}
 
@@ -1456,6 +1516,8 @@ export function StudioWorkspace({
                   {data.runs.map((runItem) => {
                     const passed = runItem.status === "PASSED";
                     const planMode = Boolean(runItem.mode && !/standalone/i.test(runItem.mode) && runItem.mode.trim());
+                    const firstEvidence = runItem.log?.find((line) => line.screenshotBase64);
+                    const evidenceUrl = evidenceDataUrl(firstEvidence?.screenshotBase64, firstEvidence?.screenshotMime);
                     return (
                       <div
                         key={runItem.id}
@@ -1497,6 +1559,14 @@ export function StudioWorkspace({
                             </span>
                           )}
                         </div>
+                        {evidenceUrl && (
+                          <img
+                            src={evidenceUrl}
+                            alt={`Screenshot evidence for run ${runItem.runNumber}`}
+                            data-testid="run-history-screenshot"
+                            className="mx-3 mt-1 h-16 w-[calc(100%-1.5rem)] rounded border border-[#e5e7eb] object-cover object-top"
+                          />
+                        )}
                         <div className="mt-1 flex items-center justify-between gap-2 px-3 text-[11px] text-[#6b7280]">
                           <span>{formatRunClock(runItem.createdAt)} {formatRunDay(runItem.createdAt)}</span>
                           <span>⏳ {formatDuration(runItem.durationMs)}</span>
@@ -1668,6 +1738,18 @@ export function StudioWorkspace({
                   {detailStep.biviaHeal.provider} · {detailStep.biviaHeal.strategy ?? "Bivia"} · {detailStep.biviaHeal.screenshotCaptured ? "screenshot captured" : "visual preview"} ·{" "}
                   {detailStep.biviaHeal.domCaptured ? "DOM captured" : "synthetic DOM"}
                 </p>
+                {(evidenceDataUrl(detailStep.biviaHeal.screenshotBase64, detailStep.biviaHeal.screenshotMime) ??
+                  (selfHealEvidence?.stepId === detailStep.id ? selfHealEvidence.dataUrl : null)) && (
+                  <img
+                    src={
+                      evidenceDataUrl(detailStep.biviaHeal.screenshotBase64, detailStep.biviaHeal.screenshotMime) ??
+                      (selfHealEvidence?.stepId === detailStep.id ? selfHealEvidence.dataUrl : "")
+                    }
+                    alt="Self-heal screenshot evidence"
+                    data-testid="studio-heal-screenshot"
+                    className="mt-2 max-h-32 w-full rounded-md border border-[#e9d5ff] object-cover object-top"
+                  />
+                )}
               </div>
             )}
             <div className="rounded-lg border border-[#e5e7eb] p-3" data-testid="studio-step-grounding">
@@ -1725,8 +1807,17 @@ export function StudioWorkspace({
                 <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">
                   <CqaIcon name="image" className="text-[15px] text-[#9ca3af]" /> Screenshot
                 </p>
-                <div className="mt-2 flex h-24 items-center justify-center rounded-md border border-dashed border-[#d1d5db] bg-white text-[11px] text-[#9ca3af]">
-                  Captured during the next run
+                <div className="mt-2 flex h-24 items-center justify-center overflow-hidden rounded-md border border-dashed border-[#d1d5db] bg-white text-[11px] text-[#9ca3af]">
+                  {detailScreenshot ? (
+                    <img
+                      src={detailScreenshot}
+                      alt={`Screenshot evidence for step ${detailIndex + 1}`}
+                      data-testid="studio-step-screenshot"
+                      className="h-full w-full object-cover object-top"
+                    />
+                  ) : (
+                    "Run the test to capture visual evidence"
+                  )}
                 </div>
               </div>
               <div className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3">
@@ -1858,6 +1949,18 @@ export function StudioWorkspace({
               </select>
             </label>
             <label className="block">
+              <span className={labelCls}>Test Type</span>
+              <select
+                className={inputCls}
+                data-testid="studio-test-type-select"
+                value={editTestType}
+                onChange={(event) => setEditTestType(event.target.value)}
+                disabled={readOnly}
+              >
+                {TEST_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </label>
+            <label className="block">
               <span className={labelCls}>Environment</span>
               <input className={inputCls} value={editEnvironment} onChange={(event) => setEditEnvironment(event.target.value)} disabled={readOnly} />
             </label>
@@ -1942,6 +2045,14 @@ export function StudioWorkspace({
                       />
                       <span className="w-7 shrink-0 text-[#94a3b8]">{line.step}.</span>
                       <span className="min-w-0 flex-1">{sentenceForStep({ id: String(line.step), action: line.action as StudioStep["action"], target: line.target, value: "", selector: "" }, data.variables, orgUrl)}</span>
+                      {line.screenshotBase64 && (
+                        <img
+                          src={evidenceDataUrl(line.screenshotBase64, line.screenshotMime) ?? ""}
+                          alt={`Run screenshot for step ${line.step}`}
+                          data-testid="studio-run-log-screenshot"
+                          className="h-8 w-14 shrink-0 rounded border border-[#334155] object-cover object-top"
+                        />
+                      )}
                       {line.healed && <span className="rounded bg-[#78350f] px-1.5 py-[1px] text-[10px] text-[#fcd34d]">auto-healed</span>}
                     </li>
                   ))}

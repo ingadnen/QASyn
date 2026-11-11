@@ -11,6 +11,8 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { normalizeGroundBox } from "../lib/bivia-box";
+import { TEST_TYPES } from "../lib/constants";
+import { resolveGroundingUrl } from "../lib/grounding-url";
 
 const BASE = process.env.QASYN_BASE ?? "http://localhost:3000";
 const RUN_LOWER = `par${(Date.now() % 100000).toString(36)}${Math.floor(Math.random() * 36).toString(36)}`.slice(0, 10);
@@ -102,7 +104,7 @@ async function apiJson(page: Page, url: string, method: string, json?: unknown) 
 }
 
 async function goto(page: Page, route: string) {
-  await page.goto(`${BASE}${route}`, { waitUntil: "networkidle", timeout: 30000 });
+  await page.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForTimeout(600);
 }
 
@@ -120,6 +122,22 @@ function psRun(command: string): string {
  * Searches tracked Git files. `ok` means the pattern is absent (git grep exits 1).
  * The error message is never inspected because it contains the search pattern.
  */
+/** Parses a JSON array column (stepsJson / logJson / impactJson lists). */
+function jsonArray(value: unknown): Array<Record<string, unknown>> {
+  if (typeof value !== "string" || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** True when the value is an inline image data URL (PNG/JPG/SVG evidence). */
+function isScreenshot(value: unknown): boolean {
+  return typeof value === "string" && value.startsWith("data:image/");
+}
+
 function gitGrepAbsent(pattern: string): { ok: boolean; output: string } {
   try {
     const output = execSync(`git grep -n -- "${pattern.replace(/"/g, '\\"')}"`, {
@@ -169,7 +187,7 @@ interface BoundingBoxLike {
 async function loginAs(browser: Browser, email: string, password = "CgiDemo2026!") {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
-  await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await page.getByLabel("Work e-mail").fill(email);
   await page.locator('input[type="password"]').fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
@@ -276,7 +294,7 @@ async function main() {
   });
 
   // ── Login ───────────────────────────────────────────────────────
-  await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await page.getByLabel("Work e-mail").fill("cgi@cgi.com");
   await page.locator('input[type="password"]').fill("CgiDemo2026!");
   await page.getByRole("button", { name: "Log in" }).click();
@@ -1168,7 +1186,7 @@ async function main() {
     await apiJson(page, `/api/dashboard/environments/${parityEnvId}`, "DELETE");
     await goto(page, "/dashboard/environments");
     let envGone = false;
-    for (let i = 0; i < 5; i++) { if (!((await body(page)) || "").includes(`Parity Env ${RUN_ID}`)) { envGone = true; break; } await page.waitForTimeout(600); await page.reload({ waitUntil: "networkidle" }).catch(() => undefined); }
+    for (let i = 0; i < 5; i++) { if (!((await body(page)) || "").includes(`Parity Env ${RUN_ID}`)) { envGone = true; break; } await page.waitForTimeout(600); await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined); }
     check("Env cleanup removed", envGone);
   }
   check("Environments no page errors", moduleErrors.length === 0);
@@ -1208,13 +1226,13 @@ async function main() {
   if ((await delFolder.count()) > 0) {
     await delFolder.click().catch(() => undefined);
     let folderGone = false;
-    for (let i = 0; i < 6; i++) { await page.waitForTimeout(600); await page.reload({ waitUntil: "networkidle" }).catch(() => undefined); if (!((await body(page)) || "").includes("ParityFolder")) { folderGone = true; break; } }
+    for (let i = 0; i < 6; i++) { await page.waitForTimeout(600); await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined); if (!((await body(page)) || "").includes("ParityFolder")) { folderGone = true; break; } }
     if (!folderGone) {
       const upList = await apiJson(page, "/api/dashboard/uploads", "GET");
       const ups = (upList.body.uploads as Array<Record<string, unknown>> | undefined) ?? [];
       const pf = ups.find((u) => String(u.fileName) === "ParityFolder");
       if (pf?.id) await apiJson(page, `/api/dashboard/uploads/${pf.id}`, "DELETE");
-      await page.reload({ waitUntil: "networkidle" }).catch(() => undefined);
+      await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined);
       folderGone = !((await body(page)) || "").includes("ParityFolder");
     }
     check("Upload folder deleted via UI", folderGone);
@@ -1260,13 +1278,13 @@ async function main() {
   if ((await delKb.count()) > 0) {
     await delKb.click().catch(() => undefined);
     let kbGone = false;
-    for (let i = 0; i < 6; i++) { await page.waitForTimeout(600); await page.reload({ waitUntil: "networkidle" }).catch(() => undefined); if (!((await body(page)) || "").includes("Parity KB Source")) { kbGone = true; break; } }
+    for (let i = 0; i < 6; i++) { await page.waitForTimeout(600); await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined); if (!((await body(page)) || "").includes("Parity KB Source")) { kbGone = true; break; } }
     if (!kbGone) {
       const kbList = await apiJson(page, "/api/dashboard/knowledge-base", "GET");
       const items = (kbList.body.items as Array<Record<string, unknown>> | undefined) ?? [];
       const pk = items.find((i) => String(i.title) === "Parity KB Source");
       if (pk?.id) await apiJson(page, `/api/dashboard/knowledge-base/${pk.id}`, "DELETE");
-      await page.reload({ waitUntil: "networkidle" }).catch(() => undefined);
+      await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined);
       kbGone = !((await body(page)) || "").includes("Parity KB Source");
     }
     check("Knowledge Base source deleted via UI", kbGone);
@@ -1304,7 +1322,7 @@ async function main() {
     for (let i = 0; i < 10; i++) { await page.waitForTimeout(500); if ((await page.getByRole("dialog", { name: "Create User" }).count()) === 0) break; }
   }
   let memberVisible = false;
-  for (let i = 0; i < 6; i++) { await page.waitForTimeout(700); await page.reload({ waitUntil: "networkidle" }).catch(() => undefined); if (((await body(page)) || "").includes(`parity-${RUN_ID}@your-domain.com`)) { memberVisible = true; break; } }
+  for (let i = 0; i < 6; i++) { await page.waitForTimeout(700); await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined); if (((await body(page)) || "").includes(`parity-${RUN_ID}@your-domain.com`)) { memberVisible = true; break; } }
   check("Invited member appears", memberVisible);
   const teamApi = await apiJson(page, "/api/dashboard/team", "GET");
   const members = (teamApi.body.members as Array<Record<string, unknown>> | undefined) ?? [];
@@ -1361,7 +1379,7 @@ async function main() {
     check("Install command dialog shows powershell", false, "install dialog not found");
   }
   let tunnelVisible = false;
-  for (let i = 0; i < 6; i++) { await page.waitForTimeout(700); if (((await body(page)) || "").includes(RUN_LOWER)) { tunnelVisible = true; break; } await page.reload({ waitUntil: "networkidle" }).catch(() => undefined); }
+  for (let i = 0; i < 6; i++) { await page.waitForTimeout(700); if (((await body(page)) || "").includes(RUN_LOWER)) { tunnelVisible = true; break; } await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined); }
   check("Tunnel machine appears", tunnelVisible);
   const tunnelsApi = await apiJson(page, "/api/dashboard/tunnels", "GET");
   const machines = (tunnelsApi.body.machines as Array<Record<string, unknown>> | undefined) ?? [];
@@ -1818,14 +1836,14 @@ async function main() {
   check("Token Copy button", (await page.getByRole("button", { name: /^Copy$/ }).count()) > 0);
   await page.getByRole("link", { name: /^Done$/ }).click().catch(() => undefined);
   await page.waitForTimeout(1000);
-  await page.reload({ waitUntil: "networkidle" }).catch(() => undefined);
+  await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined);
   check("Token appears in list", ((await body(page)) || "").includes(TOKEN_NAME));
   check("Revoke token control", (await page.getByRole("button", { name: new RegExp(`Revoke ${TOKEN_NAME}`) }).count()) > 0);
   const revokeBtn = page.getByRole("button", { name: new RegExp(`Revoke ${TOKEN_NAME}`) }).first();
   if ((await revokeBtn.count()) > 0) {
     await revokeBtn.click().catch(() => undefined);
     let revoked = false;
-    for (let i = 0; i < 8; i++) { await page.waitForTimeout(600); await page.reload({ waitUntil: "networkidle" }).catch(() => undefined); if (!((await body(page)) || "").includes(TOKEN_NAME)) { revoked = true; break; } }
+    for (let i = 0; i < 8; i++) { await page.waitForTimeout(600); await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined); if (!((await body(page)) || "").includes(TOKEN_NAME)) { revoked = true; break; } }
     check("Token revoked from list", revoked);
   } else {
     check("Token cleanup via list API", false, "revoke button not found");
@@ -1871,7 +1889,7 @@ async function main() {
   // Chat widget: open with a short click, drag, persist, clamp and reset.
   await goto(page, "/dashboard/overview");
   await page.evaluate(() => window.localStorage.removeItem("qasyn_chat_pos"));
-  await page.reload({ waitUntil: "networkidle" });
+  await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(800);
   const chatButton = page.getByTestId("finqa-chat-button");
   check("Chat widget button visible", (await chatButton.count()) > 0);
@@ -1908,7 +1926,7 @@ async function main() {
         Boolean(after?.panel && after.panel.x >= 0 && after.panel.y >= 0 && after.panel.x + 380 <= viewport.width && after.panel.y + 600 <= viewport.height),
         JSON.stringify(after?.panel ?? null),
       );
-      await page.reload({ waitUntil: "networkidle" });
+      await page.reload({ waitUntil: "domcontentloaded" });
       await page.waitForTimeout(700);
       await page.getByTestId("finqa-chat-button").click().catch(() => undefined);
       await page.waitForTimeout(500);
@@ -1985,7 +2003,7 @@ async function main() {
   for (const roleCase of roleCases) {
     const session = await loginAs(browser, roleCase.email);
     try {
-      await session.page.goto(`${BASE}/dashboard/overview`, { waitUntil: "networkidle" });
+      await session.page.goto(`${BASE}/dashboard/overview`, { waitUntil: "domcontentloaded" });
       await session.page.waitForTimeout(600);
       const settingsToggle = session.page.getByRole("button", { name: /^Settings$/ });
       if ((await settingsToggle.count()) > 0) {
@@ -1998,11 +2016,11 @@ async function main() {
       const createVisible = (await session.page.getByRole("link", { name: "New Test Cases" }).count()) > 0;
       check(`${roleCase.role} create-test-case visibility`, roleCase.role === "BA / FA" ? !createVisible : createVisible);
       for (const route of roleCase.allowedRoutes) {
-        await session.page.goto(`${BASE}${route}`, { waitUntil: "networkidle" }).catch(() => undefined);
+        await session.page.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded" }).catch(() => undefined);
         check(`${roleCase.role} can open ${route}`, !session.page.url().includes("denied="), session.page.url());
       }
       for (const route of roleCase.deniedRoutes) {
-        await session.page.goto(`${BASE}${route}`, { waitUntil: "networkidle" }).catch(() => undefined);
+        await session.page.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded" }).catch(() => undefined);
         await session.page.waitForTimeout(300);
         const denied = session.page.url().includes("denied=") || !session.page.url().includes(route);
         check(`${roleCase.role} is denied ${route}`, denied, session.page.url());
@@ -3900,6 +3918,766 @@ async function main() {
 
   check("PART 8 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part8-enterprise");
+
+  // ── PART 9 — Deliverables 1..8 verification ─────────────────────
+  moduleErrors = [];
+  const p9 = mod(
+    "part9-deliverables",
+    "PART 9 - Screenshot evidence, grounding URL, column filters, PR auto-regression, test types, enterprise provisioning, docs",
+    "/dashboard/test-cases",
+  );
+  void p9;
+
+  // 9.1 — Screenshot evidence for every executed step (passed, failed, skipped, healed).
+  const evidenceTarget = `https://www.cgi.com/parity-evidence-${RUN_ID}`;
+  const evidenceCreate = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: `PART9 EVIDENCE ${RUN_ID}`,
+    module: "Core",
+    criticality: "high",
+    stepsCount: 4,
+    targetUrl: evidenceTarget,
+    testType: "Regression",
+  });
+  const evidenceCaseId = String(evidenceCreate.body.testCases?.[0]?.id ?? "");
+  check(
+    "PART 9 a disposable test case is available for screenshot evidence",
+    evidenceCreate.status === 201 && Boolean(evidenceCaseId),
+    `status ${evidenceCreate.status} · ${evidenceCaseId || "none"}`,
+  );
+  if (evidenceCaseId) {
+    await db.testCase.update({ where: { id: evidenceCaseId }, data: { status: "failing" } });
+    const runEvidence = await apiJson(page, `/api/dashboard/test-cases/${evidenceCaseId}`, "PATCH", { action: "run_steps" });
+    interface Part9LogLine {
+      step?: number;
+      status?: string;
+      screenshotBase64?: string;
+      screenshotMime?: string;
+    }
+    const evidenceLog = (runEvidence.body.log as Part9LogLine[] | undefined) ?? [];
+    const failedLine = evidenceLog.find((line) => line.status === "failed");
+    const skippedLine = evidenceLog.find((line) => line.status === "skipped");
+    check(
+      "PART 9 failed and skipped steps persist screenshot evidence in the run response",
+      runEvidence.status === 200 &&
+        evidenceLog.length === 4 &&
+        Boolean(failedLine) &&
+        Boolean(skippedLine) &&
+        evidenceLog.every((line) => isScreenshot(line.screenshotBase64)),
+      `${evidenceLog.length} line(s) · ${evidenceLog.map((line) => line.status ?? "?").join(",")}`,
+    );
+    const persistedEvidence = await db.testCase.findUnique({ where: { id: evidenceCaseId }, select: { stepsJson: true } });
+    const persistedEvidenceSteps = jsonArray(persistedEvidence?.stepsJson);
+    check(
+      "PART 9 stepsJson stores a screenshot on every executed step",
+      persistedEvidenceSteps.length === 4 && persistedEvidenceSteps.every((step) => isScreenshot(step.screenshotBase64)),
+      `${persistedEvidenceSteps.filter((step) => isScreenshot(step.screenshotBase64)).length}/${persistedEvidenceSteps.length} step(s)`,
+    );
+    const evidenceRun = await db.testCaseRun.findFirst({
+      where: { testCaseId: evidenceCaseId },
+      orderBy: { runNumber: "desc" },
+      select: { logJson: true, status: true },
+    });
+    const persistedEvidenceLog = jsonArray(evidenceRun?.logJson);
+    check(
+      "PART 9 TestCaseRun.logJson stores a screenshot on every run line",
+      evidenceRun?.status === "FAILED" &&
+        persistedEvidenceLog.length === 4 &&
+        persistedEvidenceLog.every((line) => isScreenshot(line.screenshotBase64)),
+      `${evidenceRun?.status ?? "?"} · ${persistedEvidenceLog.length} line(s)`,
+    );
+
+    const healEvidence = await apiJson(page, `/api/dashboard/test-cases/${evidenceCaseId}`, "PATCH", { action: "simulate_self_heal" });
+    interface Part9HealStep {
+      screenshotBase64?: string;
+      screenshotMime?: string;
+      biviaHeal?: { screenshotBase64?: string; screenshotMime?: string };
+    }
+    const healedEvidenceSteps = (healEvidence.body.steps as Part9HealStep[] | undefined) ?? [];
+    const healedEvidenceStep = healedEvidenceSteps.find((step) => Boolean(step.biviaHeal));
+    check(
+      "PART 9 self-heal captures a screenshot and grounds the test case URL",
+      healEvidence.status === 200 &&
+        isScreenshot(healEvidence.body.screenshotBase64) &&
+        String(healEvidence.body.groundingUrl ?? "").startsWith(evidenceTarget) &&
+        healedEvidenceSteps.length === 4 &&
+        healedEvidenceSteps.every((step) => isScreenshot(step.screenshotBase64)) &&
+        isScreenshot(healedEvidenceStep?.biviaHeal?.screenshotBase64),
+      `${String(healEvidence.body.groundingUrl ?? "no url")} · ${String(healEvidence.body.screenshotMime ?? "?")}`,
+    );
+
+    await goto(page, `/dashboard/test-studio/${evidenceCaseId}`);
+    const evidenceStepRow = page.locator('[data-testid="studio-step-row"]').first();
+    await evidenceStepRow.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+    check("PART 9 Studio renders the executed steps", (await evidenceStepRow.count()) > 0);
+    if ((await evidenceStepRow.count()) > 0) {
+      const viewEvidenceDetails = evidenceStepRow.getByRole("button", { name: /View Details/ }).first();
+      if ((await viewEvidenceDetails.count()) > 0) await viewEvidenceDetails.click().catch(() => undefined);
+      else await evidenceStepRow.click().catch(() => undefined);
+      const evidenceDialog = page.getByRole("dialog", { name: "Step Details" });
+      await evidenceDialog.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+      const studioScreenshot = evidenceDialog.locator('[data-testid="studio-step-screenshot"]').first();
+      const studioScreenshotSrc = (await studioScreenshot.getAttribute("src").catch(() => "")) ?? "";
+      check(
+        "PART 9 Studio Step Details renders the persisted step screenshot",
+        (await evidenceDialog.count()) > 0 && (await studioScreenshot.count()) > 0 && studioScreenshotSrc.startsWith("data:image/"),
+        studioScreenshotSrc.slice(0, 42) || "missing screenshot",
+      );
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    }
+    const runHistoryButton = page.getByRole("button", { name: "Run History", exact: true }).first();
+    check("PART 9 Studio exposes the Run History panel", (await runHistoryButton.count()) > 0);
+    if ((await runHistoryButton.count()) > 0) {
+      await runHistoryButton.click().catch(() => undefined);
+      await page.waitForTimeout(600);
+      const runHistoryScreenshot = page.locator('[data-testid="run-history-screenshot"]').first();
+      const runHistorySrc = (await runHistoryScreenshot.getAttribute("src").catch(() => "")) ?? "";
+      check(
+        "PART 9 Studio Run History renders screenshot thumbnails",
+        (await runHistoryScreenshot.count()) > 0 && runHistorySrc.startsWith("data:image/"),
+        runHistorySrc.slice(0, 42) || "missing thumbnail",
+      );
+    }
+    await apiJson(page, `/api/dashboard/test-cases/${evidenceCaseId}`, "DELETE");
+  }
+
+  // 9.2 — Grounding URL priority (shared resolver + self-heal response above).
+  const groundingPriority =
+    resolveGroundingUrl({
+      stepText: "Navigate to https://www.cgi.com/step-url",
+      variables: { url: "https://www.cgi.com/variable-url" },
+      steps: [{ action: "Navigate", target: "https://www.cgi.com/navigate-url" }],
+      orgUrl: "https://www.cgi.com/org-url",
+    }) === "https://www.cgi.com/step-url" &&
+    resolveGroundingUrl({
+      variables: { url: "https://www.cgi.com/variable-url" },
+      steps: [{ action: "Navigate", target: "https://www.cgi.com/navigate-url" }],
+      orgUrl: "https://www.cgi.com/org-url",
+    }) === "https://www.cgi.com/variable-url" &&
+    resolveGroundingUrl({
+      variables: { targetUrl: "https://www.cgi.com/target-url" },
+      steps: [{ action: "Navigate", target: "https://www.cgi.com/navigate-url" }],
+      orgUrl: "https://www.cgi.com/org-url",
+    }) === "https://www.cgi.com/target-url" &&
+    resolveGroundingUrl({
+      variables: { baseUrl: "https://www.cgi.com/base-url" },
+      orgUrl: "https://www.cgi.com/org-url",
+    }) === "https://www.cgi.com/base-url" &&
+    resolveGroundingUrl({
+      steps: [{ action: "Navigate", target: "https://www.cgi.com/navigate-url" }],
+      orgUrl: "https://www.cgi.com/org-url",
+    }) === "https://www.cgi.com/navigate-url" &&
+    resolveGroundingUrl({ orgUrl: "https://www.cgi.com/org-url" }) === "https://www.cgi.com/org-url";
+  check(
+    "PART 9 grounding URL priority is step → variables.url/targetUrl/baseUrl → Navigate → org",
+    groundingPriority,
+    "step / url / targetUrl / baseUrl / navigate / org",
+  );
+
+  // 9.3 — Per-column filters on every major grid, with dropdown, text and clear behaviour.
+  const columnFilterPages: Array<[string, number]> = [
+    ["/dashboard/test-cases", 10],
+    ["/dashboard/crawl", 8],
+    ["/dashboard/requirements", 8],
+    ["/dashboard/plans/suites", 6],
+    ["/dashboard/plans/test-plans", 6],
+    ["/dashboard/team", 5],
+    ["/dashboard/pull-requests", 6],
+  ];
+  for (const [route, minimum] of columnFilterPages) {
+    await goto(page, route);
+    const filterCount = await page.locator("[data-column-filter]").count();
+    check(`PART 9 ${route} exposes per-column filter controls`, filterCount >= minimum, `${filterCount} filter(s) · expected ≥${minimum}`);
+  }
+
+  await goto(page, "/dashboard/test-cases");
+  const typeColumnFilter = page.locator('[data-testid="test-cases-type-column-filter"]').first();
+  check("PART 9 Test Cases Type header exposes a column filter", (await typeColumnFilter.count()) > 0);
+  if ((await typeColumnFilter.count()) > 0) {
+    await typeColumnFilter.click().catch(() => undefined);
+    const typePopover = page.locator('[data-column-filter-popover="Type"]').first();
+    await typePopover.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+    const typeSelect = typePopover.locator("select").first();
+    const typeOptionCount = await typeSelect.locator("option").count().catch(() => 0);
+    check("PART 9 categorical columns expose a distinct-value dropdown", typeOptionCount >= 2, `${typeOptionCount} option(s)`);
+    const chosenType = (await typeSelect.locator("option").nth(1).getAttribute("value").catch(() => "")) ?? "";
+    if (chosenType) {
+      await typeSelect.selectOption({ index: 1 }).catch(() => undefined);
+      await page.waitForTimeout(450);
+      const activeTitle = (await typeColumnFilter.getAttribute("title").catch(() => "")) ?? "";
+      const filteredRows = await page.locator("table tbody tr").allInnerTexts().catch(() => []);
+      check(
+        "PART 9 selecting a distinct value filters rows and marks the column",
+        activeTitle === `Type: ${chosenType}` && filteredRows.length > 0 && filteredRows.every((row) => row.includes(chosenType)),
+        `${chosenType} · ${filteredRows.length} row(s) · ${activeTitle}`,
+      );
+    } else {
+      check("PART 9 selecting a distinct value filters rows and marks the column", false, "no distinct Type value");
+    }
+    const clearType = typePopover.getByRole("button", { name: "Clear type", exact: true }).first();
+    if ((await clearType.count()) > 0) await clearType.click().catch(() => undefined);
+    await page.waitForTimeout(350);
+    check(
+      "PART 9 column filter Clear resets the active filter",
+      (await typeColumnFilter.getAttribute("title").catch(() => "")) === "Filter Type",
+      (await typeColumnFilter.getAttribute("title").catch(() => "")) ?? "missing title",
+    );
+    const typeTextFilter = typePopover.locator('input[type="search"]').first();
+    await typeTextFilter.fill("zzzz-no-such-type").catch(() => undefined);
+    await page.waitForTimeout(450);
+    check(
+      "PART 9 text column filters use substring matching",
+      ((await body(page)) || "").replace(/\s+/g, " ").includes("No test cases match the current filters."),
+    );
+    if ((await clearType.count()) > 0) await clearType.click().catch(() => undefined);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(250);
+
+    const createdFilter = page.locator('[data-column-filter="Created At"]').first();
+    await createdFilter.click().catch(() => undefined);
+    const createdPopover = page.locator('[data-column-filter-popover="Created At"]').first();
+    await createdPopover.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+    check(
+      "PART 9 date columns expose a substring input without a dropdown",
+      (await createdPopover.count()) > 0 &&
+        (await createdPopover.locator("select").count()) === 0 &&
+        (await createdPopover.locator('input[type="search"]').count()) === 1,
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(250);
+  }
+
+  // 9.4 — The 11 test types are exported, selectable, persisted and displayed verbatim.
+  const expectedTestTypes = [
+    "Functional",
+    "End-to-End (E2E)",
+    "Regression",
+    "Smoke",
+    "Sanity",
+    "Load",
+    "Performance",
+    "Security",
+    "Penetration",
+    "API",
+    "Accessibility",
+  ];
+  const exportedTestTypes = [...TEST_TYPES] as string[];
+  check(
+    "PART 9 exports all 11 QASyn test types",
+    exportedTestTypes.length === 11 && expectedTestTypes.every((type) => exportedTestTypes.includes(type)),
+    exportedTestTypes.join(" · "),
+  );
+  const typeCaseCreate = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: `PART9 TYPE ${RUN_ID}`,
+    module: "Core",
+    criticality: "medium",
+    stepsCount: 3,
+    targetUrl: evidenceTarget,
+    testType: "Penetration",
+  });
+  const typeCaseId = String(typeCaseCreate.body.testCases?.[0]?.id ?? "");
+  check("PART 9 a test case can be created with a selected test type", typeCaseCreate.status === 201 && Boolean(typeCaseId), `status ${typeCaseCreate.status}`);
+  if (typeCaseId) {
+    const storedTypeCase = await db.testCase.findUnique({ where: { id: typeCaseId }, select: { variablesJson: true } });
+    check(
+      "PART 9 the selected test type persists in variablesJson._testType",
+      String(storedTypeCase?.variablesJson ?? "").includes('"_testType":"Penetration"'),
+      String(storedTypeCase?.variablesJson ?? "").slice(0, 120),
+    );
+    await goto(page, "/dashboard/test-cases");
+    await page.waitForTimeout(1_000);
+    // Check Type column via first row's Type td
+    const typeCell = page.locator("tbody tr").first().locator("td").nth(0);
+    const typeText = await typeCell.innerText().catch(() => "");
+    check("PART 9 the Type column displays the exact selected type", typeText.includes("Penetration"), typeText.slice(0, 160));
+
+
+    const editTypeRes = await apiJson(page, `/api/dashboard/test-cases/${typeCaseId}`, "PATCH", { action: "edit", testType: "Accessibility" });
+    const editedTypeCase = await db.testCase.findUnique({ where: { id: typeCaseId }, select: { variablesJson: true } });
+    check(
+      "PART 9 editing a test type persists the new value",
+      editTypeRes.status === 200 && String(editedTypeCase?.variablesJson ?? "").includes('"_testType":"Accessibility"'),
+      String(editedTypeCase?.variablesJson ?? "").slice(0, 120),
+    );
+    await goto(page, "/dashboard/test-cases");
+    await page.waitForTimeout(1_000);
+    // Check Type column via first row's Type td after edit
+    const editedTypeCell = page.locator("tbody tr").first().locator("td").nth(0);
+    const editedTypeText = await editedTypeCell.innerText().catch(() => "");
+    check("PART 9 the Type column follows the edited type", editedTypeText.includes("Accessibility"), editedTypeText.slice(0, 160));
+
+    await page.getByRole("button", { name: /New Test Case/ }).first().click().catch(() => undefined);
+    const typeDialog = page.getByRole("dialog", { name: "Create Test Case" });
+    await typeDialog.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+    if ((await typeDialog.count()) > 0) {
+      await typeDialog.getByText("Create manually").first().click().catch(() => undefined);
+      await typeDialog.getByRole("button", { name: /Get started/ }).first().click().catch(() => undefined);
+      await page.waitForTimeout(450);
+      const typeOptions = await typeDialog.locator('[data-testid="test-case-type-select"] option').allTextContents().catch((): string[] => []);
+      check(
+        "PART 9 the create-test-case modal offers all 11 test types",
+        typeOptions.length === 11 && expectedTestTypes.every((type) => typeOptions.includes(type)),
+        typeOptions.join(" · "),
+      );
+      await typeDialog.getByRole("button", { name: "Cancel", exact: true }).first().click().catch(() => undefined);
+      await page.waitForTimeout(300);
+    } else {
+      check("PART 9 the create-test-case modal offers all 11 test types", false, "modal missing");
+    }
+    await apiJson(page, `/api/dashboard/test-cases/${typeCaseId}`, "DELETE");
+  }
+
+  // 9.5 — PR auto-regression API + UI with a deployed environment and per-step evidence.
+  const autoRegressionNumber = 910000 + (Date.now() % 80000);
+  const autoRegressionCases = await db.testCase.findMany({
+    where: { organisationId: cgiId },
+    take: 2,
+    orderBy: [{ criticality: "asc" }, { createdAt: "desc" }],
+    select: { id: true, title: true, module: true, criticality: true, status: true },
+  });
+  const autoRegressionEnvironment = await db.environmentConfig.findFirst({
+    where: { organisationId: cgiId },
+    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+    select: { id: true, name: true, baseUrl: true, isDefault: true },
+  });
+  const autoRegressionPr = await db.pullRequestCheck.create({
+    data: {
+      organisationId: cgiId,
+      prNumber: autoRegressionNumber,
+      title: "PART9 deployed environment regression",
+      branch: `feature/part9-${RUN_ID}`,
+      branchTarget: "main",
+      author: "qa-bot",
+      provider: "GITHUB",
+      repository: "cgi/digital-portal",
+      externalUrl: `https://github.com/cgi/digital-portal/pull/${autoRegressionNumber}`,
+      status: "pending",
+      riskLevel: "medium",
+      filesChanged: 4,
+      changedFilesJson: JSON.stringify(["src/app/checkout/page.tsx", "src/api/checkout/route.ts"]),
+      impactJson: JSON.stringify({
+        files: ["src/app/checkout/page.tsx", "src/api/checkout/route.ts"],
+        modules: [...new Set(autoRegressionCases.map((testCase) => testCase.module))],
+        impacted: autoRegressionCases.map((testCase) => ({
+          id: testCase.id,
+          title: testCase.title,
+          module: testCase.module,
+          criticality: testCase.criticality,
+          status: testCase.status,
+        })),
+      }),
+      logsJson: "[]",
+      testsRun: 0,
+      regressions: 0,
+    },
+    select: { id: true },
+  });
+  interface Part9AutoResponse {
+    status?: string;
+    environment?: { id?: string; name?: string; baseUrl?: string } | null;
+    targetUrl?: string;
+    createdTestCases?: Array<{ id?: string; title?: string; testType?: string }>;
+    executed?: Array<Record<string, unknown>>;
+    passed?: number;
+    failed?: number;
+    total?: number;
+    regressions?: number;
+    testsRun?: number;
+  }
+  const autoRegressionRes = await apiJson(page, "/api/dashboard/pull-requests/auto-regression", "POST", {
+    id: autoRegressionPr.id,
+    environmentId: autoRegressionEnvironment?.id,
+    createTests: true,
+  });
+  const autoRegressionBody = autoRegressionRes.body as unknown as Part9AutoResponse;
+  const autoCreated = autoRegressionBody.createdTestCases ?? [];
+  const autoExecuted = autoRegressionBody.executed ?? [];
+  check(
+    "PART 9 PR auto-regression creates PR-specific Smoke and Regression cases",
+    autoRegressionRes.status === 200 &&
+      autoCreated.length === 2 &&
+      autoCreated.some((testCase) => testCase.testType === "Smoke") &&
+      autoCreated.some((testCase) => testCase.testType === "Regression") &&
+      autoCreated.every((testCase) => String(testCase.title ?? "").startsWith(`PR #${autoRegressionNumber} ·`)),
+    autoCreated.map((testCase) => `${testCase.testType}:${testCase.title}`).join(" | ").slice(0, 180),
+  );
+  check(
+    "PART 9 PR auto-regression runs against the selected deployed environment",
+    autoRegressionEnvironment
+      ? autoRegressionBody.environment?.id === autoRegressionEnvironment.id &&
+          String(autoRegressionBody.targetUrl ?? "").replace(/\/+$/, "") === autoRegressionEnvironment.baseUrl.replace(/\/+$/, "")
+      : Boolean(autoRegressionBody.targetUrl),
+    `${autoRegressionBody.environment?.name ?? "default"} · ${autoRegressionBody.targetUrl ?? "no url"}`,
+  );
+  check(
+    "PART 9 PR auto-regression persists screenshots on every executed case",
+    (autoRegressionBody.total ?? 0) >= 2 &&
+      (autoRegressionBody.passed ?? 0) + (autoRegressionBody.failed ?? 0) === autoRegressionBody.total &&
+      autoExecuted.length === autoRegressionBody.total &&
+      autoExecuted.every((executed) => isScreenshot(executed.screenshotBase64) || jsonArray(executed.logJson).every((line) => isScreenshot(line.screenshotBase64))),
+    `${autoRegressionBody.passed ?? 0}/${autoRegressionBody.total ?? 0} passed · ${autoRegressionBody.regressions ?? 0} regression(s)`,
+  );
+  const updatedAutoPr = await db.pullRequestCheck.findUnique({
+    where: { id: autoRegressionPr.id },
+    select: { status: true, testsRun: true, regressions: true, impactJson: true, logsJson: true },
+  });
+  const updatedAutoImpact = jsonArray(updatedAutoPr?.impactJson) as unknown;
+  const autoImpactRecord = (() => {
+    try {
+      return JSON.parse(String(updatedAutoPr?.impactJson ?? "{}")) as Record<string, unknown>;
+    } catch {
+      return {} as Record<string, unknown>;
+    }
+  })();
+  void updatedAutoImpact;
+  const autoStoredRun = autoImpactRecord.autoRegression as
+    | { targetUrl?: string; passed?: number; failed?: number; total?: number; executed?: Array<Record<string, unknown>> }
+    | undefined;
+  check(
+    "PART 9 PR auto-regression updates PullRequestCheck with counts and run metadata",
+    (updatedAutoPr?.status === "passed_baseline" || updatedAutoPr?.status === "regression_caught") &&
+      updatedAutoPr?.testsRun === autoRegressionBody.total &&
+      updatedAutoPr?.regressions === autoRegressionBody.failed &&
+      Boolean(autoStoredRun) &&
+      autoStoredRun?.targetUrl === autoRegressionBody.targetUrl &&
+      (autoStoredRun?.executed ?? []).every((executed) => isScreenshot(executed.screenshotBase64) || jsonArray(executed.logJson).every((line) => isScreenshot(line.screenshotBase64))),
+    `${updatedAutoPr?.status ?? "?"} · ${updatedAutoPr?.testsRun ?? 0} run · ${updatedAutoPr?.regressions ?? 0} regression(s)`,
+  );
+  const storedPrCases = await db.testCase.findMany({
+    where: { organisationId: cgiId, title: { startsWith: `PR #${autoRegressionNumber} ·` } },
+    select: { id: true, title: true, variablesJson: true, stepsJson: true },
+  });
+  check(
+    "PART 9 PR-specific cases persist their test type and target URL",
+    storedPrCases.length === 2 &&
+      storedPrCases.every((testCase) => {
+        const variables = (() => {
+          try {
+            return JSON.parse(testCase.variablesJson || "{}") as Record<string, unknown>;
+          } catch {
+            return {} as Record<string, unknown>;
+          }
+        })();
+        return typeof variables._testType === "string" && typeof variables.url === "string" && variables.url.includes("cgi.com");
+      }),
+    storedPrCases.map((testCase) => testCase.title).join(" | ").slice(0, 180),
+  );
+  const prCaseRuns = await Promise.all(
+    storedPrCases.map((testCase) =>
+      db.testCaseRun.findFirst({
+        where: { testCaseId: testCase.id },
+        orderBy: { runNumber: "desc" },
+        select: { logJson: true },
+      }),
+    ),
+  );
+  check(
+    "PART 9 PR-specific case runs store screenshots in TestCaseRun.logJson",
+    prCaseRuns.length === 2 && prCaseRuns.every((run) => jsonArray(run?.logJson).length > 0 && jsonArray(run?.logJson).every((line) => isScreenshot(line.screenshotBase64))),
+    `${prCaseRuns.map((run) => jsonArray(run?.logJson).length).join("/")} line(s)`,
+  );
+
+  await goto(page, "/dashboard/pull-requests");
+  const autoRegressionRow = page.getByRole("button", { name: new RegExp(`#${autoRegressionNumber}`) }).first();
+  check("PART 9 the pull-request list shows the auto-regression PR", (await autoRegressionRow.count()) > 0, `#${autoRegressionNumber}`);
+  if ((await autoRegressionRow.count()) > 0) {
+    await autoRegressionRow.click().catch(() => undefined);
+    const autoDrawer = page.getByRole("dialog", { name: "PR analysis detail" });
+    await autoDrawer.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+    const autoSection = autoDrawer.locator('[data-testid="pr-auto-regression"]').first();
+    const autoEnvironmentSelect = autoDrawer.locator('[data-testid="pr-auto-regression-environment"]').first();
+    const autoEnvironmentOptions = await autoEnvironmentSelect.locator("option").count().catch(() => 0);
+    check(
+      "PART 9 PR drawer exposes auto-regression with an environment selector",
+      (await autoSection.count()) > 0 && (await autoEnvironmentSelect.count()) > 0 && autoEnvironmentOptions >= 1,
+      `${autoEnvironmentOptions} environment option(s)`,
+    );
+    const autoRunButton = autoDrawer.locator('[data-testid="pr-auto-regression-run"]').first();
+    check("PART 9 PR drawer exposes Run PR auto-regression", (await autoRunButton.count()) > 0);
+    if ((await autoRunButton.count()) > 0) {
+      await autoRunButton.click().catch(() => undefined);
+      const autoResult = autoDrawer.locator('[data-testid="pr-auto-regression-result"]').first();
+      await autoResult.waitFor({ state: "visible", timeout: 120_000 }).catch(() => undefined);
+      const autoResultText = ((await autoResult.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+      check(
+        "PART 9 the PR drawer renders auto-regression results",
+        (await autoResult.count()) > 0 &&
+          /passed/i.test(autoResultText) &&
+          autoResultText.includes(String(autoRegressionBody.targetUrl ?? "")),
+        autoResultText.slice(0, 180),
+      );
+    }
+    await autoDrawer.getByRole("button", { name: "Close", exact: true }).first().click().catch(() => undefined);
+    await page.waitForTimeout(300);
+  }
+  await db.pullRequestCheck.delete({ where: { id: autoRegressionPr.id } }).catch(() => undefined);
+  for (const testCase of storedPrCases) await apiJson(page, `/api/dashboard/test-cases/${testCase.id}`, "DELETE");
+
+  // 9.6 — Super Admin enterprise provisioning + plan configuration.
+  const part9Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
+  let provisionedOrgId = "";
+  try {
+    const provisionName = `PART9 Enterprise ${RUN_ID}`;
+    const provisionEmail = `part9-${RUN_ID}@qasyn.example`;
+    const provisionPassword = "Part9Demo2026!";
+    const provisionRes = await apiJson(part9Super.page, "/api/dashboard/super-admin", "POST", {
+      action: "create_enterprise_tenant",
+      organisationName: provisionName,
+      website: "https://www.cgi.com/part9-enterprise",
+      adminName: "Part9 Admin",
+      adminEmail: provisionEmail,
+      adminPassword: provisionPassword,
+      seats: 12,
+      environmentName: "Production",
+      environmentUrl: "https://www.cgi.com/part9-production",
+      trialCredits: 250000,
+    });
+    interface Part9ProvisionBody {
+      organisation?: { id?: string; name?: string; slug?: string; plan?: string; trialCredits?: number };
+      admin?: { id?: string; email?: string; role?: string; status?: string };
+      environments?: Array<{ id?: string; name?: string; baseUrl?: string; isDefault?: boolean }>;
+      ledger?: { id?: string; credits?: number; kind?: string };
+    }
+    const provisionBody = provisionRes.body as unknown as Part9ProvisionBody;
+    provisionedOrgId = String(provisionBody.organisation?.id ?? "");
+    check(
+      "PART 9 Super Admin provisions an enterprise tenant",
+      provisionRes.status === 201 &&
+        provisionBody.organisation?.plan === "enterprise" &&
+        provisionBody.organisation?.trialCredits === 250000 &&
+        Boolean(provisionedOrgId),
+      `${provisionBody.organisation?.name ?? "?"} · ${provisionBody.organisation?.plan ?? "?"} · ${provisionBody.organisation?.trialCredits ?? "?"} credits`,
+    );
+    check(
+      "PART 9 provisioning seeds Production + Staging environments, a credit ledger and an admin",
+      (provisionBody.environments ?? []).length === 2 &&
+        (provisionBody.environments ?? []).some((environment) => environment.isDefault && environment.name === "Production") &&
+        (provisionBody.environments ?? []).some((environment) => environment.name === "Staging") &&
+        provisionBody.ledger?.kind === "grant" &&
+        provisionBody.ledger?.credits === 250000 &&
+        provisionBody.admin?.role === "Admin" &&
+        provisionBody.admin?.status === "active",
+      `${(provisionBody.environments ?? []).map((environment) => environment.name).join(", ")} · ledger ${provisionBody.ledger?.credits ?? "?"}`,
+    );
+    const provisionedAdmin = await db.user.findUnique({
+      where: { email: provisionEmail },
+      select: { role: true, status: true, emailVerifiedAt: true, passwordHash: true, organisationId: true },
+    });
+    check(
+      "PART 9 the provisioned admin is verified and stores only a password hash",
+      provisionedAdmin?.role === "Admin" &&
+        provisionedAdmin?.status === "active" &&
+        Boolean(provisionedAdmin?.emailVerifiedAt) &&
+        provisionedAdmin?.passwordHash !== provisionPassword &&
+        String(provisionedAdmin?.passwordHash ?? "").length > 20 &&
+        provisionedAdmin?.organisationId === provisionedOrgId,
+      `${provisionedAdmin?.role ?? "?"} · verified=${Boolean(provisionedAdmin?.emailVerifiedAt)}`,
+    );
+    const provisionAudit = await db.systemAuditLog.findFirst({
+      where: { organisationId: provisionedOrgId, action: "super_admin.enterprise_tenant_created" },
+      select: { id: true },
+    });
+    check("PART 9 provisioning records a system audit entry", Boolean(provisionAudit));
+
+    const configureRes = await apiJson(part9Super.page, "/api/dashboard/super-admin", "POST", {
+      action: "configure_enterprise_plan",
+      organisationId: provisionedOrgId,
+      plan: "enterprise",
+      grantCredits: 5000,
+      seats: 30,
+      environmentName: "Production",
+      environmentUrl: "https://www.cgi.com/part9-staging",
+      ssoEnabled: true,
+      slaEnabled: true,
+    });
+    interface Part9ConfigureBody {
+      organisation?: { id?: string; plan?: string; trialCredits?: number };
+      environment?: { name?: string; baseUrl?: string; isDefault?: boolean } | null;
+      ledger?: { credits?: number; kind?: string } | null;
+      enterprise?: { seats?: number; ssoEnabled?: boolean; slaEnabled?: boolean };
+    }
+    const configureBody = configureRes.body as unknown as Part9ConfigureBody;
+    check(
+      "PART 9 Super Admin configures the enterprise plan and grants credits",
+      configureRes.status === 200 &&
+        configureBody.organisation?.plan === "enterprise" &&
+        configureBody.organisation?.trialCredits === 255000 &&
+        configureBody.ledger?.credits === 5000 &&
+        configureBody.ledger?.kind === "grant" &&
+        configureBody.enterprise?.seats === 30 &&
+        configureBody.enterprise?.ssoEnabled === true &&
+        configureBody.enterprise?.slaEnabled === true,
+      `${configureBody.organisation?.plan ?? "?"} · ${configureBody.organisation?.trialCredits ?? "?"} credits · ${configureBody.enterprise?.seats ?? "?"} seats`,
+    );
+    check(
+      "PART 9 configuring the tenant updates its default deployed environment",
+      configureBody.environment?.name === "Production" &&
+        configureBody.environment?.baseUrl === "https://www.cgi.com/part9-staging" &&
+        configureBody.environment?.isDefault === true,
+      `${configureBody.environment?.name ?? "?"} · ${configureBody.environment?.baseUrl ?? "?"}`,
+    );
+
+    await goto(part9Super.page, "/dashboard/settings/organization");
+    const provisionButton = part9Super.page.locator('[data-testid="super-admin-provision-enterprise"]').first();
+    await provisionButton.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+    check("PART 9 Super-Admin Console exposes Provision enterprise", (await provisionButton.count()) > 0);
+    if ((await provisionButton.count()) > 0) {
+      await provisionButton.click().catch(() => undefined);
+      const provisionDialog = part9Super.page.getByRole("dialog", { name: "Provision an enterprise tenant" });
+      await provisionDialog.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+      const provisionDialogText = ((await provisionDialog.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+      check(
+        "PART 9 the Provision modal collects tenant, admin, seats, environment and credits",
+        (await provisionDialog.count()) > 0 &&
+          provisionDialogText.toLowerCase().includes("organisation") &&
+          provisionDialogText.toLowerCase().includes("admin e-mail") &&
+          provisionDialogText.toLowerCase().includes("seats") &&
+          provisionDialogText.toLowerCase().includes("environment url") &&
+          provisionDialogText.toLowerCase().includes("credits") &&
+          (await part9Super.page.locator('[data-testid="super-admin-provision-submit"]').count()) > 0,
+        provisionDialogText.slice(0, 180),
+      );
+      await provisionDialog.getByRole("button", { name: "Cancel", exact: true }).first().click().catch(() => undefined);
+      await part9Super.page.waitForTimeout(300);
+    }
+    const configureOpen = part9Super.page.locator(`[data-testid="super-admin-configure-open-${String(provisionBody.organisation?.slug ?? "")}"]`).first();
+    check("PART 9 Super-Admin Console exposes Configure for the new tenant", (await configureOpen.count()) > 0);
+    if ((await configureOpen.count()) > 0) {
+      await configureOpen.click().catch(() => undefined);
+      const configureDialog = part9Super.page.getByRole("dialog", { name: /Configure enterprise/ }).first();
+      await configureDialog.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+      const configureDialogText = ((await configureDialog.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+      check(
+        "PART 9 the Configure modal exposes plan, seats, SSO/SLA and default environment",
+        (await configureDialog.count()) > 0 &&
+          configureDialogText.includes("Plan") &&
+          configureDialogText.includes("Seats") &&
+          configureDialogText.includes("SSO") &&
+          configureDialogText.includes("SLA") &&
+          (await part9Super.page.locator('[data-testid="super-admin-configure-enterprise"]').count()) > 0,
+        configureDialogText.slice(0, 180),
+      );
+      await configureDialog.getByRole("button", { name: "Cancel", exact: true }).first().click().catch(() => undefined);
+    }
+  } finally {
+    await part9Super.context.close().catch(() => undefined);
+  }
+  if (provisionedOrgId) {
+    await db.user.deleteMany({ where: { organisationId: provisionedOrgId } }).catch(() => undefined);
+    await db.environmentConfig.deleteMany({ where: { organisationId: provisionedOrgId } }).catch(() => undefined);
+    await db.creditEntry.deleteMany({ where: { organisationId: provisionedOrgId } }).catch(() => undefined);
+    await db.systemAuditLog.deleteMany({ where: { organisationId: provisionedOrgId } }).catch(() => undefined);
+    await db.organisation.delete({ where: { id: provisionedOrgId } }).catch(() => undefined);
+  }
+
+  // 9.7 — Production README + interactive /guide.
+  const readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+  const readmeSections = [
+    "## Architecture",
+    "## The 19 product modules",
+    "## The 11 test types",
+    "## Bivia: grounded decisions and self-healing",
+    "## PR gatekeeper and auto-regression",
+    "## Super Admin and multi-tenancy",
+    "## Evidence: screenshots for every executed step",
+    "## Installation",
+    "## Environment variables",
+    "## Seeding and demo accounts",
+    "## Running and verification",
+  ];
+  check(
+    "PART 9 README documents architecture, modules, test types, Bivia, PR gate, Super Admin and operations",
+    readme.includes("# QASyn") && readmeSections.every((section) => readme.includes(section)),
+    `${readme.length} chars · ${readmeSections.filter((section) => !readme.includes(section)).join(", ") || "all sections"}`,
+  );
+
+  await goto(page, "/guide");
+  const guideBody = ((await body(page)) || "").replace(/\s+/g, " ");
+  const guideRoleTabs = await page.locator("[data-guide-role]").count();
+  const guideFeatures = await page.locator("[data-guide-feature]").count();
+  const guideWalkthroughs = await page.locator('[data-testid="guide-walkthrough"]').count();
+  check(
+    "PART 9 /guide serves the interactive user guide",
+    (await page.locator('[data-testid="user-guide"]').count()) > 0 &&
+      guideBody.includes("QASyn") &&
+      (await page.locator('[data-testid="guide-role-tabs"]').count()) > 0 &&
+      (await page.locator('[data-testid="guide-feature-explorer"]').count()) > 0 &&
+      guideRoleTabs === 6 &&
+      guideFeatures >= 19 &&
+      guideWalkthroughs === 6,
+    `${guideRoleTabs} role tab(s) · ${guideFeatures} feature(s) · ${guideWalkthroughs} walkthrough(s)`,
+  );
+  const guideSearch = page.locator('[data-testid="guide-feature-search"]').first();
+  if ((await guideSearch.count()) > 0) {
+    await guideSearch.fill("screenshot").catch(() => undefined);
+    await page.waitForTimeout(250);
+    const visibleFeatures = await page.evaluate(() => document.querySelectorAll("[data-guide-feature]:not([hidden])").length);
+    const featureCountText = ((await page.locator("#feature-count").innerText().catch(() => "")) || "").trim();
+    check(
+      "PART 9 the feature explorer is searchable",
+      visibleFeatures > 0 && visibleFeatures < guideFeatures && /feature/i.test(featureCountText),
+      `${visibleFeatures}/${guideFeatures} visible · ${featureCountText}`,
+    );
+    await guideSearch.fill("").catch(() => undefined);
+  } else {
+    check("PART 9 the feature explorer is searchable", false, "search input missing");
+  }
+  const qaRoleTab = page.locator('[data-guide-role="QA"]').first();
+  if ((await qaRoleTab.count()) > 0) {
+    await qaRoleTab.click().catch(() => undefined);
+    await page.waitForTimeout(250);
+    const roleTitle = ((await page.locator("#role-title").innerText().catch(() => "")) || "").trim();
+    check(
+      "PART 9 role tabs focus the guide on the selected role",
+      (await qaRoleTab.getAttribute("aria-selected").catch(() => "")) === "true" && roleTitle === "QA",
+      `${roleTitle || "?"} · aria-selected=${await qaRoleTab.getAttribute("aria-selected").catch(() => "?")}`,
+    );
+  } else {
+    check("PART 9 role tabs focus the guide on the selected role", false, "QA tab missing");
+  }
+  const guideDrawerButton = page.locator('[data-testid="guide-architecture"]').first();
+  if ((await guideDrawerButton.count()) > 0) {
+    await guideDrawerButton.click().catch(() => undefined);
+    const guideDrawer = page.locator('[data-testid="guide-architecture-drawer"]').first();
+    await guideDrawer.waitFor({ state: "attached", timeout: 5_000 }).catch(() => undefined);
+    const drawerArchitectureText = ((await guideDrawer.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    const guideApiTab = page.locator('[data-drawer-tab="api"]').first();
+    if ((await guideApiTab.count()) > 0) await guideApiTab.click().catch(() => undefined);
+    await page.waitForTimeout(250);
+    const guideApiText = ((await guideDrawer.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    check(
+      "PART 9 the architecture / API drawer documents the run pipeline and delivery endpoints",
+      (await guideDrawer.getAttribute("aria-hidden").catch(() => "true")) === "false" &&
+        drawerArchitectureText.includes("Run pipeline") &&
+        drawerArchitectureText.includes("Grounding priority") &&
+        guideApiText.includes("/api/dashboard/pull-requests/auto-regression") &&
+        guideApiText.includes("/api/dashboard/super-admin"),
+      guideApiText.slice(0, 180),
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(250);
+  } else {
+    check("PART 9 the architecture / API drawer documents the run pipeline and delivery endpoints", false, "drawer button missing");
+  }
+  const guideResponse = await page.evaluate(async () => {
+    const response = await fetch("/guide");
+    return { status: response.status, contentType: response.headers.get("content-type") ?? "", text: await response.text() };
+  });
+  check(
+    "PART 9 /guide is a self-contained HTML route with role tabs, search and six walkthroughs",
+    guideResponse.status === 200 &&
+      guideResponse.contentType.includes("text/html") &&
+      guideResponse.text.includes("data-guide-role") &&
+      guideResponse.text.includes("guide-feature-search") &&
+      (guideResponse.text.match(/data-testid="guide-walkthrough"/g) ?? []).length === 6,
+    `${guideResponse.status} · ${guideResponse.contentType} · ${guideResponse.text.length} chars`,
+  );
+  await goto(page, "/dashboard/overview");
+  check("PART 9 the sidebar links to the interactive user guide", (await page.locator('a[href="/guide"]').count()) > 0);
+  check("PART 9 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part9-deliverables");
 
   await db.$disconnect();
 

@@ -245,9 +245,18 @@ export interface StepBiviaHealMetadata {
   domCaptured: boolean;
   grounding: BiviaGroundingBox;
   abstainReason?: string;
+  /** Real or generated viewport evidence captured at heal time. */
+  screenshotBase64?: string;
+  screenshotMime?: string;
+  /** Target URL used for the heal capture (same priority as Studio grounding). */
+  url?: string;
 }
 
-export function buildStepHealMetadata(decision: BiviaHealDecision, healedAt = new Date().toISOString()): StepBiviaHealMetadata {
+export function buildStepHealMetadata(
+  decision: BiviaHealDecision,
+  healedAt = new Date().toISOString(),
+  evidence?: { screenshotBase64?: string | null; screenshotMime?: string; url?: string },
+): StepBiviaHealMetadata {
   return {
     healed: decision.status === "healed",
     oldSelector: decision.oldSelector,
@@ -261,6 +270,10 @@ export function buildStepHealMetadata(decision: BiviaHealDecision, healedAt = ne
     screenshotCaptured: decision.screenshotCaptured,
     domCaptured: decision.domCaptured,
     grounding: decision.grounding,
+    ...(evidence?.screenshotBase64
+      ? { screenshotBase64: evidence.screenshotBase64, screenshotMime: evidence.screenshotMime ?? "image/png" }
+      : {}),
+    ...(evidence?.url ? { url: evidence.url } : {}),
     ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
   };
 }

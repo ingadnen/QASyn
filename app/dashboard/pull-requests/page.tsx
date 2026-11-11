@@ -18,6 +18,11 @@ export default async function PullRequestsPage({ searchParams }: { searchParams:
       where: { organisationId: ctx.org.id, provider: { in: ["GITHUB", "GITLAB", "BITBUCKET", "AZURE_DEVOPS"] }, status: "CONNECTED" },
     }),
   ]);
+  const environments = await prisma.environmentConfig.findMany({
+    where: { organisationId: ctx.org.id },
+    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+    select: { id: true, name: true, baseUrl: true, isDefault: true },
+  });
   const prs = allPrs.filter((pr) => {
     if (risk !== "all" && pr.riskLevel !== risk) return false;
     if (q && !`${pr.title} ${pr.branch} ${pr.author} #${pr.prNumber}`.toLowerCase().includes(q.toLowerCase())) return false;
@@ -81,7 +86,7 @@ export default async function PullRequestsPage({ searchParams }: { searchParams:
         </p>
       )}
 
-      <PullRequestsBoard initialRows={prs.map(prDetail)} readOnly={ctx.readOnly} nextNumber={nextNumber} />
+      <PullRequestsBoard initialRows={prs.map(prDetail)} readOnly={ctx.readOnly} nextNumber={nextNumber} environments={environments} />
 
       {prs.length > 0 && (
         <p className="text-[12px] text-[#6b7280]">

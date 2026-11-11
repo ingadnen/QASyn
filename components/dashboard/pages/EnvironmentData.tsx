@@ -16,6 +16,7 @@ import {
   useAction,
 } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 
 export interface EnvVariableRow {
   id: string;
@@ -188,6 +189,10 @@ export function EnvironmentData(props: EnvironmentDataProps) {
   const [envFilter, setEnvFilter] = useState("All environments");
   const [permFilter, setPermFilter] = useState("All permissions");
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [envColumnFilters, setEnvColumnFilters] = useState<Record<string, string>>({});
+  const [profileColumnFilters, setProfileColumnFilters] = useState<Record<string, string>>({});
+  const [globalColumnFilters, setGlobalColumnFilters] = useState<Record<string, string>>({});
+  const [authColumnFilters, setAuthColumnFilters] = useState<Record<string, string>>({});
   const [envModal, setEnvModal] = useState<{ mode: "create" } | { mode: "edit"; env: EnvCard } | null>(null);
   const [variablesEnv, setVariablesEnv] = useState<EnvCard | null>(null);
   const [profileModal, setProfileModal] = useState(false);
@@ -197,15 +202,57 @@ export function EnvironmentData(props: EnvironmentDataProps) {
   const [viewportModal, setViewportModal] = useState(false);
   const [importOpen, setImportOpen] = useState<null | "environments" | "profiles" | "global" | "auth">(null);
 
-  const filteredEnvs = envs.filter((e) => !q || `${e.name} ${e.description} ${e.baseUrl}`.toLowerCase().includes(q.toLowerCase()));
+  const filteredEnvs = envs
+    .filter((e) => !q || `${e.name} ${e.description} ${e.baseUrl}`.toLowerCase().includes(q.toLowerCase()))
+    .filter((e) =>
+      matchesColumnFilters(envColumnFilters, {
+        Name: `${e.name} ${e.baseUrl}`,
+        Description: e.description,
+        VARS: String(e.variablesCount),
+        PROFILES: String(e.profilesCount),
+        Updated: fmtDate(e.updatedAt),
+      }),
+    );
   const filteredProfiles = profiles.filter((p) => {
     if (q && !`${p.name} ${p.description}`.toLowerCase().includes(q.toLowerCase())) return false;
     if (envFilter !== "All environments" && !p.environmentIds.includes(envFilter)) return false;
     if (permFilter !== "All permissions" && p.permission !== permFilter) return false;
+    if (
+      !matchesColumnFilters(profileColumnFilters, {
+        Profile: `${p.name} ${p.description}`,
+        Permission: p.permission,
+        Environments: p.environmentIds.map((id) => envs.find((e) => e.id === id)?.name || id).join(" "),
+        "Rows × Columns": `${p.rows} × ${p.columns}`,
+        Created: fmtDate(p.createdAt),
+      })
+    )
+      return false;
     return true;
   });
-  const filteredGlobals = globals.filter((g) => !q || `${g.name} ${g.description} ${g.tags.join(" ")}`.toLowerCase().includes(q.toLowerCase()));
-  const filteredAuths = auths.filter((a) => !q || `${a.name} ${a.appUrl} ${a.username}`.toLowerCase().includes(q.toLowerCase()));
+  const filteredGlobals = globals
+    .filter((g) => !q || `${g.name} ${g.description} ${g.tags.join(" ")}`.toLowerCase().includes(q.toLowerCase()))
+    .filter((g) =>
+      matchesColumnFilters(globalColumnFilters, {
+        Name: g.name,
+        Type: g.type,
+        Permission: g.permission,
+        Value: g.value,
+        Tags: g.tags.join(" "),
+        Description: g.description,
+      }),
+    );
+  const filteredAuths = auths
+    .filter((a) => !q || `${a.name} ${a.appUrl} ${a.username}`.toLowerCase().includes(q.toLowerCase()))
+    .filter((a) =>
+      matchesColumnFilters(authColumnFilters, {
+        Profile: a.name,
+        "App URL": a.appUrl,
+        Method: a.method,
+        Username: a.username,
+        "Auto sign-in": a.autoSignIn ? "Yes" : "No",
+        "Last signed in": a.lastSignedInAt ? fmtDate(a.lastSignedInAt) : "Never",
+      }),
+    );
 
   async function deleteKind(kind: string, id: string, label: string) {
     if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return;
@@ -344,9 +391,13 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                 <table className="w-full min-w-[760px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#f0f1f3]">
-                      {["Name", "Description", "VARS", "DBS", "PROFILES", "Updated", ""].map((h) => (
-                        <th key={h} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{h}</th>
-                      ))}
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={envColumnFilters.Name ?? ""} onChange={(value) => setEnvColumnFilters((current) => ({ ...current, Name: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Description<ColumnFilter column="Description" value={envColumnFilters.Description ?? ""} onChange={(value) => setEnvColumnFilters((current) => ({ ...current, Description: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">VARS<ColumnFilter column="VARS" value={envColumnFilters.VARS ?? ""} onChange={(value) => setEnvColumnFilters((current) => ({ ...current, VARS: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">DBS<ColumnFilter column="DBS" value={envColumnFilters.DBS ?? ""} onChange={(value) => setEnvColumnFilters((current) => ({ ...current, DBS: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">PROFILES<ColumnFilter column="PROFILES" value={envColumnFilters.PROFILES ?? ""} onChange={(value) => setEnvColumnFilters((current) => ({ ...current, PROFILES: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Updated<ColumnFilter column="Updated" value={envColumnFilters.Updated ?? ""} onChange={(value) => setEnvColumnFilters((current) => ({ ...current, Updated: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]" />
                     </tr>
                   </thead>
                   <tbody>
@@ -439,9 +490,12 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                 <table className="w-full min-w-[820px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#f0f1f3]">
-                      {["Profile", "Permission", "Environments", "Rows × Columns", "Created", ""].map((h) => (
-                        <th key={h} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{h}</th>
-                      ))}
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Profile<ColumnFilter column="Profile" value={profileColumnFilters.Profile ?? ""} onChange={(value) => setProfileColumnFilters((current) => ({ ...current, Profile: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Permission<ColumnFilter column="Permission" value={profileColumnFilters.Permission ?? ""} onChange={(value) => setProfileColumnFilters((current) => ({ ...current, Permission: value }))} options={[...new Set(profiles.map((p) => p.permission))]} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Environments<ColumnFilter column="Environments" value={profileColumnFilters.Environments ?? ""} onChange={(value) => setProfileColumnFilters((current) => ({ ...current, Environments: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Rows × Columns<ColumnFilter column="Rows × Columns" value={profileColumnFilters["Rows × Columns"] ?? ""} onChange={(value) => setProfileColumnFilters((current) => ({ ...current, "Rows × Columns": value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created<ColumnFilter column="Created" value={profileColumnFilters.Created ?? ""} onChange={(value) => setProfileColumnFilters((current) => ({ ...current, Created: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]" />
                     </tr>
                   </thead>
                   <tbody>
@@ -546,16 +600,12 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                 <table className="w-full min-w-[860px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#f0f1f3]">
-                      {([
-                        ["Name", "Variable"],
-                        ["Type", "Type"],
-                        ["Permission", "Permission"],
-                        ["Value", "Value"],
-                        ["Tags", "Tags"],
-                        ["Description", "Description"],
-                      ] as const).filter(([key]) => globalColumns[key]).map(([key, label]) => (
-                        <th key={key} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{label}</th>
-                      ))}
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={globalColumnFilters.Name ?? ""} onChange={(value) => setGlobalColumnFilters((current) => ({ ...current, Name: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={globalColumnFilters.Type ?? ""} onChange={(value) => setGlobalColumnFilters((current) => ({ ...current, Type: value }))} options={[...new Set(globals.map((g) => g.type))]} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Permission<ColumnFilter column="Permission" value={globalColumnFilters.Permission ?? ""} onChange={(value) => setGlobalColumnFilters((current) => ({ ...current, Permission: value }))} options={[...new Set(globals.map((g) => g.permission))]} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Value<ColumnFilter column="Value" value={globalColumnFilters.Value ?? ""} onChange={(value) => setGlobalColumnFilters((current) => ({ ...current, Value: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Tags<ColumnFilter column="Tags" value={globalColumnFilters.Tags ?? ""} onChange={(value) => setGlobalColumnFilters((current) => ({ ...current, Tags: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Description<ColumnFilter column="Description" value={globalColumnFilters.Description ?? ""} onChange={(value) => setGlobalColumnFilters((current) => ({ ...current, Description: value }))} /></th>
                       <th className="w-10 px-4 py-3" />
                     </tr>
                   </thead>
@@ -636,9 +686,13 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                 <table className="w-full min-w-[820px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#f0f1f3]">
-                      {["Profile", "App URL", "Method", "Username", "Auto sign-in", "Last signed in", ""].map((h) => (
-                        <th key={h} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{h}</th>
-                      ))}
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Profile<ColumnFilter column="Profile" value={authColumnFilters.Profile ?? ""} onChange={(value) => setAuthColumnFilters((current) => ({ ...current, Profile: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">App URL<ColumnFilter column="App URL" value={authColumnFilters["App URL"] ?? ""} onChange={(value) => setAuthColumnFilters((current) => ({ ...current, "App URL": value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Method<ColumnFilter column="Method" value={authColumnFilters.Method ?? ""} onChange={(value) => setAuthColumnFilters((current) => ({ ...current, Method: value }))} options={[...new Set(auths.map((a) => a.method))]} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Username<ColumnFilter column="Username" value={authColumnFilters.Username ?? ""} onChange={(value) => setAuthColumnFilters((current) => ({ ...current, Username: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Auto sign-in<ColumnFilter column="Auto sign-in" value={authColumnFilters["Auto sign-in"] ?? ""} onChange={(value) => setAuthColumnFilters((current) => ({ ...current, "Auto sign-in": value }))} options={["Yes", "No"]} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last signed in<ColumnFilter column="Last signed in" value={authColumnFilters["Last signed in"] ?? ""} onChange={(value) => setAuthColumnFilters((current) => ({ ...current, "Last signed in": value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]" />
                     </tr>
                   </thead>
                   <tbody>

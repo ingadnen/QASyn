@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { CqaIcon, Modal, StatusPill, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { BulkButton, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination } from "@/components/contextqa/table-ui";
+import { BulkButton, ColumnFilter, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, tableCardClass } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -49,6 +49,7 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
   const [isRefreshing, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [visible, setVisible] = useState<Record<string, boolean>>(() => Object.fromEntries(COLUMNS.map((column) => [column.key, true])));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
@@ -66,9 +67,36 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
       if (filters.result && planResult(plan) !== filters.result) return false;
       if (filters.environment && (plan.environment || "Any") !== filters.environment) return false;
       if (filters.module && (plan.module || "Unorganised") !== filters.module) return false;
+      if (
+        !matchesColumnFilters(columnFilters, {
+          Name: plan.name,
+          Suites: plan.suites,
+          "Test Cases": plan.cases,
+          "Latest Result": planResult(plan) ?? "Not Executed",
+          Environment: plan.environment || "Any",
+          Schedule: plan.schedule.replace("_", " "),
+          "Last Run": plan.lastRunAt ? formatDate(plan.lastRunAt) : "Never",
+        })
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [localRows, search, filters]);
+  }, [localRows, search, filters, columnFilters]);
+
+  const columnOptions = useMemo(
+    () => ({
+      "Latest Result": ["Passed", "Failed", "Not Executed"],
+      Environment: distinctColumnValues(localRows.map((plan) => plan.environment || "Any")),
+      Schedule: distinctColumnValues(localRows.map((plan) => plan.schedule.replace("_", " "))),
+    }),
+    [localRows],
+  );
+
+  function setColumnFilter(column: string, value: string) {
+    setColumnFilters((current) => ({ ...current, [column]: value }));
+    setPage(1);
+  }
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pages);
@@ -240,7 +268,7 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
         </BulkButton>
       </SelectionBar>
 
-      <div className={cn(cqaCard, "overflow-hidden")}>
+      <div className={tableCardClass()}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-left">
             <thead>
@@ -248,13 +276,13 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
                 <th className="w-9 px-4 py-3">
                   <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleAll} label="Select all test plans" />
                 </th>
-                <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name</th>
-                {visible.suites && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suites</th>}
-                {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases</th>}
-                {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result</th>}
-                {visible.environment && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Environment</th>}
-                {visible.schedule && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Schedule</th>}
-                {visible.lastRun && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last Run</th>}
+                <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilter("Name", value)} /></th>
+                {visible.suites && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suites<ColumnFilter column="Suites" value={columnFilters.Suites ?? ""} onChange={(value) => setColumnFilter("Suites", value)} /></th>}
+                {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /></th>}
+                {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result<ColumnFilter column="Latest Result" value={columnFilters["Latest Result"] ?? ""} onChange={(value) => setColumnFilter("Latest Result", value)} options={columnOptions["Latest Result"]} /></th>}
+                {visible.environment && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Environment<ColumnFilter column="Environment" value={columnFilters.Environment ?? ""} onChange={(value) => setColumnFilter("Environment", value)} options={columnOptions.Environment} /></th>}
+                {visible.schedule && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Schedule<ColumnFilter column="Schedule" value={columnFilters.Schedule ?? ""} onChange={(value) => setColumnFilter("Schedule", value)} options={columnOptions.Schedule} /></th>}
+                {visible.lastRun && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => setColumnFilter("Last Run", value)} /></th>}
                 <th className="w-10 px-4 py-3" />
               </tr>
             </thead>

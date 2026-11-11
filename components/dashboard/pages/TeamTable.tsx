@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MemberActions } from "@/components/dashboard/pages/TeamParity";
+import { ColumnFilter, distinctColumnValues, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { CqaIcon, StatusPill, cqaCard, cqaIconBtn } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 
@@ -26,9 +27,46 @@ export function TeamTable({
 }) {
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
-  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((member) =>
+        matchesColumnFilters(columnFilters, {
+          NAME: member.name,
+          EMAIL: member.email,
+          ROLES: member.role,
+          VERIFIED: member.verified ? "Verified" : "Invited",
+          ADMIN: member.role === "Admin" ? "Admin" : "Member",
+        }),
+      ),
+    [rows, columnFilters],
+  );
+
+  const columnOptions = useMemo(
+    () => ({
+      ROLES: distinctColumnValues(rows.map((member) => member.role)),
+      VERIFIED: ["Verified", "Invited"],
+      ADMIN: ["Admin", "Member"],
+    }),
+    [rows],
+  );
+
+  function setColumnFilter(column: string, value: string) {
+    setColumnFilters((current) => ({ ...current, [column]: value }));
+    setPage(1);
+  }
+
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pages);
-  const visible = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const headers = [
+    { key: "NAME", label: "NAME", options: undefined as string[] | undefined },
+    { key: "EMAIL", label: "EMAIL", options: undefined },
+    { key: "ROLES", label: "ROLES", options: columnOptions.ROLES },
+    { key: "VERIFIED", label: "VERIFIED", options: columnOptions.VERIFIED },
+    { key: "ADMIN", label: "ADMIN", options: columnOptions.ADMIN },
+  ];
 
   return (
     <div className={cqaCard}>
@@ -36,17 +74,28 @@ export function TeamTable({
         <table className="w-full min-w-[760px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#f0f1f3] bg-[#fafafa]">
-              {["NAME", "EMAIL", "ROLES", "VERIFIED", "ADMIN", ""].map((h) => (
-                <th key={h} className="whitespace-nowrap px-4 py-2.5 text-[10px] font-semibold tracking-[0.08em] text-[#9ca3af]">{h}</th>
+              {headers.map((header) => (
+                <th key={header.key} className="whitespace-nowrap px-4 py-2.5 text-[10px] font-semibold tracking-[0.08em] text-[#9ca3af]">
+                  {header.label}
+                  <ColumnFilter
+                    column={header.key}
+                    value={columnFilters[header.key] ?? ""}
+                    onChange={(value) => setColumnFilter(header.key, value)}
+                    options={header.options}
+                  />
+                </th>
               ))}
+              <th className="whitespace-nowrap px-4 py-2.5 text-[10px] font-semibold tracking-[0.08em] text-[#9ca3af]">{""}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-14 text-center">
                   <p className="text-[14px] font-medium text-[#374151]">No users found</p>
-                  <p className="mt-1 text-[12.5px] text-[#9ca3af]">Invite a teammate to get started.</p>
+                  <p className="mt-1 text-[12.5px] text-[#9ca3af]">
+                    {rows.length === 0 ? "Invite a teammate to get started." : "No teammate matches the current column filters."}
+                  </p>
                 </td>
               </tr>
             )}
@@ -101,7 +150,7 @@ export function TeamTable({
         </div>
         <div className="ml-auto flex items-center gap-2">
           <span className="tabular-nums">
-            {rows.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, rows.length)} of {rows.length}
+            {filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length}
           </span>
           <button type="button" aria-label="Previous page" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className={cn(cqaIconBtn, "size-7 border border-[#e5e7eb] bg-white disabled:opacity-40")}>
             <CqaIcon name="chevron_left" className="text-[16px]" />

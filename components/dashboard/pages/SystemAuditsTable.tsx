@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { ColumnFilter, distinctColumnValues, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { CqaIcon, cqaBtnGhost, cqaCard } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 
@@ -19,10 +20,29 @@ export function SystemAuditsTable({ rows }: { rows: AuditRow[] }) {
   const router = useRouter();
   const [module, setModule] = useState("All modules");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
 
-  const filtered = useMemo(() => (module === "All modules" ? rows : rows.filter((r) => r.module === module)), [rows, module]);
+  const filtered = useMemo(
+    () =>
+      rows.filter((row) => {
+        if (module !== "All modules" && row.module !== module) return false;
+        return matchesColumnFilters(columnFilters, {
+          Date: row.date,
+          "Module & ID": `${row.module} ${row.moduleId}`,
+          Details: row.details,
+        });
+      }),
+    [rows, module, columnFilters],
+  );
+
+  const columnOptions = useMemo(() => ({ "Module & ID": distinctColumnValues(rows.map((row) => row.module)) }), [rows]);
+
+  function setColumnFilter(column: string, value: string) {
+    setColumnFilters((current) => ({ ...current, [column]: value }));
+    setPage(1);
+  }
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const current = Math.min(page, pages);
   const visible = filtered.slice((current - 1) * size, current * size);
@@ -65,9 +85,24 @@ export function SystemAuditsTable({ rows }: { rows: AuditRow[] }) {
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="border-b border-[#f0f1f3] bg-white">
-                {["Date", "Module & ID", "Details"].map((h) => (
-                  <th key={h} className="whitespace-nowrap px-5 py-3 text-[12.5px] font-medium text-[#4a5565]">{h}</th>
-                ))}
+                <th className="whitespace-nowrap px-5 py-3 text-[12.5px] font-medium text-[#4a5565]">
+                  Date
+                  <ColumnFilter column="Date" value={columnFilters.Date ?? ""} onChange={(value) => setColumnFilter("Date", value)} />
+                </th>
+                <th className="whitespace-nowrap px-5 py-3 text-[12.5px] font-medium text-[#4a5565]">
+                  Module &amp; ID
+                  <ColumnFilter
+                    column="Module & ID"
+                    value={columnFilters["Module & ID"] ?? ""}
+                    onChange={(value) => setColumnFilter("Module & ID", value)}
+                    options={columnOptions["Module & ID"]}
+                    placeholder="Search module or ID…"
+                  />
+                </th>
+                <th className="whitespace-nowrap px-5 py-3 text-[12.5px] font-medium text-[#4a5565]">
+                  Details
+                  <ColumnFilter column="Details" value={columnFilters.Details ?? ""} onChange={(value) => setColumnFilter("Details", value)} />
+                </th>
               </tr>
             </thead>
             <tbody className="text-[13px] text-[#374151]">

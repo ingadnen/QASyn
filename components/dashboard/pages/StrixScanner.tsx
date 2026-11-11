@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CqaIcon, cqaBtnPrimary, cqaCard, cqaInput } from "@/components/dashboard/ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import type { StrixFinding, StrixReport, StrixSeverity } from "@/lib/strix";
 import { cn } from "@/lib/utils";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 
 const SEVERITY_STYLE: Record<StrixSeverity, string> = {
   critical: "bg-[#fef2f2] text-[#b42318] border-[#fecdca]",
@@ -68,6 +69,20 @@ export function StrixScanner({ readOnly = false, defaultTarget = "https://www.cg
   const [report, setReport] = useState<StrixReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cookieColumnFilters, setCookieColumnFilters] = useState<Record<string, string>>({});
+
+  const visibleCookies = useMemo(
+    () =>
+      (report?.cookies ?? []).filter((cookie) =>
+        matchesColumnFilters(cookieColumnFilters, {
+          Name: cookie.name,
+          Secure: cookie.secure ? "yes" : "no",
+          HttpOnly: cookie.httpOnly ? "yes" : "no",
+          SameSite: cookie.sameSite,
+        }),
+      ),
+    [report, cookieColumnFilters],
+  );
 
   async function scan() {
     setLoading(true);
@@ -167,13 +182,17 @@ export function StrixScanner({ readOnly = false, defaultTarget = "https://www.cg
                 <table className="w-full min-w-[420px] text-left text-[11.5px]">
                   <thead className="bg-[#fafafa] text-[10.5px] uppercase tracking-wide text-[#9ca3af]">
                     <tr>
-                      {["Name", "Secure", "HttpOnly", "SameSite"].map((header) => (
-                        <th key={header} className="px-3 py-1.5 font-semibold">{header}</th>
-                      ))}
+                      <th className="px-3 py-1.5 font-semibold">Name<ColumnFilter column="Name" value={cookieColumnFilters.Name ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, Name: value }))} /></th>
+                      <th className="px-3 py-1.5 font-semibold">Secure<ColumnFilter column="Secure" value={cookieColumnFilters.Secure ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, Secure: value }))} options={["yes", "no"]} /></th>
+                      <th className="px-3 py-1.5 font-semibold">HttpOnly<ColumnFilter column="HttpOnly" value={cookieColumnFilters.HttpOnly ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, HttpOnly: value }))} options={["yes", "no"]} /></th>
+                      <th className="px-3 py-1.5 font-semibold">SameSite<ColumnFilter column="SameSite" value={cookieColumnFilters.SameSite ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, SameSite: value }))} /></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {report.cookies.map((cookie) => (
+                    {visibleCookies.length === 0 && (
+                      <tr className="border-t border-[#f3f4f6] text-[#9ca3af]"><td colSpan={4} className="px-3 py-2 text-center">No cookies match the current filters.</td></tr>
+                    )}
+                    {visibleCookies.map((cookie) => (
                       <tr key={cookie.name} className="border-t border-[#f3f4f6] text-[#374151]">
                         <td className="px-3 py-1.5 font-mono">{cookie.name}</td>
                         <td className="px-3 py-1.5">{cookie.secure ? "yes" : "no"}</td>

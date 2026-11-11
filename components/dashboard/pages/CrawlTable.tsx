@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Modal, StatusPill, cqaBtnSecondary, useAction } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { BulkButton, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, tableCardClass } from "@/components/contextqa/table-ui";
+import { BulkButton, ColumnFilter, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, tableCardClass } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -69,6 +69,7 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
   const [isRefreshing, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [visible, setVisible] = useState<Record<string, boolean>>(visibilityFromStorage);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -101,9 +102,39 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
       if (query && ![row.name, row.code, row.status, row.plan, row.createdBy, row.targetUrl].some((value) => value.toLowerCase().includes(query))) return false;
       if (filters.status && row.status !== filters.status) return false;
       if (filters.format && "Auto Crawl" !== filters.format) return false;
+      if (
+        !matchesColumnFilters(columnFilters, {
+          Name: row.name,
+          Format: "Auto Crawl",
+          Type: "Crawl",
+          "Test Plan": row.plan,
+          Status: crawlStatus(row.status),
+          "Test Cases": row.cases,
+          "Created by": row.createdBy,
+          "Created Date": formatDate(row.createdAt),
+        })
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [localRows, search, filters]);
+  }, [localRows, search, filters, columnFilters]);
+
+  const columnOptions = useMemo(
+    () => ({
+      Format: ["Auto Crawl"],
+      Type: ["Crawl"],
+      "Test Plan": distinctColumnValues(localRows.map((row) => row.plan)),
+      Status: distinctColumnValues(localRows.map((row) => crawlStatus(row.status))),
+      "Created by": distinctColumnValues(localRows.map((row) => row.createdBy)),
+    }),
+    [localRows],
+  );
+
+  function setColumnFilter(column: string, value: string) {
+    setColumnFilters((current) => ({ ...current, [column]: value }));
+    setPage(1);
+  }
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pages);
@@ -243,14 +274,14 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
                 <th className="w-8 px-4 py-3">
                   <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleAll} label="Select all crawls" />
                 </th>
-                {visible.name !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name</th>}
-                {visible.format !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Format</th>}
-                {visible.type !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Type</th>}
-                {visible.plan !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Plan</th>}
-                {visible.status !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Status</th>}
-                {visible.cases !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases</th>}
-                {visible.author !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created by</th>}
-                {visible.created !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date</th>}
+                {visible.name !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilter("Name", value)} /></th>}
+                {visible.format !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Format<ColumnFilter column="Format" value={columnFilters.Format ?? ""} onChange={(value) => setColumnFilter("Format", value)} options={columnOptions.Format} /></th>}
+                {visible.type !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => setColumnFilter("Type", value)} options={columnOptions.Type} /></th>}
+                {visible.plan !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Plan<ColumnFilter column="Test Plan" value={columnFilters["Test Plan"] ?? ""} onChange={(value) => setColumnFilter("Test Plan", value)} options={columnOptions["Test Plan"]} /></th>}
+                {visible.status !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={columnFilters.Status ?? ""} onChange={(value) => setColumnFilter("Status", value)} options={columnOptions.Status} /></th>}
+                {visible.cases !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /></th>}
+                {visible.author !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created by<ColumnFilter column="Created by" value={columnFilters["Created by"] ?? ""} onChange={(value) => setColumnFilter("Created by", value)} options={columnOptions["Created by"]} /></th>}
+                {visible.created !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilter("Created Date", value)} /></th>}
                 <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
               </tr>
             </thead>

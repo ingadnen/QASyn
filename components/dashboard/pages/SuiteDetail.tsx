@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CqaIcon, Modal, StatusPill, cqaBtnGhost, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaIconBtn, useAction } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/workspace";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { cn } from "@/lib/utils";
 
 export interface SuiteCaseRow {
@@ -91,6 +92,8 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
   const [reorder, setReorder] = useState(false);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const [caseColumnFilters, setCaseColumnFilters] = useState<Record<string, string>>({});
+  const [planColumnFilters, setPlanColumnFilters] = useState<Record<string, string>>({});
   const [manageOpen, setManageOpen] = useState(false);
   const [manageQuery, setManageQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(cases.map((c) => c.id));
@@ -109,10 +112,30 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
     const filtered = cases.filter(
       (c) =>
         (status === "All" || caseStatusLabel(c.status) === status) &&
-        (!query.trim() || `${c.code} ${c.title} ${c.module}`.toLowerCase().includes(query.trim().toLowerCase())),
+        (!query.trim() || `${c.code} ${c.title} ${c.module}`.toLowerCase().includes(query.trim().toLowerCase())) &&
+        matchesColumnFilters(caseColumnFilters, {
+          "Test Case": `${c.code} ${c.title}`,
+          "Latest Result": latestResult(c).label,
+          Status: caseStatusLabel(c.status),
+          Folder: c.module || "Unorganised",
+          "Last Executed": fmtDate(c.lastRunAt),
+        }),
     );
     return reorder ? [...filtered].sort((a, b) => a.title.localeCompare(b.title)) : filtered;
-  }, [cases, status, query, reorder]);
+  }, [cases, status, query, reorder, caseColumnFilters]);
+
+  const visiblePlans = useMemo(
+    () =>
+      plans.filter((p) =>
+        matchesColumnFilters(planColumnFilters, {
+          "Test Plan": `${p.code} ${p.name}`,
+          Platform: p.platform,
+          "Latest Result": resultFor(p).label,
+          "Last Executed": fmtDate(p.lastRunAt),
+        }),
+      ),
+    [plans, planColumnFilters],
+  );
 
   const pages = Math.max(1, Math.ceil(visibleCases.length / size));
   const current = Math.min(page, pages);
@@ -281,9 +304,12 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
               <table className="w-full min-w-[980px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-[#f0f1f3] bg-white">
-                    {["Test Case", "Latest Result", "Status", "Folder", "Last Executed", "Action"].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">{h}</th>
-                    ))}
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Test Case<ColumnFilter column="Test Case" value={caseColumnFilters["Test Case"] ?? ""} onChange={(value) => setCaseColumnFilters((current) => ({ ...current, "Test Case": value }))} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Latest Result<ColumnFilter column="Latest Result" value={caseColumnFilters["Latest Result"] ?? ""} onChange={(value) => setCaseColumnFilters((current) => ({ ...current, "Latest Result": value }))} options={["Passed", "Failed", "Flaky", "Not Executed"]} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Status<ColumnFilter column="Status" value={caseColumnFilters.Status ?? ""} onChange={(value) => setCaseColumnFilters((current) => ({ ...current, Status: value }))} options={["Ready", "In Review", "Draft"]} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Folder<ColumnFilter column="Folder" value={caseColumnFilters.Folder ?? ""} onChange={(value) => setCaseColumnFilters((current) => ({ ...current, Folder: value }))} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Last Executed<ColumnFilter column="Last Executed" value={caseColumnFilters["Last Executed"] ?? ""} onChange={(value) => setCaseColumnFilters((current) => ({ ...current, "Last Executed": value }))} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="text-[13px] text-[#374151]">
@@ -360,13 +386,15 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
               <table className="w-full min-w-[820px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-[#f0f1f3] bg-white">
-                    {["Test Plan", "Platform", "Latest Result", "Last Executed", "Action"].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">{h}</th>
-                    ))}
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Test Plan<ColumnFilter column="Test Plan" value={planColumnFilters["Test Plan"] ?? ""} onChange={(value) => setPlanColumnFilters((current) => ({ ...current, "Test Plan": value }))} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Platform<ColumnFilter column="Platform" value={planColumnFilters.Platform ?? ""} onChange={(value) => setPlanColumnFilters((current) => ({ ...current, Platform: value }))} options={[...new Set(plans.map((p) => p.platform))]} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Latest Result<ColumnFilter column="Latest Result" value={planColumnFilters["Latest Result"] ?? ""} onChange={(value) => setPlanColumnFilters((current) => ({ ...current, "Latest Result": value }))} options={["Passed", "Failed", "Not Executed"]} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Last Executed<ColumnFilter column="Last Executed" value={planColumnFilters["Last Executed"] ?? ""} onChange={(value) => setPlanColumnFilters((current) => ({ ...current, "Last Executed": value }))} /></th>
+                    <th className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[#4a5565]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="text-[13px] text-[#374151]">
-                  {plans.length === 0 && (
+                  {visiblePlans.length === 0 && (
                     <tr>
                       <td colSpan={5} className="px-4 py-14 text-center">
                         <p className="text-[14px] font-medium text-[#374151]">Not used in any test plan</p>
@@ -374,7 +402,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
                       </td>
                     </tr>
                   )}
-                  {plans.map((p) => {
+                  {visiblePlans.map((p) => {
                     const r = resultFor(p);
                     return (
                       <tr key={p.id} className="border-b border-[#f3f4f6] bg-white last:border-0 hover:bg-[#fafafa]">

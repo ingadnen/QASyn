@@ -352,6 +352,15 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           <SymbolIcon name="help" className="text-[20px]" />
           {expanded && <span>Help &amp; docs</span>}
         </button>
+        <Link
+          href="/guide"
+          title={expanded ? undefined : "User guide"}
+          aria-label="User guide"
+          className={cn("flex w-full items-center gap-3 rounded-lg py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
+        >
+          <SymbolIcon name="menu_book" className="text-[20px]" />
+          {expanded && <span>User guide</span>}
+        </Link>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event(OPEN_CHAT_EVENT))}
@@ -497,7 +506,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
             <button type="button" className="font-medium text-brand-600 hover:underline" onClick={() => { setHelpOpen(false); window.dispatchEvent(new Event(OPEN_CHAT_EVENT)); }}>
               Live chat
             </button>
-            .
+            {" "}or open the <Link href="/guide" className="font-medium text-brand-600 hover:underline" onClick={() => setHelpOpen(false)}>interactive user guide</Link>.
           </p>
         </div>
       </Modal>

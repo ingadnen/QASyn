@@ -23,6 +23,26 @@ export const CREDIT_COSTS = {
   codeAnalysis: 30,
 } as const;
 
+/**
+ * The eleven QASyn test types. Persisted on TestCase.variablesJson under the
+ * hidden `_testType` key so existing SQLite databases remain compatible.
+ */
+export const TEST_TYPES = [
+  "Functional",
+  "End-to-End (E2E)",
+  "Regression",
+  "Smoke",
+  "Sanity",
+  "Load",
+  "Performance",
+  "Security",
+  "Penetration",
+  "API",
+  "Accessibility",
+] as const;
+export type TestType = (typeof TEST_TYPES)[number];
+export const DEFAULT_TEST_TYPE: TestType = "Functional";
+
 export const STEPS = [
   { n: 1, kicker: "WHAT YOU'RE BUILDING", label: "Describe" },
   { n: 2, kicker: "CONTEXT", label: "Context" },

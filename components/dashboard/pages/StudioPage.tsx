@@ -74,6 +74,7 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
   }
 
   const variables = parseJson<Record<string, string>>(tc.variablesJson, {});
+  const testType = typeof variables._testType === "string" && variables._testType.trim() ? variables._testType : "Functional";
   const prerequisiteIds = Array.isArray((variables as Record<string, unknown>)._prerequisites)
     ? ((variables as Record<string, unknown>)._prerequisites as string[])
     : [];
@@ -119,6 +120,7 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
         labels: parseJson<string[]>(tc.labelsJson, []),
         createdAt: tc.createdAt.toISOString(),
         steps,
+        testType,
         variables: Object.fromEntries(Object.entries(variables).filter(([key]) => !key.startsWith("_"))),
         caseOptions: allCases.filter((c) => c.id !== tc.id).map((c) => ({ id: c.id, title: c.title, module: c.module })),
         prerequisites,
@@ -141,6 +143,7 @@ export default async function StudioPage({ params }: { params: Promise<{ id: str
           autoFix: r.autoFix,
           createdBy: r.createdBy,
           createdAt: r.createdAt.toISOString(),
+          log: parseJson<Array<{ step: number; action: string; target: string; status: string; healed?: boolean; message: string; screenshotBase64?: string | null; screenshotMime?: string }>>(r.logJson, []),
         })),
         versions,
         settings: {

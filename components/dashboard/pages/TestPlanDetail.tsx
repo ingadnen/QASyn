@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CqaIcon, Modal, StatusPill, cqaBtnGhost, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaIconBtn, useAction } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 
 export interface PlanExecutionRow {
   id: string;
@@ -213,7 +214,8 @@ export function TestPlanDetail({
   const [saved, setSaved] = useState(false);
   const [emailDraft, setEmailDraft] = useState("");
   const [proxyOpen, setProxyOpen] = useState(false);
-
+  const [suiteColumnFilters, setSuiteColumnFilters] = useState<Record<string, string>>({});
+  const [matrixColumnFilters, setMatrixColumnFilters] = useState<Record<string, string>>({});
   const latest = executions[0] ?? null;
   const latestStatus = latest ? runStatusLabel(latest.status) : "Not Executed";
   const latestPassed = latest?.passed ?? cases.filter((c) => c.status === "passing").length;
@@ -236,6 +238,16 @@ export function TestPlanDetail({
       return true;
     });
   }, [cases]);
+
+  const visibleSuites = useMemo(
+    () => suites.filter((s) => matchesColumnFilters(suiteColumnFilters, { SUITE: `${s.code} ${s.name}`, CASES: `${s.casesCount} cases` })),
+    [suites, suiteColumnFilters],
+  );
+
+  const visibleMatrixCases = useMemo(
+    () => matrixCases.filter((c) => matchesColumnFilters(matrixColumnFilters, { "Test case": `${c.code} ${c.title}`, Module: c.module || "Unorganised" })),
+    [matrixCases, matrixColumnFilters],
+  );
 
   function setSetting<K extends keyof PlanSettingsData>(key: K, value: PlanSettingsData[K]) {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -472,16 +484,18 @@ export function TestPlanDetail({
                 <table className="w-full min-w-[780px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#f0f1f3] bg-white">
-                      {["#", "SUITE", "CASES", "BROWSER/DEVICE", "ACTIONS"].map((h) => (
-                        <th key={h} className="whitespace-nowrap px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">{h}</th>
-                      ))}
+                      <th className="whitespace-nowrap px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">#</th>
+                      <th className="whitespace-nowrap px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">SUITE<ColumnFilter column="SUITE" value={suiteColumnFilters.SUITE ?? ""} onChange={(value) => setSuiteColumnFilters((current) => ({ ...current, SUITE: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">CASES<ColumnFilter column="CASES" value={suiteColumnFilters.CASES ?? ""} onChange={(value) => setSuiteColumnFilters((current) => ({ ...current, CASES: value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">BROWSER/DEVICE<ColumnFilter column="BROWSER/DEVICE" value={suiteColumnFilters["BROWSER/DEVICE"] ?? ""} onChange={(value) => setSuiteColumnFilters((current) => ({ ...current, "BROWSER/DEVICE": value }))} /></th>
+                      <th className="whitespace-nowrap px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#6b7280]">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody className="text-[13px] text-[#374151]">
-                    {suites.length === 0 && (
+                    {visibleSuites.length === 0 && (
                       <tr><td colSpan={5} className="px-4 py-12 text-center text-[13px] text-[#9ca3af]">No suites in this plan yet.</td></tr>
                     )}
-                    {suites.map((s, i) => (
+                    {visibleSuites.map((s, i) => (
                       <tr key={s.id} className="border-b border-[#f3f4f6] bg-white last:border-0 hover:bg-[#fafafa]">
                         <td className="px-4 py-3 tabular-nums text-[#6b7280]">{i + 1}</td>
                         <td className="px-4 py-3">
@@ -1210,7 +1224,7 @@ export function TestPlanDetail({
                 <table className="w-full min-w-[720px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#f0f1f3] bg-white">
-                      <th className="px-4 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Test case</th>
+                      <th className="px-4 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Test case<ColumnFilter column="Test case" value={matrixColumnFilters["Test case"] ?? ""} onChange={(value) => setMatrixColumnFilters((current) => ({ ...current, "Test case": value }))} /></th>
                       {displayedRuns.map((e) => (
                         <th key={e.id} className="whitespace-nowrap px-4 py-2.5 text-center text-[11.5px] font-medium text-[#6b7280]">
                           #{executions.indexOf(e) + 1}<br /><span className="font-normal">{fmtDay(e.startedAt)}</span><br /><span className="font-normal">{new Date(e.startedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -1219,7 +1233,10 @@ export function TestPlanDetail({
                     </tr>
                   </thead>
                   <tbody className="text-[12.5px] text-[#374151]">
-                    {matrixCases.map((c) => {
+                    {visibleMatrixCases.length === 0 && (
+                      <tr><td colSpan={displayedRuns.length + 1} className="px-4 py-10 text-center text-[12.5px] text-[#9ca3af]">No test cases match the current filters.</td></tr>
+                    )}
+                    {visibleMatrixCases.map((c) => {
                       const statuses = displayedRuns.map((e) => e.cases.find((x) => x.id === c.id)?.status ?? "not_executed");
                       const passRate = statuses.length ? Math.round((statuses.filter((s) => s === "passed").length / statuses.length) * 100) : 0;
                       return (

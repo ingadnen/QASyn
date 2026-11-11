@@ -13,6 +13,7 @@ import {
   cqaLabel,
 } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
+import { ColumnFilter, distinctColumnValues, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import type { CatalogPullRequest } from "@/lib/pr-catalog";
 import { toast } from "@/lib/toast";
@@ -51,6 +52,27 @@ export interface PrDetailRow {
   testsRun: number;
   regressions: number;
   createdAt: string;
+}
+
+export interface PrEnvironmentOption {
+  id: string;
+  name: string;
+  baseUrl: string;
+  isDefault: boolean;
+}
+
+interface AutoRegressionResponse {
+  status: string;
+  environment: { id: string; name: string; baseUrl: string } | null;
+  targetUrl: string;
+  createdTestCases: Array<{ id: string; title: string; testType: string }>;
+  executed: Array<{ id: string; title: string; status: string; runId: string; runNumber: number }>;
+  passed: number;
+  failed: number;
+  total: number;
+  regressions: number;
+  testsRun: number;
+  ranAt: string;
 }
 
 interface SourcePayload {
@@ -107,16 +129,24 @@ function exportReport(row: PrDetailRow) {
 function PrDetailDrawer({
   row,
   readOnly,
+  environments,
   onClose,
   onUpdated,
 }: {
   row: PrDetailRow;
   readOnly: boolean;
+  environments: PrEnvironmentOption[];
   onClose: () => void;
   onUpdated: (row: PrDetailRow) => void;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoEnv, setAutoEnv] = useState(environments.find((env) => env.isDefault)?.id ?? environments[0]?.id ?? "");
+  const [autoUrl, setAutoUrl] = useState("");
+  const [autoCreate, setAutoCreate] = useState(true);
+  const [autoPending, setAutoPending] = useState(false);
+  const [autoError, setAutoError] = useState<string | null>(null);
+  const [autoResult, setAutoResult] = useState<AutoRegressionResponse | null>(null);
   const [gateOpen, setGateOpen] = useState(false);
   const [gatePending, setGatePending] = useState(false);
   const [gateError, setGateError] = useState<string | null>(null);
@@ -174,6 +204,33 @@ function PrDetailDrawer({
       setError(errorMessage(caught));
     } finally {
       setPending(false);
+    }
+  }
+
+  async function runAutoRegression() {
+    if (autoPending) return;
+    setAutoPending(true);
+    setAutoError(null);
+    try {
+      const result = await apiFetch<AutoRegressionResponse>("/api/dashboard/pull-requests/auto-regression", {
+        method: "POST",
+        json: {
+          id: row.id,
+          environmentId: autoEnv || undefined,
+          targetUrl: autoUrl.trim() || undefined,
+          createTests: autoCreate,
+        },
+      });
+      setAutoResult(result);
+      onUpdated({ ...row, status: result.status, testsRun: result.testsRun, regressions: result.regressions });
+      toast(
+        `PR #${row.prNumber} auto-regression · ${result.passed}/${result.total} passed${result.regressions ? ` · ${result.regressions} regression(s)` : ""}.`,
+        result.regressions ? "error" : "success",
+      );
+    } catch (caught) {
+      setAutoError(errorMessage(caught));
+    } finally {
+      setAutoPending(false);
     }
   }
 
@@ -291,6 +348,87 @@ function PrDetailDrawer({
                 </p>
               ))}
             </div>
+          </section>
+
+          <section data-testid="pr-auto-regression" className="rounded-lg border border-[#ddd8fb] bg-[#faf9ff] p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <h3 className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#111827]">
+                  <CqaIcon name="rocket_launch" className="text-[16px] text-[#5b4ee8]" /> PR auto-regression
+                </h3>
+                <p className="mt-1 text-[11.5px] leading-4 text-[#6b7280]">
+                  Creates PR-specific smoke and regression cases, then runs them plus the impacted suite against the deployed URL with per-step screenshots.
+                </p>
+              </div>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
+                {row.status === "regression_caught" ? `${row.regressions} caught` : row.testsRun > 0 ? "Baseline captured" : "Not run"}
+              </span>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <label className="block">
+                <span className={cqaLabel}>Environment</span>
+                <select
+                  className={cqaInput}
+                  data-testid="pr-auto-regression-environment"
+                  value={autoEnv}
+                  onChange={(event) => setAutoEnv(event.target.value)}
+                  disabled={readOnly || autoPending}
+                >
+                  <option value="">Default environment</option>
+                  {environments.map((environment) => (
+                    <option key={environment.id} value={environment.id}>
+                      {environment.name}{environment.isDefault ? " · default" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>Deployed URL override</span>
+                <input
+                  className={cqaInput}
+                  value={autoUrl}
+                  onChange={(event) => setAutoUrl(event.target.value)}
+                  placeholder={(() => {
+                    const selected = environments.find((environment) => environment.id === autoEnv);
+                    return selected?.baseUrl || row.externalUrl || "https://staging.example.com";
+                  })()}
+                  disabled={readOnly || autoPending}
+                />
+              </label>
+            </div>
+            <label className="mt-2 flex items-center gap-2 text-[11.5px] text-[#4b5563]">
+              <input
+                type="checkbox"
+                className="size-3.5 accent-[#5b4ee8]"
+                checked={autoCreate}
+                onChange={(event) => setAutoCreate(event.target.checked)}
+                disabled={readOnly || autoPending}
+              />
+              Auto-create PR-specific test cases when none exist
+            </label>
+            {autoError && <p role="alert" className="mt-2 rounded border border-[#fecdca] bg-[#fef3f2] px-2 py-1 text-[11.5px] text-[#b42318]">{autoError}</p>}
+            {autoResult && (
+              <div data-testid="pr-auto-regression-result" className="mt-2 rounded-md border border-[#d1fadf] bg-[#ecfdf3] px-2.5 py-2 text-[11.5px] text-[#067647]">
+                <p className="font-semibold">
+                  {autoResult.passed}/{autoResult.total} passed · {autoResult.regressions} regression(s) · {autoResult.environment?.name ?? "default environment"}
+                </p>
+                <p className="mt-0.5 break-all font-mono text-[10.5px] text-[#067647]">{autoResult.targetUrl}</p>
+                {autoResult.createdTestCases.length > 0 && (
+                  <p className="mt-1">Created {autoResult.createdTestCases.length} PR test case(s): {autoResult.createdTestCases.map((test) => test.title).join(" · ")}</p>
+                )}
+                <p className="mt-1 text-[10.5px]">Per-step screenshots are stored in each test run history and Test Studio.</p>
+              </div>
+            )}
+            <button
+              type="button"
+              className={cn(cqaBtnPrimary, "mt-2 h-8 px-3 text-[12px]")}
+              data-testid="pr-auto-regression-run"
+              disabled={readOnly || autoPending}
+              onClick={() => void runAutoRegression()}
+            >
+              <CqaIcon name={autoPending ? "hourglass_top" : "play_arrow"} className={cn("text-[16px]", autoPending && "animate-pulse")} />
+              {autoPending ? "Running auto-regression…" : "Run PR auto-regression"}
+            </button>
           </section>
 
           <section>
@@ -675,17 +813,47 @@ export function PullRequestsBoard({
   initialRows,
   readOnly,
   nextNumber,
+  environments = [],
 }: {
   initialRows: PrDetailRow[];
   readOnly: boolean;
   nextNumber: number;
+  environments?: PrEnvironmentOption[];
 }) {
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [detail, setDetail] = useState<PrDetailRow | null>(null);
 
   useEffect(() => setRows(initialRows), [initialRows]);
+
+  function setColumnFilter(column: string, value: string) {
+    setColumnFilters((current) => ({ ...current, [column]: value }));
+  }
+
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((row) =>
+        matchesColumnFilters(columnFilters, {
+          "Pull request": `#${row.prNumber} ${row.title} ${row.branch} ${row.branchTarget} ${row.author}`,
+          Risk: riskLabel(row.riskLevel),
+          Files: row.filesChanged,
+          "Tests run": row.status === "running" ? "Running" : row.testsRun,
+          Verdict: verdictLabel(row),
+          Opened: shortDate(row.createdAt),
+        }),
+      ),
+    [rows, columnFilters],
+  );
+
+  const columnOptions = useMemo(
+    () => ({
+      Risk: ["High", "Medium", "Low"],
+      Verdict: distinctColumnValues(rows.map((row) => verdictLabel(row))),
+    }),
+    [rows],
+  );
 
   function replace(row: PrDetailRow) {
     setRows((prev) => prev.map((item) => (item.id === row.id ? row : item)));
@@ -706,25 +874,47 @@ export function PullRequestsBoard({
       </div>
 
       <div className={cqaCard}>
-        {rows.length === 0 ? (
+        {filteredRows.length === 0 ? (
           <div className="px-4 py-14 text-center">
             <p className="text-[14px] font-medium text-[#374151]">No data available</p>
-            <p className="mt-1 text-[12.5px] text-[#9ca3af]">There is no data available to display.</p>
+            <p className="mt-1 text-[12.5px] text-[#9ca3af]">
+              {rows.length === 0 ? "There is no data available to display." : "No pull request matches the current column filters."}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#f0f1f3]">
-                  {["Pull request", "Risk", "Files", "Tests run", "Verdict", "Opened", "Action"].map((header) => (
-                    <th key={header} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
-                      {header}
-                    </th>
-                  ))}
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
+                    Pull request
+                    <ColumnFilter column="Pull request" value={columnFilters["Pull request"] ?? ""} onChange={(value) => setColumnFilter("Pull request", value)} placeholder="Search title, branch or author…" />
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
+                    Risk
+                    <ColumnFilter column="Risk" value={columnFilters.Risk ?? ""} onChange={(value) => setColumnFilter("Risk", value)} options={columnOptions.Risk} />
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
+                    Files
+                    <ColumnFilter column="Files" value={columnFilters.Files ?? ""} onChange={(value) => setColumnFilter("Files", value)} />
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
+                    Tests run
+                    <ColumnFilter column="Tests run" value={columnFilters["Tests run"] ?? ""} onChange={(value) => setColumnFilter("Tests run", value)} />
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
+                    Verdict
+                    <ColumnFilter column="Verdict" value={columnFilters.Verdict ?? ""} onChange={(value) => setColumnFilter("Verdict", value)} options={columnOptions.Verdict} />
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
+                    Opened
+                    <ColumnFilter column="Opened" value={columnFilters.Opened ?? ""} onChange={(value) => setColumnFilter("Opened", value)} />
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
+                {filteredRows.map((row) => (
                   <tr key={row.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
                     <td className="max-w-[380px] px-4 py-3">
                       <button type="button" onClick={() => setDetail(row)} className="max-w-full text-left">
@@ -780,6 +970,7 @@ export function PullRequestsBoard({
         <PrDetailDrawer
           row={detail}
           readOnly={readOnly}
+          environments={environments}
           onClose={() => setDetail(null)}
           onUpdated={(row) => {
             replace(row);

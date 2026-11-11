@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { GraphifyMapView } from "@/components/dashboard/pages/GraphifyMap";
 import { CqaIcon, StatusPill, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaIconBtn } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/workspace";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import type { GraphifyMap } from "@/lib/graphify";
 import { cn } from "@/lib/utils";
 
@@ -66,14 +67,30 @@ export function RequirementDetail({
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("cases");
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const addFilter = (column: string) => (value: string) => setColumnFilters((current) => ({ ...current, [column]: value }));
 
   const counts = useMemo(() => countTypes(cases), [cases]);
   const filtered = useMemo(
-    () => cases.filter((c) => (type === "All" || c.type === type) && (!query.trim() || c.title.toLowerCase().includes(query.trim().toLowerCase()))),
-    [cases, type, query],
+    () =>
+      cases.filter(
+        (c) =>
+          (type === "All" || c.type === type) &&
+          (!query.trim() || c.title.toLowerCase().includes(query.trim().toLowerCase())) &&
+          matchesColumnFilters(columnFilters, {
+            "Test Case": `${c.code} ${c.title} ${c.description}`,
+            Action: "Create",
+            Type: c.type,
+            Priority: c.priority,
+            Prerequisite: c.prerequisite,
+            Variables: c.variables,
+            Decision: c.decision,
+          }),
+      ),
+    [cases, type, query, columnFilters],
   );
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const current = Math.min(page, pages);
@@ -186,9 +203,14 @@ export function RequirementDetail({
               <table className="w-full min-w-[1100px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-[#f0f1f3] bg-white">
-                    {["Test Case", "Action", "Type", "Priority", "Prerequisite", "Variables", "Decision", "Actions"].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">{h}</th>
-                    ))}
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Test Case<ColumnFilter column="Test Case" value={columnFilters["Test Case"] ?? ""} onChange={addFilter("Test Case")} /></th>
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnFilter column="Action" value={columnFilters.Action ?? ""} onChange={addFilter("Action")} options={["Create"]} /></th>
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={addFilter("Type")} options={[...new Set(cases.map((c) => c.type))]} /></th>
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Priority<ColumnFilter column="Priority" value={columnFilters.Priority ?? ""} onChange={addFilter("Priority")} options={[...new Set(cases.map((c) => c.priority))]} /></th>
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Prerequisite<ColumnFilter column="Prerequisite" value={columnFilters.Prerequisite ?? ""} onChange={addFilter("Prerequisite")} /></th>
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Variables<ColumnFilter column="Variables" value={columnFilters.Variables ?? ""} onChange={addFilter("Variables")} /></th>
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Decision<ColumnFilter column="Decision" value={columnFilters.Decision ?? ""} onChange={addFilter("Decision")} options={["Accepted", "Flagged"]} /></th>
+                    <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="text-[13px] text-[#374151]">

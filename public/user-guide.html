@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QASyn User Guide</title>
+<meta name="description" content="Interactive QASyn user guide: roles, features, six walkthroughs, architecture and API reference." />
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --panel: #ffffff;
+    --ink: #101828;
+    --muted: #667085;
+    --line: #e6e8ef;
+    --brand: #5b4ee8;
+    --brand-soft: #eef2ff;
+    --brand-deep: #3f35c9;
+    --dark: #0b0f1a;
+    --green: #067647;
+    --green-soft: #ecfdf3;
+    --amber: #b54708;
+    --amber-soft: #fffaeb;
+    --red: #b42318;
+    --red-soft: #fef3f2;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 16px 40px rgba(16, 24, 40, .07);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); }
+  a { color: var(--brand); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button { font: inherit; cursor: pointer; }
+  .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+
+  /* Hero */
+  .hero { background: radial-gradient(1200px 500px at 15% -10%, #2b2470 0%, transparent 60%), var(--dark); color: #e8ecf8; padding: 34px 0 74px; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; inset: auto -120px -220px auto; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(91,78,232,.35), transparent 65%); pointer-events: none; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 44px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; color: #fff; }
+  .brand .mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #7c6eff, #4a3de0); display: grid; place-items: center; font-size: 13px; font-weight: 800; box-shadow: 0 6px 18px rgba(91,78,232,.45); }
+  .topbar nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .topbar nav a, .topbar nav button { color: #c7cee0; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 7px 13px; font-size: 12.5px; font-weight: 600; }
+  .topbar nav a:hover, .topbar nav button:hover { background: rgba(255,255,255,.13); text-decoration: none; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: #d6d9ff; border-radius: 999px; padding: 6px 12px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .hero h1 { font-size: clamp(32px, 5vw, 54px); line-height: 1.04; letter-spacing: -.03em; margin: 18px 0 14px; max-width: 820px; }
+  .hero h1 span { color: #a79fff; }
+  .hero p.lead { max-width: 720px; color: #b8c0d4; font-size: 16.5px; margin: 0; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid transparent; padding: 10px 16px; font-weight: 650; font-size: 13.5px; transition: .15s ease; }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 8px 24px rgba(91,78,232,.35); }
+  .btn-primary:hover { background: #6d61ff; }
+  .btn-ghost { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); color: #e8ecf8; }
+  .btn-ghost:hover { background: rgba(255,255,255,.14); }
+  .hero-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 38px; }
+  .stat { background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.11); border-radius: 12px; padding: 13px 15px; }
+  .stat b { display: block; font-size: 22px; letter-spacing: -.02em; color: #fff; }
+  .stat span { color: #98a2b3; font-size: 12px; }
+
+  /* Layout */
+  main { padding-bottom: 80px; }
+  section.block { margin-top: 44px; }
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .section-head h2 { font-size: 24px; letter-spacing: -.02em; margin: 0; }
+  .section-head p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; max-width: 680px; }
+  .kicker { color: var(--brand); font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  /* Role tabs */
+  .role-shell { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .role-tabs { display: flex; gap: 4px; padding: 10px 12px; border-bottom: 1px solid var(--line); overflow-x: auto; background: #fbfbfe; }
+  .role-tab { border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: 9px; padding: 8px 13px; font-size: 13px; font-weight: 650; white-space: nowrap; }
+  .role-tab:hover { background: #f1f2f8; color: var(--ink); }
+  .role-tab[aria-selected="true"] { background: var(--brand); color: #fff; box-shadow: 0 4px 14px rgba(91,78,232,.25); }
+  .role-panel { display: grid; grid-template-columns: 1.4fr .9fr; gap: 22px; padding: 22px; }
+  .role-panel h3 { margin: 0 0 6px; font-size: 18px; letter-spacing: -.01em; }
+  .role-panel p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .role-can { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+  .role-can li { display: flex; gap: 9px; font-size: 13px; color: #344054; }
+  .role-can li::before { content: "✓"; color: var(--green); font-weight: 800; }
+  .role-note { background: var(--brand-soft); border: 1px solid #dfe4ff; border-radius: 11px; padding: 14px; font-size: 12.5px; color: #3538cd; }
+  .role-note b { display: block; margin-bottom: 4px; }
+
+  /* Search */
+  .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-box { position: relative; flex: 1 1 320px; max-width: 520px; }
+  .search-box svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #98a2b3; }
+  .search-box input { width: 100%; height: 44px; border-radius: 11px; border: 1px solid var(--line); background: #fff; padding: 0 14px 0 40px; font: inherit; font-size: 14px; outline: none; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .search-box input:focus { border-color: #a9a1f7; box-shadow: 0 0 0 4px rgba(91,78,232,.12); }
+  .result-count { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+  .feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+  .feature { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 16px; box-shadow: 0 1px 2px rgba(16,24,40,.04); transition: .15s ease; }
+  .feature:hover { border-color: #cfc9fb; box-shadow: var(--shadow); transform: translateY(-1px); }
+  .feature .top { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+  .feature .ico { width: 32px; height: 32px; border-radius: 9px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; flex: none; }
+  .feature .ico svg { width: 17px; height: 17px; }
+  .feature h4 { margin: 0; font-size: 14px; letter-spacing: -.01em; }
+  .feature p { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .tag { background: #f3f4f7; color: #475467; border-radius: 6px; padding: 2px 7px; font-size: 10.5px; font-weight: 650; }
+  .tag.role { background: var(--brand-soft); color: var(--brand-deep); }
+  .empty { background: var(--panel); border: 1px dashed #cfd4e0; border-radius: 13px; padding: 36px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+  /* Walkthroughs */
+  .walk-grid { display: grid; gap: 11px; }
+  .walk { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; overflow: hidden; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .walk summary { list-style: none; cursor: pointer; padding: 15px 18px; display: flex; align-items: center; gap: 12px; font-weight: 650; font-size: 14px; }
+  .walk summary::-webkit-details-marker { display: none; }
+  .walk summary .num { width: 26px; height: 26px; border-radius: 8px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-size: 12px; font-weight: 800; flex: none; }
+  .walk summary .chev { margin-left: auto; color: #98a2b3; transition: transform .18s ease; }
+  .walk[open] summary .chev { transform: rotate(180deg); }
+  .walk[open] summary { border-bottom: 1px solid var(--line); background: #fbfbfe; }
+  .walk-body { padding: 17px 18px 19px; }
+  .walk-body > p:first-child { margin: 0 0 13px; color: var(--muted); font-size: 13px; }
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .steps li { counter-increment: step; position: relative; padding-left: 34px; font-size: 13px; color: #344054; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border-radius: 50%; background: #f1f2f8; color: #475467; display: grid; place-items: center; font-size: 10.5px; font-weight: 800; }
+  .steps li b { color: var(--ink); }
+  .callout { margin-top: 13px; border-radius: 10px; padding: 11px 13px; font-size: 12.5px; border: 1px solid; }
+  .callout.info { background: var(--brand-soft); border-color: #dfe4ff; color: #3538cd; }
+  .callout.win { background: var(--green-soft); border-color: #abefc6; color: var(--green); }
+  .callout.warn { background: var(--amber-soft); border-color: #fedf89; color: var(--amber); }
+  code { font-family: var(--mono); background: #f2f4f7; border: 1px solid #e4e7ec; border-radius: 5px; padding: 1px 5px; font-size: 12px; }
+  .walk-body code { white-space: nowrap; }
+
+  /* Drawer */
+  .drawer-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 80; }
+  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(680px, 100%); background: #fff; z-index: 90; transform: translateX(102%); transition: transform .24s cubic-bezier(.2,.7,.2,1); display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(15,23,42,.25); }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+  .drawer-head h3 { margin: 0; font-size: 17px; letter-spacing: -.01em; }
+  .drawer-close { margin-left: auto; border: 1px solid var(--line); background: #fff; border-radius: 9px; width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); }
+  .drawer-close:hover { background: #f5f6fa; color: var(--ink); }
+  .drawer-tabs { display: flex; gap: 4px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: #fbfbfe; }
+  .drawer-tab { border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: 8px; padding: 7px 12px; font-size: 12.5px; font-weight: 650; }
+  .drawer-tab[aria-selected="true"] { background: #fff; border-color: var(--line); color: var(--ink); box-shadow: 0 1px 2px rgba(16,24,40,.05); }
+  .drawer-body { padding: 20px; overflow: auto; }
+  .drawer-body h4 { margin: 20px 0 8px; font-size: 13.5px; }
+  .drawer-body h4:first-child { margin-top: 0; }
+  .drawer-body p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  .layer { display: grid; gap: 9px; }
+  .layer-row { border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; background: #fbfbfe; }
+  .layer-row b { display: block; font-size: 12.5px; }
+  .layer-row span { color: var(--muted); font-size: 12px; }
+  .api { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 9px; }
+  .api-head { display: flex; align-items: center; gap: 9px; padding: 9px 11px; background: #fbfbfe; border-bottom: 1px solid var(--line); }
+  .method { font-family: var(--mono); font-size: 10px; font-weight: 800; border-radius: 5px; padding: 2px 6px; background: #eef2ff; color: #3538cd; }
+  .method.post { background: #ecfdf3; color: var(--green); }
+  .method.patch { background: #fffaeb; color: var(--amber); }
+  .api-head code { background: transparent; border: 0; padding: 0; font-size: 11.5px; }
+  .api p { padding: 9px 11px; margin: 0; font-size: 12px; }
+  .api pre { margin: 0; padding: 9px 11px; background: #0f1421; color: #d7dcf0; font-family: var(--mono); font-size: 11px; overflow: auto; }
+
+  /* Misc */
+  .tiles { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 16px; }
+  .tile b { display: block; margin-bottom: 4px; font-size: 17px; letter-spacing: -.01em; }
+  .tile p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .footer { border-top: 1px solid var(--line); margin-top: 52px; padding-top: 20px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 12.5px; }
+  .footer a { font-weight: 650; }
+  .skip { position: absolute; left: -9999px; top: 0; background: #fff; padding: 10px 14px; border-radius: 8px; z-index: 100; }
+  .skip:focus { left: 12px; top: 12px; }
+
+  @media (max-width: 900px) {
+    .feature-grid, .tiles { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .role-panel { grid-template-columns: 1fr; }
+    .hero-stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  }
+  @media (max-width: 600px) {
+    .feature-grid, .tiles { grid-template-columns: 1fr; }
+    .hero { padding-bottom: 52px; }
+    .topbar { align-items: flex-start; flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body data-testid="user-guide">
+<a class="skip" href="#features">Skip to features</a>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="mark">QA</span> QASyn <span style="color:#7f8aa3;font-weight:500">/ User guide</span></div>
+      <nav aria-label="Guide navigation">
+        <a href="#roles">Roles</a>
+        <a href="#features">Features</a>
+        <a href="#walkthroughs">Walkthroughs</a>
+        <button type="button" data-drawer="architecture" data-testid="guide-architecture">Architecture &amp; API</button>
+      </nav>
+    </div>
+    <span class="eyebrow">Autonomous quality engineering</span>
+    <h1>Everything you need to <span>plan, run and prove</span> quality.</h1>
+    <p class="lead">
+      QASyn turns a crawl, a requirement or a pull request into executable browser tests — then keeps a screenshot-backed
+      record of every step. This guide adapts to your role, lets you search all 19 modules, and walks through the six
+      workflows teams use most.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#walkthroughs">Start a walkthrough →</a>
+      <button type="button" class="btn btn-ghost" data-drawer="api">Browse the API</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><b>19</b><span>product modules</span></div>
+      <div class="stat"><b>11</b><span>test types</span></div>
+      <div class="stat"><b>6</b><span>guided walkthroughs</span></div>
+      <div class="stat"><b>100%</b><span>step screenshot evidence</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Roles -->
+  <section class="block" id="roles">
+    <div class="section-head">
+      <div>
+        <div class="kicker">Start here</div>
+        <h2>Choose your role</h2>
+        <p>Permissions in QASyn are role-based. Pick a role to see the surfaces and actions available to it — the feature explorer below follows your choice.</p>
+      </div>
+    </div>
+    <div class="role-shell">
+      <div class="role-tabs" role="tablist" aria-label="Guide roles" data-testid="guide-role-tabs">
+        <button class="role-tab" role="tab" aria-selected="true" data-guide-role="all" data-testid="guide-role-all">All roles</button>
+        <button class="role-tab" role="tab" aria-selected="false" data-guide-role="Admin">Admin</button>
+        <button class="role-tab" role="tab" aria-selected="false" data-guide-role="QA">QA</button>
+        <button class="role-tab" role="tab" aria-selected="false" data-guide-role="Engineer">Engineer</button>
+        <button class="role-tab" role="tab" aria-selected="false" data-guide-role="Eng manager">Eng manager</button>
+        <button class="role-tab" role="tab" aria-selected="false" data-guide-role="Super Admin">Super Admin</button>
+      </div>
+      <div class="role-panel">
+        <div>
+          <h3 id="role-title">All roles</h3>
+          <p id="role-description">A shared tour of the workspace. Use the tabs to focus the guide on what your role can do.</p>
+          <ul class="role-can" id="role-can">
+            <li>Navigate the 19 modules from the left sidebar</li>
+            <li>Open this guide any time from <b>Help &amp; docs</b></li>
+            <li>Use the search below to find a feature by name or outcome</li>
+          </ul>
+        </div>
+        <div class="role-note">
+          <b>Permission note</b>
+          <span id="role-note">Admins manage billing, team and settings. QA authors and runs tests. Engineers use Studio, API and integrations. Eng managers read reporting and PR risk. Super Admin provisions tenants across workspaces.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature explorer -->
+  <section class="block" id="features">
+    <div class="section-head">
+      <div>
+        <div class="kicker">Feature explorer</div>
+        <h2>Find a capability</h2>
+        <p>Search by module, action or outcome. Cards are tagged with the roles that use them most.</p>
+      </div>
+      <span class="result-count" id="feature-count">25 features</span>
+    </div>
+    <div class="search-row">
+      <label class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+        <input id="feature-search" data-testid="guide-feature-search" type="search" placeholder="Search features: crawl, screenshot, PR gate, credits, API…" aria-label="Search features" />
+      </label>
+      <span class="result-count">Try “screenshot”, “Bivia”, “enterprise” or “regression”.</span>
+    </div>
+    <div class="feature-grid" id="feature-grid" data-testid="guide-feature-explorer">
+      <article class="feature" data-guide-feature data-roles="Admin QA Engineer Eng manager" data-keywords="overview dashboard kpi bivia observatory autopilot">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><h4>Overview</h4></div>
+        <p>Quality KPIs, Bivia token observatory and the Quality Autopilot launcher in one landing page.</p>
+        <div class="tagrow"><span class="tag">Module 01</span><span class="tag role">All roles</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin QA Engineer Eng manager" data-keywords="pull request impact risk gate ci cd regression">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M6 8.4V15a3 3 0 0 0 3 3h6.6"/><path d="M18 8v4"/><circle cx="18" cy="6" r="2"/></svg></span><h4>Pull requests</h4></div>
+        <p>Impact analysis, risk scoring, provider comment, CI/CD gate Markdown and auto-regression on the deployed environment.</p>
+        <div class="tagrow"><span class="tag">Module 02</span><span class="tag">Regression</span><span class="tag role">Eng manager</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="crawl map flows autopilot requirements linked cases">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3Z"/></svg></span><h4>Crawl</h4></div>
+        <p>Map a site, record flows into requirements and generate linked draft cases. Re-import updates without duplicates.</p>
+        <div class="tagrow"><span class="tag">Module 03</span><span class="tag">Autopilot</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Engineer QA" data-keywords="code analysis graphify topology blast radius coverage">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 6-5 6 5 6M16 6l5 6-5 6"/><path d="m14 4-4 16"/></svg></span><h4>Code Analysis</h4></div>
+        <p>Graphify topology, blast radius and coverage gaps so you know which code a change can break.</p>
+        <div class="tagrow"><span class="tag">Module 04</span><span class="tag">Bivia</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Admin" data-keywords="requirements coverage library upload csv link cases">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span><h4>Requirements</h4></div>
+        <p>Import specs, track coverage, link test cases and export the library with per-column filters.</p>
+        <div class="tagrow"><span class="tag">Module 05</span><span class="tag">Traceability</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Admin Engineer" data-keywords="test cases grid type filter folder clone move run export">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11.5 11.5 14 15.5 9.5"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg></span><h4>Test Cases</h4></div>
+        <p>The master grid: all 11 test types, folders, step groups, bulk run/delete/export and per-column filters.</p>
+        <div class="tagrow"><span class="tag">Module 06</span><span class="tag">11 types</span><span class="tag role">QA</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="step groups reusable component shared steps">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="6" rx="1.5"/><rect x="3" y="10.5" width="18" height="6" rx="1.5"/><path d="M5 20h14"/></svg></span><h4>Step Groups</h4></div>
+        <p>Reusable multi-step building blocks shared by test cases; edit once and every consumer stays in sync.</p>
+        <div class="tagrow"><span class="tag">Module 07</span><span class="tag">Reuse</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="studio nlp steps ai assertion screenshot self heal grounding version history">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="4.5"/></svg></span><h4>Test Studio</h4></div>
+        <p>Author NLP steps, AI assertions and variables. Ground a selector, self-heal it, inspect versions and see the screenshot for every run.</p>
+        <div class="tagrow"><span class="tag">Module 08</span><span class="tag">Screenshots</span><span class="tag role">QA</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Admin" data-keywords="suites grouping folder platform pass rate bulk run">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></span><h4>Test Suites</h4></div>
+        <p>Group cases by platform and module, track the latest result and run or export the suite in bulk.</p>
+        <div class="tagrow"><span class="tag">Module 09</span><span class="tag role">Admin</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Admin Eng manager" data-keywords="test plans schedule environments matrix report recovery">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h3M8 18h3"/></svg></span><h4>Test Plans</h4></div>
+        <p>Combine suites, bind environments, schedule runs, compare run matrices and export reports.</p>
+        <div class="tagrow"><span class="tag">Module 10</span><span class="tag">Scheduling</span><span class="tag role">Eng manager</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin QA Engineer" data-keywords="environments variables secrets data profiles auth profiles import">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><h4>Environment &amp; Data</h4></div>
+        <p>Environments, test-data profiles, global variables and auth profiles with encrypted secrets and CSV import.</p>
+        <div class="tagrow"><span class="tag">Module 11</span><span class="tag role">Admin</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Admin" data-keywords="uploads requirements specification parsing conversion">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span><h4>Uploads</h4></div>
+        <p>Upload specs and spreadsheets, parse them into requirements and convert them into draft test cases.</p>
+        <div class="tagrow"><span class="tag">Module 12</span><span class="tag">Import</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="knowledge base indexed product context generation bivia">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16M8 7h8M8 11h6"/></svg></span><h4>Knowledge Base</h4></div>
+        <p>Indexed product knowledge that improves AI generation and gives Bivia the context it needs.</p>
+        <div class="tagrow"><span class="tag">Module 13</span><span class="tag">Context</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin Eng manager" data-keywords="team access members invite roles verification permission">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="18" cy="9" r="2.2"/><path d="M16.5 14.5A4 4 0 0 1 21 18.5"/></svg></span><h4>Team &amp; access</h4></div>
+        <p>Invite members, assign roles, verify accounts and control what each person can change.</p>
+        <div class="tagrow"><span class="tag">Module 14</span><span class="tag role">Admin</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Engineer QA" data-keywords="tunnels localhost secure connector staging reach">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V9a8 8 0 0 1 16 0v11"/><path d="M8 20v-9a4 4 0 0 1 8 0v9"/><path d="M2 20h20"/></svg></span><h4>Tunnels</h4></div>
+        <p>Reach localhost or protected networks through a secure connector when no staging URL exists.</p>
+        <div class="tagrow"><span class="tag">Module 15</span><span class="tag role">Engineer</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin Engineer" data-keywords="integrations github gitlab jira linear slack bivia browser">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7H6a4 4 0 0 0 0 8h3M15 7h3a4 4 0 0 1 0 8h-3"/><path d="M8 11h8"/></svg></span><h4>Integrations</h4></div>
+        <p>Connect source control, trackers, chat, Bivia and browser providers with encrypted credentials.</p>
+        <div class="tagrow"><span class="tag">Module 16</span><span class="tag role">Admin</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin Eng manager" data-keywords="billing usage credits ledger plans tokens observatory cost">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6 15h4"/></svg></span><h4>Billing &amp; usage</h4></div>
+        <p>Plan, credits, ledger and the 1B-token Bivia observatory with calibration and abstention metrics.</p>
+        <div class="tagrow"><span class="tag">Module 17</span><span class="tag">Governance</span><span class="tag role">Admin</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Engineer Admin" data-keywords="mcp api token assistant query workspace protocol">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m8 9 3 3-3 3M14 15h3"/></svg></span><h4>MCP</h4></div>
+        <p>Query your workspace from an AI assistant with a scoped API token and the Model Context Protocol.</p>
+        <div class="tagrow"><span class="tag">Module 18</span><span class="tag role">Engineer</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin Super Admin" data-keywords="settings organization audits analysis bug reproduction api tokens super admin">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4Z"/></svg></span><h4>Settings</h4></div>
+        <p>Organisation profile, audits, analysis defaults, bug reproduction, API tokens and the Super-Admin Console.</p>
+        <div class="tagrow"><span class="tag">Module 19</span><span class="tag role">Super Admin</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer Admin" data-keywords="column filters table search dropdown badges clear">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg></span><h4>Per-column filters</h4></div>
+        <p>Every data table header has a filter. Categorical columns offer distinct values; dates and text use substring search. Active filters show a dot and clear in one click.</p>
+        <div class="tagrow"><span class="tag">Tables</span><span class="tag role">All roles</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="screenshot evidence step run history base64 visual proof">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m3 17 5-4 4 3 3-2 6 4"/></svg></span><h4>Screenshot evidence</h4></div>
+        <p>Every executed step stores a screenshot in the step and run log. Step Details, run history and self-heal all render the persisted image.</p>
+        <div class="tagrow"><span class="tag">Evidence</span><span class="tag role">All roles</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="bivia grounding target url bounding box calibrated confidence self heal">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h4>Bivia grounding</h4></div>
+        <p>Resolve an element from a description, DOM and screenshot. Get a calibrated selector, confidence and a 0–1000 bounding box.</p>
+        <div class="tagrow"><span class="tag">Bivia</span><span class="tag role">QA</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="self healing selector broken auto fix rerun version history">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.5-2L20 9M4 15l2.4 2a7 7 0 0 0 11.5-2"/></svg></span><h4>Self-healing</h4></div>
+        <p>Detect corrupt selectors, ask Bivia for a replacement, persist it with a version entry and re-run the case with fresh evidence.</p>
+        <div class="tagrow"><span class="tag">Bivia</span><span class="tag role">Engineer</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin Super Admin" data-keywords="enterprise provisioning tenant seats credits environment admin sso sla">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg></span><h4>Super Admin provisioning</h4></div>
+        <p>Create an enterprise tenant with environments, a credit grant and a verified admin, then configure plan, seats, SSO and SLA.</p>
+        <div class="tagrow"><span class="tag">Super Admin</span><span class="tag role">Super Admin</span></div>
+      </article>
+      <article class="feature" data-guide-feature data-roles="Admin QA Engineer" data-keywords="api rest endpoints json route handlers integrations webhooks">
+        <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M13 5l-2 14"/></svg></span><h4>REST API</h4></div>
+        <p>Every dashboard action is backed by an authenticated route handler. Use the API drawer for the endpoints behind the six walkthroughs.</p>
+        <div class="tagrow"><span class="tag">API</span><span class="tag role">Engineer</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Walkthroughs -->
+  <section class="block" id="walkthroughs">
+    <div class="section-head">
+      <div>
+        <div class="kicker">Hands-on</div>
+        <h2>Six walkthroughs</h2>
+        <p>Each walkthrough maps a real user goal to the screens and API calls that complete it. Expand one to follow the steps.</p>
+      </div>
+    </div>
+    <div class="walk-grid">
+      <details class="walk" open data-testid="guide-walkthrough">
+        <summary><span class="num">1</span> Author, type and run your first test case <span class="chev">⌄</span></summary>
+        <div class="walk-body">
+          <p>Goal: go from a blank workspace to a passing run with screenshot evidence on every step.</p>
+          <ol class="steps">
+            <li><b>Open Test Cases</b> and choose <b>New Test Case</b>. Pick AI Assistance, Import, Record or Manual.</li>
+            <li>Select one of the <b>11 test types</b> in the Test Type field (Functional is the default), choose the module and priority, then create.</li>
+            <li>Open the case in <b>Test Studio</b>. Confirm the Navigate step points at your real URL and add Click, Enter Text or AI Assertion steps.</li>
+            <li>Click <b>Run</b>. QASyn resolves the target URL, executes each step, and writes a scoped <code>TestCaseRun</code>.</li>
+            <li>Open <b>Step Details</b> or <b>Run history</b> and confirm the screenshot thumbnail is present for every executed step.</li>
+          </ol>
+          <div class="callout win">Evidence is persisted twice: on <code>stepsJson[i].screenshotBase64</code> and in the run’s <code>logJson</code>. The Type column always shows the exact type you chose.</div>
+        </div>
+      </details>
+
+      <details class="walk" data-testid="guide-walkthrough">
+        <summary><span class="num">2</span> Ground a selector and recover it with self-heal <span class="chev">⌄</span></summary>
+        <div class="walk-body">
+          <p>Goal: fix a broken or empty selector without guessing CSS.</p>
+          <ol class="steps">
+            <li>In Test Studio, select the failing step and open <b>Step Details</b>.</li>
+            <li>Click <b>Run Bivia Visual Grounding</b>. QASyn uses the step URL, then <code>variables.url</code> / <code>targetUrl</code> / <code>baseUrl</code>, then the first Navigate target, then the org website.</li>
+            <li>Review the returned bounding box, confidence and screenshot.</li>
+            <li>Click <b>Simulate Self-Healing</b>. Bivia proposes a new selector; QASyn persists it on the step, writes a version entry and creates an “Auto-fix rerun”.</li>
+            <li>Confirm the healed screenshot card and the updated run history show the new evidence.</li>
+          </ol>
+          <div class="callout info">If the target site is unreachable, grounding still returns generated visual evidence and explains whether the DOM/screenshot was live or synthetic.</div>
+        </div>
+      </details>
+
+      <details class="walk" data-testid="guide-walkthrough">
+        <summary><span class="num">3</span> Turn a crawl into a regression suite <span class="chev">⌄</span></summary>
+        <div class="walk-body">
+          <p>Goal: build a reusable baseline from a deployed application.</p>
+          <ol class="steps">
+            <li>Open <b>Crawl</b> and launch a crawl for the target URL (or use <b>Quality Autopilot</b> from Overview/Crawl for the full five-phase flow).</li>
+            <li>Wait for the crawl to complete. QASyn records flows as requirements and generates linked draft test cases.</li>
+            <li>Open <b>Test Cases</b>, filter the Type or Module columns, and review the generated cases.</li>
+            <li>Create a <b>Test Suite</b>, add the cases, then create a <b>Test Plan</b> that binds the suite to an environment and schedule.</li>
+            <li>Run the plan and inspect the run matrix; every case keeps its own per-step evidence.</li>
+          </ol>
+          <div class="callout info">Re-importing the same crawl updates the existing linked cases instead of creating duplicates.</div>
+        </div>
+      </details>
+
+      <details class="walk" data-testid="guide-walkthrough">
+        <summary><span class="num">4</span> Gate a pull request and run auto-regression <span class="chev">⌄</span></summary>
+        <div class="walk-body">
+          <p>Goal: decide whether a PR is safe to merge using impacted tests and a deployed environment.</p>
+          <ol class="steps">
+            <li>Open <b>Pull requests</b> and analyse a PR (or open an existing row). Changed files are mapped to modules and impacted cases.</li>
+            <li>In the drawer, click <b>Generate CI/CD PR Gate Comment</b>. Review the verdict, Bivia risk score, impacted test table and Strix security summary, then copy the Markdown.</li>
+            <li>In the <b>PR auto-regression</b> section, choose the environment (Production, Staging or any configured environment) or override the deployed URL.</li>
+            <li>Keep <b>Auto-create PR-specific test cases</b> checked. QASyn creates a Smoke and a Regression case named <code>PR #n · …</code> if none exist.</li>
+            <li>Click <b>Run PR auto-regression</b>. The result panel shows pass/fail/regressions, the target URL and the created cases; the PR row updates its verdict and counts.</li>
+          </ol>
+          <div class="callout warn">A caught regression sets the PR to <code>regression_caught</code>. Open the affected case → run history to inspect the failing step’s screenshot before merging.</div>
+        </div>
+      </details>
+
+      <details class="walk" data-testid="guide-walkthrough">
+        <summary><span class="num">5</span> Provision and configure an enterprise tenant <span class="chev">⌄</span></summary>
+        <div class="walk-body">
+          <p>Goal: onboard a new customer without touching SQL or the database console.</p>
+          <ol class="steps">
+            <li>Sign in as the super admin and open <b>Settings → Organization → Super-Admin Console</b> (or use the workspace menu).</li>
+            <li>Click <b>Provision enterprise</b>. Fill in organisation, website, admin name/e-mail/password, seats, environment name/URL and credits.</li>
+            <li>Submit. In one transaction QASyn creates the Enterprise organisation, Production + Staging environments, a credit ledger grant, a verified Admin user and an audit entry.</li>
+            <li>Use the per-organisation <b>Configure</b> action to change plan, grant credits, update seats/environment and toggle SSO/SLA.</li>
+            <li>Switch into the new workspace from the sidebar to verify its environments, billing and team.</li>
+          </ol>
+          <div class="callout win">Enterprise defaults to 250,000 credits. The ledger grant is visible in Billing &amp; usage and the admin can sign in immediately.</div>
+        </div>
+      </details>
+
+      <details class="walk" data-testid="guide-walkthrough">
+        <summary><span class="num">6</span> Filter, export and operate with confidence <span class="chev">⌄</span></summary>
+        <div class="walk-body">
+          <p>Goal: find the exact rows you need and share evidence with the team.</p>
+          <ol class="steps">
+            <li>On any data grid (Test Cases, Crawl, Requirements, Suites, Plans, Team, Audits, Pull Requests), click the filter icon in a column header.</li>
+            <li>Categorical columns such as Type, Status or Priority offer a distinct-value dropdown; dates and text accept a substring search.</li>
+            <li>The filter icon shows a blue dot when active. Reopen it and choose <b>Clear</b>, or use the toolbar filter chips, to reset.</li>
+            <li>Select rows to reveal the bulk bar: run selected, export CSV or delete (permission-dependent).</li>
+            <li>For operational context, open <b>Billing &amp; usage</b> for credits and the Bivia observatory, <b>Integrations</b> for providers, or <b>MCP</b> to query the workspace from an assistant.</li>
+          </ol>
+          <div class="callout info">Existing search, column visibility, pagination and RowMenu actions stay available — per-column filters are additive.</div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="section-head">
+      <div>
+        <div class="kicker">At a glance</div>
+        <h2>What every run guarantees</h2>
+      </div>
+    </div>
+    <div class="tiles">
+      <div class="tile"><b>Real URL grounding</b><p>The test case’s real target wins over the org default every time.</p></div>
+      <div class="tile"><b>Step-level evidence</b><p>Passed, failed and healed steps all persist screenshots.</p></div>
+      <div class="tile"><b>Deterministic PR runs</b><p>Auto-regression uses stable outcomes so PR verdicts do not flip randomly.</p></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>QASyn · User guide · self-contained HTML served at <code>/guide</code></span>
+    <span><a href="/dashboard/overview">Open the dashboard</a> · <a href="/README.md">README</a></span>
+  </footer>
+</main>
+
+<!-- Architecture / API drawer -->
+<div class="drawer-backdrop" id="drawer-backdrop" data-drawer-close></div>
+<aside class="drawer" id="guide-drawer" data-testid="guide-architecture-drawer" aria-label="Architecture and API reference" aria-hidden="true">
+  <div class="drawer-head">
+    <h3>Architecture &amp; API</h3>
+    <button type="button" class="drawer-close" aria-label="Close architecture and API drawer" data-drawer-close>✕</button>
+  </div>
+  <div class="drawer-tabs" role="tablist" aria-label="Reference sections">
+    <button class="drawer-tab" role="tab" aria-selected="true" data-drawer-tab="architecture">Architecture</button>
+    <button class="drawer-tab" role="tab" aria-selected="false" data-drawer-tab="api">API reference</button>
+  </div>
+  <div class="drawer-body">
+    <div data-drawer-panel="architecture">
+      <p>QASyn is a Next.js App Router application. Server components read Prisma directly; client workspaces call authenticated route handlers. The execution engine is the only layer that launches Playwright.</p>
+      <div class="layer">
+        <div class="layer-row"><b>Presentation</b><span>Marketing, onboarding, dashboard modules, Test Studio, this guide.</span></div>
+        <div class="layer-row"><b>Application</b><span>Route handlers in <code>app/api/dashboard/*</code> with Zod validation and RBAC guards.</span></div>
+        <div class="layer-row"><b>Domain</b><span><code>engine.ts</code>, <code>web-executor.ts</code>, <code>selector-healing.ts</code>, <code>bivia.ts</code>, <code>pr-gate.ts</code>.</span></div>
+        <div class="layer-row"><b>Persistence</b><span>Prisma Client over SQLite: organisations, users, cases, runs, suites, plans, PRs, environments, credits, audits.</span></div>
+        <div class="layer-row"><b>External</b><span>Articul8 Bivia, GitHub/GitLab, Jira/Linear, Slack, browser providers, Strix.</span></div>
+      </div>
+      <h4>Run pipeline</h4>
+      <p><code>request → RBAC → URL resolver → Playwright per step → Bivia assertion/heal → screenshot evidence → TestCaseRun.logJson → Studio UI</code></p>
+      <h4>Evidence model</h4>
+      <p>Each step stores <code>screenshotBase64</code> + <code>screenshotMime</code>. Runs store the same fields per log line. The UI falls back from the step to the latest run, so no executed step shows an empty placeholder.</p>
+      <h4>Grounding priority</h4>
+      <p><code>detailStep URL → variables.url/targetUrl/baseUrl → first Navigate step → orgUrl</code></p>
+    </div>
+    <div data-drawer-panel="api" hidden>
+      <p>All endpoints are same-origin and session-authenticated. Send JSON with <code>content-type: application/json</code>.</p>
+      <div class="api"><div class="api-head"><span class="method">GET</span><code>/api/dashboard/test-cases</code></div><p>List cases with steps, variables and run metadata.</p></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/test-cases</code></div><p>Create a manual or AI case. Include <code>testType</code> to persist one of the 11 types.</p><pre>{ "mode": "manual", "title": "Checkout", "module": "Checkout",
+  "criticality": "high", "stepsCount": 5,
+  "testType": "Regression", "targetUrl": "https://staging.example.com" }</pre></div>
+      <div class="api"><div class="api-head"><span class="method patch">PATCH</span><code>/api/dashboard/test-cases/[id]</code></div><p>Actions: <code>steps</code>, <code>run_steps</code>, <code>simulate_self_heal</code>, metadata updates. Returns run <code>log</code> with per-step screenshots.</p></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/bivia/ground</code></div><p>Ground a target description on a URL. Returns <code>screenshotBase64</code>, DOM status and a normalized bounding box.</p><pre>{ "targetDescription": "Sign in button",
+  "targetUrl": "https://staging.example.com/login" }</pre></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/pull-requests/gate</code></div><p>Generate the CI/CD Markdown gate report for a stored pull request.</p><pre>{ "id": "pr_check_id" }</pre></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/pull-requests/auto-regression</code></div><p>Run impacted + PR-specific cases against the deployed URL with deterministic outcomes.</p><pre>{ "id": "pr_check_id",
+  "environmentId": "env_id",
+  "targetUrl": "https://staging.example.com",
+  "createTests": true }</pre></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/super-admin</code></div><p>Enterprise provisioning and configuration.</p><pre>{ "action": "create_enterprise_tenant",
+  "organisationName": "Acme Enterprise",
+  "adminName": "Jordan Lee", "adminEmail": "admin@acme.com",
+  "adminPassword": "At least8Chars", "seats": 25 }</pre></div>
+      <div class="api"><div class="api-head"><span class="method">GET</span><code>/api/dashboard/environments</code></div><p>List environment configs; the default environment is used by PR auto-regression when no ID is supplied.</p></div>
+      <div class="api"><div class="api-head"><span class="method">GET</span><code>/api/dashboard/billing</code></div><p>Plan, credit ledger and the Bivia token observatory metrics.</p></div>
+    </div>
+  </div>
+</aside>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── Role tabs ────────────────────────────────────────────────────────────
+  var roleCopy = {
+    all: {
+      title: "All roles",
+      description: "A shared tour of the workspace. Use the tabs to focus the guide on what your role can do.",
+      can: [
+        "Navigate the 19 modules from the left sidebar",
+        "Open this guide any time from <b>Help &amp; docs</b>",
+        "Use the search below to find a feature by name or outcome"
+      ],
+      note: "Admins manage billing, team and settings. QA authors and runs tests. Engineers use Studio, API and integrations. Eng managers read reporting and PR risk. Super Admin provisions tenants across workspaces."
+    },
+    "Admin": {
+      title: "Admin",
+      description: "You run the workspace: people, plans, credentials and governance.",
+      can: [
+        "Invite members and assign roles from <b>Team &amp; access</b>",
+        "Manage environments, test data, integrations and API tokens",
+        "Track plan, credits and the Bivia token observatory in <b>Billing &amp; usage</b>",
+        "Provision enterprise tenants when you are also a super admin"
+      ],
+      note: "Admin includes full configuration access. Billing, team and settings are visible; destructive test editing still follows the read-only flag of the active workspace."
+    },
+    "QA": {
+      title: "QA",
+      description: "You design and execute the quality strategy.",
+      can: [
+        "Author cases with any of the 11 test types",
+        "Run Studio flows and inspect per-step screenshot evidence",
+        "Ground selectors with Bivia and approve self-healed selectors",
+        "Build suites and plans, then review run matrices and reports"
+      ],
+      note: "QA owns test authoring and execution. Settings and billing are typically read-only unless the account is also Admin."
+    },
+    "Engineer": {
+      title: "Engineer",
+      description: "You connect code, PRs and automation.",
+      can: [
+        "Read impact analysis and blast radius in <b>Code Analysis</b> and <b>Pull requests</b>",
+        "Generate CI/CD gate Markdown and run PR auto-regression",
+        "Use Tunnels for localhost targets and MCP for assistant access",
+        "Inspect self-heal decisions and selector versions in Studio"
+      ],
+      note: "Engineer focuses on integration surfaces. Team and billing administration are reserved for Admin/Super Admin."
+    },
+    "Eng manager": {
+      title: "Eng manager",
+      description: "You need risk, coverage and delivery signals.",
+      can: [
+        "Monitor PR risk, regressions and the verdict on each pull request",
+        "Review plan pass rates, schedules and run reports",
+        "Track coverage and requirement traceability",
+        "Read team activity in System Audits"
+      ],
+      note: "Eng manager is primarily a reporting role. Test authoring and settings are read-only unless paired with another role."
+    },
+    "Super Admin": {
+      title: "Super Admin",
+      description: "You operate QASyn across every workspace.",
+      can: [
+        "Switch between organisations from the sidebar workspace menu",
+        "Provision an enterprise tenant with environments, credits and an admin",
+        "Configure plan, credits, seats, SSO/SLA and the default environment",
+        "Review global organisations and users in the Super-Admin Console"
+      ],
+      note: "Super Admin is platform-level. Use it for onboarding and governance; day-to-day test work should happen in the tenant workspace."
+    }
+  };
+
+  var roleTabs = document.querySelectorAll("[data-guide-role]");
+  var roleTitle = document.getElementById("role-title");
+  var roleDescription = document.getElementById("role-description");
+  var roleCan = document.getElementById("role-can");
+  var roleNote = document.getElementById("role-note");
+  var featureGrid = document.getElementById("feature-grid");
+  var featureCards = Array.prototype.slice.call(document.querySelectorAll("[data-guide-feature]"));
+  var featureSearch = document.getElementById("feature-search");
+  var featureCount = document.getElementById("feature-count");
+  var activeRole = "all";
+  var activeQuery = "";
+
+  function applyFeatures() {
+    var query = activeQuery.trim().toLowerCase();
+    var shown = 0;
+    featureCards.forEach(function (card) {
+      var roles = (card.getAttribute("data-roles") || "").toLowerCase();
+      var text = (card.textContent + " " + (card.getAttribute("data-keywords") || "")).toLowerCase();
+      var roleOk = activeRole === "all" || roles.indexOf(activeRole.toLowerCase()) !== -1;
+      var queryOk = !query || text.indexOf(query) !== -1;
+      var visible = roleOk && queryOk;
+      card.hidden = !visible;
+      if (visible) shown += 1;
+    });
+    featureCount.textContent = shown + (shown === 1 ? " feature" : " features");
+    var existing = document.getElementById("feature-empty");
+    if (shown === 0 && !existing) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.id = "feature-empty";
+      empty.textContent = "No feature matches this role and search. Try a broader term or choose All roles.";
+      featureGrid.appendChild(empty);
+    } else if (shown > 0 && existing) {
+      existing.remove();
+    }
+  }
+
+  roleTabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      activeRole = tab.getAttribute("data-guide-role") || "all";
+      roleTabs.forEach(function (other) { other.setAttribute("aria-selected", String(other === tab)); });
+      var copy = roleCopy[activeRole] || roleCopy.all;
+      roleTitle.textContent = copy.title;
+      roleDescription.textContent = copy.description;
+      roleCan.innerHTML = copy.can.map(function (item) { return "<li>" + item + "</li>"; }).join("");
+      roleNote.innerHTML = copy.note;
+      applyFeatures();
+    });
+  });
+
+  featureSearch.addEventListener("input", function () {
+    activeQuery = featureSearch.value || "";
+    applyFeatures();
+  });
+
+  applyFeatures();
+
+  // ── Drawer ───────────────────────────────────────────────────────────────
+  var drawer = document.getElementById("guide-drawer");
+  var backdrop = document.getElementById("drawer-backdrop");
+  var lastFocus = null;
+  var drawerTabs = document.querySelectorAll("[data-drawer-tab]");
+  var drawerPanels = document.querySelectorAll("[data-drawer-panel]");
+
+  function setDrawerTab(name) {
+    drawerTabs.forEach(function (tab) {
+      tab.setAttribute("aria-selected", String(tab.getAttribute("data-drawer-tab") === name));
+    });
+    drawerPanels.forEach(function (panel) {
+      panel.hidden = panel.getAttribute("data-drawer-panel") !== name;
+    });
+  }
+
+  function openDrawer(tab) {
+    lastFocus = document.activeElement;
+    setDrawerTab(tab === "api" ? "api" : "architecture");
+    drawer.classList.add("open");
+    backdrop.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    var focusTarget = drawer.querySelector(".drawer-close");
+    if (focusTarget) focusTarget.focus();
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove("open");
+    backdrop.classList.remove("open");
+    drawer.setAttribute("aria-hidden", "true");
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+  }
+
+  document.querySelectorAll("[data-drawer]").forEach(function (button) {
+    button.addEventListener("click", function () { openDrawer(button.getAttribute("data-drawer")); });
+  });
+  document.querySelectorAll("[data-drawer-close]").forEach(function (node) {
+    node.addEventListener("click", closeDrawer);
+  });
+  drawerTabs.forEach(function (tab) {
+    tab.addEventListener("click", function () { setDrawerTab(tab.getAttribute("data-drawer-tab")); });
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && drawer.classList.contains("open")) closeDrawer();
+  });
+})();
+</script>
+</body>
+</html>

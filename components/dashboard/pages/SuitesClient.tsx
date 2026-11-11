@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { CreateCollectionButton } from "@/components/dashboard/pages/CreateCollectionButton";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { BulkButton, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination } from "@/components/contextqa/table-ui";
+import { BulkButton, ColumnFilter, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, tableCardClass } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -62,6 +62,7 @@ export function SuitesClient({
   const [view, setView] = useState<"list" | "modular">("list");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [visible, setVisible] = useState<Record<string, boolean>>(() => Object.fromEntries(COLUMNS.map((column) => [column.key, true])));
   const [openFolder, setOpenFolder] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -80,9 +81,36 @@ export function SuitesClient({
       if (filters.platform && suite.platform !== filters.platform) return false;
       if (filters.module && (suite.module || "Unorganised") !== filters.module) return false;
       if (filters.result && liveResult(suite) !== filters.result) return false;
+      if (
+        !matchesColumnFilters(columnFilters, {
+          "Suite Name": suite.name,
+          Platform: suite.platform,
+          "Test Cases": suite.testCasesCount,
+          "Latest Result": liveResult(suite),
+          "Created Date": formatDate(suite.createdAt),
+          Modified: formatDate(suite.lastRunAt ?? suite.createdAt),
+          Folder: suite.module || "Unorganised",
+        })
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [localRows, search, filters]);
+  }, [localRows, search, filters, columnFilters]);
+
+  const columnOptions = useMemo(
+    () => ({
+      Platform: distinctColumnValues(localRows.map((suite) => suite.platform)),
+      "Latest Result": distinctColumnValues(localRows.map((suite) => liveResult(suite))),
+      Folder: distinctColumnValues(localRows.map((suite) => suite.module || "Unorganised")),
+    }),
+    [localRows],
+  );
+
+  function setColumnFilter(column: string, value: string) {
+    setColumnFilters((current) => ({ ...current, [column]: value }));
+    setPage(1);
+  }
 
   const folders = useMemo(() => {
     const map = new Map<string, SuiteRow[]>();
@@ -300,7 +328,7 @@ export function SuitesClient({
             </div>
           )}
           {folders.map(([folder, rows]) => (
-            <div key={folder} className={cn(cqaCard, "overflow-hidden")}>
+            <div key={folder} className={tableCardClass()}>
               <button
                 type="button"
                 onClick={() => setOpenFolder((prev) => (prev === folder ? null : folder))}
@@ -330,7 +358,7 @@ export function SuitesClient({
           ))}
         </div>
       ) : (
-        <div className={cn(cqaCard, "overflow-hidden")}>
+        <div className={tableCardClass()}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] border-collapse text-left">
               <thead>
@@ -338,13 +366,13 @@ export function SuitesClient({
                   <th className="w-9 px-4 py-3">
                     <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleAll} label="Select all suites" />
                   </th>
-                  <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suite Name</th>
-                  {visible.platform && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Platform</th>}
-                  {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases</th>}
-                  {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result</th>}
-                  {visible.created && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date</th>}
-                  {visible.modified && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Modified</th>}
-                  {visible.folder && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Folder</th>}
+                  <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suite Name<ColumnFilter column="Suite Name" value={columnFilters["Suite Name"] ?? ""} onChange={(value) => setColumnFilter("Suite Name", value)} /></th>
+                  {visible.platform && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Platform<ColumnFilter column="Platform" value={columnFilters.Platform ?? ""} onChange={(value) => setColumnFilter("Platform", value)} options={columnOptions.Platform} /></th>}
+                  {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /></th>}
+                  {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result<ColumnFilter column="Latest Result" value={columnFilters["Latest Result"] ?? ""} onChange={(value) => setColumnFilter("Latest Result", value)} options={columnOptions["Latest Result"]} /></th>}
+                  {visible.created && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilter("Created Date", value)} /></th>}
+                  {visible.modified && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Modified<ColumnFilter column="Modified" value={columnFilters.Modified ?? ""} onChange={(value) => setColumnFilter("Modified", value)} /></th>}
+                  {visible.folder && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => setColumnFilter("Folder", value)} options={columnOptions.Folder} /></th>}
                   <th className="w-[72px] px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
                 </tr>
               </thead>

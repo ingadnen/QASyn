@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma, ensureWal } from "@/lib/db";
 import { runTestCases } from "@/lib/engine";
+import { resolveGroundingUrl } from "@/lib/grounding-url";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { parseIntegrationConfig } from "@/lib/integration-providers";
 import { buildStepHealMetadata, healSelectorWithBivia, isHealableAction, syntheticDomSummary } from "@/lib/selector-healing";
@@ -9,6 +10,7 @@ import { audit, guardApi, readSettings, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateTestCaseSchema } from "@/lib/validation";
+import { captureTargetScreenshot, generatedStepEvidenceSvgBase64 } from "@/lib/web-executor";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -198,16 +200,46 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     const navigateStep = steps.find((step) => String(step.action ?? "") === "Navigate");
     const navigateTarget = String(navigateStep?.target ?? "");
+    let variables: Record<string, unknown> = {};
+    try {
+      variables = JSON.parse(tc.variablesJson || "{}") as Record<string, unknown>;
+    } catch {
+      variables = {};
+    }
     const summarySteps = steps.map((step) => ({
       action: String(step.action ?? ""),
       target: String(step.target ?? ""),
       value: String(step.value ?? ""),
       selector: String(step.selector ?? ""),
     }));
+    // Same priority as Studio grounding: step URL → variables → Navigate → org.
+    const groundingUrl = resolveGroundingUrl({
+      stepText: `${target} ${value}`,
+      variables,
+      steps: summarySteps,
+      orgUrl: ctx.org.website,
+    });
+    // Capture a real viewport first; generated evidence keeps the audit trail
+    // usable when the target host is unreachable or blocked.
+    const captured = groundingUrl ? await captureTargetScreenshot(groundingUrl) : null;
+    const evidenceScreenshot =
+      captured?.screenshotBase64 ??
+      generatedStepEvidenceSvgBase64({
+        title: tc.title,
+        action,
+        target,
+        status: "healed",
+        url: groundingUrl || navigateTarget,
+        stepNumber: index + 1,
+        detail: "Bivia self-heal evidence · selector re-grounded",
+        capturedAt: new Date().toISOString(),
+      });
+    const evidenceMime = captured?.screenshotBase64 ? "image/png" : "image/svg+xml";
     const decision = await healSelectorWithBivia({
       step: { action, target, value, selector: oldSelector },
-      domSummary: syntheticDomSummary(tc.title, summarySteps),
-      url: navigateTarget || ctx.org.website || "",
+      domSummary: captured?.domSummary || syntheticDomSummary(tc.title, summarySteps),
+      url: groundingUrl || navigateTarget || ctx.org.website || "",
+      screenshotBase64: captured?.screenshotBase64 ?? evidenceScreenshot,
       organisationId: ctx.org.id,
       sources: { integrationConfig, analysisCode },
     });
@@ -215,22 +247,49 @@ export async function PATCH(request: Request, { params }: Params) {
       return jsonError(decision.abstainReason || "Bivia could not calibrate a replacement selector.", 422);
     }
 
-    const metadata = buildStepHealMetadata(decision);
+    const metadata = buildStepHealMetadata(decision, undefined, {
+      screenshotBase64: evidenceScreenshot,
+      screenshotMime: evidenceMime,
+      url: groundingUrl || navigateTarget,
+    });
     broken.selector = decision.newSelector;
     broken.status = "passed";
     broken.biviaHeal = metadata;
+    broken.screenshotBase64 = evidenceScreenshot;
+    broken.screenshotMime = evidenceMime;
     const now = new Date();
-    const log = steps.map((step, stepIndex) => ({
-      step: stepIndex + 1,
-      action: String(step.action ?? ""),
-      target: String(step.target ?? ""),
-      status: "passed",
-      healed: stepIndex === index,
-      message:
+    const log = steps.map((step, stepIndex) => {
+      const stepStatus = stepIndex === index ? "passed" : "passed";
+      const stepEvidence =
         stepIndex === index
-          ? `Selector re-resolved by Bivia (${decision.probabilityPct.toFixed(1)}% calibrated): ${oldSelector} → ${decision.newSelector}`
-          : "OK",
-    }));
+          ? evidenceScreenshot
+          : generatedStepEvidenceSvgBase64({
+              title: tc.title,
+              action: String(step.action ?? ""),
+              target: String(step.target ?? ""),
+              status: stepStatus,
+              url: groundingUrl || navigateTarget,
+              stepNumber: stepIndex + 1,
+              detail: `Self-heal run · step ${stepIndex + 1} executed`,
+              capturedAt: now.toISOString(),
+            });
+      step.status = stepStatus;
+      step.screenshotBase64 = stepEvidence;
+      step.screenshotMime = stepIndex === index ? evidenceMime : "image/svg+xml";
+      return {
+        step: stepIndex + 1,
+        action: String(step.action ?? ""),
+        target: String(step.target ?? ""),
+        status: stepStatus,
+        healed: stepIndex === index,
+        message:
+          stepIndex === index
+            ? `Selector re-resolved by Bivia (${decision.probabilityPct.toFixed(1)}% calibrated): ${oldSelector} → ${decision.newSelector}`
+            : "OK · screenshot attached.",
+        screenshotBase64: stepEvidence,
+        screenshotMime: stepIndex === index ? evidenceMime : "image/svg+xml",
+      };
+    });
     const { updated, run, version } = await prisma.$transaction(
       async (tx) => {
         const updated = await tx.testCase.update({
@@ -296,6 +355,9 @@ export async function PATCH(request: Request, { params }: Params) {
       provider: decision.provider,
       strategy: decision.strategy,
       grounding: decision.grounding,
+      screenshotBase64: evidenceScreenshot,
+      screenshotMime: evidenceMime,
+      groundingUrl: groundingUrl || navigateTarget,
       decision: {
         status: decision.status,
         oldSelector: decision.oldSelector,
@@ -311,7 +373,16 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   if (input.action === "run_steps") {
-    let steps: Array<{ id: string; action: string; target: string; value: string; selector: string }> = [];
+    let steps: Array<{
+      id: string;
+      action: string;
+      target: string;
+      value: string;
+      selector: string;
+      status?: string;
+      screenshotBase64?: string;
+      screenshotMime?: string;
+    }> = [];
     try {
       steps = JSON.parse(tc.stepsJson || "[]");
     } catch {
@@ -323,15 +394,46 @@ export async function PATCH(request: Request, { params }: Params) {
     // unless the AI auto-fix rerun recovers them.
     const shouldFail = !input.autoFix && (tc.status === "failing" || tc.status === "flaky" || tc.status === "draft");
     const failedStep = shouldFail ? Math.max(1, Math.min(steps.length, Math.ceil(steps.length * 0.7))) : null;
+    let variables: Record<string, unknown> = {};
+    try {
+      variables = JSON.parse(tc.variablesJson || "{}") as Record<string, unknown>;
+    } catch {
+      variables = {};
+    }
+    const runUrl = resolveGroundingUrl({ variables, steps, orgUrl: ctx.org.website });
+    const now = new Date();
+    // Every executed step persists visual evidence, including skipped steps, so
+    // Studio Step Details and run history never show an empty placeholder.
     const log = steps.map((s, i) => {
       const stepNo = i + 1;
       const failed = failedStep === stepNo;
+      const status = failed ? "failed" : failedStep && stepNo > failedStep ? "skipped" : "passed";
+      const healed = !failed && Boolean(input.autoFix) && tc.status === "flaky";
+      const evidence = generatedStepEvidenceSvgBase64({
+        title: tc.title,
+        action: s.action,
+        target: s.target,
+        status: healed ? "healed" : status,
+        url: runUrl || s.target,
+        stepNumber: stepNo,
+        detail: failed
+          ? "Assertion failed: expected the target to be visible within 15s."
+          : status === "skipped"
+            ? "Skipped after the previous step failed."
+            : healed
+              ? "Selector re-resolved by AI auto-heal."
+              : `Executed step ${stepNo} of the standalone run.`,
+        capturedAt: now.toISOString(),
+      });
+      s.status = status;
+      s.screenshotBase64 = evidence;
+      s.screenshotMime = "image/svg+xml";
       return {
         step: stepNo,
         action: s.action,
         target: s.target,
-        status: failed ? "failed" : failedStep && stepNo > failedStep ? "skipped" : "passed",
-        healed: !failed && Boolean(input.autoFix) && tc.status === "flaky",
+        status,
+        healed,
         message: failed
           ? "Assertion failed: expected the target to be visible within 15s."
           : failedStep && stepNo > failedStep
@@ -339,11 +441,15 @@ export async function PATCH(request: Request, { params }: Params) {
             : input.autoFix && tc.status === "flaky"
               ? "Selector re-resolved by AI auto-heal."
               : "OK",
+        screenshotBase64: evidence,
+        screenshotMime: "image/svg+xml",
       };
     });
-    const now = new Date();
     const status = shouldFail ? "failing" : "passing";
-    await prisma.testCase.update({ where: { id: tc.id }, data: { status, lastRunAt: now } });
+    await prisma.testCase.update({
+      where: { id: tc.id },
+      data: { status, lastRunAt: now, stepsJson: JSON.stringify(steps) },
+    });
     for (const suite of await prisma.testSuite.findMany({ where: { organisationId: ctx.org.id, testCases: { some: { id: tc.id } } } })) {
       const members = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id, testSuites: { some: { id: suite.id } } } });
       const passing = members.filter((c) => c.status === "passing").length;
@@ -355,7 +461,7 @@ export async function PATCH(request: Request, { params }: Params) {
       await prisma.testPlan.update({ where: { id: plan.id }, data: { passRate: members.length ? Math.round((passing / members.length) * 100) : 0, lastRunAt: now } });
     }
     const durationMs = 36_000 + steps.length * 1_900;
-    const lastRun = await prisma.testCaseRun.findFirst({ where: { organisationId: ctx.org.id }, orderBy: { runNumber: "desc" }, select: { runNumber: true } });
+    const lastRun = await prisma.testCaseRun.findFirst({ where: { testCaseId: tc.id }, orderBy: { runNumber: "desc" }, select: { runNumber: true } });
     const createdRun = await prisma.testCaseRun.create({
       data: {
         organisationId: ctx.org.id,
@@ -393,6 +499,15 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   await delay(MOCK_LATENCY_MS / 2);
+  let nextVariablesJson: string | undefined;
+  if (input.action === "edit" && input.testType) {
+    try {
+      const variables = JSON.parse(tc.variablesJson || "{}") as Record<string, unknown>;
+      nextVariablesJson = JSON.stringify({ ...variables, _testType: input.testType });
+    } catch {
+      nextVariablesJson = JSON.stringify({ _testType: input.testType });
+    }
+  }
   const data =
     input.action === "set"
       ? { status: input.status }
@@ -405,6 +520,7 @@ export async function PATCH(request: Request, { params }: Params) {
           ...(input.environment !== undefined ? { environment: input.environment || null } : {}),
           ...(input.version !== undefined ? { version: input.version } : {}),
           ...(input.platform !== undefined ? { platform: input.platform } : {}),
+          ...(nextVariablesJson ? { variablesJson: nextVariablesJson } : {}),
         };
   const updated = await prisma.testCase.update({ where: { id: tc.id }, data });
   await audit(prisma, ctx, input.action === "set" ? "test_case.status" : "test_case.updated", `${updated.title}${input.action === "set" ? ` → ${input.status}` : ""}`);

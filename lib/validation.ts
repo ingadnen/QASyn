@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { APP_DESCRIPTION_MAX } from "./constants";
+import { APP_DESCRIPTION_MAX, TEST_TYPES } from "./constants";
 import {
   APP_LOGIN_TYPES, AUTH_TYPES, CRITICALITIES, FOCUS_KEYS, KNOWLEDGE_TYPES, ONBOARDING_ROLES, PAIN_POINTS, PLANS,
   PROVIDERS, REACH_MODES, SCHEDULES, TEST_STATUSES, TESTING_MATURITY, UPLOAD_KINDS, USER_ROLES,
@@ -139,6 +139,7 @@ export const createTestCaseSchema = z.discriminatedUnion("mode", [
     stepsCount: z.number().int().min(1).max(50).default(3),
     /** Explicit Target URL entered in the creation modal (wins over the org website). */
     targetUrl: z.string().trim().max(300).optional(),
+    testType: z.enum(TEST_TYPES).optional(),
   }),
   z.object({
     mode: z.literal("ai"),
@@ -148,6 +149,7 @@ export const createTestCaseSchema = z.discriminatedUnion("mode", [
     count: z.number().int().min(1).max(4).default(3),
     /** Explicit Target URL entered in the creation modal (wins over the org website). */
     targetUrl: z.string().trim().max(300).optional(),
+    testType: z.enum(TEST_TYPES).optional(),
   }),
 ]);
 
@@ -166,6 +168,7 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
     environment: z.string().trim().max(80).optional(),
     version: z.string().trim().max(20).optional(),
     platform: z.enum(["web", "mobile", "api"]).optional(),
+    testType: z.enum(TEST_TYPES).optional(),
   }),
   z.object({
     action: z.literal("steps"),

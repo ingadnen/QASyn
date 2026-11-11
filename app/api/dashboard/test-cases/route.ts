@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CREDIT_COSTS } from "@/lib/constants";
+import { CREDIT_COSTS, DEFAULT_TEST_TYPE } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { buildStepsJson, generateTitles, resolveTargetUrl } from "@/lib/engine";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return validationError(parsed.error);
   const input = parsed.data;
   const targetUrl = resolveTargetUrl(input.targetUrl, ctx.org.website);
+  const testType = input.testType ?? DEFAULT_TEST_TYPE;
   await delay(input.mode === "ai" ? MOCK_LATENCY_MS * 2 : MOCK_LATENCY_MS);
 
   const created = await prisma.$transaction(async (tx) => {
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
           stepsCount: input.stepsCount,
           source: "manual",
           stepsJson: buildStepsJson(targetUrl, input.stepsCount, input.module, input.title),
-          variablesJson: JSON.stringify({ url: targetUrl }),
+          variablesJson: JSON.stringify({ url: targetUrl, _testType: testType }),
         },
       });
       await audit(tx, ctx, "test_case.created", tc.title);
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
             stepsCount,
             source: "ai",
             stepsJson: buildStepsJson(targetUrl, stepsCount, input.module, title),
-            variablesJson: JSON.stringify({ url: targetUrl }),
+            variablesJson: JSON.stringify({ url: targetUrl, _testType: testType }),
           },
         }),
       );

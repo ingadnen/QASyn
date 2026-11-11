@@ -25,6 +25,16 @@ function parseSteps(raw: string): ParityStep[] {
   }
 }
 
+/** Reads the hidden test type persisted in TestCase.variablesJson._testType. */
+function parseTestType(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw || "{}") as Record<string, unknown>;
+    return typeof parsed._testType === "string" && parsed._testType.trim() ? parsed._testType : "Functional";
+  } catch {
+    return "Functional";
+  }
+}
+
 export default async function TestCasesPage({
   searchParams,
 }: {
@@ -56,6 +66,7 @@ export default async function TestCasesPage({
     status: t.status,
     stepsCount: t.stepsCount,
     source: t.source,
+    testType: parseTestType(t.variablesJson),
     labels: [t.source === "crawl" ? "crawl" : t.source === "ai" ? "ai generated" : "manual", t.module.toLowerCase()],
     createdBy,
     folder: t.folder?.name ?? "",

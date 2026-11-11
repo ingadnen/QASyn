@@ -340,6 +340,127 @@ export function SelectAllCheckbox({ checked, indeterminate, onChange, label }: {
   );
 }
 
+/**
+ * Distinct, sorted option values for a categorical column filter.
+ */
+export function distinctColumnValues(values: Array<string | number | null | undefined>): string[] {
+  return [...new Set(values.map((value) => String(value ?? "").trim()).filter((value) => value && value !== "-"))].sort((a, b) =>
+    a.localeCompare(b),
+  );
+}
+
+/**
+ * Shared substring predicate for per-column filters. Categorical select
+ * values and free-text input both match case-insensitively.
+ */
+export function matchesColumnFilters(
+  columnFilters: Record<string, string>,
+  values: Record<string, string | number | null | undefined>,
+): boolean {
+  for (const [column, needle] of Object.entries(columnFilters)) {
+    if (!needle) continue;
+    if (!String(values[column] ?? "").toLowerCase().includes(needle.toLowerCase())) return false;
+  }
+  return true;
+}
+
+/**
+ * Per-column filter used inside a table header.
+ *
+ * Categorical columns pass `options` to render the distinct-value dropdown
+ * alongside a free-text substring input. Text/date columns pass no options and
+ * only render the substring search. A blue dot marks an active filter and the
+ * popover exposes a one-click clear so no filter can get stuck.
+ */
+export function ColumnFilter({
+  column,
+  value,
+  onChange,
+  options = [],
+  placeholder,
+  testId,
+}: {
+  column: string;
+  value: string;
+  onChange: (value: string) => void;
+  options?: string[];
+  placeholder?: string;
+  testId?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useOutsideClose(open, () => setOpen(false));
+  const active = Boolean(value);
+  return (
+    <span className="relative inline-flex align-middle" ref={ref}>
+      <button
+        type="button"
+        aria-label={`Filter ${column}`}
+        title={active ? `${column}: ${value}` : `Filter ${column}`}
+        aria-expanded={open}
+        data-column-filter={column}
+        data-testid={testId}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((current) => !current);
+        }}
+        className={cn(
+          "ml-1 inline-flex size-5 items-center justify-center rounded transition hover:bg-[#eef2ff]",
+          active ? "text-[#4f46e5]" : "text-[#9ca3af]",
+        )}
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3.5 fill-current">
+          <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+        </svg>
+        {active && <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-[#5b4ee8]" />}      </button>
+      {open && (
+        <div
+          data-column-filter-popover={column}
+          className="absolute left-0 top-full z-50 mt-1 w-60 rounded-lg border border-[#e5e7eb] bg-white p-3 text-left font-normal shadow-[0_16px_40px_rgba(15,23,42,0.16)]"
+        >
+          <p className="mb-2 text-[12px] font-semibold text-[#111827]">Filter {column}</p>
+          {options.length > 0 && (
+            <select
+              aria-label={`${column} distinct values`}
+              className="mb-2 h-8 w-full rounded-md border border-[#e5e7eb] bg-white px-2 text-[12px] text-[#374151]"
+              value={options.includes(value) ? value : ""}
+              onChange={(event) => onChange(event.target.value)}
+            >
+              <option value="">All {column.toLowerCase()} values</option>
+              {options.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          )}
+          <input
+            type="search"
+            aria-label={`Filter ${column} text`}
+            value={value}
+            placeholder={placeholder ?? `Search ${column.toLowerCase()}…`}
+            onChange={(event) => onChange(event.target.value)}
+            className="h-8 w-full rounded-md border border-[#e5e7eb] px-2 text-[12px] text-[#374151] outline-none focus:border-[#a9a1f7]"
+          />
+          <div className="mt-2 flex items-center justify-between">
+            <button
+              type="button"
+              className="text-[11.5px] font-medium text-[#6b7280] hover:underline"
+              onClick={() => onChange("")}
+            >
+              Clear {column.toLowerCase()}
+            </button>
+            <button
+              type="button"
+              className={cn(cqaBtnSecondary, "h-7 px-2 text-[11.5px]")}
+              onClick={() => setOpen(false)}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </span>
+  );
+}
+
 export function tableCardClass(className?: string) {
   // No overflow-hidden: toolbar popovers and RowMenu triggers inside the card
   // must never be clipped by the card boundary. Horizontal table scrolling is

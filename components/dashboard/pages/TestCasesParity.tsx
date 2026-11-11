@@ -16,8 +16,9 @@ import {
   useAction,
 } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { BulkButton, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination } from "@/components/contextqa/table-ui";
+import { BulkButton, ColumnFilter, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, matchesColumnFilters, tableCardClass } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
+import { TEST_TYPES } from "@/lib/constants";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,8 @@ export interface ParityTestCase {
   status: string;
   stepsCount: number;
   source: string;
+  /** Exact test type chosen at creation/edit time (Functional, Regression…). */
+  testType: string;
   labels: string[];
   createdBy: string;
   folder: string;
@@ -80,7 +83,7 @@ const COLUMNS = [
 const FILTERS = [
   { key: "createdBy", label: "Created By", options: ["Any user"] },
   { key: "status", label: "Status", options: ["Any status", "Ready", "In Review", "Draft"] },
-  { key: "testType", label: "Test Type", options: ["Any test type", "Functional", "End to End", "Regression"] },
+  { key: "testType", label: "Test Type", options: ["Any test type", ...TEST_TYPES] },
   { key: "type", label: "Type", options: ["Any type", "Positive", "Negative", "Edge Case"] },
   { key: "priority", label: "Priority", options: ["Any priority", "High", "Medium", "Low"] },
   { key: "result", label: "Latest Run Result", options: ["Any result", "Passed", "Failed", "Not Executed"] },
@@ -148,6 +151,7 @@ export function TestCasesParity({
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<ParityStepGroup | null>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     Object.fromEntries(COLUMNS.map((c) => [c, true])),
   );
@@ -171,14 +175,53 @@ export function TestCasesParity({
         if (filters.result && resultOf(r.status) !== filters.result) return false;
         if (filters.module && r.module !== filters.module) return false;
         if (filters.createdBy && r.createdBy !== filters.createdBy) return false;
-        if (filters.testType && "Functional" !== filters.testType) return false;
-        if (filters.type && "Functional" !== filters.type) return false;
+        if (filters.testType && r.testType !== filters.testType) return false;
+        if (filters.type && filters.type !== "Positive") return false;
         if (filters.suite && (filters.suite === "Yes") !== Boolean(r.status === "passing")) return false;
         if (filters.labels && !r.labels.includes(filters.labels)) return false;
+        // Deliverable 3: per-column header filters use substring matching so a
+        // distinct-value selection and free text share the same predicate.
+        const columnValues: Record<string, string> = {
+          "Test Cases": `${r.title} ${r.code}`,
+          Type: r.testType,
+          Priority: priorityOf(r.criticality),
+          Result: resultOf(r.status),
+          Status: stateOf(r.status),
+          Module: r.module,
+          Labels: r.labels.join(", "),
+          "Created By": r.createdBy,
+          Folder: r.folder || "Unfiled",
+          "Created At": fmt(r.createdAt),
+          "Updated At": fmt(r.updatedAt),
+          "Last Run": fmt(r.lastRunAt),
+        };
+        for (const [column, needle] of Object.entries(columnFilters)) {
+          if (!needle) continue;
+          if (!String(columnValues[column] ?? "").toLowerCase().includes(needle.toLowerCase())) return false;
+        }
         return true;
       }),
-    [rows, q, scope, folder, filters, userName],
+    [rows, q, scope, folder, filters, columnFilters, userName],
   );
+
+  const columnOptions = useMemo(() => {
+    const distinct = (values: string[]) => [...new Set(values.filter((value) => value && value !== "-"))].sort((a, b) => a.localeCompare(b));
+    return {
+      Type: distinct(rows.map((row) => row.testType)),
+      Priority: ["High", "Medium", "Low"],
+      Result: ["Passed", "Failed", "Not Executed"],
+      Status: ["Ready", "In Review", "Draft"],
+      Module: distinct(rows.map((row) => row.module)),
+      Labels: distinct(rows.flatMap((row) => row.labels)),
+      "Created By": distinct(rows.map((row) => row.createdBy)),
+      Folder: distinct(rows.map((row) => row.folder || "Unfiled")),
+    } satisfies Record<string, string[]>;
+  }, [rows]);
+
+  function setColumnFilter(column: string, value: string) {
+    setColumnFilters((current) => ({ ...current, [column]: value }));
+    setPage(1);
+  }
 
   useEffect(() => {
     const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -541,6 +584,9 @@ export function TestCasesParity({
             onClone={cloneCase}
             onMove={setMoveTarget}
             onExport={exportPlaywright}
+            columnFilters={columnFilters}
+            columnOptions={columnOptions}
+            onColumnFilter={setColumnFilter}
             page={currentPage}
             pageSize={pageSize}
             total={filtered.length}
@@ -621,6 +667,9 @@ function CasesTable({
   onClone,
   onMove,
   onExport,
+  columnFilters,
+  columnOptions,
+  onColumnFilter,
   page,
   pageSize,
   total,
@@ -641,6 +690,9 @@ function CasesTable({
   onClone: (row: ParityTestCase) => void;
   onMove: (row: ParityTestCase) => void;
   onExport: (row: ParityTestCase) => void;
+  columnFilters: Record<string, string>;
+  columnOptions: Record<string, string[]>;
+  onColumnFilter: (column: string, value: string) => void;
   page: number;
   pageSize: number;
   total: number;
@@ -648,7 +700,7 @@ function CasesTable({
   onPageSize: (size: number) => void;
 }) {
   return (
-    <div className={cn(cqaCard, "overflow-hidden")}>
+    <div className={tableCardClass()}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1280px] border-collapse text-left">
           <thead>
@@ -656,19 +708,19 @@ function CasesTable({
               <th className="w-9 px-3 py-3">
                 <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={onToggleAll} label="Select all test cases" />
               </th>
-              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases</th>
+              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => onColumnFilter("Test Cases", value)} /></th>
               <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
-              {visible.Type && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Type</th>}
-              {visible.Priority && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Priority</th>}
-              {visible.Result && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Result</th>}
-              {visible.Status && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Status</th>}
-              {visible.Module && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Module</th>}
-              {visible.Labels && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Labels</th>}
-              {visible["Created By"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created By</th>}
-              {visible.Folder && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Folder</th>}
-              {visible["Created At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created At</th>}
-              {visible["Updated At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Updated At</th>}
-              {visible["Last Run"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Last Run</th>}
+              {visible.Type && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => onColumnFilter("Type", value)} options={columnOptions.Type} testId="test-cases-type-column-filter" /></th>}
+              {visible.Priority && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Priority<ColumnFilter column="Priority" value={columnFilters.Priority ?? ""} onChange={(value) => onColumnFilter("Priority", value)} options={columnOptions.Priority} /></th>}
+              {visible.Result && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Result<ColumnFilter column="Result" value={columnFilters.Result ?? ""} onChange={(value) => onColumnFilter("Result", value)} options={columnOptions.Result} /></th>}
+              {visible.Status && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={columnFilters.Status ?? ""} onChange={(value) => onColumnFilter("Status", value)} options={columnOptions.Status} /></th>}
+              {visible.Module && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Module<ColumnFilter column="Module" value={columnFilters.Module ?? ""} onChange={(value) => onColumnFilter("Module", value)} options={columnOptions.Module} /></th>}
+              {visible.Labels && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Labels<ColumnFilter column="Labels" value={columnFilters.Labels ?? ""} onChange={(value) => onColumnFilter("Labels", value)} options={columnOptions.Labels} /></th>}
+              {visible["Created By"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created By<ColumnFilter column="Created By" value={columnFilters["Created By"] ?? ""} onChange={(value) => onColumnFilter("Created By", value)} options={columnOptions["Created By"]} /></th>}
+              {visible.Folder && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => onColumnFilter("Folder", value)} options={columnOptions.Folder} /></th>}
+              {visible["Created At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created At<ColumnFilter column="Created At" value={columnFilters["Created At"] ?? ""} onChange={(value) => onColumnFilter("Created At", value)} /></th>}
+              {visible["Updated At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Updated At<ColumnFilter column="Updated At" value={columnFilters["Updated At"] ?? ""} onChange={(value) => onColumnFilter("Updated At", value)} /></th>}
+              {visible["Last Run"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => onColumnFilter("Last Run", value)} /></th>}
               <th className="w-10 px-3 py-3" />
             </tr>
           </thead>
@@ -701,7 +753,7 @@ function CasesTable({
                     </Link>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-[12.5px] text-[#6b7280]">{r.source === "manual" ? "Manual" : "Automated"}</td>
-                  {visible.Type && <td className="whitespace-nowrap px-3 py-3 text-[12.5px] text-[#4b5563]">Functional</td>}
+                  {visible.Type && <td className="whitespace-nowrap px-3 py-3 text-[12.5px] text-[#4b5563]">{r.testType}</td>}
                   {visible.Priority && (
                     <td className="whitespace-nowrap px-3 py-3">
                       <span className="inline-flex items-center gap-1.5 text-[12.5px] text-[#4b5563]">
@@ -768,21 +820,34 @@ function StepGroupsTable({
   onDuplicate: (group: ParityStepGroup) => void;
   insertHref: string;
 }) {
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const visibleGroups = useMemo(
+    () =>
+      groups.filter((g) =>
+        matchesColumnFilters(columnFilters, {
+          Name: `${g.name} ${g.stepsCount} steps`,
+          Description: g.description,
+          Steps: String(g.stepsCount),
+          "Created Date": fmt(g.createdAt),
+        }),
+      ),
+    [groups, columnFilters],
+  );
   return (
-    <div className={cn(cqaCard, "overflow-hidden")}>
+    <div className={tableCardClass()}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#f0f1f3]">
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name</th>
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Description</th>
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Steps</th>
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date</th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Name: value }))} /></th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Description<ColumnFilter column="Description" value={columnFilters.Description ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Description: value }))} /></th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Steps<ColumnFilter column="Steps" value={columnFilters.Steps ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Steps: value }))} options={[...new Set(groups.map((g) => String(g.stepsCount)))]} /></th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, "Created Date": value }))} /></th>
               <th className="w-10 px-4 py-3" />
             </tr>
           </thead>
           <tbody>
-            {groups.length === 0 && (
+            {visibleGroups.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-16 text-center">
                   <p className="text-[14px] font-medium text-[#374151]">No data available</p>
@@ -790,7 +855,7 @@ function StepGroupsTable({
                 </td>
               </tr>
             )}
-            {groups.map((g) => (
+            {visibleGroups.map((g) => (
               <tr key={g.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
                 <td className="px-4 py-3">
                   <p className="font-medium text-[#1f2937]">{g.name}</p>
@@ -951,6 +1016,7 @@ function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: 
   const [step, setStep] = useState(1);
   const [module, setModule] = useState(modules[0] ?? "Core");
   const [priority, setPriority] = useState("medium");
+  const [testType, setTestType] = useState<string>("Functional");
   const [title, setTitle] = useState("");
   const [stepsCount, setStepsCount] = useState(3);
   const [url, setUrl] = useState(orgUrl);
@@ -987,7 +1053,7 @@ function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: 
         .filter((parts) => parts.length >= 2 && parts[0] && parts[1]);
       for (const [t, m] of parsed) {
         await run("import", "/api/dashboard/test-cases", {
-          json: { mode: "manual", title: t.trim(), module: (m || module).trim(), criticality: priority, stepsCount, targetUrl },
+          json: { mode: "manual", title: t.trim(), module: (m || module).trim(), criticality: priority, stepsCount, targetUrl, testType },
         });
       }
       router.refresh();
@@ -996,8 +1062,8 @@ function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: 
     }
     const json =
       method === "manual"
-        ? { mode: "manual", title, module, criticality: priority, stepsCount, targetUrl }
-        : { mode: "ai", module, criticality: priority, prompt: prompt || (targetUrl ? `Explore ${targetUrl}` : ""), count, targetUrl };
+        ? { mode: "manual", title, module, criticality: priority, stepsCount, targetUrl, testType }
+        : { mode: "ai", module, criticality: priority, prompt: prompt || (targetUrl ? `Explore ${targetUrl}` : ""), count, targetUrl, testType };
     const res = await run("create", "/api/dashboard/test-cases", { json });
     if (res) {
       router.refresh();
@@ -1100,6 +1166,17 @@ function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: 
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>Test Type</span>
+                <select
+                  className={cqaInput}
+                  data-testid="test-case-type-select"
+                  value={testType}
+                  onChange={(e) => setTestType(e.target.value)}
+                >
+                  {TEST_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>
             </div>
