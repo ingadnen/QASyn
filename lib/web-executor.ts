@@ -516,7 +516,18 @@ export function generatedStepEvidenceSvgBase64(input: GeneratedEvidenceInput): s
   <text x="108" y="564" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#64748b">Evidence</text>
   <text x="108" y="594" font-family="ui-monospace,Consolas,monospace" font-size="12" fill="#334155">deterministic visual capture · 1280×720 · attached to stepsJson + TestCaseRun.logJson</text>
 </svg>`;
-  return Buffer.from(svg, "utf8").toString("base64");
+  return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
+}
+
+/**
+ * Normalises a raw Playwright PNG base64 payload into an inline `data:` URL so
+ * persisted evidence always renders in <img> tags and satisfies the evidence
+ * contract (data:image/…). Already-prefixed values pass through untouched.
+ */
+export function screenshotDataUrl(base64?: string | null, mime = "image/png"): string | null {
+  if (!base64) return null;
+  if (base64.startsWith("data:image/")) return base64;
+  return `data:${mime};base64,${base64}`;
 }
 
 /** Executes NLP steps: real Playwright when available, HTTP orchestrator otherwise. */

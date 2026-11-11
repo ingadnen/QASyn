@@ -258,6 +258,7 @@ function formatDuration(ms: number) {
 /** Data URL for persisted PNG or generated SVG step evidence. */
 function evidenceDataUrl(base64?: string | null, mime?: string) {
   if (!base64) return null;
+  if (base64.startsWith("data:image/")) return base64;
   return `data:${mime || (base64.startsWith("PHN2Zy") ? "image/svg+xml" : "image/png")};base64,${base64}`;
 }
 
@@ -667,7 +668,13 @@ export function StudioWorkspace({
         },
       });
       setGroundBox(response.result);
-      setGroundImage(response.screenshotBase64 ? `data:image/png;base64,${response.screenshotBase64}` : null);
+      setGroundImage(
+        response.screenshotBase64
+          ? response.screenshotBase64.startsWith("data:image/")
+            ? response.screenshotBase64
+            : `data:image/png;base64,${response.screenshotBase64}`
+          : null,
+      );
       setGroundMeta(
         `${response.result.provider} · ${response.result.latencyMs} ms · ${response.domCaptured ? "DOM captured" : "synthetic DOM"} · ${
           response.screenshotCaptured ? "screenshot captured" : "visual preview"

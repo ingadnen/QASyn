@@ -456,8 +456,9 @@ export async function runTestCases(
     }
 
     // Deliverable 1: every executed step keeps visual evidence, including
-    // deterministic runs where Chromium is not launched. The generated
-    // viewport is a real image payload persisted with the step and the run log.
+    // deterministic runs where Chromium is not launched. Real Playwright PNG
+    // screenshots captured by `executeWebSteps` are preserved; the generated
+    // viewport is only used as the offline fallback.
     const runLog = steps.map((step, index) => {
       const action = String(step.action ?? "");
       const target = String(step.target ?? "");
@@ -465,19 +466,29 @@ export async function runTestCases(
       const stepStatus = String(
         step.status ?? (status === "failing" && index === steps.length - 1 ? "failed" : healed ? "passed" : "passed"),
       );
-      const evidence = generatedStepEvidenceSvgBase64({
-        title: tc.title,
-        action,
-        target,
-        status: stepStatus,
-        url: targetUrl || String(steps.find((entry) => String(entry.action ?? "") === "Navigate")?.target ?? ""),
-        stepNumber: index + 1,
-        detail: healed ? "Bivia re-resolved this locator; visual evidence persisted." : String(step.message ?? "Executed by the QASyn deterministic engine."),
-        capturedAt: now.toISOString(),
-      });
+      const existingEvidence =
+        typeof step.screenshotBase64 === "string" && step.screenshotBase64.startsWith("data:image/")
+          ? step.screenshotBase64
+          : null;
+      const evidence =
+        existingEvidence ??
+        generatedStepEvidenceSvgBase64({
+          title: tc.title,
+          action,
+          target,
+          status: stepStatus,
+          url: targetUrl || String(steps.find((entry) => String(entry.action ?? "") === "Navigate")?.target ?? ""),
+          stepNumber: index + 1,
+          detail: healed ? "Bivia re-resolved this locator; visual evidence persisted." : String(step.message ?? "Executed by the QASyn deterministic engine."),
+          capturedAt: now.toISOString(),
+        });
       step.status = stepStatus;
       step.screenshotBase64 = evidence;
-      step.screenshotMime = "image/svg+xml";
+      step.screenshotMime = existingEvidence ? step.screenshotMime ?? "image/png" : "image/svg+xml";
+      step.lastScreenshot = evidence;
+      step.screenshot = evidence;
+      step.lastRunStatus = stepStatus;
+      step.lastRunAt = now.toISOString();
       return {
         step: index + 1,
         action,
@@ -490,7 +501,9 @@ export async function runTestCases(
             ? "Assertion failed: expected the target to be visible within 15s. Screenshot attached."
             : "OK · screenshot attached.",
         screenshotBase64: evidence,
-        screenshotMime: "image/svg+xml",
+        screenshotMime: existingEvidence ? step.screenshotMime ?? "image/png" : "image/svg+xml",
+        screenshot: evidence,
+        lastScreenshot: evidence,
       };
     });
     stepsChanged = steps.length > 0;

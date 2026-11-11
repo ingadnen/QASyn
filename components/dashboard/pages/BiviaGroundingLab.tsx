@@ -41,7 +41,13 @@ export function BiviaGroundingLab({
       });
       setBox(response.result);
       setConfidence(response.result.confidence ?? 0);
-      setImage(response.screenshotBase64 ? `data:image/png;base64,${response.screenshotBase64}` : null);
+      setImage(
+        response.screenshotBase64
+          ? response.screenshotBase64.startsWith("data:image/")
+            ? response.screenshotBase64
+            : `data:image/png;base64,${response.screenshotBase64}`
+          : null,
+      );
       setMeta(
         `${response.result.provider} · ${response.result.latencyMs} ms · ${response.domCaptured ? "DOM captured" : "synthetic DOM"} · ${
           response.screenshotCaptured ? "screenshot captured" : "visual preview"

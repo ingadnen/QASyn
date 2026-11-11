@@ -4187,10 +4187,13 @@ async function main() {
       String(storedTypeCase?.variablesJson ?? "").slice(0, 120),
     );
     await goto(page, "/dashboard/test-cases");
-    await page.waitForTimeout(1_000);
-    // Check Type column via first row's Type td
-    const typeCell = page.locator("tbody tr").first().locator("td").nth(0);
-    const typeText = await typeCell.innerText().catch(() => "");
+    const typeSearch = page.getByPlaceholder("Search test cases").first();
+    if ((await typeSearch.count()) > 0) await typeSearch.fill(`PART9 TYPE ${RUN_ID}`).catch(() => undefined);
+    await page.waitForTimeout(900);
+    // Row layout: [checkbox] [Test Cases] [Action] [Type] — Type is the 4th cell.
+    const typeRow = page.locator("tbody tr", { hasText: `PART9 TYPE ${RUN_ID}` }).first();
+    const typeCell = typeRow.locator("td").nth(3);
+    const typeText = ((await typeCell.innerText().catch(() => "")) || "").trim();
     check("PART 9 the Type column displays the exact selected type", typeText.includes("Penetration"), typeText.slice(0, 160));
 
 
@@ -4202,10 +4205,12 @@ async function main() {
       String(editedTypeCase?.variablesJson ?? "").slice(0, 120),
     );
     await goto(page, "/dashboard/test-cases");
-    await page.waitForTimeout(1_000);
-    // Check Type column via first row's Type td after edit
-    const editedTypeCell = page.locator("tbody tr").first().locator("td").nth(0);
-    const editedTypeText = await editedTypeCell.innerText().catch(() => "");
+    const editedTypeSearch = page.getByPlaceholder("Search test cases").first();
+    if ((await editedTypeSearch.count()) > 0) await editedTypeSearch.fill(`PART9 TYPE ${RUN_ID}`).catch(() => undefined);
+    await page.waitForTimeout(900);
+    const editedTypeRow = page.locator("tbody tr", { hasText: `PART9 TYPE ${RUN_ID}` }).first();
+    const editedTypeCell = editedTypeRow.locator("td").nth(3);
+    const editedTypeText = ((await editedTypeCell.innerText().catch(() => "")) || "").trim();
     check("PART 9 the Type column follows the edited type", editedTypeText.includes("Accessibility"), editedTypeText.slice(0, 160));
 
     await page.getByRole("button", { name: /New Test Case/ }).first().click().catch(() => undefined);
