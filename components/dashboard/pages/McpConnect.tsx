@@ -6,11 +6,11 @@ import {
   cqaBtnPrimary,
   cqaBtnSecondary,
   cqaCard,
-  cqaIconBtn,
   cqaInput,
   cqaLabel,
 } from "@/components/dashboard/ui";
 import { apiFetch, errorMessage } from "@/lib/api";
+import type { AgentSkill } from "@/lib/agent-skills";
 import { can } from "@/lib/rbac";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,11 @@ import { cn } from "@/lib/utils";
 /** Local MCP endpoints served by this QASyn instance. */
 const MCP_SSE = "http://localhost:3000/api/mcp/sse";
 const MCP_JSONRPC = "http://localhost:3000/api/mcp";
-const TOKEN_PLACEHOLDER = "cqa_REPLACE_WITH_YOUR_TOKEN";
+/** Shown only when the signed-in role may not read the organisation secret. */
+const TOKEN_FALLBACK = "cqa_<generate-a-token-above>";
+const DEFAULT_MCP_TOKEN_NAME = "MCP · default";
+
+const OPENCODE_MODELS = ["opencode/big-pickle", "opencode/glm-4.7-free", "opencode/grok-code"];
 
 export interface McpTokenRow {
   id: string;
@@ -30,6 +34,7 @@ export interface McpTokenRow {
 }
 
 type ClientKey =
+  | "opencode"
   | "claude-code"
   | "claude-desktop"
   | "cursor"
@@ -48,6 +53,18 @@ interface ClientDefinition {
 }
 
 const CLIENTS: ClientDefinition[] = [
+  {
+    key: "opencode",
+    name: "OpenCode (Free AI Models)",
+    description: "Terminal agent — free models",
+    icon: "terminal",
+    file: "opencode.json",
+    steps: [
+      "Create opencode.json at the project root with the QASyn MCP server below.",
+      "Run opencode --model opencode/big-pickle (or run /models inside OpenCode).",
+      "Ask OpenCode to call the qasyn_* tools — free models include big-pickle, GLM 4.7 Free and Grok Code.",
+    ],
+  },
   {
     key: "claude-code",
     name: "Claude Code",
@@ -127,6 +144,45 @@ const CLIENTS: ClientDefinition[] = [
   },
 ];
 
+/** Five ready-to-paste OpenCode prompts covering the main QA workflows. */
+const OPENCODE_PROMPTS: Array<{ id: string; title: string; prompt: string; icon: string }> = [
+  {
+    id: "qa-audit",
+    title: "QA audit",
+    icon: "monitoring",
+    prompt:
+      "Call qasyn_get_quality_summary and qasyn_list_test_cases. Audit this workspace: coverage by module, failing critical tests, stale cases and the top three release risks. Return a table and a prioritised action list.",
+  },
+  {
+    id: "cgi-contextqa",
+    title: "Test CGI / Gmail AD",
+    icon: "travel_explore",
+    prompt:
+      "Test https://www.cgi.com and https://gmailad.contextqa.com: call qasyn_start_crawl on each target, list the discovered flows, then create web tests with qasyn_create_web_test for every uncovered critical journey. Use Playwright role-based locators.",
+  },
+  {
+    id: "pr-analysis",
+    title: "Analyse a PR",
+    icon: "merge",
+    prompt:
+      "Call qasyn_analyze_pr for PR #812 (branch feat/checkout-wallet, files src/checkout/wallet.tsx, src/api/payments/route.ts, src/billing/invoice.ts). Return the blast radius, impacted tests and a Go/No-Go verdict with evidence.",
+  },
+  {
+    id: "bugs-mcp",
+    title: "Bugs via MCP",
+    icon: "bug_report",
+    prompt:
+      "Call qasyn_list_bugs and qasyn_get_execution_evidence for the failing cases. Group bugs by root cause, link each one to its failing test and propose the smallest fix with a regression test.",
+  },
+  {
+    id: "self-healing",
+    title: "Self-heal a run",
+    icon: "auto_fix_high",
+    prompt:
+      "Call qasyn_get_execution_evidence for the last failing checkout test, resolve qasyn_context7_resolve for Playwright locators, then propose and apply the best accessible locator. Re-run only the failed step and report before/after selectors.",
+  },
+];
+
 interface ToolDefinition {
   name: string;
   label: string;
@@ -135,7 +191,7 @@ interface ToolDefinition {
   sample: Record<string, unknown>;
 }
 
-/** The six tools featured on this page; all are executable below. */
+/** The six tools featured on this page, plus Context7, all executable below. */
 const TOOLS: ToolDefinition[] = [
   {
     name: "qasyn_get_quality_summary",
@@ -183,6 +239,13 @@ const TOOLS: ToolDefinition[] = [
     description: "Reproduced bugs with root cause and severity.",
     icon: "bug_report",
     sample: {},
+  },
+  {
+    name: "qasyn_context7_resolve",
+    label: "Context7 live docs",
+    description: "Resolve Playwright / Next.js rules for generation and healing.",
+    icon: "menu_book",
+    sample: { query: "Playwright locator for the checkout pay button" },
   },
 ];
 
@@ -248,9 +311,35 @@ function jsonBlock(value: string) {
   return value;
 }
 
+function openCodeConfig(token: string): string {
+  return JSON.stringify(
+    {
+      $schema: "https://opencode.ai/config.json",
+      model: OPENCODE_MODELS[0],
+      mcp: {
+        qasyn: {
+          type: "remote",
+          url: MCP_SSE,
+          headers: { Authorization: `Bearer ${token}` },
+          enabled: true,
+        },
+      },
+      instructions: [".claude/CLAUDE.md", ".github/copilot-instructions.md"],
+    },
+    null,
+    2,
+  );
+}
+
 function clientSnippet(key: ClientKey, token: string): { title: string; body: string; language: string } {
   const auth = `Bearer ${token}`;
   switch (key) {
+    case "opencode":
+      return {
+        title: "opencode.json",
+        language: "json",
+        body: openCodeConfig(token),
+      };
     case "claude-code":
       return {
         title: "Register the server",
@@ -367,14 +456,14 @@ function useCopy() {
   return { copied, copy };
 }
 
-function CopyButton({ id, value, label }: { id: string; value: string; label?: string }) {
+function CopyButton({ id, value, label, ariaLabel }: { id: string; value: string; label?: string; ariaLabel?: string }) {
   const { copied, copy } = useCopy();
   return (
     <button
       type="button"
       className={cn(cqaBtnSecondary, "h-8 shrink-0 px-2.5 text-[11.5px]")}
       onClick={() => void copy(id, value)}
-      aria-label={label ?? "Copy"}
+      aria-label={ariaLabel ?? label ?? "Copy"}
     >
       <CqaIcon name={copied === id ? "check" : "content_copy"} className="text-[15px]" />
       {copied === id ? "Copied" : label ?? "Copy"}
@@ -396,31 +485,95 @@ function CodePanel({ title, body, id }: { title: string; body: string; id: strin
   );
 }
 
-export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: McpTokenRow[]; role: string }) {
+interface SkillPayload {
+  skills: AgentSkill[];
+  enabled: string[];
+}
+
+export function McpConnect({
+  tokens: initialTokens,
+  role: userRole,
+  initialPlainToken,
+  enabledSkills,
+}: {
+  tokens: McpTokenRow[];
+  role: string;
+  /** Auto-provisioned organisation token, embedded directly in every snippet. */
+  initialPlainToken?: string | null;
+  /** Agent Skills enabled for the organisation. */
+  enabledSkills?: string[];
+}) {
   const [tokens, setTokens] = useState<McpTokenRow[]>(initialTokens);
-  const [activeTokenId, setActiveTokenId] = useState<string>(initialTokens[0]?.id ?? "");
+  const defaultTokenId = useMemo(
+    () => initialTokens.find((row) => row.name === DEFAULT_MCP_TOKEN_NAME)?.id ?? initialTokens[0]?.id ?? "",
+    [initialTokens],
+  );
+  const [activeTokenId, setActiveTokenId] = useState<string>(defaultTokenId);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+  const [generatedTokenId, setGeneratedTokenId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [activeClient, setActiveClient] = useState<ClientKey>("claude-code");
+  const [activeClient, setActiveClient] = useState<ClientKey>("opencode");
   const [activeRole, setActiveRole] = useState("admin");
   const [toolName, setToolName] = useState(TOOLS[0].name);
   const [argsText, setArgsText] = useState(JSON.stringify(TOOLS[0].sample, null, 2));
   const [response, setResponse] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
+  const [skills, setSkills] = useState<SkillPayload | null>(
+    enabledSkills ? { skills: [], enabled: enabledSkills } : null,
+  );
+  const [skillPending, setSkillPending] = useState<string | null>(null);
+  const [exportResult, setExportResult] = useState<{ path: string; filename: string; content: string } | null>(null);
+  const [contextQuery, setContextQuery] = useState("Playwright locator for the checkout pay button");
+  const [contextResult, setContextResult] = useState<{
+    resolved: boolean;
+    library: { name: string; version: string; docsUrl: string };
+    score: number;
+    rules: string[];
+    injectedPrompt: string;
+    source: string;
+  } | null>(null);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [contextError, setContextError] = useState<string | null>(null);
   const canGenerate = can(userRole, "mcpTokens");
 
-  const token = generatedToken && activeTokenId === tokens[0]?.id ? generatedToken : TOKEN_PLACEHOLDER;
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/dashboard/agent-skills")
+      .then(async (res) => (res.ok ? ((await res.json()) as SkillPayload) : null))
+      .then((payload) => {
+        if (!cancelled && payload) setSkills(payload);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeSecret =
+    generatedToken && activeTokenId === generatedTokenId
+      ? generatedToken
+      : activeTokenId === defaultTokenId && initialPlainToken
+        ? initialPlainToken
+        : null;
+  const token = activeSecret ?? TOKEN_FALLBACK;
   const client = CLIENTS.find((item) => item.key === activeClient) ?? CLIENTS[0];
   const snippet = useMemo(() => clientSnippet(client.key, token), [client.key, token]);
   const role = ROLE_GUIDES.find((item) => item.key === activeRole) ?? ROLE_GUIDES[0];
   const tool = TOOLS.find((item) => item.name === toolName) ?? TOOLS[0];
+  const enabledSkillsList = skills?.enabled ?? enabledSkills ?? [];
 
   useEffect(() => {
     setArgsText(JSON.stringify(tool.sample, null, 2));
     setResponse(null);
     setRunError(null);
   }, [tool]);
+
+  useEffect(() => {
+    void resolveContext(contextQuery);
+    // Run once with the default Playwright query.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function generateToken() {
     setGenerating(true);
@@ -447,6 +600,7 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
       };
       setTokens((prev) => [row, ...prev]);
       setGeneratedToken(result.token);
+      setGeneratedTokenId(row.id);
       setActiveTokenId(row.id);
       toast("MCP token generated. Copy it now — it is shown only once.", "success");
     } catch (error) {
@@ -464,7 +618,7 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
       let args: Record<string, unknown> = {};
       if (argsText.trim()) args = JSON.parse(argsText) as Record<string, unknown>;
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (generatedToken && activeTokenId === tokens[0]?.id) headers.Authorization = `Bearer ${generatedToken}`;
+      if (activeSecret) headers.Authorization = `Bearer ${activeSecret}`;
       const started = performance.now();
       const res = await fetch("/api/mcp", {
         method: "POST",
@@ -486,6 +640,71 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
     }
   }
 
+  async function toggleSkill(skill: AgentSkill) {
+    if (!skills || !canGenerate) return;
+    const enabled = skills.enabled.includes(skill.id);
+    setSkillPending(skill.id);
+    try {
+      const result = await apiFetch<{ enabled: string[] }>("/api/dashboard/agent-skills", {
+        method: "POST",
+        json: { action: "toggle", id: skill.id, enabled: !enabled },
+      });
+      setSkills({ ...skills, enabled: result.enabled });
+      toast(`${skill.title} ${enabled ? "disabled" : "enabled"}.`, "success");
+    } catch (error) {
+      toast(errorMessage(error), "error");
+    } finally {
+      setSkillPending(null);
+    }
+  }
+
+  async function exportSkills(target: "claude" | "copilot" | "opencode") {
+    setSkillPending(`export-${target}`);
+    try {
+      const result = await apiFetch<{ filename: string; path: string; content: string }>("/api/dashboard/agent-skills", {
+        method: "POST",
+        json: { action: "export", target },
+      });
+      setExportResult(result);
+      toast(`${result.path} generated. Copy or download it.`, "success");
+    } catch (error) {
+      toast(errorMessage(error), "error");
+    } finally {
+      setSkillPending(null);
+    }
+  }
+
+  function downloadExport() {
+    if (!exportResult) return;
+    const blob = new Blob([exportResult.content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = exportResult.filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function resolveContext(query = contextQuery) {
+    setContextLoading(true);
+    setContextError(null);
+    try {
+      const result = await apiFetch<{
+        resolved: boolean;
+        library: { name: string; version: string; docsUrl: string };
+        score: number;
+        rules: string[];
+        injectedPrompt: string;
+        source: string;
+      }>("/api/dashboard/context7", { method: "POST", json: { query } });
+      setContextResult(result);
+    } catch (error) {
+      setContextError(errorMessage(error));
+    } finally {
+      setContextLoading(false);
+    }
+  }
+
   const selectedToken = tokens.find((row) => row.id === activeTokenId);
 
   return (
@@ -494,8 +713,8 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
         <div>
           <h1 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-[#111827]">Connect QASyn</h1>
           <p className="mt-1 max-w-3xl text-[13.5px] leading-5 text-[#6b7280]">
-            Use QASyn from Claude Code, Claude Desktop, Cursor, VS Code Copilot, Windsurf, OpenAI/ChatGPT or any
-            MCP-compatible client. All six QASyn tools execute against this workspace.
+            Use QASyn from OpenCode with free models, Claude Code, Claude Desktop, Cursor, VS Code Copilot, Windsurf,
+            OpenAI/ChatGPT or any MCP-compatible client. Every QASyn tool executes against this workspace.
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ecfdf3] px-3 py-1 text-[12px] font-semibold text-[#067647]">
@@ -555,8 +774,8 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
                 ? "Your role can use the MCP tools with this dashboard session; token creation is limited to Admin, QA and Engineer roles."
                 : generatedToken
                   ? "Your new token is embedded in the snippets below. It is shown only once."
-                  : selectedToken
-                    ? `Using ${selectedToken.tokenPrefix}… — the secret is not stored. Generate a token to embed it.`
+                  : activeSecret
+                    ? `Using ${selectedToken?.tokenPrefix ?? "cqa"}… — the auto-provisioned organisation token is embedded below.`
                     : "Generate a token to embed it in the snippets below."}
             </p>
           </div>
@@ -570,6 +789,18 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
             </div>
             <code data-testid="mcp-token-value" className="mt-1.5 block break-all font-mono text-[12px] text-[#065f46]">
               {generatedToken}
+            </code>
+          </div>
+        )}
+
+        {!generatedToken && initialPlainToken && (
+          <div className="mt-3 rounded-lg border border-[#abefc6] bg-[#ecfdf3] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11.5px] font-semibold text-[#067647]">Active organisation token (auto-provisioned)</p>
+              <CopyButton id="active-token" value={initialPlainToken} label="Copy token" />
+            </div>
+            <code data-testid="mcp-token-value" className="mt-1.5 block break-all font-mono text-[12px] text-[#065f46]">
+              {initialPlainToken}
             </code>
           </div>
         )}
@@ -636,6 +867,33 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
 
             <CodePanel title={snippet.title} body={snippet.body} id={`client-${client.key}`} />
 
+            {client.key === "opencode" && (
+              <div className="space-y-3" data-testid="opencode-setup">
+                <div className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#9ca3af]">Free models</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {OPENCODE_MODELS.map((model) => (
+                      <span
+                        key={model}
+                        className="rounded-full border border-[#ddd6fe] bg-white px-2 py-0.5 font-mono text-[10.5px] text-[#5b4ee8]"
+                      >
+                        {model}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] leading-4 text-[#6b7280]">
+                    OpenCode reads <span className="font-mono">opencode.json</span> from the project root. Switch models
+                    at any time with <span className="font-mono">/models</span>.
+                  </p>
+                </div>
+                <CodePanel
+                  title="Start OpenCode with a free model"
+                  id="opencode-command"
+                  body={`opencode --model opencode/big-pickle\n\n# inside OpenCode\n/models`}
+                />
+              </div>
+            )}
+
             {client.key === "openai" && (
               <p className="text-[11.5px] leading-4 text-[#6b7280]">
                 The token is passed as a query parameter because ChatGPT connectors cannot set custom headers.
@@ -644,6 +902,214 @@ export function McpConnect({ tokens: initialTokens, role: userRole }: { tokens: 
             )}
           </div>
         </div>
+      </section>
+
+      {activeClient === "opencode" && (
+        <section className={cn(cqaCard, "p-4")} aria-label="OpenCode prompts">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="text-[15px] font-semibold text-[#111827]">OpenCode quick prompts</h2>
+              <p className="mt-0.5 text-[12px] text-[#6b7280]">
+                Five copyable prompts that drive the QASyn MCP tools end to end.
+              </p>
+            </div>
+            <span className="rounded-full bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#5b4ee8]">
+              Free models ready
+            </span>
+          </div>
+          <div className="mt-3 grid gap-2 lg:grid-cols-2">
+            {OPENCODE_PROMPTS.map((item) => (
+              <div
+                key={item.id}
+                data-prompt={item.id}
+                className="flex items-start gap-2 rounded-lg border border-[#eef0f3] px-3 py-2"
+              >
+                <CqaIcon name={item.icon} className="mt-0.5 text-[16px] text-[#5b4ee8]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11.5px] font-semibold text-[#374151]">{item.title}</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-[#6b7280]">{item.prompt}</p>
+                </div>
+                <CopyButton id={`prompt-${item.id}`} value={item.prompt} label="Copy prompt" ariaLabel="Copy Test Prompt for OpenCode" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className={cn(cqaCard, "p-4")} aria-label="Agent Skills Library" data-testid="agent-skills">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-[15px] font-semibold text-[#111827]">Agent Skills Library</h2>
+            <p className="mt-0.5 text-[12px] text-[#6b7280]">
+              Six reusable QA skills. Enable them for this workspace, then export instructions for Claude Code, GitHub
+              Copilot or OpenCode.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(["claude", "copilot", "opencode"] as const).map((target) => (
+              <button
+                key={target}
+                type="button"
+                data-export={target}
+                className={cn(cqaBtnSecondary, "h-8 px-2.5 text-[11.5px]")}
+                disabled={!canGenerate || skillPending === `export-${target}`}
+                onClick={() => void exportSkills(target)}
+              >
+                <CqaIcon name="download" className="text-[14px]" />
+                {target === "claude" ? ".claude/CLAUDE.md" : target === "copilot" ? "copilot-instructions" : "opencode.json"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {(skills?.skills ?? []).map((skill) => {
+            const enabled = enabledSkillsList.includes(skill.id);
+            return (
+              <div
+                key={skill.id}
+                data-skill={skill.id}
+                data-enabled={enabled ? "true" : "false"}
+                className={cn(
+                  "rounded-lg border px-3 py-2.5 transition",
+                  enabled ? "border-[#c7d2fe] bg-[#faf9ff]" : "border-[#eef0f3] bg-white",
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#111827]">
+                    <span className={cn("flex size-6 items-center justify-center rounded-md", enabled ? "bg-[#eef2ff] text-[#4f46e5]" : "bg-[#f3f4f6] text-[#6b7280]")}>
+                      <CqaIcon name={skill.icon} className="text-[15px]" />
+                    </span>
+                    {skill.title}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enabled}
+                    aria-label={`${enabled ? "Disable" : "Enable"} ${skill.title}`}
+                    disabled={!canGenerate || skillPending === skill.id}
+                    onClick={() => void toggleSkill(skill)}
+                    className={cn(
+                      "relative h-5 w-9 shrink-0 rounded-full transition disabled:opacity-50",
+                      enabled ? "bg-[#5b4ee8]" : "bg-[#d1d5db]",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 size-4 rounded-full bg-white shadow transition",
+                        enabled ? "left-[18px]" : "left-0.5",
+                      )}
+                    />
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-4 text-[#6b7280]">{skill.description}</p>
+                <p className="mt-1 font-mono text-[10px] text-[#9ca3af]">{skill.name}</p>
+              </div>
+            );
+          })}
+          {!skills && <p className="text-[12px] text-[#9ca3af]">Loading the skills catalogue…</p>}
+        </div>
+
+        {exportResult && (
+          <div className="mt-3">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <p className="font-mono text-[11px] font-medium text-[#6b7280]">{exportResult.path}</p>
+              <div className="flex gap-1.5">
+                <CopyButton id="export-content" value={exportResult.content} />
+                <button type="button" className={cn(cqaBtnSecondary, "h-8 px-2.5 text-[11.5px]")} onClick={downloadExport}>
+                  <CqaIcon name="download" className="text-[14px]" /> Download
+                </button>
+              </div>
+            </div>
+            <pre className="max-h-[260px] overflow-auto rounded-lg bg-[#10141c] p-3 text-[11.5px] leading-5 text-[#e2e8f0]">
+              <code>{exportResult.content}</code>
+            </pre>
+          </div>
+        )}
+      </section>
+
+      <section className={cn(cqaCard, "p-4")} aria-label="Context7 live documentation" data-testid="context7-resolver">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[#111827]">
+              <CqaIcon name="menu_book" className="text-[18px] text-[#5b4ee8]" /> Context7 live docs
+            </h2>
+            <p className="mt-0.5 text-[12px] text-[#6b7280]">
+              Resolve a QA task to versioned Playwright, Next.js, Tailwind, Prisma or TypeScript rules. The same rules
+              are injected into test generation and self-healing.
+            </p>
+          </div>
+          <span className="rounded-full bg-[#f3f4f6] px-2.5 py-1 font-mono text-[10.5px] text-[#4b5563]">
+            qasyn_context7_resolve
+          </span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            className={cn(cqaInput, "h-9 min-w-[260px] flex-1")}
+            value={contextQuery}
+            onChange={(event) => setContextQuery(event.target.value)}
+            aria-label="Context7 query"
+            placeholder="e.g. Playwright accessible locator for a checkout button"
+          />
+          <button type="button" className={cqaBtnPrimary} disabled={contextLoading} onClick={() => void resolveContext()}>
+            <CqaIcon name="search" className="text-[16px]" />
+            {contextLoading ? "Resolving…" : "Resolve docs"}
+          </button>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {["Playwright locator", "Next.js hydration", "Tailwind responsive", "Prisma multi-tenant", "TypeScript types"].map(
+            (sample) => (
+              <button
+                key={sample}
+                type="button"
+                className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[10.5px] font-medium text-[#4b5563] transition hover:bg-[#e9eaee]"
+                onClick={() => {
+                  setContextQuery(sample);
+                  void resolveContext(sample);
+                }}
+              >
+                {sample}
+              </button>
+            ),
+          )}
+        </div>
+
+        {contextError && (
+          <p role="alert" className="mt-3 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[12px] text-[#b42318]">
+            {contextError}
+          </p>
+        )}
+
+        {contextResult && (
+          <div className="mt-3 rounded-lg border border-[#eef0f3] bg-[#fafafa] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[12.5px] font-semibold text-[#111827]">
+                {contextResult.library.name}{" "}
+                <span className="font-mono text-[11px] font-normal text-[#6b7280]">v{contextResult.library.version}</span>
+              </p>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#4f46e5] ring-1 ring-[#e5e7eb]">
+                {contextResult.resolved ? `score ${contextResult.score}` : "fallback"} · local deterministic
+              </span>
+            </div>
+            <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11.5px] leading-4 text-[#4b5563]">
+              {contextResult.rules.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ul>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <a
+                href={contextResult.library.docsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] font-medium text-[#5b4ee8] hover:underline"
+              >
+                {contextResult.source}
+              </a>
+              <CopyButton id="context7-prompt" value={contextResult.injectedPrompt} label="Copy injected prompt" />
+            </div>
+          </div>
+        )}
       </section>
 
       <section className={cn(cqaCard, "p-4")} aria-label="MCP tool runner">

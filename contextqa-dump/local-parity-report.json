@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T18:11:23.863Z",
+  "generatedAt": "2026-11-11T01:47:22.247Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -359,7 +359,7 @@
         {
           "check": "Open PR shows number, title, branches, author and files",
           "ok": true,
-          "detail": "#740Add wallet payments to checkout 6 files feat/wallet-payments → main · @priya · Nov 9, 2026 src/checkout/wallet.tsx · src/checkout/payment-form.tsx · src/checkout/checkout-sessi"
+          "detail": "#740Add wallet payments to checkout 6 files feat/wallet-payments → main · @priya · Nov 10, 2026 src/checkout/wallet.tsx · src/checkout/payment-form.tsx · src/checkout/checkout-sess"
         },
         {
           "check": "PR check opens the analysis drawer",
@@ -399,12 +399,12 @@
         {
           "check": "PR drawer computes a verdict",
           "ok": true,
-          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close 3 regressions caught High risk AZURE_DEVOPS · cgi/digital-portal Open in provider"
+          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close 1 regression caught High risk AZURE_DEVOPS · cgi/digital-portal Open in provider "
         },
         {
           "check": "PR drawer posts a provider comment automatically",
           "ok": true,
-          "detail": " method - ✅ Upgrade from Starter to Pro - ✅ Cancel a subscription - ✅ Retry a failed payment - ✅ Pay with a saved card - ❌ Pay with a wallet - ❌ Handle a declined card - ❌ Complete checkout _Posted automatically by QASyn for CGI._ refresh Re-run analysis Close"
+          "detail": "subscription - ✅ Retry a failed payment - ✅ Pay with a saved card - ✅ Pay with a wallet - ❌ Checkout session survives token refresh - ✅ Complete checkout - ✅ Log in with e-mail and password _Posted automatically by QASyn for CGI._ refresh Re-run analysis Close"
         },
         {
           "check": "Pull requests shows no raw JSON",
@@ -920,12 +920,12 @@
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-16533\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-51692\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-16533\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-51692\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -940,7 +940,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-16533"
+          "detail": "https://www.cgi.com/parity-51692"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -2001,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for parcr9k close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it "
+          "detail": "Install command for par13vwg close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
         },
         {
           "check": "Install command one-time token",
@@ -2230,7 +2230,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_16533\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_51692\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2458,7 +2458,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_n-ivyFWY"
+          "detail": "cqa_7LHcBIXp"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2478,7 +2478,7 @@
         {
           "check": "MCP tools/list exposes the six required tools",
           "ok": true,
-          "detail": "qasyn_get_quality_summary, qasyn_list_test_cases, qasyn_run_test_case, qasyn_start_crawl, qasyn_analyze_pr, qasyn_list_bugs, qasyn_create_web_test, qasyn_run_test_plan, qasyn_get_execution_evidence, qasyn_trigger_api_chain, qasyn_list_pull_requests, qasyn_run_mobile_test, qasyn_ship_workflow, qasyn_reproduce_bug, qasyn_analyze_pr_impact"
+          "detail": "qasyn_get_quality_summary, qasyn_list_test_cases, qasyn_run_test_case, qasyn_start_crawl, qasyn_analyze_pr, qasyn_list_bugs, qasyn_create_web_test, qasyn_run_test_plan, qasyn_get_execution_evidence, qasyn_trigger_api_chain, qasyn_list_pull_requests, qasyn_run_mobile_test, qasyn_ship_workflow, qasyn_reproduce_bug, qasyn_analyze_pr_impact, qasyn_context7_resolve"
         },
         {
           "check": "MCP role guide \"Admin\"",
@@ -2548,7 +2548,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 67, \"passRate\": 57, \"bugsReproduced\": 8, \"regressionsCaught\": 39, \"costAvoi"
+          "detail": "200 { \"testCases\": 67, \"passRate\": 60, \"bugsReproduced\": 10, \"regressionsCaught\": 92, \"costAvo"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2578,7 +2578,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwb0454b00mwx90ss0hswvhp\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
+          "detail": "200 { \"id\": \"cmwbgheva0051x9cgg9y9k5cp\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2598,7 +2598,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwazz01g00i4x90sk9furvu0\", \"title\": \"Complete checkout fails\", \"severity\":"
+          "detail": "200 [ { \"id\": \"cmwbgd4je0009x9cgd5oq6cum\", \"title\": \"Checkout session survives token refresh f"
         },
         {
           "check": "MCP no page errors",
@@ -3690,7 +3690,7 @@
         {
           "check": "PART 4 RowMenu flips upward when space below is short",
           "ok": true,
-          "detail": "trigger y 428 · menu 171–424"
+          "detail": "trigger y 330 · menu 73–326"
         },
         {
           "check": "PART 4 crawl table has no vertical scrollbar",
@@ -3700,7 +3700,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwb07jel00nox90s4ref9e7i"
+          "detail": "status 201 · cmwbgj4za005tx9cgjlrf3vgi"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3735,7 +3735,7 @@
         {
           "check": "PART 4 filter keeps only completed crawls",
           "ok": true,
-          "detail": "5 row(s)"
+          "detail": "8 row(s)"
         },
         {
           "check": "PART 4 filter chip can be removed",
@@ -3805,7 +3805,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 16533? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 51692? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -4059,7 +4059,7 @@
         {
           "check": "Plan run from list executes every linked case",
           "ok": true,
-          "detail": "total 67 · counted 67 · passed 38 · failed 8 · not executed 21"
+          "detail": "total 67 · counted 67 · passed 39 · failed 7 · not executed 21"
         },
         {
           "check": "Plan run from list returns a viewport",
@@ -4074,12 +4074,12 @@
         {
           "check": "Plan run from list persists an execution",
           "ok": true,
-          "detail": "2 → 3"
+          "detail": "8 → 9"
         },
         {
           "check": "Plan run from list persists a TestRun",
           "ok": true,
-          "detail": "16 → 17"
+          "detail": "31 → 32"
         },
         {
           "check": "Plan detail lists every linked suite",
@@ -4099,42 +4099,42 @@
         {
           "check": "Plan run from detail executes every linked case",
           "ok": true,
-          "detail": "total 67 · passed 38 · failed 8"
+          "detail": "total 67 · passed 39 · failed 7"
         },
         {
           "check": "Plan run from detail persists an execution",
           "ok": true,
-          "detail": "3 → 4"
+          "detail": "9 → 10"
         },
         {
           "check": "Plan run from detail persists a TestRun",
           "ok": true,
-          "detail": "17 → 18"
+          "detail": "32 → 33"
         },
         {
           "check": "Plan execution has START and END",
           "ok": true,
-          "detail": "FAILED · 2026-11-10T18:10:59.756Z"
+          "detail": "FAILED · 2026-11-11T01:46:59.363Z"
         },
         {
           "check": "Plan execution persists the viewport",
           "ok": true,
-          "detail": "{\"total\":67,\"passed\":38,\"failed\":8,\"notExecuted\":21,\"autoFixed\":50,\"durationMs\":65395,\"viewport\":\"1440×900 · Chromium\",\""
+          "detail": "{\"total\":67,\"passed\":39,\"failed\":7,\"notExecuted\":21,\"autoFixed\":127,\"durationMs\":65395,\"viewport\":\"1440×900 · Chromium\","
         },
         {
           "check": "Plan counters refreshed after the run",
           "ok": true,
-          "detail": "lastRunAt 2026-11-10T18:10:59.756Z · passRate 82.6"
+          "detail": "lastRunAt 2026-11-11T01:46:59.363Z · passRate 84.8"
         },
         {
           "check": "Plan detail START card is populated",
           "ok": true,
-          "detail": "START Nov 10, 2026, 1:10 PM Latest run"
+          "detail": "START Nov 10, 2026, 8:46 PM Latest run"
         },
         {
           "check": "Plan detail END card is populated",
           "ok": true,
-          "detail": "END Nov 10, 2026, 1:10 PM Latest run"
+          "detail": "END Nov 10, 2026, 8:46 PM Latest run"
         },
         {
           "check": "Plan detail shows the latest viewport",
@@ -4170,6 +4170,16 @@
           "check": "install.ps1 prints the connected message",
           "ok": true,
           "detail": "success message present"
+        },
+        {
+          "check": "install.ps1 uses a simple function (no CmdletBinding/param binder)",
+          "ok": true,
+          "detail": "raw --name/--token reach $args"
+        },
+        {
+          "check": "install.ps1 accepts key=value and positional tokens",
+          "ok": true,
+          "detail": ""
         },
         {
           "check": "install.ps1 avoids get.qasyn.com",
@@ -4224,7 +4234,7 @@
         {
           "check": "Tunnel connect persists connectedAt",
           "ok": true,
-          "detail": "2026-11-10T18:11:04.611Z"
+          "detail": "2026-11-11T01:47:01.031Z"
         },
         {
           "check": "Super Admin account exists",
@@ -4315,6 +4325,415 @@
           "check": "PART 5 Super Admin has no page errors",
           "ok": true,
           "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "part7-integrations",
+      "name": "PART 7 - PowerShell, menus, Studio, MCP, Graphify, Magic, Strix",
+      "route": "/dashboard/tunnels",
+      "checks": [
+        {
+          "check": "PART 7 real PowerShell prints Connected: qamachine -> origin",
+          "ok": true,
+          "detail": " QASyn Tunnel Agent Origin: http://localhost:3000 Installed. Next: qasyn connect --name <machine> --token <token> Connected: qamachine -> http://localhost:3000 This machine now shows as Connected in Tunnels. "
+        },
+        {
+          "check": "PART 7 real PowerShell never falls back to Usage",
+          "ok": true,
+          "detail": " QASyn Tunnel Agent Origin: http://localhost:3000 Installed. Next: qasyn connect --name <machine> --token <token> Connected: qamachine -> http://localhost:3000 This machine now sho"
+        },
+        {
+          "check": "PART 7 real PowerShell flips the machine to connected",
+          "ok": true,
+          "detail": "connected · DESKTOP-MTMMURQ"
+        },
+        {
+          "check": "PART 7 PowerShell accepts -name/-token",
+          "ok": true,
+          "detail": " QASyn Tunnel Agent Origin: http://localhost:3000 Installed. Next: qasyn connect --name <machine> --token <token> Connected: qamachine -> http://localhost:3000 This machine now shows as Connected in T"
+        },
+        {
+          "check": "PART 7 PowerShell accepts name=value/token=value",
+          "ok": true,
+          "detail": " QASyn Tunnel Agent Origin: http://localhost:3000 Installed. Next: qasyn connect --name <machine> --token <token> Connected: qamachine -> http://localhost:3000 This machine now shows as Connected in T"
+        },
+        {
+          "check": "PART 7 PowerShell accepts positional name and cqa_tun token",
+          "ok": true,
+          "detail": " QASyn Tunnel Agent Origin: http://localhost:3000 Installed. Next: qasyn connect --name <machine> --token <token> Connected: qamachine -> http://localhost:3000 This machine now shows as Connected in T"
+        },
+        {
+          "check": "PART 7 pre-armed install URL auto-connects",
+          "ok": true,
+          "detail": " QASyn Tunnel Agent Origin: http://localhost:3000 Token detected in install URL - connecting automatically... Connected: qamachine -> http://localhost:3000 This machine now shows as Connected in Tunnels. "
+        },
+        {
+          "check": "PART 7 pre-armed URL never prints Usage",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Tunnels lists the machine",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Tunnels uses the shared More menu",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Tunnels menu is portaled to document.body",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Tunnels menu uses position: fixed",
+          "ok": true,
+          "detail": "fixed"
+        },
+        {
+          "check": "PART 7 Tunnels menu uses z-index 9999",
+          "ok": true,
+          "detail": "9999"
+        },
+        {
+          "check": "PART 7 Tunnels menu is fully inside the viewport",
+          "ok": true,
+          "detail": "1183,254 208×45 in 1440×900"
+        },
+        {
+          "check": "PART 7 Tunnels menu exposes Remove machine",
+          "ok": true,
+          "detail": "delete Remove machine"
+        },
+        {
+          "check": "PART 7 Tunnels menu closes on Escape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 a test case with steps is available",
+          "ok": true,
+          "detail": "cmwayzzsa00gyx9ukdzfwqesl"
+        },
+        {
+          "check": "PART 7 Studio title is visible",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio priority badge",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio header exposes Undo/Redo/More/Refresh/Run",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio Run button is indigo",
+          "ok": true,
+          "detail": "rgb(91, 78, 232)"
+        },
+        {
+          "check": "PART 7 Studio header title, badges and Run share one row",
+          "ok": true,
+          "detail": "38.0 / 38.5 / 38.0"
+        },
+        {
+          "check": "PART 7 Studio dotted '+ Add Prerequisite' banner",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio tabs (with icons), search and Reorder share one row",
+          "ok": true,
+          "detail": "148.0 / 148.0 / 148.0 · 3 icon(s)"
+        },
+        {
+          "check": "PART 7 Studio header shows the green Ready badge",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio renders step rows",
+          "ok": true,
+          "detail": "7 row(s)"
+        },
+        {
+          "check": "PART 7 Studio step row has a selection checkbox",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio step icon is 32×32",
+          "ok": true,
+          "detail": "32×32"
+        },
+        {
+          "check": "PART 7 Studio step target is an indigo pill",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio step exposes View Details ›",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio bulk bar appears after selecting a step",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Studio vertical rail is 60px wide and visible",
+          "ok": true,
+          "detail": "1020,187 60×254"
+        },
+        {
+          "check": "PART 7 Magic UI inspector is present in Step Details",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Magic UI scores locator candidates",
+          "ok": true,
+          "detail": "3 candidate(s)"
+        },
+        {
+          "check": "PART 7 Magic UI exposes Apply Best Locator",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Apply Best Locator confirms the applied strategy",
+          "ok": true,
+          "detail": "✨ Magic UI Component & Smart Locator Element · Navigate https://www.cgi.com Magic-MCP Test ID page.getByTestId('https-ww"
+        },
+        {
+          "check": "PART 7 Studio rail exposes Run History",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Run History renders cards",
+          "ok": true,
+          "detail": "8 card(s)"
+        },
+        {
+          "check": "PART 7 Run History card shows #run and Passed/Failed",
+          "ok": true,
+          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
+        },
+        {
+          "check": "PART 7 Run History card shows automated trigger and author",
+          "ok": true,
+          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
+        },
+        {
+          "check": "PART 7 Run History card shows time and duration",
+          "ok": true,
+          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
+        },
+        {
+          "check": "PART 7 Run History card shows Standalone Run or plan pill",
+          "ok": true,
+          "detail": "Release 2.8 sign-off · check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2"
+        },
+        {
+          "check": "PART 7 Run History exposes Auto-fix rerun when applicable",
+          "ok": true,
+          "detail": "auto-fix badge conditional"
+        },
+        {
+          "check": "PART 7 MCP lists OpenCode first",
+          "ok": true,
+          "detail": "opencode"
+        },
+        {
+          "check": "PART 7 MCP labels OpenCode with free models",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 MCP lists free model opencode/big-pickle",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 MCP lists free model opencode/glm-4.7-free",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 MCP lists free model opencode/grok-code",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 MCP shows the OpenCode command",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 MCP never shows cqa_REPLACE_WITH_YOUR_TOKEN",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 MCP embeds a real auto-provisioned cqa_ token",
+          "ok": true,
+          "detail": "cqa__dkfq3Aa… (36 chars)"
+        },
+        {
+          "check": "PART 7 MCP exposes 5 copyable OpenCode prompts",
+          "ok": true,
+          "detail": "5 prompt(s)"
+        },
+        {
+          "check": "PART 7 OpenCode prompts expose Copy Test Prompt for OpenCode",
+          "ok": true,
+          "detail": "5 button(s)"
+        },
+        {
+          "check": "PART 7 OpenCode prompt targets a qasyn_ tool",
+          "ok": true,
+          "detail": "monitoring QA audit Call qasyn_get_quality_summary and qasyn_list_test_cases. Audit this workspace: coverage by module, failing critical tes"
+        },
+        {
+          "check": "PART 7 MCP lists the 6 Agent Skills",
+          "ok": true,
+          "detail": "6 skill(s)"
+        },
+        {
+          "check": "PART 7 MCP exposes 3 Agent Skills exports",
+          "ok": true,
+          "detail": "3 export(s)"
+        },
+        {
+          "check": "PART 7 MCP embeds the Context7 resolver",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Context7 resolver returns versioned rules",
+          "ok": true,
+          "detail": "menu_book Context7 live docs Resolve a QA task to versioned Playwright, Next.js, Tailwind, Prisma or TypeScript rules. The same rules are injected into test generation and self-hea"
+        },
+        {
+          "check": "PART 7 Context7 API resolves Playwright docs",
+          "ok": true,
+          "detail": "Playwright v1.65 · 5 rules"
+        },
+        {
+          "check": "PART 7 MCP tool runner returns a live JSON-RPC 200",
+          "ok": true,
+          "detail": "{ \"status\": 200, \"elapsedMs\": 15, \"jsonrpc\": \"2.0\", \"id\": 1794361636299, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 67,\\n \\\"passRate\\\": 58,\\n \\\"bugsRepr"
+        },
+        {
+          "check": "PART 7 Agent Skills export writes .claude/CLAUDE.md",
+          "ok": true,
+          "detail": ".claude/CLAUDE.md · 1664 chars"
+        },
+        {
+          "check": "PART 7 Graphify API returns nodes and edges",
+          "ok": true,
+          "detail": "61 node(s) · 38 edge(s)"
+        },
+        {
+          "check": "PART 7 Graphify API covers URL/DOM/Requirement/Test/PR",
+          "ok": true,
+          "detail": "{\"url\":7,\"dom\":15,\"requirement\":10,\"test\":24,\"pr\":5}"
+        },
+        {
+          "check": "PART 7 crawl details expose the Graphify Map tab",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 crawl Graphify Map renders",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Graphify Map has 5 kind filters",
+          "ok": true,
+          "detail": "5 filter(s)"
+        },
+        {
+          "check": "PART 7 Graphify Map has zoom controls",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Graphify zoom changes from 100% to 115%",
+          "ok": true,
+          "detail": "before=true after=true"
+        },
+        {
+          "check": "PART 7 Graphify filters toggle",
+          "ok": true,
+          "detail": "true → false"
+        },
+        {
+          "check": "PART 7 Graphify Map renders interactive SVG nodes",
+          "ok": true,
+          "detail": "50 node(s)"
+        },
+        {
+          "check": "PART 7 code analysis embeds the Graphify Map",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 code analysis Graphify Map renders SVG nodes",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Magic Locator API scores Role/Test ID/Label/CSS",
+          "ok": true,
+          "detail": "Role, Test ID, Text, CSS, Label"
+        },
+        {
+          "check": "PART 7 Magic Locator returns a Best Locator",
+          "ok": true,
+          "detail": "page.getByRole('button', { name: /Pay now/i }) · 96"
+        },
+        {
+          "check": "PART 7 Strix refuses localhost (SSRF-safe)",
+          "ok": true,
+          "detail": "status 400"
+        },
+        {
+          "check": "PART 7 Strix scans a public target gracefully",
+          "ok": true,
+          "detail": "score 44 · grade F"
+        },
+        {
+          "check": "PART 7 Security testing embeds Strix",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 Strix UI reports the blocked target",
+          "ok": true,
+          "detail": "Only public http(s) targets can be scanned. Private and loopback URLs are refused."
+        },
+        {
+          "check": "PART 7 Red team embeds Strix",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 7 has no page errors",
+          "ok": true,
+          "detail": ""
         },
         {
           "check": "Global: no example.com anywhere",
@@ -4336,5 +4755,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 825
+  "totalChecks": 907
 }

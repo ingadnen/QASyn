@@ -341,5 +341,8 @@ export function SelectAllCheckbox({ checked, indeterminate, onChange, label }: {
 }
 
 export function tableCardClass(className?: string) {
-  return cn(cqaCard, "overflow-hidden", className);
+  // No overflow-hidden: toolbar popovers and RowMenu triggers inside the card
+  // must never be clipped by the card boundary. Horizontal table scrolling is
+  // handled by the inner overflow-x-auto wrapper.
+  return cn(cqaCard, className);
 }

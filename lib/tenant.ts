@@ -217,6 +217,10 @@ export interface OrgSettings {
   permissions?: Record<string, Record<string, boolean>>;
   /** Tunnels alert delivery preferences. */
   tunnelAlerts?: { sendAlerts: boolean; delivery: "Immediate" | "Daily digest"; digestHour: string; channel: string; recipients?: string[] };
+  /** Enabled Agent Skills Library ids. */
+  agentSkills?: string[];
+  /** Encrypted default MCP token secret (AES-256-GCM), never rendered raw in settings UI. */
+  mcpDefaultToken?: { tokenId: string; secret: string };
 }
 
 export function readSettings(org: Pick<Organisation, "settingsJson">): OrgSettings {

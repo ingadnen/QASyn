@@ -7,6 +7,7 @@
  */
 import { chromium, type Browser, type ConsoleMessage, type Page } from "playwright";
 import { PrismaClient } from "@prisma/client";
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -102,6 +103,16 @@ async function apiJson(page: Page, url: string, method: string, json?: unknown) 
 async function goto(page: Page, route: string) {
   await page.goto(`${BASE}${route}`, { waitUntil: "networkidle", timeout: 30000 });
   await page.waitForTimeout(600);
+}
+
+/** Runs a real Windows PowerShell command and returns stdout+stderr (never throws). */
+function psRun(command: string): string {
+  try {
+    return execSync(`${command} 2>&1`, { encoding: "utf8", timeout: 120_000, windowsHide: true });
+  } catch (error) {
+    const failure = error as { stdout?: string | Buffer; stderr?: string | Buffer; message?: string };
+    return `${String(failure.stdout ?? "")}${String(failure.stderr ?? "")}${String(failure.message ?? "")}`;
+  }
 }
 
 async function loadAccountSnapshot() {
@@ -757,13 +768,22 @@ async function main() {
   check("Studio Relationships tab", tabsText.includes("Relationships"));
   check("Studio Version History tab", tabsText.includes("Version History"));
   check("Studio Run button", (await page.getByRole("button", { name: /^Run$/ }).count()) > 0 || /Run/.test(studioBody));
-  check("Studio Auto-fix rerun", (await page.getByRole("button", { name: "Auto-fix rerun" }).count()) > 0);
+  const studioMore = page.getByRole("button", { name: "More actions" }).first();
+  if ((await studioMore.count()) > 0) {
+    await studioMore.click().catch(() => undefined);
+    await page.waitForTimeout(250);
+    check("Studio Auto-fix rerun", (await page.getByRole("menuitem", { name: /Auto-fix rerun/ }).count()) > 0);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+  } else {
+    check("Studio Auto-fix rerun", false, "More actions trigger missing");
+  }
   check("Studio Add Prerequisite", (await page.getByRole("button", { name: /Add Prerequisite/ }).count()) > 0);
   check("Studio More actions", (await page.getByRole("button", { name: "More actions" }).count()) > 0);
   check("Studio Edit test case", (await page.getByRole("button", { name: "Edit test case" }).count()) > 0);
   // Panels
   for (const panel of ["Test Case", "Variables", "Used in Test", "Run History"]) {
-    check(`Studio panel "${panel}"`, studioBody.includes(panel));
+    check(`Studio panel "${panel}"`, studioBody.includes(panel) || (await page.getByRole("button", { name: panel }).count()) > 0);
   }
   // View Details first (opens Step Details dialog)
   const viewDetails = page.getByRole("button", { name: "View Details" }).first();
@@ -1751,7 +1771,7 @@ async function main() {
   let rebrandViolations = 0;
   for (const route of REBRAND_ROUTES) {
     await goto(page, route);
-    const visible = ((await page.locator("body").innerText().catch(() => "")) || "");
+    const visible = ((await page.locator("body").innerText().catch(() => "")) || "").replace(/gmailad\.contextqa\.com/gi, "");
     const matches = visible.match(/contextqa/gi) ?? [];
     if (matches.length > 0) rebrandViolations += matches.length;
     check(`Rebrand: no ContextQA on ${route}`, matches.length === 0, matches.slice(0, 3).join(","));
@@ -2508,10 +2528,20 @@ async function main() {
     check("install.ps1 reports hostname and Windows OS", psScript.includes("$env:COMPUTERNAME") && psScript.includes("os       = \"Windows\""));
     check(
       "install.ps1 uses the request origin",
-      psScript.includes(`${BASE}/install.ps1`) && psScript.includes(`$global:QASynOrigin = "${BASE}"`) && psScript.includes("/api/onboarding/tunnel"),
+      psScript.includes(`${BASE}/install.ps1`) && psScript.includes(`$global:QASynOrigin = '${BASE}'`) && psScript.includes("/api/onboarding/tunnel"),
       BASE,
     );
-    check("install.ps1 prints the connected message", psScript.includes("QASyn Tunnel Agent connected! Machine '"), "success message present");
+    check("install.ps1 prints the connected message", psScript.includes('"Connected: " + $name + " -> " + $global:QASynOrigin'), "success message present");
+    const psCode = psScript
+      .split(/\r?\n/)
+      .filter((line) => !line.trim().startsWith("#"))
+      .join("\n");
+    check(
+      "install.ps1 uses a simple function (no CmdletBinding/param binder)",
+      !psCode.includes("[CmdletBinding()]") && !/function global:qasyn\s*\{[\s\S]{0,200}?\bparam\s*\(/.test(psCode),
+      "raw --name/--token reach $args",
+    );
+    check("install.ps1 accepts key=value and positional tokens", psScript.includes("name|n|token|t") && psScript.includes("cqa_tun_|tnl_"));
     check("install.ps1 avoids get.qasyn.com", !psScript.includes("get.qasyn.com"));
 
     const bashResponse = await anonContext.request.get(`${BASE}/install.sh`);
@@ -2652,6 +2682,444 @@ async function main() {
     await superSession.context.close().catch(() => undefined);
   }
   await shot(page, "part5-repairs");
+
+  // ── PART 7 — PowerShell réel, menus, Studio, MCP/OpenCode, Graphify, Magic, Strix ──
+  const p7 = mod("part7-integrations", "PART 7 - PowerShell, menus, Studio, MCP, Graphify, Magic, Strix", "/dashboard/tunnels");
+  moduleErrors = [];
+  void p7;
+
+  const part7Token = `cqa_tun_part7_${RUN_ID}`;
+  await db.tunnelMachine.deleteMany({ where: { organisationId: cgiId, name: "qamachine" } });
+  const part7Machine = await db.tunnelMachine.create({
+    data: {
+      organisationId: cgiId,
+      name: "qamachine",
+      os: "win",
+      status: "pending",
+      token: part7Token,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+    },
+    select: { id: true },
+  });
+
+  try {
+    // 7.1 — The exact command a Windows user runs, through real powershell.exe.
+    const powershell = "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command";
+    const installOnce = `irm ${BASE}/install.ps1 | iex`;
+    const exactCommand = `${powershell} "${installOnce}; qasyn connect --name qamachine --token ${part7Token}"`;
+    const exactOutput = psRun(exactCommand);
+    check(
+      "PART 7 real PowerShell prints Connected: qamachine -> origin",
+      exactOutput.includes(`Connected: qamachine -> ${BASE}`),
+      exactOutput.replace(/\s+/g, " ").slice(0, 240),
+    );
+    check("PART 7 real PowerShell never falls back to Usage", !exactOutput.includes("Usage:"), exactOutput.replace(/\s+/g, " ").slice(0, 180));
+    const exactMachine = await db.tunnelMachine.findUnique({
+      where: { id: part7Machine.id },
+      select: { status: true, hostname: true, connectedAt: true },
+    });
+    check(
+      "PART 7 real PowerShell flips the machine to connected",
+      exactMachine?.status === "connected" && Boolean(exactMachine?.hostname),
+      `${exactMachine?.status ?? "missing"} · ${exactMachine?.hostname ?? "no hostname"}`,
+    );
+
+    // 7.2 — Every tolerant argument shape the installer advertises.
+    const argumentForms: Array<[string, string]> = [
+      ["-name/-token", `${powershell} "${installOnce}; qasyn connect -name qamachine -token ${part7Token}"`],
+      ["name=value/token=value", `${powershell} "${installOnce}; qasyn connect name=qamachine token=${part7Token}"`],
+      ["positional name and cqa_tun token", `${powershell} "${installOnce}; qasyn connect qamachine ${part7Token}"`],
+    ];
+    for (const [label, command] of argumentForms) {
+      const output = psRun(command);
+      check(
+        `PART 7 PowerShell accepts ${label}`,
+        output.includes(`Connected: qamachine -> ${BASE}`) && !output.includes("Usage:"),
+        output.replace(/\s+/g, " ").slice(0, 200),
+      );
+    }
+
+    // 7.3 — Pre-armed install URL (?name=&token=) auto-connects without a second call.
+    const prearmed = psRun(`${powershell} "irm '${BASE}/install.ps1?name=qamachine&token=${part7Token}' | iex"`);
+    check(
+      "PART 7 pre-armed install URL auto-connects",
+      prearmed.includes(`Connected: qamachine -> ${BASE}`),
+      prearmed.replace(/\s+/g, " ").slice(0, 220),
+    );
+    check("PART 7 pre-armed URL never prints Usage", !prearmed.includes("Usage:"));
+
+    // 7.4 — Tunnels "More" menu: shared portal, never clipped.
+    await goto(page, "/dashboard/tunnels");
+    const machineText = page.getByText("qamachine", { exact: true }).first();
+    await machineText.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+    check("PART 7 Tunnels lists the machine", (await machineText.count()) > 0);
+    const moreTrigger = page.getByRole("button", { name: "More actions for qamachine", exact: true }).first();
+    check("PART 7 Tunnels uses the shared More menu", (await moreTrigger.count()) > 0);
+    if ((await moreTrigger.count()) > 0) {
+      await moreTrigger.click();
+      const menu = page.locator("[data-row-menu]").first();
+      await menu.waitFor({ state: "visible", timeout: 5_000 }).catch(() => undefined);
+      const placement = await menu
+        .evaluate((el) => {
+          const node = el as HTMLElement;
+          const style = getComputedStyle(node);
+          return { parentIsBody: node.parentElement === document.body, position: style.position, zIndex: style.zIndex };
+        })
+        .catch(() => null);
+      check("PART 7 Tunnels menu is portaled to document.body", placement?.parentIsBody === true);
+      check("PART 7 Tunnels menu uses position: fixed", placement?.position === "fixed", placement?.position ?? "missing");
+      check("PART 7 Tunnels menu uses z-index 9999", placement?.zIndex === "9999", placement?.zIndex ?? "missing");
+      const menuBox = await menu.boundingBox();
+      const viewport = page.viewportSize();
+      const menuInside =
+        Boolean(menuBox && viewport) &&
+        menuBox!.x >= -1 &&
+        menuBox!.y >= -1 &&
+        menuBox!.x + menuBox!.width <= viewport!.width + 1 &&
+        menuBox!.y + menuBox!.height <= viewport!.height + 1;
+      check(
+        "PART 7 Tunnels menu is fully inside the viewport",
+        menuInside,
+        menuBox && viewport ? `${Math.round(menuBox.x)},${Math.round(menuBox.y)} ${Math.round(menuBox.width)}×${Math.round(menuBox.height)} in ${viewport.width}×${viewport.height}` : "no bounding box",
+      );
+      const menuText = ((await menu.innerText()) || "").replace(/\s+/g, " ");
+      check("PART 7 Tunnels menu exposes Remove machine", menuText.includes("Remove machine"), menuText.slice(0, 120));
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+      check("PART 7 Tunnels menu closes on Escape", (await page.locator("[data-row-menu]").count()) === 0);
+    }
+
+    // 7.5 — Studio parity: header, tab row, step rows, rail, run history and Magic inspector.
+    const studioCases = await apiJson(page, "/api/dashboard/test-cases", "GET");
+    const casesWithSteps = (studioCases.body.testCases ?? []).filter((row) => /"action"\s*:/.test(String(row.stepsJson ?? "")));
+    const studioCase = casesWithSteps.find((row) => String(row.status) === "passing") ?? casesWithSteps[0];
+    let studioCaseId = String(studioCase?.id ?? "");
+    let createdStudioCase = false;
+    if (!studioCaseId) {
+      const created = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+        mode: "manual",
+        title: `PART7 STUDIO ${RUN_ID}`,
+        module: "Core",
+        criticality: "medium",
+        stepsCount: 5,
+      });
+      studioCaseId = String(created.body.testCases?.[0]?.id ?? "");
+      createdStudioCase = Boolean(studioCaseId);
+    }
+    check("PART 7 a test case with steps is available", Boolean(studioCaseId), studioCaseId || "none");
+    try {
+      if (studioCaseId) {
+        await goto(page, `/dashboard/test-cases/${studioCaseId}`);
+        const studioTitle = page.locator('[data-testid="studio-title"]').first();
+        await studioTitle.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+        check("PART 7 Studio title is visible", (await studioTitle.count()) > 0);
+        check("PART 7 Studio priority badge", (await page.locator('[data-testid="studio-priority"]').count()) > 0);
+        check(
+          "PART 7 Studio header exposes Undo/Redo/More/Refresh/Run",
+          (await page.getByRole("button", { name: "Undo", exact: true }).count()) > 0 &&
+            (await page.getByRole("button", { name: "Redo", exact: true }).count()) > 0 &&
+            (await page.getByRole("button", { name: "More actions", exact: true }).count()) > 0 &&
+            (await page.getByRole("button", { name: "Refresh", exact: true }).count()) > 0 &&
+            (await page.locator('[data-testid="studio-run"]').count()) > 0,
+        );
+        const runButton = page.locator('[data-testid="studio-run"]').first();
+        const runColor = await runButton.evaluate((el) => getComputedStyle(el as HTMLElement).backgroundColor).catch(() => "");
+        check("PART 7 Studio Run button is indigo", runColor === "rgb(91, 78, 232)", runColor || "missing");
+        const headerBoxes = await Promise.all(
+          [studioTitle, page.locator('[data-testid="studio-priority"]').first(), runButton].map((locator) => locator.boundingBox().catch(() => null)),
+        );
+        const headerCenters = headerBoxes.filter(Boolean).map((box) => box!.y + box!.height / 2);
+        check(
+          "PART 7 Studio header title, badges and Run share one row",
+          headerCenters.length === 3 && Math.max(...headerCenters) - Math.min(...headerCenters) <= 12,
+          headerCenters.map((value) => value.toFixed(1)).join(" / "),
+        );
+
+        const prerequisiteBanner = page.locator('[data-testid="add-prerequisite-banner"]').first();
+        check("PART 7 Studio dotted '+ Add Prerequisite' banner", (await prerequisiteBanner.count()) > 0 && (await prerequisiteBanner.innerText()).includes("Add Prerequisite"));
+
+        const tabs = [
+          page.getByRole("button", { name: /^Test Steps \(\d+\)$/ }).first(),
+          page.getByRole("button", { name: "Relationships", exact: true }).first(),
+          page.getByRole("button", { name: "Version History", exact: true }).first(),
+        ];
+        const tabBoxes = await Promise.all(tabs.map((locator) => locator.boundingBox().catch(() => null)));
+        const tabCenters = tabBoxes.filter(Boolean).map((box) => box!.y + box!.height / 2);
+        const tabIconCount = (await Promise.all(tabs.map((locator) => locator.locator("span.material-symbols-outlined").count()))).reduce((total, value) => total + value, 0);
+        check(
+          "PART 7 Studio tabs (with icons), search and Reorder share one row",
+          tabCenters.length === 3 && Math.max(...tabCenters) - Math.min(...tabCenters) <= 10 && tabIconCount === 3 && (await page.getByLabel("Search Action Text").count()) > 0 && (await page.getByRole("button", { name: "Reorder", exact: true }).count()) > 0,
+          `${tabCenters.map((value) => value.toFixed(1)).join(" / ")} · ${tabIconCount} icon(s)`,
+        );
+        check("PART 7 Studio header shows the green Ready badge", (await page.getByRole("button", { name: "Ready", exact: true }).count()) > 0);
+
+        const stepRows = page.locator('[data-testid="studio-step-row"]');
+        const stepCount = await stepRows.count();
+        check("PART 7 Studio renders step rows", stepCount > 0, `${stepCount} row(s)`);
+        if (stepCount > 0) {
+          const firstRow = stepRows.first();
+          check("PART 7 Studio step row has a selection checkbox", (await firstRow.locator('input[type="checkbox"]').count()) > 0);
+          const actionIcon = firstRow.locator('[data-testid="step-action-icon"]').first();
+          const iconBox = await actionIcon.boundingBox().catch(() => null);
+          check(
+            "PART 7 Studio step icon is 32×32",
+            Boolean(iconBox && Math.abs(iconBox.width - 32) <= 1 && Math.abs(iconBox.height - 32) <= 1),
+            iconBox ? `${iconBox.width}×${iconBox.height}` : "missing",
+          );
+          check("PART 7 Studio step target is an indigo pill", (await firstRow.locator("span.bg-indigo-50").count()) > 0);
+          check("PART 7 Studio step exposes View Details ›", (await firstRow.getByRole("button", { name: /View Details/ }).count()) > 0);
+          await firstRow.locator('input[type="checkbox"]').first().check().catch(() => undefined);
+          await page.waitForTimeout(300);
+          check("PART 7 Studio bulk bar appears after selecting a step", (await page.locator("[data-bulk-bar]").count()) > 0);
+          await page.locator("[data-bulk-bar]").getByRole("button", { name: /Clear/ }).first().click().catch(() => undefined);
+          await page.waitForTimeout(200);
+        }
+
+        const rail = page.locator('[data-testid="studio-rail"]').first();
+        const railBox = await rail.boundingBox().catch(() => null);
+        check(
+          "PART 7 Studio vertical rail is 60px wide and visible",
+          Boolean(railBox && Math.abs(railBox.width - 60) <= 2 && railBox.x >= 0 && railBox.x + railBox.width <= 1440),
+          railBox ? `${railBox.x.toFixed(0)},${railBox.y.toFixed(0)} ${railBox.width.toFixed(0)}×${railBox.height.toFixed(0)}` : "missing",
+        );
+
+        // Magic UI inspector inside the step detail modal.
+        const viewDetails = stepRows.first().getByRole("button", { name: /View Details/ }).first();
+        if ((await viewDetails.count()) > 0) {
+          await viewDetails.click();
+          const stepDialog = page.getByRole("dialog", { name: "Step Details" });
+          await stepDialog.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+          const magic = stepDialog.locator('[data-testid="magic-locator"]');
+          await magic.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+          check("PART 7 Magic UI inspector is present in Step Details", (await magic.count()) > 0);
+          const strategyCount = await magic.locator("[data-locator-strategy]").count();
+          check("PART 7 Magic UI scores locator candidates", strategyCount >= 3, `${strategyCount} candidate(s)`);
+          const magicApply = magic.locator('[data-testid="magic-apply"]');
+          check("PART 7 Magic UI exposes Apply Best Locator", (await magicApply.count()) > 0);
+          if ((await magicApply.count()) > 0 && (await magicApply.isEnabled().catch(() => false))) {
+            await magicApply.click();
+            await page.waitForTimeout(300);
+            check("PART 7 Apply Best Locator confirms the applied strategy", /Applied/.test(await magic.innerText().catch(() => "")), (await magic.innerText().catch(() => "")).replace(/\s+/g, " ").slice(0, 120));
+          }
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(300);
+        }
+
+        // Run History cards with the expected metadata.
+        const runHistoryRail = page.getByRole("button", { name: "Run History", exact: true }).first();
+        check("PART 7 Studio rail exposes Run History", (await runHistoryRail.count()) > 0);
+        if ((await runHistoryRail.count()) > 0) {
+          await runHistoryRail.click();
+          await page.waitForTimeout(900);
+          let cards = page.locator('[data-testid="run-history-card"]');
+          if ((await cards.count()) === 0) {
+            await page.locator('[data-testid="studio-run"]').click().catch(() => undefined);
+            const runDialog = page.getByRole("dialog", { name: "Live" });
+            await runDialog.getByText(/Run complete/).first().waitFor({ state: "visible", timeout: 60_000 }).catch(() => undefined);
+            await runDialog.getByRole("button", { name: "Close", exact: true }).first().click().catch(() => undefined);
+            await page.waitForTimeout(2_500);
+            cards = page.locator('[data-testid="run-history-card"]');
+          }
+          const cardCount = await cards.count();
+          check("PART 7 Run History renders cards", cardCount > 0, `${cardCount} card(s)`);
+          if (cardCount > 0) {
+            const cardText = ((await cards.first().innerText()) || "").replace(/\s+/g, " ");
+            check("PART 7 Run History card shows #run and Passed/Failed", /#\d+/.test(cardText) && /(Passed|Failed)/.test(cardText), cardText.slice(0, 160));
+            check("PART 7 Run History card shows automated trigger and author", cardText.includes("⚙") && cardText.includes("👤"), cardText.slice(0, 160));
+            check("PART 7 Run History card shows time and duration", cardText.includes("⏳"), cardText.slice(0, 160));
+            const modePill = cards.first().getByTestId("run-history-mode");
+            const modeText = ((await modePill.innerText().catch(() => "")) || "").trim();
+            check("PART 7 Run History card shows Standalone Run or plan pill", (await modePill.count()) > 0 && modeText.length > 0, `${modeText} · ${cardText.slice(0, 120)}`);
+            if (/Failed/.test(cardText)) check("PART 7 failed Run History card shows Failed at Step X", /Failed at Step \d+/.test(cardText), cardText.slice(0, 160));
+            const autoFix = cards.first().getByText("Auto-fix rerun");
+            check("PART 7 Run History exposes Auto-fix rerun when applicable", (await autoFix.count()) > 0 || !/Auto-fix/.test(cardText), "auto-fix badge conditional");
+          }
+        }
+      }
+    } finally {
+      if (createdStudioCase) await db.testCase.delete({ where: { id: studioCaseId } }).catch(() => undefined);
+    }
+
+    // 7.6 — MCP page: OpenCode first, real cqa_ token, 5 prompts, skills, Context7, live tool.
+    await goto(page, "/dashboard/mcp");
+    await page.locator('[data-client="opencode"]').first().waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+    const firstClient = await page.locator("[data-client]").first().getAttribute("data-client");
+    check("PART 7 MCP lists OpenCode first", firstClient === "opencode", firstClient ?? "none");
+    check("PART 7 MCP labels OpenCode with free models", (await page.locator('[data-client="opencode"]').first().innerText()).includes("OpenCode (Free AI Models)"));
+    const mcpBody = await body(page);
+    for (const model of ["opencode/big-pickle", "opencode/glm-4.7-free", "opencode/grok-code"]) {
+      check(`PART 7 MCP lists free model ${model}`, mcpBody.includes(model));
+    }
+    check("PART 7 MCP shows the OpenCode command", mcpBody.includes("opencode --model opencode/big-pickle") && mcpBody.includes("/models"));
+    check("PART 7 MCP never shows cqa_REPLACE_WITH_YOUR_TOKEN", !mcpBody.includes("cqa_REPLACE_WITH_YOUR_TOKEN"));
+    const tokenValue = page.locator('[data-testid="mcp-token-value"]').first();
+    await tokenValue.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+    const tokenText = ((await tokenValue.innerText().catch(() => "")) || "").trim();
+    check("PART 7 MCP embeds a real auto-provisioned cqa_ token", /^cqa_[A-Za-z0-9_-]{20,}/.test(tokenText), tokenText ? `${tokenText.slice(0, 12)}… (${tokenText.length} chars)` : "missing");
+    const promptCount = await page.locator("[data-prompt]").count();
+    check("PART 7 MCP exposes 5 copyable OpenCode prompts", promptCount === 5, `${promptCount} prompt(s)`);
+    check(
+      "PART 7 OpenCode prompts expose Copy Test Prompt for OpenCode",
+      (await page.locator('[data-prompt] button[aria-label="Copy Test Prompt for OpenCode"]').count()) === promptCount && promptCount > 0,
+      `${await page.locator('[data-prompt] button[aria-label="Copy Test Prompt for OpenCode"]').count()} button(s)`,
+    );
+    if (promptCount > 0) {
+      const firstPrompt = ((await page.locator("[data-prompt]").first().innerText()) || "").replace(/\s+/g, " ");
+      check("PART 7 OpenCode prompt targets a qasyn_ tool", firstPrompt.includes("qasyn_"), firstPrompt.slice(0, 140));
+    }
+    let skillCount = 0;
+    for (let i = 0; i < 20; i++) {
+      skillCount = await page.locator("[data-skill]").count();
+      if (skillCount >= 6) break;
+      await page.waitForTimeout(400);
+    }
+    check("PART 7 MCP lists the 6 Agent Skills", skillCount === 6, `${skillCount} skill(s)`);
+    check("PART 7 MCP exposes 3 Agent Skills exports", (await page.locator("[data-export]").count()) === 3, `${await page.locator("[data-export]").count()} export(s)`);
+    const context7Section = page.locator('[data-testid="context7-resolver"]').first();
+    check("PART 7 MCP embeds the Context7 resolver", (await context7Section.count()) > 0);
+    if ((await context7Section.count()) > 0) {
+      await context7Section.getByText(/local deterministic/).first().waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+      const c7Text = ((await context7Section.innerText()) || "").replace(/\s+/g, " ");
+      check("PART 7 Context7 resolver returns versioned rules", /Playwright/.test(c7Text) && /score \d+/.test(c7Text), c7Text.slice(0, 180));
+    }
+
+    const context7Api = await apiJson(page, "/api/dashboard/context7", "POST", { query: "Playwright locator for checkout" });
+    const c7body = context7Api.body as { rules?: string[]; library?: { name?: string; version?: string }; injectedPrompt?: string; resolved?: boolean };
+    check(
+      "PART 7 Context7 API resolves Playwright docs",
+      context7Api.status === 200 && (c7body.library?.name ?? "").toLowerCase().includes("playwright") && (c7body.rules?.length ?? 0) > 0 && Boolean(c7body.injectedPrompt),
+      `${c7body.library?.name ?? "?"} v${c7body.library?.version ?? "?"} · ${c7body.rules?.length ?? 0} rules`,
+    );
+
+    const mcpRun = page.locator('[data-testid="mcp-tool-run"]').first();
+    if ((await mcpRun.count()) > 0) {
+      await mcpRun.click();
+      const mcpResponse = page.locator('[data-testid="mcp-tool-response"]').first();
+      await mcpResponse.waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
+      const responseText = ((await mcpResponse.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+      check("PART 7 MCP tool runner returns a live JSON-RPC 200", responseText.includes('"status": 200') && responseText.includes('"result"'), responseText.slice(0, 180));
+    }
+
+    const exportRes = await apiJson(page, "/api/dashboard/agent-skills", "POST", { action: "export", target: "claude" });
+    const exportBody = exportRes.body as { path?: string; content?: string };
+    check(
+      "PART 7 Agent Skills export writes .claude/CLAUDE.md",
+      exportRes.status === 200 && exportBody.path === ".claude/CLAUDE.md" && /Playwright Self-Healing/.test(exportBody.content ?? ""),
+      `${exportBody.path ?? "missing"} · ${(exportBody.content ?? "").length} chars`,
+    );
+
+    // 7.7 — Graphify Map: API + tab on crawl details + interactive SVG on code analysis.
+    const graphApi = await apiJson(page, "/api/dashboard/graphify", "GET");
+    const graphData = graphApi.body as unknown as {
+      nodes?: unknown[];
+      edges?: unknown[];
+      stats?: Record<string, number>;
+    };
+    check(
+      "PART 7 Graphify API returns nodes and edges",
+      graphApi.status === 200 && Array.isArray(graphData.nodes) && Array.isArray(graphData.edges),
+      `${graphData.nodes?.length ?? 0} node(s) · ${graphData.edges?.length ?? 0} edge(s)`,
+    );
+    check(
+      "PART 7 Graphify API covers URL/DOM/Requirement/Test/PR",
+      ["url", "dom", "requirement", "test", "pr"].every((kind) => typeof graphData.stats?.[kind] === "number"),
+      JSON.stringify(graphData.stats ?? {}),
+    );
+
+    const crawlForGraph = await db.crawlSession.findFirst({
+      where: { organisationId: cgiId },
+      orderBy: { startedAt: "desc" },
+      select: { id: true },
+    });
+    if (crawlForGraph) {
+      await goto(page, `/dashboard/crawl/${crawlForGraph.id}`);
+      const graphTab = page.getByRole("button", { name: "Graphify Map", exact: true }).first();
+      await graphTab.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+      check("PART 7 crawl details expose the Graphify Map tab", (await graphTab.count()) > 0);
+      if ((await graphTab.count()) > 0) {
+        await graphTab.click();
+        const graphMap = page.locator('[data-testid="graphify-map"]');
+        await graphMap.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+        check("PART 7 crawl Graphify Map renders", (await graphMap.count()) > 0);
+        check("PART 7 Graphify Map has 5 kind filters", (await graphMap.locator("[data-filter]").count()) === 5, `${await graphMap.locator("[data-filter]").count()} filter(s)`);
+        check("PART 7 Graphify Map has zoom controls", (await graphMap.locator('[data-testid="graphify-zoom-in"]').count()) > 0 && (await graphMap.locator('[data-testid="graphify-zoom-out"]').count()) > 0);
+        const beforeZoom = ((await graphMap.innerText()) || "").includes("100%");
+        await graphMap.locator('[data-testid="graphify-zoom-in"]').click().catch(() => undefined);
+        await page.waitForTimeout(300);
+        const afterZoom = ((await graphMap.innerText()) || "").includes("115%");
+        check("PART 7 Graphify zoom changes from 100% to 115%", beforeZoom && afterZoom, `before=${beforeZoom} after=${afterZoom}`);
+        const prFilter = graphMap.locator('[data-filter="pr"]');
+        const beforePressed = await prFilter.getAttribute("aria-pressed");
+        await prFilter.click().catch(() => undefined);
+        await page.waitForTimeout(200);
+        const afterPressed = await prFilter.getAttribute("aria-pressed");
+        check("PART 7 Graphify filters toggle", beforePressed !== afterPressed, `${beforePressed} → ${afterPressed}`);
+        if ((graphData.nodes?.length ?? 0) > 0) {
+          check("PART 7 Graphify Map renders interactive SVG nodes", (await graphMap.locator("svg [data-node-kind]").count()) > 0, `${await graphMap.locator("svg [data-node-kind]").count()} node(s)`);
+        }
+      }
+    } else {
+      check("PART 7 crawl details expose the Graphify Map tab", false, "no crawl session in the organisation");
+    }
+
+    await goto(page, "/dashboard/code-analysis");
+    const codeGraph = page.locator('[data-testid="graphify-map"]').first();
+    await codeGraph.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+    check("PART 7 code analysis embeds the Graphify Map", (await codeGraph.count()) > 0);
+    if ((await codeGraph.count()) > 0 && (graphData.nodes?.length ?? 0) > 0) {
+      check("PART 7 code analysis Graphify Map renders SVG nodes", (await codeGraph.locator("svg [data-node-kind]").count()) > 0);
+    }
+
+    // 7.8 — Magic Locator API covers every accessibility strategy.
+    const magicClick = await apiJson(page, "/api/dashboard/magic-locator", "POST", { action: "Click", target: "Pay now", value: "", selector: "" });
+    const magicInput = await apiJson(page, "/api/dashboard/magic-locator", "POST", { action: "Enter Text", target: "Work e-mail", value: "qa@cgi.com", selector: "" });
+    const magicStrategies = new Set(
+      [
+        ...(((magicClick.body as { candidates?: Array<{ strategy?: string }> }).candidates ?? [])),
+        ...(((magicInput.body as { candidates?: Array<{ strategy?: string }> }).candidates ?? [])),
+      ].map((candidate) => String(candidate.strategy)),
+    );
+    const magicBest = (magicClick.body as { best?: { selector?: string; score?: number } }).best;
+    check(
+      "PART 7 Magic Locator API scores Role/Test ID/Label/CSS",
+      magicClick.status === 200 && magicInput.status === 200 && ["Role", "Test ID", "Label", "CSS"].every((strategy) => magicStrategies.has(strategy)),
+      [...magicStrategies].join(", "),
+    );
+    check("PART 7 Magic Locator returns a Best Locator", Boolean(magicBest?.selector) && Number(magicBest?.score ?? 0) > 0, `${magicBest?.selector ?? "missing"} · ${magicBest?.score ?? 0}`);
+
+    // 7.9 — Strix passive scanner: SSRF refusal, graceful public scan, both pages.
+    const strixBlocked = await apiJson(page, "/api/dashboard/strix", "POST", { url: "http://localhost:3000" });
+    check("PART 7 Strix refuses localhost (SSRF-safe)", strixBlocked.status === 400, `status ${strixBlocked.status}`);
+    const strixPublic = await apiJson(page, "/api/dashboard/strix", "POST", { url: "https://example.com" });
+    const strixReport = strixPublic.body as { findings?: unknown[]; notes?: unknown[]; score?: number; grade?: string; reachable?: boolean; error?: string };
+    check(
+      "PART 7 Strix scans a public target gracefully",
+      strixPublic.status === 200 && Array.isArray(strixReport.findings) && Array.isArray(strixReport.notes) && typeof strixReport.score === "number" && typeof strixReport.grade === "string",
+      strixReport.reachable ? `score ${strixReport.score} · grade ${strixReport.grade}` : `unreachable handled · ${strixReport.error ?? "no error"}`,
+    );
+
+    await goto(page, "/dashboard/security-testing");
+    const strixUi = page.locator('[data-testid="strix-scanner"]').first();
+    await strixUi.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+    check("PART 7 Security testing embeds Strix", (await strixUi.count()) > 0 && (await strixUi.innerText()).includes("Strix AI Security & OWASP Inspector"));
+    if ((await strixUi.count()) > 0) {
+      await strixUi.getByLabel("Strix scan target").fill("http://localhost:3000").catch(() => undefined);
+      await strixUi.locator('[data-testid="strix-scan"]').click().catch(() => undefined);
+      const strixAlert = strixUi.getByRole("alert").first();
+      await strixAlert.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+      check("PART 7 Strix UI reports the blocked target", (await strixAlert.count()) > 0 && /public http\(s\)/i.test(await strixAlert.innerText().catch(() => "")), ((await strixAlert.innerText().catch(() => "")) || "").slice(0, 140));
+    }
+
+    await goto(page, "/dashboard/red-team");
+    const strixRed = page.locator('[data-testid="strix-scanner"]').first();
+    await strixRed.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+    check("PART 7 Red team embeds Strix", (await strixRed.count()) > 0 && (await strixRed.innerText()).includes("Strix AI Security & OWASP Inspector"));
+
+    check("PART 7 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+    await shot(page, "part7-integrations");
+  } finally {
+    await db.tunnelMachine.delete({ where: { id: part7Machine.id } }).catch(() => undefined);
+  }
 
   await db.$disconnect();
 

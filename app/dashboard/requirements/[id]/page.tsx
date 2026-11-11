@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RequirementDetail, type RequirementDetailData } from "@/components/dashboard/pages/RequirementDetail";
 import { prisma } from "@/lib/db";
+import { loadGraphifyMap } from "@/lib/graphify";
 import { detailCases, longDate } from "@/lib/requirement-detail";
 import { requireOrgContext } from "@/lib/tenant";
 
@@ -51,5 +52,5 @@ export default async function RequirementDetailPage({ params }: { params: Promis
     plan: plan?.name ?? "Not created",
   };
 
-  return <RequirementDetail data={data} cases={detailCases(cases)} />;
+  return <RequirementDetail data={data} cases={detailCases(cases)} graph={await loadGraphifyMap(ctx.org.id)} />;
 }

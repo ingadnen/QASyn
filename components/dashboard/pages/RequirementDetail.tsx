@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { GraphifyMapView } from "@/components/dashboard/pages/GraphifyMap";
 import { CqaIcon, StatusPill, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaIconBtn } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/workspace";
+import type { GraphifyMap } from "@/lib/graphify";
 import { cn } from "@/lib/utils";
 
 export interface DetailCase {
@@ -37,6 +39,7 @@ const TABS = [
   { id: "cases", label: "Test Cases" },
   { id: "questionnaire", label: "Questionnaire" },
   { id: "requirement", label: "Requirement Data" },
+  { id: "graph", label: "Graphify Map" },
   { id: "history", label: "History (Coming soon)" },
   { id: "metadata", label: "Metadata" },
   { id: "gaps", label: "Gaps (Coming soon)" },
@@ -51,7 +54,15 @@ function countTypes(cases: DetailCase[]) {
   return counts;
 }
 
-export function RequirementDetail({ data, cases }: { data: RequirementDetailData; cases: DetailCase[] }) {
+export function RequirementDetail({
+  data,
+  cases,
+  graph,
+}: {
+  data: RequirementDetailData;
+  cases: DetailCase[];
+  graph?: GraphifyMap;
+}) {
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("cases");
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
@@ -258,6 +269,21 @@ export function RequirementDetail({ data, cases }: { data: RequirementDetailData
               The AI Insight and captured activity this requirement was created from will appear here.
             </p>
           </div>
+        </div>
+      )}
+
+      {tab === "graph" && (
+        <div className="mt-4">
+          {graph ? (
+            <GraphifyMapView data={graph} />
+          ) : (
+            <div className={cn(cqaCard, "px-6 py-14 text-center")}>
+              <h3 className="text-[16px] font-semibold text-[#374151]">Graphify Map unavailable</h3>
+              <p className="mx-auto mt-2 max-w-lg text-[13px] leading-5 text-[#6b7280]">
+                Run a crawl or create test cases to build the quality graph.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

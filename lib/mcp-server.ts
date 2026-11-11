@@ -4,6 +4,7 @@
  * Every tool is scoped to exactly one organisation.
  */
 import { prisma } from "./db";
+import { resolveContext7 } from "./context7";
 import { analyzePrImpact, executeApiChain, reproduceBug, simulateMobileRun, simulateSteps, type ApiRequestStep } from "./engines";
 import { runTestCases } from "./engine";
 import { runMcpTool } from "./mcp";
@@ -34,6 +35,7 @@ export const QASYN_MCP_TOOLS: McpTool[] = [
   { name: "qasyn_ship_workflow", description: "Run the autonomous Ship pipeline and return the Go/No-Go verdict.", inputSchema: obj({ name: { type: "string" } }) },
   { name: "qasyn_reproduce_bug", description: "Reproduce a bug from a support ticket description.", inputSchema: obj({ title: { type: "string" }, description: { type: "string" } }, ["title", "description"]) },
   { name: "qasyn_analyze_pr_impact", description: "Alias of qasyn_analyze_pr kept for existing agent skills.", inputSchema: obj({ prNumber: { type: "number" }, branch: { type: "string" }, title: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["prNumber", "branch", "title", "files"]) },
+  { name: "qasyn_context7_resolve", description: "Resolve Context7 live documentation for Playwright, Next.js, Tailwind, Prisma or TypeScript and return prompt-ready rules.", inputSchema: obj({ query: { type: "string" } }, ["query"]) },
 ];
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -153,6 +155,8 @@ export async function callMcpTool(organisationId: string, name: string, args: Re
       const { steps, rootCause, severity } = reproduceBug(str(args.description), str(args.title));
       return { steps, rootCause, severity };
     }
+    case "qasyn_context7_resolve":
+      return resolveContext7(str(args.query) || "playwright test generation");
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

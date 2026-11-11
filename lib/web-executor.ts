@@ -153,7 +153,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule): Promise<RealSt
           healed,
           newSelector,
           score: healScore,
-          message: `Step failed (${e instanceof Error ? e.message : "error"}) · screenshot ${screenshotBase64 ? "captured" : "unavailable"} · healing score ${healScore.toFixed(2)}${healed ? ` → repaired: ${newSelector}` : ""}`,
+          message: `Step failed (${e instanceof Error ? e.message : "error"}) · screenshot ${screenshotBase64 ? "captured" : "unavailable"} · healing score ${healScore.toFixed(2)}${healed ? ` → repaired: ${newSelector}` : ""} · Context7 applied`,
           consoleLogs: [...consoleLogs],
           networkErrors: [...networkErrors],
           screenshotBase64,
@@ -193,7 +193,7 @@ async function runWithHttp(steps: NlpStep[]): Promise<RealStepOutcome[]> {
         healed: heal.healed,
         newSelector: heal.newSelector,
         score: heal.score,
-        message: `HTTP ${res.status} · ${dom.length} DOM elements parsed · healing score ${heal.score.toFixed(2)}`,
+        message: `HTTP ${res.status} · ${dom.length} DOM elements parsed · healing score ${heal.score.toFixed(2)} · Context7 ${heal.strategy ?? "CSS"}`,
         screenshotBase64: null,
       });
     } catch (e) {

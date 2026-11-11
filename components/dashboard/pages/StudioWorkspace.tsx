@@ -13,6 +13,8 @@ import {
   useAction,
 } from "@/components/dashboard/ui";
 import { STUDIO_STEP_TEMPLATES } from "@/lib/studio-templates";
+import { RowMenu } from "@/components/contextqa/workspace";
+import { MagicLocatorInspector } from "@/components/dashboard/pages/MagicLocatorInspector";
 import { cn } from "@/lib/utils";
 
 export interface StudioStep {
@@ -21,6 +23,7 @@ export interface StudioStep {
   target: string;
   value: string;
   selector: string;
+  disabled?: boolean;
 }
 
 export interface StudioVersion {
@@ -119,11 +122,55 @@ const inputCls =
 const labelCls = "mb-1.5 block text-[13px] font-medium text-[#374151]";
 
 const PANELS: Array<{ id: Panel; label: string; icon: string }> = [
-  { id: "testcase", label: "Test Case", icon: "folder" },
+  { id: "testcase", label: "Document Test Case", icon: "folder" },
   { id: "variables", label: "Variables", icon: "data_object" },
   { id: "usedin", label: "Used in Test", icon: "play_circle" },
   { id: "runhistory", label: "Run History", icon: "history" },
 ];
+
+type StepTone = { icon: string; tone: string; label: string };
+
+/** Icon + colour per action type, matching the ContextQA step list. */
+function stepVisual(step: StudioStep): StepTone {
+  const target = `${step.target} ${step.value}`.toLowerCase();
+  if (step.action === "AI Assertion") return { icon: "auto_awesome", tone: "bg-purple-50 text-purple-600", label: "AI Verification" };
+  if (step.action === "Navigate" || /url|navigate|page url/.test(target)) return { icon: "link", tone: "bg-rose-50 text-rose-500", label: "Navigate" };
+  if (step.action === "Enter Text" || /enter|type|fill|password/.test(target)) return { icon: "keyboard", tone: "bg-emerald-50 text-emerald-600", label: "Enter" };
+  if (step.action === "Click") return { icon: "ads_click", tone: "bg-sky-50 text-sky-600", label: "Click" };
+  if (step.action === "Verify Element") return { icon: "fact_check", tone: "bg-sky-50 text-sky-600", label: "Verify" };
+  return { icon: "bolt", tone: "bg-indigo-50 text-indigo-600", label: step.action };
+}
+
+/** Splits a generated sentence into an action prefix and the highlighted target/assertion. */
+function stepParts(step: StudioStep, variables: Record<string, string>, orgUrl: string) {
+  const sentence = sentenceForStep(step, variables, orgUrl);
+  switch (step.action) {
+    case "Navigate":
+      return { prefix: "Navigate to", focus: sentence.replace(/^Navigate to\s*/i, "") || orgUrl };
+    case "Click":
+      return { prefix: "Click on", focus: sentence.replace(/^Click on\s*/i, "") || "the target element" };
+    case "Enter Text": {
+      const match = /^Enter\s+(.+?)\s+in\s+(.+)$/i.exec(sentence);
+      return match
+        ? { prefix: "Enter", focus: `${match[1]} in ${match[2]}` }
+        : { prefix: "Enter text", focus: sentence };
+    }
+    case "AI Assertion":
+      return { prefix: "AI Verification", focus: sentence.replace(/^Verify that\s*/i, "") || sentence };
+    case "Verify Element":
+      return { prefix: "Verify that", focus: sentence.replace(/^Verify that\s*/i, "") || "the expected state is visible" };
+    default:
+      return { prefix: stepVisual(step).label, focus: sentence };
+  }
+}
+
+function formatRunClock(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+}
+
+function formatRunDay(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 function parseInitials(name: string) {
   return (
@@ -268,6 +315,10 @@ export function StudioWorkspace({
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [reorder, setReorder] = useState(false);
+  const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
+  const [undoStack, setUndoStack] = useState<StudioStep[][]>([]);
+  const [redoStack, setRedoStack] = useState<StudioStep[][]>([]);
+  const [railCollapsed, setRailCollapsed] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [detailIndex, setDetailIndex] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -343,9 +394,85 @@ export function StudioWorkspace({
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  async function persistSteps(next: StudioStep[], key = "save") {
+  async function persistSteps(next: StudioStep[], key = "save", recordHistory = true) {
+    if (recordHistory) {
+      setUndoStack((prev) => [...prev.slice(-49), steps]);
+      setRedoStack([]);
+    }
     setSteps(next);
     return run(key, `/api/dashboard/test-cases/${data.id}`, { method: "PATCH", json: { action: "steps", steps: next } });
+  }
+
+  function undoSteps() {
+    if (undoStack.length === 0) return;
+    const previous = undoStack[undoStack.length - 1];
+    setUndoStack((prev) => prev.slice(0, -1));
+    setRedoStack((prev) => [...prev, steps]);
+    setSteps(previous);
+    setSelectedSteps([]);
+    void run("undo", `/api/dashboard/test-cases/${data.id}`, { method: "PATCH", json: { action: "steps", steps: previous } });
+  }
+
+  function redoSteps() {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.slice(0, -1));
+    setUndoStack((prev) => [...prev, steps]);
+    setSteps(next);
+    setSelectedSteps([]);
+    void run("redo", `/api/dashboard/test-cases/${data.id}`, { method: "PATCH", json: { action: "steps", steps: next } });
+  }
+
+  function toggleStepSelection(id: string) {
+    setSelectedSteps((prev) => (prev.includes(id) ? prev.filter((entry) => entry !== id) : [...prev, id]));
+  }
+
+  function selectedIndexes() {
+    return steps.map((step, index) => (selectedSteps.includes(step.id) ? index : -1)).filter((index) => index >= 0);
+  }
+
+  function deleteSelected() {
+    const indexes = new Set(selectedIndexes());
+    if (indexes.size === 0) return;
+    setSelectedSteps([]);
+    setDetailIndex(null);
+    void persistSteps(steps.filter((_, index) => !indexes.has(index)), "bulk-delete");
+  }
+
+  function duplicateSelected() {
+    const indexes = new Set(selectedIndexes());
+    if (indexes.size === 0) return;
+    const clones = steps
+      .filter((_, index) => indexes.has(index))
+      .map((step) => ({ ...step, id: `s${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }));
+    setSelectedSteps([]);
+    void persistSteps([...steps, ...clones], "bulk-duplicate");
+  }
+
+  function toggleDisabledSelected() {
+    const indexes = new Set(selectedIndexes());
+    if (indexes.size === 0) return;
+    const allDisabled = steps.every((step, index) => !indexes.has(index) || step.disabled);
+    void persistSteps(
+      steps.map((step, index) => (indexes.has(index) ? { ...step, disabled: !allDisabled } : step)),
+      "bulk-disable",
+    );
+  }
+
+  function moveSelected(direction: -1 | 1) {
+    const indexes = selectedIndexes();
+    if (indexes.length === 0) return;
+    const next = [...steps];
+    const ordered = direction < 0 ? indexes : [...indexes].reverse();
+    let moved = false;
+    for (const index of ordered) {
+      const target = index + direction;
+      if (target < 0 || target >= next.length) continue;
+      if (selectedSteps.includes(next[target].id)) continue;
+      [next[index], next[target]] = [next[target], next[index]];
+      moved = true;
+    }
+    if (moved) void persistSteps(next, "bulk-move");
   }
 
   function addTemplate(template: string) {
@@ -506,135 +633,181 @@ export function StudioWorkspace({
 
   return (
     <div className="pb-10">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[22px] font-bold leading-7 tracking-[-0.01em] text-[#101828]">{data.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <h1 className="min-w-0 truncate text-[22px] font-bold leading-7 tracking-[-0.01em] text-[#101828]" data-testid="studio-title">
+            {data.title}
+          </h1>
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            aria-label="Edit test case"
+            className="rounded p-1 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#374151]"
+          >
+            <CqaIcon name="edit" className="text-[17px]" />
+          </button>
+          <button type="button" onClick={() => setEditOpen(true)} className={cn("inline-flex items-center rounded-md border px-2.5 py-[3px] text-[12px] font-medium", statusTone(data.status))}>
+            {data.status}
+          </button>
+          <div className="relative">
             <button
               type="button"
-              onClick={() => setEditOpen(true)}
-              aria-label="Edit test case"
-              className="rounded p-1 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#374151]"
+              onClick={() => setPriorityOpen((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-md border border-[#fde68a] bg-[#fffbeb] px-2.5 py-[3px] text-[12px] font-medium text-[#b45309] hover:bg-[#fef3c7]"
+              data-testid="studio-priority"
             >
-              <CqaIcon name="edit" className="text-[17px]" />
+              {priorityLabel(priority)}
+              <CqaIcon name="expand_more" className="text-[14px]" />
             </button>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2.5">
-            <button type="button" onClick={() => setEditOpen(true)} className={cn("inline-flex items-center rounded-md border px-2.5 py-[3px] text-[12px] font-medium", statusTone(data.status))}>
-              {data.status}
-            </button>
-            <div className="relative">
-              <button type="button" onClick={() => setPriorityOpen((v) => !v)} className="inline-flex items-center gap-1 rounded-md border border-[#e5e7eb] bg-white px-2.5 py-[3px] text-[12px] font-medium text-[#4a5565] hover:bg-[#f9fafb]">
-                {priorityLabel(priority)}
-                <CqaIcon name="expand_more" className="text-[14px]" />
-              </button>
-              {priorityOpen && (
-                <div className="absolute left-0 top-[calc(100%+4px)] z-30 w-36 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]">
-                  {["low", "medium", "high", "critical"].map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => void savePriority(value)}
-                      className={cn("flex w-full items-center px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f9fafb]", priority === value ? "font-medium text-[#5b4ee8]" : "text-[#374151]")}
-                    >
-                      {priorityLabel(value)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <button type="button" aria-label="More actions" onClick={() => setMenuOpen((v) => !v)} className={cn(cqaIconBtn, "border border-[#e5e7eb] bg-white")}>
-              <CqaIcon name="more_vert" className="text-[19px]" />
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]">
-                <button type="button" onClick={() => void duplicateCase()} disabled={readOnly} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50">
-                  <CqaIcon name="content_copy" className="text-[16px]" /> Duplicate test case
-                </button>
-                <button type="button" onClick={exportSteps} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]">
-                  <CqaIcon name="download" className="text-[16px]" /> Export steps
-                </button>
-                <button type="button" onClick={() => void deleteCase()} disabled={readOnly} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">
-                  <CqaIcon name="delete" className="text-[16px]" /> Delete test case
-                </button>
+            {priorityOpen && (
+              <div className="absolute left-0 top-[calc(100%+4px)] z-30 w-36 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]">
+                {["low", "medium", "high", "critical"].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => void savePriority(value)}
+                    className={cn("flex w-full items-center px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f9fafb]", priority === value ? "font-medium text-[#5b4ee8]" : "text-[#374151]")}
+                  >
+                    {priorityLabel(value)}
+                  </button>
+                ))}
               </div>
             )}
           </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           <button
             type="button"
-            aria-label="Auto-fix rerun"
-            title="Auto-fix rerun"
-            onClick={() => void executeRun(true)}
-            disabled={readOnly || pending === "run" || pending === "save"}
+            aria-label="Undo"
+            title="Undo"
+            onClick={undoSteps}
+            disabled={undoStack.length === 0 || readOnly}
+            className={cn(cqaIconBtn, "border border-[#e5e7eb] bg-white disabled:opacity-40")}
+          >
+            <CqaIcon name="undo" className="text-[18px]" />
+          </button>
+          <button
+            type="button"
+            aria-label="Redo"
+            title="Redo"
+            onClick={redoSteps}
+            disabled={redoStack.length === 0 || readOnly}
+            className={cn(cqaIconBtn, "border border-[#e5e7eb] bg-white disabled:opacity-40")}
+          >
+            <CqaIcon name="redo" className="text-[18px]" />
+          </button>
+          <RowMenu
+            items={[
+              { label: "Auto-fix rerun", icon: "autorenew", disabled: readOnly, onSelect: () => executeRun(true) },
+              { label: "Duplicate test case", icon: "content_copy", disabled: readOnly, onSelect: () => duplicateCase() },
+              { label: "Export steps", icon: "download", onSelect: () => exportSteps() },
+              { label: "Delete test case", icon: "delete", danger: true, disabled: readOnly, onSelect: () => deleteCase() },
+            ]}
+          />
+          <button
+            type="button"
+            aria-label="Refresh"
+            title="Refresh"
+            onClick={() => router.refresh()}
             className={cn(cqaIconBtn, "border border-[#e5e7eb] bg-white")}
           >
-            <CqaIcon name="autorenew" className="text-[19px]" />
+            <CqaIcon name="refresh" className="text-[18px]" />
           </button>
-          <button type="button" onClick={() => void executeRun(false)} disabled={readOnly || pending === "run" || pending === "save"} className={cn(cqaBtnPrimary, "h-9 px-4")}>
+          <button type="button" onClick={() => void executeRun(false)} disabled={readOnly || pending === "run" || pending === "save"} className={cn(cqaBtnPrimary, "h-9 px-4")} data-testid="studio-run">
             <CqaIcon name="play_arrow" className="text-[18px]" /> Run
-          </button>
-          <button type="button" onClick={() => setPrereqOpen(true)} disabled={readOnly} className={cn(cqaBtnSecondary, "h-9 px-3")}>
-            <CqaIcon name="add" className="text-[17px]" /> Add Prerequisite
           </button>
         </div>
       </div>
 
-      <div className="mt-5 flex items-center gap-6 overflow-x-auto border-b border-[#e5e7eb]">
-        {([
-          { id: "steps" as const, label: `Test Steps (${steps.length})` },
-          { id: "relationships" as const, label: "Relationships" },
-          { id: "versions" as const, label: "Version History" },
-        ]).map((item) => (
+      <button
+        type="button"
+        onClick={() => setPrereqOpen(true)}
+        disabled={readOnly}
+        data-testid="add-prerequisite-banner"
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/20 py-2.5 text-center text-sm font-medium text-indigo-600 transition hover:bg-indigo-50/50 disabled:opacity-50"
+      >
+        <CqaIcon name="add" className="text-[17px]" /> Add Prerequisite
+      </button>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-b border-[#e5e7eb]">
+        <div className="flex min-w-0 items-center gap-5 overflow-x-auto">
+          {([
+            { id: "steps" as const, label: `Test Steps (${steps.length})`, icon: "checklist" },
+            { id: "relationships" as const, label: "Relationships", icon: "account_tree" },
+            { id: "versions" as const, label: "Version History", icon: "history" },
+          ]).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 pb-2.5 pt-1 text-[13.5px] transition",
+                tab === item.id ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+              )}
+            >
+              <CqaIcon name={item.icon} className="text-[16px]" />
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-2 pb-2">
+          <div className="relative w-[210px]">
+            <CqaIcon name="search" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9ca3af]" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search Action Text"
+              aria-label="Search Action Text"
+              className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+            />
+          </div>
           <button
-            key={item.id}
             type="button"
-            onClick={() => setTab(item.id)}
+            onClick={() => setReorder((value) => !value)}
+            aria-pressed={reorder}
             className={cn(
-              "whitespace-nowrap border-b-2 pb-2.5 pt-1 text-[13.5px] transition",
-              tab === item.id ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+              "inline-flex h-9 items-center gap-1.5 rounded-lg border bg-white px-2.5 text-[12.5px] font-medium transition",
+              reorder ? "border-[#a9a1f7] text-[#5b4ee8]" : "border-[#e5e7eb] text-[#4a5565] hover:bg-[#f9fafb]",
             )}
           >
-            {item.label}
+            <CqaIcon name="drag_indicator" className="text-[18px]" /> Reorder
           </button>
-        ))}
+        </div>
       </div>
 
       {error && <p role="alert" className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">{error}</p>}
+
+      {selectedSteps.length > 0 && (
+        <div data-bulk-bar="" className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#ddd8fb] bg-[#f5f3ff] px-3 py-2 text-[12.5px] text-[#4c3fd6]">
+          <span className="font-semibold">{selectedSteps.length} selected</span>
+          <span className="text-[#a5a0d8]">·</span>
+          <button type="button" onClick={deleteSelected} disabled={readOnly} className="inline-flex h-7 items-center gap-1 rounded-md border border-[#fecaca] bg-white px-2 font-medium text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">
+            <CqaIcon name="delete" className="text-[14px]" /> Delete
+          </button>
+          <button type="button" onClick={duplicateSelected} disabled={readOnly} className="inline-flex h-7 items-center gap-1 rounded-md border border-[#ddd8fb] bg-white px-2 font-medium hover:bg-[#faf9ff] disabled:opacity-50">
+            <CqaIcon name="content_copy" className="text-[14px]" /> Duplicate
+          </button>
+          <button type="button" onClick={toggleDisabledSelected} disabled={readOnly} className="inline-flex h-7 items-center gap-1 rounded-md border border-[#ddd8fb] bg-white px-2 font-medium hover:bg-[#faf9ff] disabled:opacity-50">
+            <CqaIcon name="block" className="text-[14px]" /> Disable
+          </button>
+          <button type="button" onClick={() => moveSelected(-1)} disabled={readOnly} className="inline-flex h-7 items-center gap-1 rounded-md border border-[#ddd8fb] bg-white px-2 font-medium hover:bg-[#faf9ff] disabled:opacity-50">
+            <CqaIcon name="arrow_upward" className="text-[14px]" /> Move up
+          </button>
+          <button type="button" onClick={() => moveSelected(1)} disabled={readOnly} className="inline-flex h-7 items-center gap-1 rounded-md border border-[#ddd8fb] bg-white px-2 font-medium hover:bg-[#faf9ff] disabled:opacity-50">
+            <CqaIcon name="arrow_downward" className="text-[14px]" /> Move down
+          </button>
+          <button type="button" onClick={() => setSelectedSteps([])} className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium hover:bg-[#e4e1fd]">
+            <CqaIcon name="close" className="text-[14px]" /> Clear
+          </button>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-col gap-5 xl:flex-row">
         <div className="min-w-0 flex-1">
           {tab === "steps" && (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative min-w-[220px] flex-1">
-                  <CqaIcon name="search" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9ca3af]" />
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search"
-                    aria-label="Search steps"
-                    className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setReorder((value) => !value)}
-                  aria-pressed={reorder}
-                  className={cn(
-                    "inline-flex h-9 items-center gap-1.5 rounded-lg border bg-white px-2.5 text-[12.5px] font-medium transition",
-                    reorder ? "border-[#a9a1f7] text-[#5b4ee8]" : "border-[#e5e7eb] text-[#4a5565] hover:bg-[#f9fafb]",
-                  )}
-                >
-                  <CqaIcon name="drag_indicator" className="text-[18px]" /> Reorder
-                </button>
-              </div>
-
-              <div className={cn(cqaCard, "overflow-hidden")}>
+              <div className={cqaCard}>
                 {visibleSteps.length === 0 ? (
                   <div className="px-5 py-14 text-center">
                     <p className="text-[14px] font-medium text-[#374151]">No steps match your search</p>
@@ -647,17 +820,37 @@ export function StudioWorkspace({
                       return (
                         <li
                           key={step.id}
+                          data-testid="studio-step-row"
                           draggable={!readOnly && reorder}
                           onDragStart={() => setDragIndex(index)}
                           onDragOver={(event) => reorder && event.preventDefault()}
                           onDrop={() => reorder && dropStep(index)}
-                          className="group flex items-start gap-3 px-4 py-3.5 transition hover:bg-[#fafafa]"
-                        >
-                          {reorder && (
-                            <CqaIcon name="drag_indicator" className="mt-0.5 shrink-0 cursor-grab text-[18px] text-[#9ca3af] active:cursor-grabbing" />
+                          onClick={() => setDetailIndex(index)}
+                          className={cn(
+                            "group flex cursor-pointer items-start gap-3 px-4 py-3.5 transition hover:bg-[#fafafa]",
+                            step.disabled && "opacity-55",
                           )}
-                          <span className="mt-0.5 flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#f5f3ff] text-[11px] font-semibold text-[#5b4ee8]">
+                        >
+                          <input
+                            type="checkbox"
+                            aria-label={`Select step ${index + 1}`}
+                            checked={selectedSteps.includes(step.id)}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() => toggleStepSelection(step.id)}
+                            className="mt-1.5 size-4 shrink-0 rounded border-[#d1d5db] accent-[#5b4ee8]"
+                          />
+                          {reorder && (
+                            <CqaIcon name="drag_indicator" className="mt-1 shrink-0 cursor-grab text-[18px] text-[#9ca3af] active:cursor-grabbing" />
+                          )}
+                          <span className="mt-1 flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#f5f3ff] text-[11px] font-semibold text-[#5b4ee8]">
                             {index + 1}
+                          </span>
+                          <span
+                            data-testid="step-action-icon"
+                            className={cn("mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg", stepVisual(step).tone)}
+                            title={step.action}
+                          >
+                            <CqaIcon name={stepVisual(step).icon} className="text-[17px]" />
                           </span>
                           <div className="min-w-0 flex-1">
                             {step.action === "AI Assertion" ? (
@@ -665,31 +858,29 @@ export function StudioWorkspace({
                                 <CqaIcon name="auto_awesome" className="text-[12px]" /> AI Verification
                               </span>
                             ) : null}
-                            <p className="text-[13px] leading-5 text-[#1f2937]">{sentenceForStep(step, data.variables, orgUrl)}</p>
-                            <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                              <button
-                                type="button"
-                                onClick={() => setDetailIndex(index)}
-                                className="text-[11.5px] font-medium text-[#5b4ee8] hover:underline"
-                              >
-                                View Details
-                              </button>
-                              {!readOnly && (
-                                <span className="flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
-                                  <button type="button" aria-label="Move step up" onClick={() => moveStep(index, -1)} className="rounded p-1 text-[#9ca3af] hover:text-[#374151]">
-                                    <CqaIcon name="arrow_upward" className="text-[14px]" />
-                                  </button>
-                                  <button type="button" aria-label="Move step down" onClick={() => moveStep(index, 1)} className="rounded p-1 text-[#9ca3af] hover:text-[#374151]">
-                                    <CqaIcon name="arrow_downward" className="text-[14px]" />
-                                  </button>
-                                  <button type="button" aria-label="Delete step" onClick={() => removeStep(index)} className="rounded p-1 text-[#9ca3af] hover:text-[#dc2626]">
-                                    <CqaIcon name="delete" className="text-[14px]" />
-                                  </button>
-                                </span>
+                            <p className="flex flex-wrap items-center gap-1.5 text-[13px] leading-5 text-[#1f2937]">
+                              {step.action !== "AI Assertion" && (
+                                <span className="font-medium text-[#4a5565]">{stepParts(step, data.variables, orgUrl).prefix}</span>
                               )}
-                            </div>
+                              <span className="inline-flex max-w-full items-center rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700">
+                                <span className="truncate">{stepParts(step, data.variables, orgUrl).focus}</span>
+                              </span>
+                              {step.disabled && <span className="rounded bg-[#f3f4f6] px-1.5 py-[1px] text-[10px] font-medium text-[#6b7280]">Disabled</span>}
+                            </p>
                           </div>
-                          <span className="mt-0.5 shrink-0 text-[11.5px] text-[#9ca3af]">{stepDate}</span>
+                          <div className="flex shrink-0 items-center gap-2 pt-0.5 text-[11.5px]">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setDetailIndex(index);
+                              }}
+                              className="font-medium text-[#5b4ee8] hover:underline"
+                            >
+                              View Details ›
+                            </button>
+                            <span className="text-[#9ca3af]">{stepDate}</span>
+                          </div>
                         </li>
                       );
                     })}
@@ -921,24 +1112,46 @@ export function StudioWorkspace({
           )}
         </div>
 
-        <aside className="w-full shrink-0 xl:w-[320px]">
-          <div className={cn(cqaCard, "overflow-hidden xl:sticky xl:top-4")}>
-            <div className="grid grid-cols-4 border-b border-[#f0f1f3]">
-              {PANELS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setPanel(item.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 border-b-2 px-1 py-2.5 text-[10.5px] font-medium transition",
-                    panel === item.id ? "border-[#5b4ee8] text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#374151]",
-                  )}
-                >
-                  <CqaIcon name={item.icon} className="text-[18px]" />
-                  {item.label}
-                </button>
-              ))}
-            </div>
+        <aside className="flex w-full shrink-0 gap-2 xl:w-auto">
+          <div
+            data-testid="studio-rail"
+            className="flex w-[60px] shrink-0 flex-col items-center gap-1 rounded-[11px] border border-[#e5e7eb] bg-white px-1 py-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)] xl:sticky xl:top-4 xl:self-start"
+          >
+            <button
+              type="button"
+              aria-label={railCollapsed ? "Expand test case panel" : "Collapse test case panel"}
+              title={railCollapsed ? "Expand" : "Collapse"}
+              onClick={() => setRailCollapsed((value) => !value)}
+              className="flex size-8 items-center justify-center rounded-md text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]"
+            >
+              <CqaIcon name={railCollapsed ? "chevron_right" : "chevron_left"} className="text-[18px]" />
+            </button>
+            {PANELS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-label={item.label}
+                title={item.label}
+                aria-pressed={panel === item.id}
+                onClick={() => {
+                  setPanel(item.id);
+                  setRailCollapsed(false);
+                }}
+                className={cn(
+                  "flex w-full flex-col items-center gap-0.5 rounded-md px-0.5 py-1.5 text-[8.5px] font-medium leading-[10px] transition",
+                  panel === item.id
+                    ? "bg-[#eef2ff] text-[#4f46e5] ring-1 ring-[#c7d2fe]"
+                    : "text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#374151]",
+                )}
+              >
+                <CqaIcon name={item.icon} className="text-[18px]" />
+                <span className="text-center">{item.id === "testcase" ? "Document" : item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {!railCollapsed && (
+          <div className={cn(cqaCard, "w-full xl:sticky xl:top-4 xl:w-[320px] xl:self-start")}>
 
             {panel === "testcase" && (
               <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 py-4">
@@ -1127,38 +1340,73 @@ export function StudioWorkspace({
               <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-3 py-3">
                 {data.runs.length === 0 && <p className="px-2 py-8 text-center text-[12px] text-[#9ca3af]">No runs yet. Hit Run to execute this test case.</p>}
                 <div className="space-y-2.5">
-                  {data.runs.map((runItem) => (
-                    <div key={runItem.id} className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5">
-                      <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
-                        <CqaIcon
-                          name={runItem.status === "PASSED" ? "check_circle" : "cancel"}
-                          className={runItem.status === "PASSED" ? "text-[15px] text-[#00a63e]" : "text-[15px] text-[#dc2626]"}
-                        />
-                        <span className="font-semibold text-[#111827]">#{runItem.runNumber}</span>
-                        <span className={runItem.status === "PASSED" ? "text-[#00a63e]" : "text-[#dc2626]"}>{runItem.status === "PASSED" ? "Passed" : "Failed"}</span>
-                        <span className="text-[#9ca3af]">·</span>
-                        <span className="text-[#4a5565]">{runItem.trigger}</span>
-                        {runItem.autoFix && (
-                          <span className="ml-1 inline-flex items-center gap-1 rounded bg-[#f5f3ff] px-1.5 py-[1px] text-[10px] font-medium text-[#5b4ee8]">
-                            <CqaIcon name="auto_awesome" className="text-[11px]" /> Auto-fix rerun
-                          </span>
+                  {data.runs.map((runItem) => {
+                    const passed = runItem.status === "PASSED";
+                    const planMode = Boolean(runItem.mode && !/standalone/i.test(runItem.mode) && runItem.mode.trim());
+                    return (
+                      <div
+                        key={runItem.id}
+                        data-testid="run-history-card"
+                        className={cn(
+                          "rounded-lg border border-[#e5e7eb] border-l-4 bg-white",
+                          passed ? "border-l-emerald-500" : "border-l-rose-500",
                         )}
+                      >
+                        <div className="flex items-center justify-between gap-2 px-3 pt-2.5">
+                          <span className="flex items-center gap-1.5 text-[12.5px]">
+                            <CqaIcon
+                              name={passed ? "check_circle" : "cancel"}
+                              className={cn("text-[16px]", passed ? "text-[#00a63e]" : "text-[#dc2626]")}
+                            />
+                            <span className={cn("font-semibold underline decoration-1 underline-offset-2", passed ? "text-[#00a63e]" : "text-[#dc2626]")}>
+                              #{runItem.runNumber}
+                            </span>
+                          </span>
+                          <span
+                            className={cn(
+                              "rounded px-2 py-[2px] text-[10.5px] font-semibold text-white",
+                              passed ? "bg-emerald-500" : "bg-rose-500",
+                            )}
+                          >
+                            {passed ? "Passed" : "Failed"}
+                          </span>
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 px-3 text-[11.5px] text-[#4a5565]">
+                          <span>⚙ {runItem.trigger || "Automated"}</span>
+                          <span className="text-[#c0c5cd]">·</span>
+                          <span>👤 {runItem.createdBy || "System"}</span>
+                          {runItem.autoFix && (
+                            <span className="inline-flex items-center gap-1 rounded bg-[#f5f3ff] px-1.5 py-[1px] text-[10px] font-medium text-[#5b4ee8]">
+                              <CqaIcon name="auto_awesome" className="text-[11px]" /> Auto-fix rerun
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-2 px-3 text-[11px] text-[#6b7280]">
+                          <span>{formatRunClock(runItem.createdAt)} {formatRunDay(runItem.createdAt)}</span>
+                          <span>⏳ {formatDuration(runItem.durationMs)}</span>
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 px-3 pb-2.5">
+                          {!passed && (
+                            <span className="rounded bg-rose-50 px-1.5 py-[1px] text-[10px] font-medium text-rose-600">
+                              {runItem.failedStep ? `Failed at Step ${runItem.failedStep}` : "Failed"}
+                            </span>
+                          )}
+                          <span
+                            data-testid="run-history-mode"
+                            className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700"
+                            title={runItem.mode}
+                          >
+                            {planMode ? runItem.mode : "Standalone Run"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-[#6b7280]">
-                        <span className="inline-flex items-center gap-1"><CqaIcon name="calendar_today" className="text-[12px]" /> {formatRunDate(runItem.createdAt)}</span>
-                        <span className="inline-flex items-center gap-1"><CqaIcon name="hourglass_empty" className="text-[12px]" /> {formatDuration(runItem.durationMs)}</span>
-                      </div>
-                      <p className={cn("mt-1.5 text-[11.5px]", runItem.status === "PASSED" ? "text-[#00a63e]" : "text-[#dc2626]")}>
-                        {runItem.status === "PASSED" ? "Passed" : runItem.failedStep ? `Failed at Step ${runItem.failedStep}` : "Failed"}
-                      </p>
-                      <p className="mt-0.5 truncate text-[11px] text-[#6b7280]" title={runItem.mode}>{runItem.mode}</p>
-                      {runItem.failedStepText && <p className="mt-0.5 truncate text-[10.5px] text-[#9ca3af]" title={runItem.failedStepText}>{runItem.failedStepText}</p>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
+          )}
         </aside>
       </div>
 
@@ -1255,6 +1503,48 @@ export function StudioWorkspace({
                   }}
                 />
               </label>
+            </div>
+            <MagicLocatorInspector
+              key={detailStep.id}
+              step={{ action: detailStep.action, target: detailStep.target, value: detailStep.value, selector: detailStep.selector }}
+              readOnly={readOnly}
+              onApply={(selector) => {
+                setSteps((current) => current.map((step, index) => (index === detailIndex ? { ...step, selector } : step)));
+              }}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3">
+                <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">
+                  <CqaIcon name="image" className="text-[15px] text-[#9ca3af]" /> Screenshot
+                </p>
+                <div className="mt-2 flex h-24 items-center justify-center rounded-md border border-dashed border-[#d1d5db] bg-white text-[11px] text-[#9ca3af]">
+                  Captured during the next run
+                </div>
+              </div>
+              <div className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3">
+                <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">
+                  <CqaIcon name="terminal" className="text-[15px] text-[#9ca3af]" /> Logs
+                </p>
+                <div className="mt-2 max-h-24 overflow-y-auto rounded-md bg-[#10141c] px-2 py-1.5 font-mono text-[10.5px] leading-5 text-[#cbd5e1]">
+                  <p>[{detailStep.action}] {sentenceForStep(detailStep, data.variables, orgUrl)}</p>
+                  <p className="text-[#94a3b8]">selector: {detailStep.selector || "auto-resolved"}</p>
+                  {data.runs[0]?.failedStepText && <p className="text-[#fca5a5]">{data.runs[0].failedStepText}</p>}
+                  {!data.runs[0]?.failedStepText && <p className="text-[#86efac]">last run: passed</p>}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[#e5e7eb] p-3">
+              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">
+                <CqaIcon name="data_object" className="text-[15px] text-[#9ca3af]" /> Variables
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {Object.entries(data.variables).length === 0 && <span className="text-[11.5px] text-[#9ca3af]">No variables</span>}
+                {Object.entries(data.variables).map(([key, value]) => (
+                  <span key={key} className="inline-flex max-w-full items-center gap-1 truncate rounded border border-[#e5e7eb] bg-[#f9fafb] px-1.5 py-[2px] font-mono text-[10.5px] text-[#4a5565]">
+                    <span className="font-semibold text-[#5b4ee8]">{key}</span>=<span className="truncate">{value}</span>
+                  </span>
+                ))}
+              </div>
             </div>
             <p className="rounded-lg bg-[#f5f3ff] px-3 py-2 text-[12px] text-[#4f46e5]">
               AI auto-healing re-resolves this step from the page during execution if the selector changes.

@@ -14,6 +14,7 @@ import {
   cqaLabel,
   useAction,
 } from "@/components/dashboard/ui";
+import { RowMenu } from "@/components/contextqa/workspace";
 import { cn } from "@/lib/utils";
 
 export interface TunnelMachineRow {
@@ -297,7 +298,7 @@ export function Tunnels(props: TunnelsProps) {
             {machines.map((machine) => {
               const meta = statusMeta(machine.status);
               return (
-                <div key={machine.id} className={cn(cqaCard, "overflow-hidden")}>
+                <div key={machine.id} className={cqaCard}>
                   <div className="flex flex-wrap items-center gap-3 px-4 py-3">
                     <span className="flex size-9 items-center justify-center rounded-lg bg-[#f3f4f6] text-[#4b5563]" title={OS_LABEL[machine.os] ?? machine.os}>
                       <CqaIcon name={OS_ICON[machine.os] ?? "desktop_windows"} className="text-[20px]" />
@@ -328,16 +329,19 @@ export function Tunnels(props: TunnelsProps) {
                         <CqaIcon name="refresh" className="text-[16px]" />
                         {pending === `renew-${machine.id}` ? "Creating…" : "Create new command"}
                       </button>
-                      <details className="relative">
-                        <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-medium text-[#374151] hover:bg-[#f9fafb] [&::-webkit-details-marker]:hidden">
-                          More <CqaIcon name="expand_more" className="text-[16px]" />
-                        </summary>
-                        <div className="absolute right-0 z-30 mt-1 w-44 rounded-lg border border-[#e5e7eb] bg-white py-1 shadow-lg">
-                          <button type="button" disabled={readOnly} onClick={() => void remove(machine)} className="block w-full px-3 py-1.5 text-left text-[12.5px] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">
-                            Remove…
-                          </button>
-                        </div>
-                      </details>
+                      <RowMenu
+                        label={`More actions for ${machine.name}`}
+                        triggerLabel="More"
+                        items={[
+                          {
+                            label: "Remove machine",
+                            icon: "delete",
+                            danger: true,
+                            disabled: readOnly,
+                            onSelect: () => remove(machine),
+                          },
+                        ]}
+                      />
                     </div>
                   </div>
                   {machine.status === "expired" && (

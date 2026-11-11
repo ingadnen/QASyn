@@ -2,7 +2,11 @@
  * DOM similarity auto-healing: when a recorded selector no longer matches,
  * score every candidate element of the current DOM against the originally
  * recorded element (tag, attributes, text, position) and pick the best one.
+ *
+ * Context7 Playwright rules are injected into every healing decision so the
+ * replacement prefers accessible, stable selectors over generated CSS chains.
  */
+import { context7Guidance } from "./context7";
 export interface DomElement {
   tag: string;
   attrs: Record<string, string>;
@@ -66,18 +70,29 @@ export interface HealResult {
   score: number;
   newSelector: string | null;
   candidate?: DomElement;
+  strategy?: "Test ID" | "Role" | "Text" | "CSS";
+  guidance: string;
 }
 
 /** Tries to heal a broken selector against the current DOM. */
 export function healSelector(recorded: RecordedElement, candidates: DomElement[], threshold = 0.45): HealResult {
+  const guidance = context7Guidance("playwright locator healing accessible role", 3);
   let best: { el: DomElement; score: number } | null = null;
   for (const el of candidates) {
     const score = similarity(recorded, el);
     if (!best || score > best.score) best = { el, score };
   }
-  if (!best || best.score < threshold) return { healed: false, score: best?.score ?? 0, newSelector: null };
+  if (!best || best.score < threshold) return { healed: false, score: best?.score ?? 0, newSelector: null, guidance };
   const el = best.el;
   const id = el.attrs["data-testid"] || el.attrs.id;
-  const newSelector = id ? `css:[data-testid="${id}"]` : el.attrs.class ? `css:${el.tag}.${el.attrs.class.split(" ")[0]}` : `css:${el.tag} >> nth=${el.index}`;
-  return { healed: true, score: best.score, newSelector, candidate: el };
+  const label = el.attrs["aria-label"] || el.attrs.name || el.text;
+  const role = el.tag === "a" ? "link" : el.tag === "button" ? "button" : el.tag === "input" ? "textbox" : null;
+  if (id) {
+    return { healed: true, score: best.score, newSelector: `css:[data-testid="${id}"]`, candidate: el, strategy: "Test ID", guidance };
+  }
+  if (role && label) {
+    return { healed: true, score: best.score, newSelector: `role=${role}[name="${label.replace(/"/g, '\\"').slice(0, 80)}"]`, candidate: el, strategy: "Role", guidance };
+  }
+  const newSelector = el.attrs.class ? `css:${el.tag}.${el.attrs.class.split(" ")[0]}` : `css:${el.tag} >> nth=${el.index}`;
+  return { healed: true, score: best.score, newSelector, candidate: el, strategy: "CSS", guidance };
 }

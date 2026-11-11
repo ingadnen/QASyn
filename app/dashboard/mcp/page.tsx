@@ -1,8 +1,11 @@
 ﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { McpConnect, type McpTokenRow } from "@/components/dashboard/pages/McpConnect";
+import { normalizeEnabledSkills } from "@/lib/agent-skills";
 import { prisma } from "@/lib/db";
-import { requireOrgContext } from "@/lib/tenant";
+import { ensureDefaultMcpToken } from "@/lib/mcp-default";
+import { can } from "@/lib/rbac";
+import { readSettings } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "MCP" };
 export const dynamic = "force-dynamic";
@@ -18,6 +21,16 @@ function parseList(value: string): string[] {
 
 export default async function McpPage() {
   const ctx = await requirePermission("mcp");
+  let plainToken: string | null = null;
+  if (can(ctx.user.role, "mcpTokens")) {
+    try {
+      plainToken = (await ensureDefaultMcpToken(ctx.org)).token;
+    } catch {
+      // A read-only replica or an exhausted token budget must not break the page.
+      plainToken = null;
+    }
+  }
+
   const tokens = await prisma.apiToken.findMany({
     where: { organisationId: ctx.org.id },
     orderBy: { createdAt: "desc" },
@@ -40,5 +53,13 @@ export default async function McpPage() {
     lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
   }));
 
-  return <McpConnect tokens={rows} role={ctx.user.role} />;
+  const settings = readSettings(ctx.org);
+  return (
+    <McpConnect
+      tokens={rows}
+      role={ctx.user.role}
+      initialPlainToken={plainToken}
+      enabledSkills={normalizeEnabledSkills(settings.agentSkills)}
+    />
+  );
 }

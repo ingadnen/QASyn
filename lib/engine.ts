@@ -1,5 +1,6 @@
 import type { CrawlSession, Prisma, PrismaClient, TestCase } from "@prisma/client";
 import { CREDIT_COSTS } from "./constants";
+import { context7Guidance } from "./context7";
 import { buildCrawlLogs, crawlPlan, crawlProgress, hostFromUrl } from "./crawl";
 import { prisma } from "./db";
 import {
@@ -400,6 +401,8 @@ export interface NlpStepLike {
   target: string;
   value: string;
   selector: string;
+  /** Context7 live-doc rules injected at generation time (Playwright/Next.js). */
+  context7?: string;
 }
 
 const LEGACY_URL_PATTERN = /https?:\/\/(?:[a-z0-9-]+\.)*acme\.example(?::\d+)?(?:\/[^\s"',)\]]*)?|https?:\/\/(?:[a-z0-9-]+\.)*example\.com(?::\d+)?(?:\/[^\s"',)\]]*)?/gi;
@@ -485,11 +488,17 @@ export async function repairLegacyTestUrls(organisationId: string, website: stri
   return candidates.length;
 }
 
+/** Context7 rules injected into step generation (Playwright + Next.js). */
+export function buildContext7GenerationContext(module: string, title = ""): string {
+  return context7Guidance(`playwright nextjs e2e ${module} ${title}`.trim(), 3);
+}
+
 /** Builds exactly `count` realistic NLP steps anchored on the organisation URL. */
 export function buildStepsJson(orgUrl: string, count: number, module: string, title = ""): string {
   const base = normalizeWebsite((orgUrl || "").trim()) ?? "";
   const host = base ? base.replace(/^https?:\/\//, "") : "the application";
   const goTo = base || "the application";
+  const context7 = buildContext7GenerationContext(module, title);
   const flows: Array<[string, string, string]> = [
     ["Navigate", `Navigate to ${goTo}`, ""],
     ["Verify Element", base ? `Verify that the current page URL contains ${host}` : "Verify that the application home page is displayed", ""],
@@ -504,7 +513,14 @@ export function buildStepsJson(orgUrl: string, count: number, module: string, ti
   ];
   const steps: NlpStepLike[] = Array.from({ length: Math.max(1, count) }, (_, i) => {
     const [action, target, value] = flows[i % flows.length];
-    return { id: `s${i + 1}`, action, target: action === "Navigate" && i > 0 && i % 5 === 4 ? `${base}/settings` : target, value, selector: "" };
+    return {
+      id: `s${i + 1}`,
+      action,
+      target: action === "Navigate" && i > 0 && i % 5 === 4 ? `${base}/settings` : target,
+      value,
+      selector: "",
+      ...(action === "AI Assertion" ? { context7 } : {}),
+    };
   });
   return JSON.stringify(steps);
 }

@@ -30,10 +30,17 @@ export function RowMenu({
   items,
   align = "right",
   label = "More actions",
+  triggerLabel,
+  triggerIcon = "expand_more",
+  triggerClassName,
 }: {
   items: RowMenuItem[];
   align?: "left" | "right";
   label?: string;
+  /** Optional visible label; when set the trigger renders as a bordered "More ▾" button. */
+  triggerLabel?: string;
+  triggerIcon?: string;
+  triggerClassName?: string;
 }) {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -111,9 +118,20 @@ export function RowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="flex size-8 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-[#f3f4f6] hover:text-[#111827]"
+        className={cn(
+          triggerLabel
+            ? "inline-flex h-9 items-center gap-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-medium text-[#374151] transition hover:bg-[#f9fafb]"
+            : "flex size-8 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-[#f3f4f6] hover:text-[#111827]",
+          triggerClassName,
+        )}
       >
-        <CqaIcon name="more_horiz" className="text-[20px]" />
+        {triggerLabel ? (
+          <>
+            {triggerLabel} <CqaIcon name={triggerIcon} className="text-[16px]" />
+          </>
+        ) : (
+          <CqaIcon name="more_horiz" className="text-[20px]" />
+        )}
       </button>
       {mounted && open && createPortal(
         <div

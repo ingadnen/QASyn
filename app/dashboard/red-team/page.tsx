@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RedTeamForm } from "@/components/dashboard/pages/RedTeamClient";
+import { StrixScanner } from "@/components/dashboard/pages/StrixScanner";
 import { Card, EmptyState, PageHeader, StatusPill } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
@@ -14,6 +15,7 @@ export default async function RedTeamPage() {
   return (
     <div className="space-y-6">
       <PageHeader kicker="ENTERPRISE" title="Red team" description="Automated adversarial prompts (OWASP LLM Top 10) with vulnerability scoring and regression." />
+      <StrixScanner readOnly={ctx.readOnly} defaultTarget={ctx.org.website ?? "https://www.cgi.com"} />
       <Card title="Run red team suite"><div className="px-5 py-4"><RedTeamForm readOnly={ctx.readOnly} /></div></Card>
       <Card title={`${suites.length} suites`}>
         {suites.length === 0 ? <EmptyState title="No suites yet" description="Run your first red team suite above." /> : (

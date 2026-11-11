@@ -1,10 +1,12 @@
 ﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { CodeAnalysisRowActions } from "@/components/dashboard/pages/CodeAnalysisRowActions";
+import { GraphifyMapView } from "@/components/dashboard/pages/GraphifyMap";
 import { RunAnalysisButton } from "@/components/dashboard/pages/RunAnalysisButton";
 import { CqaIcon, PageHeader, StatusPill, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
+import { loadGraphifyMap } from "@/lib/graphify";
 import { readSettings, requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Code Analysis" };
@@ -18,6 +20,7 @@ export default async function CodeAnalysisPage({ searchParams }: { searchParams:
     prisma.testCase.groupBy({ by: ["module"], where: { organisationId: ctx.org.id }, _count: { _all: true } }),
   ]);
   const settings = readSettings(ctx.org);
+  const graph = await loadGraphifyMap(ctx.org.id);
   const hasRepo = repos.some((r) => r.status === "CONNECTED");
   const analysedAt = settings.codeAnalysisAt ? new Date(settings.codeAnalysisAt) : null;
   const rows = analysedAt
@@ -130,6 +133,8 @@ export default async function CodeAnalysisPage({ searchParams }: { searchParams:
           </div>
         )}
       </div>
+
+      <GraphifyMapView data={graph} compact />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SecurityScanForm } from "@/components/dashboard/pages/EngineClients";
+import { StrixScanner } from "@/components/dashboard/pages/StrixScanner";
 import { Card, EmptyState, PageHeader, StatusPill } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
@@ -14,6 +15,7 @@ export default async function SecurityTestingPage() {
   return (
     <div className="space-y-6">
       <PageHeader kicker="SOLUTIONS" title="Security testing" description="OWASP Top 10 automated scanner: XSS, SQL injection, headers, CORS and cookie checks with CVSS scoring." />
+      <StrixScanner readOnly={ctx.readOnly} defaultTarget={ctx.org.website ?? "https://www.cgi.com"} />
       <Card title="New scan"><div className="px-5 py-4"><SecurityScanForm readOnly={ctx.readOnly} /></div></Card>
       <Card title={`${scans.length} scans`}>
         {scans.length === 0 ? <EmptyState title="No scans" description="Run your first scan above." /> : (

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { AgentSkillsPanel } from "@/components/dashboard/pages/AgentSkillsPanel";
 import { ContextForm } from "@/components/dashboard/pages/ContextClients";
 import { Card, EmptyState, PageHeader } from "@/components/dashboard/ui";
+import { AGENT_SKILLS, normalizeEnabledSkills } from "@/lib/agent-skills";
 import { prisma } from "@/lib/db";
-import { requireOrgContext } from "@/lib/tenant";
+import { readSettings, requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Context graph" };
 export const dynamic = "force-dynamic";
@@ -18,6 +20,7 @@ export default async function ContextPage() {
     <div className="space-y-6">
       <PageHeader kicker="CONTEXT GRAPH ENGINE" title="Context graph" description="Ingest Jira stories, Swagger docs, Figma layouts, raw URLs and video logs. Each source derives a knowledge-graph node." />
       <Card title="Ingest a source"><div className="px-5 py-4"><ContextForm readOnly={ctx.readOnly} /></div></Card>
+      <AgentSkillsPanel skills={AGENT_SKILLS} initialEnabled={normalizeEnabledSkills(readSettings(ctx.org).agentSkills)} readOnly={ctx.readOnly} />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title={`Sources (${sources.length})`}>
           {sources.length === 0 ? <EmptyState title="No sources" description="Ingest one above." /> : (

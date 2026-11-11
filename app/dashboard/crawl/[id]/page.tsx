@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RequirementDetail, type RequirementDetailData } from "@/components/dashboard/pages/RequirementDetail";
 import { prisma } from "@/lib/db";
+import { loadGraphifyMap } from "@/lib/graphify";
 import { detailCases, longDate } from "@/lib/requirement-detail";
 import { requireOrgContext } from "@/lib/tenant";
 
@@ -55,7 +56,8 @@ export default async function CrawlDetailPage({ params }: { params: Promise<{ id
     plan: plan?.name ?? "Not created",
   };
 
-  return <RequirementDetail data={data} cases={detailCases(cases)} />;
+  const graph = await loadGraphifyMap(ctx.org.id, { crawlId: crawl.id });
+  return <RequirementDetail data={data} cases={detailCases(cases)} graph={graph} />;
 }
 
 function crawlTitle(targetUrl: string, startedAt: Date) {
