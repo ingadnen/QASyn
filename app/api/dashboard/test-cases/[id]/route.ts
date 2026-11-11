@@ -220,11 +220,6 @@ export async function PATCH(request: Request, { params }: Params) {
     broken.status = "passed";
     broken.biviaHeal = metadata;
     const now = new Date();
-    const updated = await prisma.testCase.update({
-      where: { id: tc.id },
-      data: { status: "passing", lastRunAt: now, stepsJson: JSON.stringify(steps), stepsCount: Math.max(1, steps.length) },
-    });
-
     const log = steps.map((step, stepIndex) => ({
       step: stepIndex + 1,
       action: String(step.action ?? ""),
@@ -236,41 +231,52 @@ export async function PATCH(request: Request, { params }: Params) {
           ? `Selector re-resolved by Bivia (${decision.probabilityPct.toFixed(1)}% calibrated): ${oldSelector} → ${decision.newSelector}`
           : "OK",
     }));
-    const lastRun = await prisma.testCaseRun.findFirst({
-      where: { organisationId: ctx.org.id },
-      orderBy: { runNumber: "desc" },
-      select: { runNumber: true },
-    });
-    const run = await prisma.testCaseRun.create({
-      data: {
-        organisationId: ctx.org.id,
-        testCaseId: tc.id,
-        runNumber: (lastRun?.runNumber ?? 0) + 1,
-        status: "PASSED",
-        trigger: "Self-Healing",
-        mode: "Bivia Auto-Heal",
-        durationMs: 18_400 + steps.length * 1_900,
-        failedStep: index + 1,
-        failedStepText: `${action}: ${target} — ${oldSelector} not found`,
-        autoFix: true,
-        createdBy: "Articul8 Bivia",
-        logJson: JSON.stringify(log),
+    const { updated, run, version } = await prisma.$transaction(
+      async (tx) => {
+        const updated = await tx.testCase.update({
+          where: { id: tc.id },
+          data: { status: "passing", lastRunAt: now, stepsJson: JSON.stringify(steps), stepsCount: Math.max(1, steps.length) },
+        });
+        // Run numbers are per test case, matching Studio's run history.
+        const lastRun = await tx.testCaseRun.findFirst({
+          where: { testCaseId: tc.id },
+          orderBy: { runNumber: "desc" },
+          select: { runNumber: true },
+        });
+        const run = await tx.testCaseRun.create({
+          data: {
+            organisationId: ctx.org.id,
+            testCaseId: tc.id,
+            runNumber: (lastRun?.runNumber ?? 0) + 1,
+            status: "PASSED",
+            trigger: "Self-Healing",
+            mode: "Bivia Auto-Heal",
+            durationMs: 18_400 + steps.length * 1_900,
+            failedStep: index + 1,
+            failedStepText: `${action}: ${target} — ${oldSelector} not found`,
+            autoFix: true,
+            createdBy: "Articul8 Bivia",
+            logJson: JSON.stringify(log),
+          },
+        });
+        const versionCount = await tx.testCaseVersion.count({ where: { testCaseId: tc.id } });
+        const version = await tx.testCaseVersion.create({
+          data: {
+            organisationId: ctx.org.id,
+            testCaseId: tc.id,
+            version: versionCount + 1,
+            summary: `✨ Bivia self-healed selector: ${oldSelector} → ${decision.newSelector} (${decision.probabilityPct.toFixed(1)}% calibrated)`,
+            author: "Articul8 Bivia",
+            addedJson: JSON.stringify([decision.newSelector]),
+            removedJson: JSON.stringify([oldSelector]),
+            stepsJson: JSON.stringify(steps),
+          },
+        });
+        await spendCredits(tx, ctx.org.id, CREDIT_COSTS.testRun);
+        return { updated, run, version };
       },
-    });
-    const versionCount = await prisma.testCaseVersion.count({ where: { testCaseId: tc.id } });
-    const version = await prisma.testCaseVersion.create({
-      data: {
-        organisationId: ctx.org.id,
-        testCaseId: tc.id,
-        version: versionCount + 1,
-        summary: `✨ Bivia self-healed selector: ${oldSelector} → ${decision.newSelector} (${decision.probabilityPct.toFixed(1)}% calibrated)`,
-        author: "Articul8 Bivia",
-        addedJson: JSON.stringify([decision.newSelector]),
-        removedJson: JSON.stringify([oldSelector]),
-        stepsJson: JSON.stringify(steps),
-      },
-    });
-    await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.testRun);
+      { timeout: 30_000 },
+    );
     await audit(
       prisma,
       ctx,

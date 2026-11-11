@@ -56,8 +56,11 @@ export interface BiviaObservatorySummary {
 }
 
 const MAX_ENTRIES = 5_000;
+const MAX_LEDGER_BYTES = 1_500_000;
+const COMPACT_EVERY_APPENDS = 50;
 const LEDGER_DIR = path.join(process.cwd(), ".qasyn-data");
 const LEDGER_PATH = path.join(LEDGER_DIR, "bivia-telemetry.json");
+let appendsSinceCompaction = 0;
 
 function emptySummary(): BiviaObservatorySummary {
   return {
@@ -143,11 +146,18 @@ function safeReadEntries(): BiviaTelemetryEntry[] {
 
 function compactLedger(entries: BiviaTelemetryEntry[]) {
   if (entries.length <= MAX_ENTRIES) return;
+  const tmpPath = `${LEDGER_PATH}.${process.pid}.tmp`;
   try {
     const kept = entries.slice(-MAX_ENTRIES);
-    fs.writeFileSync(LEDGER_PATH, `${kept.map((entry) => JSON.stringify(entry)).join("\n")}\n`, "utf8");
+    fs.writeFileSync(tmpPath, `${kept.map((entry) => JSON.stringify(entry)).join("\n")}\n`, "utf8");
+    // Atomic rename: readers always see either the previous or the compacted file.
+    fs.renameSync(tmpPath, LEDGER_PATH);
   } catch {
-    /* best-effort compaction */
+    try {
+      fs.unlinkSync(tmpPath);
+    } catch {
+      /* best-effort compaction */
+    }
   }
 }
 
@@ -190,8 +200,19 @@ export function recordBiviaDecision(input: RecordBiviaDecisionInput): void {
   try {
     fs.mkdirSync(LEDGER_DIR, { recursive: true });
     fs.appendFileSync(LEDGER_PATH, `${JSON.stringify(entry)}\n`, "utf8");
-    const entries = safeReadEntries();
-    compactLedger(entries);
+    appendsSinceCompaction += 1;
+    let overSize = false;
+    try {
+      overSize = fs.statSync(LEDGER_PATH).size > MAX_LEDGER_BYTES;
+    } catch {
+      overSize = false;
+    }
+    // Reading and parsing the whole ledger is expensive; only do it once every
+    // 50 appends or when the file grows past the size budget.
+    if (appendsSinceCompaction >= COMPACT_EVERY_APPENDS || overSize) {
+      appendsSinceCompaction = 0;
+      compactLedger(safeReadEntries());
+    }
   } catch {
     /* best-effort telemetry */
   }

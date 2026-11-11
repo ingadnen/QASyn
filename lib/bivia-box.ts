@@ -41,11 +41,13 @@ export function normalizeGroundBox(
   const safeB = Number.isFinite(b) ? b : 0;
   const safeC = Number.isFinite(c) ? c : 0;
   const safeD = Number.isFinite(d) ? d : 0;
-  // Corner format [x1,y1,x2,y2] unless inverted, then [x,y,w,h].
-  const x1 = Math.min(safeA, safeC);
-  const y1 = Math.min(safeB, safeD);
-  const x2 = safeC > safeA ? safeC : safeA + Math.max(0, safeC);
-  const y2 = safeD > safeB ? safeD : safeB + Math.max(0, safeD);
+  // Corner format [x1,y1,x2,y2] only when both corners grow. Otherwise the
+  // payload is [x,y,w,h] and the third/fourth values are width/height.
+  const cornerFormat = safeC > safeA && safeD > safeB;
+  const x1 = safeA;
+  const y1 = safeB;
+  const x2 = cornerFormat ? safeC : safeA + Math.max(0, safeC);
+  const y2 = cornerFormat ? safeD : safeB + Math.max(0, safeD);
   const magnitude = Math.max(Math.abs(x1), Math.abs(y1), Math.abs(x2), Math.abs(y2));
 
   let scaleX = 1;

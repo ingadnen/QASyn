@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T04:11:21.839Z",
+  "generatedAt": "2026-11-11T06:42:53.905Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -404,7 +404,7 @@
         {
           "check": "PR drawer posts a provider comment automatically",
           "ok": true,
-          "detail": "ion.ts` - `src/api/payments/route.ts` - `src/billing/invoice.ts` - `src/ui/components/WalletButton.tsx` ### Impacted test cases - ✅ Pay with a wallet _Posted automatically by QASyn for CGI._ refresh Re-run analysis gavel 📋 Generate CI/CD PR Gate Comment Close"
+          "detail": "ments/route.ts` - `src/billing/invoice.ts` - `src/ui/components/WalletButton.tsx` ### Impacted test cases - ✅ Pay with a wallet - ✅ Complete checkout _Posted automatically by QASyn for CGI._ refresh Re-run analysis gavel 📋 Generate CI/CD PR Gate Comment Close"
         },
         {
           "check": "Pull requests shows no raw JSON",
@@ -915,17 +915,17 @@
         {
           "check": "UI-created test case persisted",
           "ok": true,
-          "detail": "70 cases"
+          "detail": "71 cases"
         },
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-68010\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-65167\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-68010\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-65167\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -940,7 +940,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-68010"
+          "detail": "https://www.cgi.com/parity-65167"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -1337,7 +1337,7 @@
         {
           "check": "Manage Test Cases modal content",
           "ok": true,
-          "detail": "Manage Test Cases close search TC-069 Update the payment method Billing TC-068 Download the latest invoice (PDF) Billing TC-067 Billing address validation Billi"
+          "detail": "Manage Test Cases close search TC-070 Update the payment method Billing TC-069 Download the latest invoice (PDF) Billing TC-068 Billing address validation Billi"
         },
         {
           "check": "Suite deleted via API (id gone)",
@@ -2001,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for par1gh6n close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
+          "detail": "Install command for par1ea7a close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
         },
         {
           "check": "Install command one-time token",
@@ -2295,7 +2295,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_68010\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_65167\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2523,7 +2523,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_IPiK7opo"
+          "detail": "cqa_04sLWb6X"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2558,7 +2558,7 @@
         {
           "check": "MCP qasyn_bivia_decide returns a calibrated Bivia response",
           "ok": true,
-          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 183, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
+          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 460, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
         },
         {
           "check": "MCP role guide \"Admin\"",
@@ -2628,7 +2628,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 69, \"passRate\": 59, \"bugsReproduced\": 11, \"regressionsCaught\": 157, \"costAv"
+          "detail": "200 { \"testCases\": 70, \"passRate\": 61, \"bugsReproduced\": 12, \"regressionsCaught\": 194, \"costAv"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2638,7 +2638,7 @@
         {
           "check": "MCP tool \"qasyn_list_test_cases\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwblex3o00fzx950ascj4g1j\", \"title\": \"Open Menu from the main navigation — Auto"
+          "detail": "200 [ { \"id\": \"cmwbqd36q0009x9kc307r3mq0\", \"title\": \"Open Skip to main content from the main n"
         },
         {
           "check": "MCP tool selector \"qasyn_run_test_case\"",
@@ -2648,7 +2648,7 @@
         {
           "check": "MCP tool \"qasyn_run_test_case\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCaseId\": \"cmwblex3o00fzx950ascj4g1j\", \"title\": \"Open Menu from the main navigation — Auto"
+          "detail": "200 { \"testCaseId\": \"cmwbqd36q0009x9kc307r3mq0\", \"title\": \"Open Skip to main content from the main n"
         },
         {
           "check": "MCP tool selector \"qasyn_start_crawl\"",
@@ -2658,7 +2658,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwblm6fh00kwx950ow85bz5i\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
+          "detail": "200 { \"id\": \"cmwbr17eh004nx9ws6plo9bgl\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2678,7 +2678,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwbhnc3n0005x9yoxodcor8t\", \"title\": \"Complete checkout fails\", \"severity\":"
+          "detail": "200 [ { \"id\": \"cmwbqd3h3000bx9kcdhemkzgg\", \"title\": \"Verify CGI at 50 years landing page — Aut"
         },
         {
           "check": "MCP no page errors",
@@ -3820,7 +3820,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwblnwet00lox9505dzwmd4z"
+          "detail": "status 201 · cmwbr2xbk005fx9wshojiaocg"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3925,7 +3925,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 68010? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 65167? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -4179,7 +4179,7 @@
         {
           "check": "Plan run from list executes every linked case",
           "ok": true,
-          "detail": "total 69 · counted 69 · passed 40 · failed 8 · not executed 21"
+          "detail": "total 70 · counted 70 · passed 42 · failed 7 · not executed 21"
         },
         {
           "check": "Plan run from list returns a viewport",
@@ -4194,12 +4194,12 @@
         {
           "check": "Plan run from list persists an execution",
           "ok": true,
-          "detail": "16 → 17"
+          "detail": "20 → 21"
         },
         {
           "check": "Plan run from list persists a TestRun",
           "ok": true,
-          "detail": "52 → 53"
+          "detail": "65 → 66"
         },
         {
           "check": "Plan detail lists every linked suite",
@@ -4219,42 +4219,42 @@
         {
           "check": "Plan run from detail executes every linked case",
           "ok": true,
-          "detail": "total 69 · passed 40 · failed 8"
+          "detail": "total 70 · passed 42 · failed 7"
         },
         {
           "check": "Plan run from detail persists an execution",
           "ok": true,
-          "detail": "17 → 18"
+          "detail": "21 → 22"
         },
         {
           "check": "Plan run from detail persists a TestRun",
           "ok": true,
-          "detail": "53 → 54"
+          "detail": "66 → 67"
         },
         {
           "check": "Plan execution has START and END",
           "ok": true,
-          "detail": "FAILED · 2026-11-11T04:10:38.656Z"
+          "detail": "FAILED · 2026-11-11T06:42:17.718Z"
         },
         {
           "check": "Plan execution persists the viewport",
           "ok": true,
-          "detail": "{\"total\":69,\"passed\":40,\"failed\":8,\"notExecuted\":21,\"autoFixed\":145,\"durationMs\":67419,\"viewport\":\"1440×900 · Chromium\","
+          "detail": "{\"total\":70,\"passed\":42,\"failed\":7,\"notExecuted\":21,\"autoFixed\":68,\"durationMs\":68583,\"viewport\":\"1440×900 · Chromium\",\""
         },
         {
           "check": "Plan counters refreshed after the run",
           "ok": true,
-          "detail": "lastRunAt 2026-11-11T04:10:38.656Z · passRate 83.3"
+          "detail": "lastRunAt 2026-11-11T06:42:17.718Z · passRate 85.7"
         },
         {
           "check": "Plan detail START card is populated",
           "ok": true,
-          "detail": "START Nov 10, 2026, 11:10 PM Latest run"
+          "detail": "START Nov 11, 2026, 1:42 AM Latest run"
         },
         {
           "check": "Plan detail END card is populated",
           "ok": true,
-          "detail": "END Nov 10, 2026, 11:10 PM Latest run"
+          "detail": "END Nov 11, 2026, 1:42 AM Latest run"
         },
         {
           "check": "Plan detail shows the latest viewport",
@@ -4354,7 +4354,7 @@
         {
           "check": "Tunnel connect persists connectedAt",
           "ok": true,
-          "detail": "2026-11-11T04:10:40.316Z"
+          "detail": "2026-11-11T06:42:19.380Z"
         },
         {
           "check": "Super Admin account exists",
@@ -4538,7 +4538,7 @@
         {
           "check": "PART 7 a test case with steps is available",
           "ok": true,
-          "detail": "cmwblex3o00fzx950ascj4g1j"
+          "detail": "cmwbqd36q0009x9kc307r3mq0"
         },
         {
           "check": "PART 7 Studio title is visible",
@@ -4648,27 +4648,27 @@
         {
           "check": "PART 7 Run History renders cards",
           "ok": true,
-          "detail": "2 card(s)"
+          "detail": "5 card(s)"
         },
         {
           "check": "PART 7 Run History card shows #run and Passed/Failed",
           "ok": true,
-          "detail": "check_circle #2 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 11:10:38 PM Nov 10 ⏳ 00:01.18 Release 2.8 sign-off"
+          "detail": "check_circle #5 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 01:42:17 AM Nov 11 ⏳ 00:01.16 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows automated trigger and author",
           "ok": true,
-          "detail": "check_circle #2 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 11:10:38 PM Nov 10 ⏳ 00:01.18 Release 2.8 sign-off"
+          "detail": "check_circle #5 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 01:42:17 AM Nov 11 ⏳ 00:01.16 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows time and duration",
           "ok": true,
-          "detail": "check_circle #2 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 11:10:38 PM Nov 10 ⏳ 00:01.18 Release 2.8 sign-off"
+          "detail": "check_circle #5 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 01:42:17 AM Nov 11 ⏳ 00:01.16 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows Standalone Run or plan pill",
           "ok": true,
-          "detail": "Release 2.8 sign-off · check_circle #2 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 11:10:38 PM Nov 10 ⏳ 00:01.18 Release "
+          "detail": "Release 2.8 sign-off · check_circle #5 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 01:42:17 AM Nov 11 ⏳ 00:01.16 Release "
         },
         {
           "check": "PART 7 Run History exposes Auto-fix rerun when applicable",
@@ -4758,7 +4758,7 @@
         {
           "check": "PART 7 MCP tool runner returns a live JSON-RPC 200",
           "ok": true,
-          "detail": "{ \"status\": 200, \"elapsedMs\": 14, \"jsonrpc\": \"2.0\", \"id\": 1794370256059, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 69,\\n \\\"passRate\\\": 58,\\n \\\"bugsRepr"
+          "detail": "{ \"status\": 200, \"elapsedMs\": 15, \"jsonrpc\": \"2.0\", \"id\": 1794379354619, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 70,\\n \\\"passRate\\\": 60,\\n \\\"bugsRepr"
         },
         {
           "check": "PART 7 Agent Skills export writes .claude/CLAUDE.md",
@@ -4768,7 +4768,7 @@
         {
           "check": "PART 7 Graphify API returns nodes and edges",
           "ok": true,
-          "detail": "63 node(s) · 31 edge(s)"
+          "detail": "63 node(s) · 33 edge(s)"
         },
         {
           "check": "PART 7 Graphify API covers URL/DOM/Requirement/Test/PR",
@@ -4895,24 +4895,29 @@
           "detail": "pixels · 250,250,750,750"
         },
         {
+          "check": "PART 8 keeps inverted [x, y, w, h] boxes at their true origin and size",
+          "ok": true,
+          "detail": "milli · 500,300,120,40"
+        },
+        {
           "check": "PART 8 a test case is available for self-healing",
           "ok": true,
-          "detail": "Open Menu from the main navigation — Autopilot"
+          "detail": "Open Skip to main content from the main navigation — Autopilot"
         },
         {
           "check": "PART 8 Simulate Self-Healing re-grounds the broken selector with Bivia",
           "ok": true,
-          "detail": "#broken-legacy-selector-999 → page.getByTestId('the-cgi-at-50-years-heading-is-visible') · 96.8%"
+          "detail": "#broken-legacy-selector-999 → page.getByRole('heading', { name: /the \"CGI at 50 years\" heading is visible/i }) · 94.4%"
         },
         {
           "check": "PART 8 healed step keeps the raw grounding box and confidence",
           "ok": true,
-          "detail": "{\"x\":130,\"y\":368,\"width\":186,\"height\":56,\"rawBox\":[130,368,316,424],\"space\":\"milli\",\"label\":\"Verify the \\\"CGI at 50 years\\\" heading is visible\",\"confidence\":0.9"
+          "detail": "{\"x\":548,\"y\":442,\"width\":296,\"height\":30,\"rawBox\":[548,442,844,472],\"space\":\"milli\",\"label\":\"Verify the \\\"CGI at 50 years\\\" heading is visible\",\"confidence\":0.8"
         },
         {
           "check": "PART 8 healed selector is persisted in SQLite",
           "ok": true,
-          "detail": "passing · page.getByTestId('the-cgi-at-50-years-heading-is-visible')"
+          "detail": "passing · page.getByRole('heading', { name: /the \"CGI at 50 years\" heading is visible/i })"
         },
         {
           "check": "PART 8 self-heal creates an ✨ Auto-fix rerun",
@@ -4920,9 +4925,14 @@
           "detail": "Self-Healing · autoFix=true · PASSED"
         },
         {
+          "check": "PART 8 self-heal run number is scoped to its test case",
+          "ok": true,
+          "detail": "run #6 · case max #6"
+        },
+        {
           "check": "PART 8 Version History documents the old → new selector",
           "ok": true,
-          "detail": "✨ Bivia self-healed selector: #broken-legacy-selector-999 → page.getByTestId('the-cgi-at-50-years-heading-is-visible') (96.8% calibrated)"
+          "detail": "✨ Bivia self-healed selector: #broken-legacy-selector-999 → page.getByRole('heading', { name: /the \"CGI at 50 years\" heading is visible/i }) (94.4% calibrated)"
         },
         {
           "check": "PART 8 Studio exposes 🧪 Simulate Self-Healing",
@@ -4937,12 +4947,12 @@
         {
           "check": "PART 8 Step Details shows the healed selector evidence",
           "ok": true,
-          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 96.8% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
+          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 94.4% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
         },
         {
           "check": "PART 8 Step Details renders the neon bounding-box overlay",
           "ok": true,
-          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 96.8% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
+          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 94.4% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
         },
         {
           "check": "PART 8 Step Details exposes 🎯 Run Bivia Visual Grounding",
@@ -4957,7 +4967,7 @@
         {
           "check": "PART 8 Version History shows the Bivia self-heal entry",
           "ok": true,
-          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CG Open Menu from the main nav"
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help chat workspace_premium CG Open Skip to main content f"
         },
         {
           "check": "PART 8 visual testing embeds the Bivia grounding canvas",
@@ -4985,6 +4995,11 @@
           "detail": "completed · 23 pages · 6 flows"
         },
         {
+          "check": "PART 8 Autopilot crawl requirement has linked test cases (> 0)",
+          "ok": true,
+          "detail": "2 linked · 2 relation(s) · covered"
+        },
+        {
           "check": "PART 8 Autopilot persists the Strix OWASP/header scan",
           "ok": true,
           "detail": "Strix OWASP / headers · grade C · 74/100"
@@ -4992,17 +5007,17 @@
         {
           "check": "PART 8 Autopilot builds the Graphify topology",
           "ok": true,
-          "detail": "56 nodes · 31 edges"
+          "detail": "56 nodes · 32 edges"
         },
         {
           "check": "PART 8 Autopilot authors a Context7 + Bivia-calibrated test case",
           "ok": true,
-          "detail": "Verify CGI at 50 years landing page — Autopilot · 1 AI verification · 2 calibrated · 70.8%"
+          "detail": "Verify CGI at 50 years landing page — Autopilot · 1 AI verification · 2 calibrated · 96.8%"
         },
         {
           "check": "PART 8 authored case persists AI Verification, Context7 and scored locators",
           "ok": true,
-          "detail": "ai · 1653 chars"
+          "detail": "ai · 1658 chars"
         },
         {
           "check": "PART 8 Autopilot executes the new cases immediately in Studio",
@@ -5030,19 +5045,24 @@
           "detail": ""
         },
         {
+          "check": "PART 8 Crawl table shows the Autopilot linked test cases",
+          "ok": true,
+          "detail": " REQ-037 11-Nov-2026-6-42-44-AM_crawl Auto Crawl language Crawl - Completed 2 Linked Claire Girard 11 Nov 2026, 01:42 more_horiz"
+        },
+        {
           "check": "PART 8 PR Gate API returns a calibrated Markdown report",
           "ok": true,
-          "detail": "200 · 1573 chars · bivia-api"
+          "detail": "200 · 1624 chars · bivia-calibrated-fallback"
         },
         {
           "check": "PART 8 PR Gate emits the Bivia verdict + risk score + confidence",
           "ok": true,
-          "detail": "2.9/10 · 28.6% · low"
+          "detail": "10/10 · 97% · high"
         },
         {
           "check": "PART 8 PR Gate lists the Bivia /set impacted tests with Passed/Failed",
           "ok": true,
-          "detail": "| Test case | Module | Result | / | --- | --- | --- | / | Open Menu from the main navigation — Autopilot | Core | ✅ Passed | / | Verify CGI at 50 years landing page — Autopilot | Core | ❌ Failed |"
+          "detail": "| Test case | Module | Result | / | --- | --- | --- | / | Open Skip to main content from the main navigation — Autopilot | Core | ✅ Passed | / | Open Menu from the main navigation — Autopilot | Core | ❌ Failed |"
         },
         {
           "check": "PART 8 PR Gate includes the Strix security summary",
@@ -5052,7 +5072,7 @@
         {
           "check": "PART 8 PR list shows the gate pull request",
           "ok": true,
-          "detail": "#945666"
+          "detail": "#947956"
         },
         {
           "check": "PART 8 PR drawer exposes 📋 Generate CI/CD PR Gate Comment",
@@ -5067,22 +5087,27 @@
         {
           "check": "PART 8 PR gate modal renders the generated Markdown",
           "ok": true,
-          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #945666 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
+          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #947956 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
         },
         {
           "check": "PART 8 Bivia telemetry ledger meters boolean/choice/ground/score/set",
           "ok": true,
-          "detail": "39 entry(ies) · score, set, boolean, choice, ground"
+          "detail": "83 entry(ies) · score, set, boolean, choice, ground"
+        },
+        {
+          "check": "PART 8 telemetry compaction is atomic and leaves no partial ledger",
+          "ok": true,
+          "detail": "83 NDJSON line(s) · 0 temp file(s)"
         },
         {
           "check": "PART 8 billing usage renders the 1B token grant observatory",
           "ok": true,
-          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. Live ledger Tokens Grant 1,000,000,000 Tokens Used 14,094 39 decision(s) Tokens R"
+          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. Live ledger Tokens Grant 1,000,000,000 Tokens Used 29,380 83 decision(s) Tokens R"
         },
         {
           "check": "PART 8 observatory reports confidence, abstention, latency and cost saved",
           "ok": true,
-          "detail": ") 705 27 API · 12 fallback savings ESTIMATED LLM COST SAVED ($) $0.10 0 image · 11,598 text tokens Derived estimates only · the ledger stores no prompt text, image bytes or API key. Last decision 11/10/2026, 11:11:15 PM."
+          "detail": "S) 720 59 API · 24 fallback savings ESTIMATED LLM COST SAVED ($) $0.22 0 image · 24,068 text tokens Derived estimates only · the ledger stores no prompt text, image bytes or API key. Last decision 11/11/2026, 1:42:47 AM."
         },
         {
           "check": "PART 8 Integrations Bivia card embeds the token observatory",
@@ -5124,5 +5149,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 979
+  "totalChecks": 984
 }

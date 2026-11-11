@@ -155,19 +155,33 @@ export async function runQualityAutopilot(
   if (flows.length === 0) flows = fallbackFlows(targetUrl);
   flows = flows.slice(0, 6);
 
-  // A running crawl short-circuits startCrawl; retire it first so every
-  // autopilot run owns a fresh, linked crawl session.
+  // A running crawl short-circuits startCrawl. Retire only sessions that have
+  // been running for more than two minutes; a genuinely active crawl keeps its
+  // logs and is extended below instead of being silently wiped.
+  const staleCrawlCutoff = new Date(Date.now() - 2 * 60 * 1000);
   try {
     await db.crawlSession.updateMany({
-      where: { organisationId: actor.org.id, status: "running" },
+      where: { organisationId: actor.org.id, status: "running", startedAt: { lt: staleCrawlCutoff } },
       data: { status: "completed", completedAt: new Date() },
     });
   } catch {
-    /* no running crawl */
+    /* no stale running crawl */
   }
   const crawl = await startCrawl(db, actor, targetUrl, { publishMode: "Require approval" });
   const pagesVisited = Math.max(1, snapshot ? 1 + snapshot.navLinks.length + snapshot.forms.length : flows.length);
-  const crawlLogs = [
+  let priorCrawlLogs: Array<{ offsetMs: number; tag: string; message: string }> = [];
+  try {
+    const parsedLogs = JSON.parse(crawl.logs || "[]") as unknown;
+    if (Array.isArray(parsedLogs)) {
+      priorCrawlLogs = parsedLogs.filter(
+        (line): line is { offsetMs: number; tag: string; message: string } =>
+          Boolean(line) && typeof line === "object",
+      );
+    }
+  } catch {
+    priorCrawlLogs = [];
+  }
+  const autopilotLogs = [
     { offsetMs: 0, tag: "INFO", message: `Quality Autopilot started · ${targetUrl}` },
     {
       offsetMs: 400,
@@ -179,6 +193,7 @@ export async function runQualityAutopilot(
     { offsetMs: 900, tag: "MAP", message: `${flows.length} flows mapped across ${pagesVisited} pages` },
     { offsetMs: 1_400, tag: "DONE", message: `Autopilot crawl complete · ${flows.length} flows ready for authoring` },
   ];
+  const crawlLogs = [...priorCrawlLogs, ...autopilotLogs];
   await db.crawlSession.update({
     where: { id: crawl.id },
     data: {
@@ -379,6 +394,97 @@ export async function runQualityAutopilot(
       status: testCase.status,
       href: `/dashboard/test-studio/${testCase.id}`,
     });
+  }
+
+  // ── Phase 4b · Link the authored cases to the crawl requirement/suite/plan ──
+  // startCrawl creates the requirement and returns the pre-update row, so the
+  // requirementId is read back before linking.
+  if (created.length > 0) {
+    const createdIds = created.map((testCase) => ({ id: testCase.id }));
+    const linkedCrawl = await db.crawlSession.findUnique({
+      where: { id: crawl.id },
+      select: { requirementId: true },
+    });
+    if (linkedCrawl?.requirementId) {
+      await db.requirement.update({
+        where: { id: linkedCrawl.requirementId },
+        data: {
+          linkedTestsCount: created.length,
+          coverageStatus: "covered",
+          testCases: { set: createdIds },
+        },
+      });
+    }
+
+    const host = hostOf(targetUrl);
+    const suiteName = `${host} crawl suite`;
+    const existingSuite = await db.testSuite.findFirst({
+      where: { organisationId: actor.org.id, name: suiteName },
+      select: { id: true },
+    });
+    let suiteId: string | null = null;
+    if (existingSuite) {
+      suiteId = existingSuite.id;
+      await db.testSuite.update({
+        where: { id: suiteId },
+        data: { description: `Generated from crawl ${targetUrl}`, testCases: { connect: createdIds } },
+      });
+      const suiteCount = await db.testSuite.findUnique({
+        where: { id: suiteId },
+        select: { _count: { select: { testCases: true } } },
+      });
+      await db.testSuite.update({
+        where: { id: suiteId },
+        data: { testCasesCount: suiteCount?._count.testCases ?? created.length },
+      });
+    } else {
+      const suite = await db.testSuite.create({
+        data: {
+          organisationId: actor.org.id,
+          name: suiteName,
+          description: `Generated from crawl ${targetUrl}`,
+          testCasesCount: created.length,
+          passRate: 0,
+          testCases: { connect: createdIds },
+        },
+      });
+      suiteId = suite.id;
+    }
+
+    const planName = `${host} crawl plan`;
+    const existingPlan = await db.testPlan.findFirst({
+      where: { organisationId: actor.org.id, name: planName },
+      select: { id: true },
+    });
+    if (existingPlan) {
+      await db.testPlan.update({
+        where: { id: existingPlan.id },
+        data: {
+          testCases: { connect: createdIds },
+          ...(suiteId ? { suites: { connect: [{ id: suiteId }] } } : {}),
+        },
+      });
+      const planCount = await db.testPlan.findUnique({
+        where: { id: existingPlan.id },
+        select: { _count: { select: { testCases: true } } },
+      });
+      await db.testPlan.update({
+        where: { id: existingPlan.id },
+        data: { testCasesCount: planCount?._count.testCases ?? created.length },
+      });
+    } else {
+      await db.testPlan.create({
+        data: {
+          organisationId: actor.org.id,
+          name: planName,
+          environment: "Staging",
+          testCasesCount: created.length,
+          passRate: 0,
+          testCases: { connect: createdIds },
+          ...(suiteId ? { suites: { connect: [{ id: suiteId }] } } : {}),
+        },
+      });
+    }
   }
 
   const aiVerifications = created.reduce((sum, testCase) => sum + testCase.verifySteps, 0);

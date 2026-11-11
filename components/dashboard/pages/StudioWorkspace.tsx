@@ -727,8 +727,8 @@ export function StudioWorkspace({
   return (
     <div className="pb-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <h1 className="min-w-0 truncate text-[22px] font-bold leading-7 tracking-[-0.01em] text-[#101828]" data-testid="studio-title">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <h1 className="min-w-0 flex-1 truncate text-[22px] font-bold leading-7 tracking-[-0.01em] text-[#101828]" data-testid="studio-title">
             {data.title}
           </h1>
           <button
@@ -739,10 +739,10 @@ export function StudioWorkspace({
           >
             <CqaIcon name="edit" className="text-[17px]" />
           </button>
-          <button type="button" onClick={() => setEditOpen(true)} className={cn("inline-flex items-center rounded-md border px-2.5 py-[3px] text-[12px] font-medium", statusTone(data.status))}>
+          <button type="button" onClick={() => setEditOpen(true)} className={cn("inline-flex shrink-0 items-center rounded-md border px-2.5 py-[3px] text-[12px] font-medium", statusTone(data.status))}>
             {data.status}
           </button>
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => setPriorityOpen((v) => !v)}

@@ -614,15 +614,20 @@ async function inspectWithPlaywright(url: string, pw: PwModule): Promise<TargetD
  * Playwright is preferred (rendered SPA DOM); fetch is the fallback. Private and
  * loopback hosts are blocked by the same SSRF guard as real execution.
  */
-export async function inspectTargetDom(targetUrl: string): Promise<TargetDomSnapshot | null> {
+export async function inspectTargetDom(
+  targetUrl: string,
+  options?: { skipBrowser?: boolean },
+): Promise<TargetDomSnapshot | null> {
   if (!isSafeUrl(targetUrl)) return null;
-  const pw = await loadPlaywright();
-  if (pw) {
-    try {
-      const snapshot = await inspectWithPlaywright(targetUrl, pw);
-      if (snapshot) return snapshot;
-    } catch {
-      /* fall through to fetch */
+  if (!options?.skipBrowser) {
+    const pw = await loadPlaywright();
+    if (pw) {
+      try {
+        const snapshot = await inspectWithPlaywright(targetUrl, pw);
+        if (snapshot) return snapshot;
+      } catch {
+        /* fall through to fetch */
+      }
     }
   }
   return inspectWithFetch(targetUrl);

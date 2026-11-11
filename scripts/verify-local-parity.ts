@@ -3274,6 +3274,16 @@ async function main() {
     pixelBox.space === "pixels" && near(pixelBox.x, 250) && near(pixelBox.y, 250) && near(pixelBox.width, 750) && near(pixelBox.height, 750) && JSON.stringify(pixelBox.rawBox) === JSON.stringify([320, 180, 1280, 720]),
     `${pixelBox.space} · ${pixelBox.x},${pixelBox.y},${pixelBox.width},${pixelBox.height}`,
   );
+  const widthHeightBox = normalizeGroundBox([500, 300, 120, 40]);
+  check(
+    "PART 8 keeps inverted [x, y, w, h] boxes at their true origin and size",
+    widthHeightBox.space === "milli" &&
+      widthHeightBox.x === 500 &&
+      widthHeightBox.y === 300 &&
+      widthHeightBox.width === 120 &&
+      widthHeightBox.height === 40,
+    `${widthHeightBox.space} · ${widthHeightBox.x},${widthHeightBox.y},${widthHeightBox.width},${widthHeightBox.height}`,
+  );
 
   // 8.2 — Closed-loop self-healing through the real Test Studio API.
   const healCase = await db.testCase.findFirst({
@@ -3355,8 +3365,8 @@ async function main() {
     );
     const autoRun = await db.testCaseRun.findFirst({
       where: { testCaseId: healCase.id },
-      orderBy: { createdAt: "desc" },
-      select: { autoFix: true, status: true, trigger: true, mode: true, failedStepText: true },
+      orderBy: { runNumber: "desc" },
+      select: { runNumber: true, autoFix: true, status: true, trigger: true, mode: true, failedStepText: true },
     });
     check(
       "PART 8 self-heal creates an ✨ Auto-fix rerun",
@@ -3366,6 +3376,16 @@ async function main() {
         autoRun?.mode === "Bivia Auto-Heal" &&
         String(autoRun?.failedStepText ?? "").includes("#broken-legacy-selector-999"),
       `${autoRun?.trigger ?? "?"} · autoFix=${autoRun?.autoFix ?? "?"} · ${autoRun?.status ?? "?"}`,
+    );
+    const caseMaxRun = await db.testCaseRun.findFirst({
+      where: { testCaseId: healCase.id },
+      orderBy: { runNumber: "desc" },
+      select: { runNumber: true },
+    });
+    check(
+      "PART 8 self-heal run number is scoped to its test case",
+      (autoRun?.runNumber ?? 0) > 0 && autoRun?.runNumber === caseMaxRun?.runNumber,
+      `run #${autoRun?.runNumber ?? "?"} · case max #${caseMaxRun?.runNumber ?? "?"}`,
     );
     const latestVersion = await db.testCaseVersion.findFirst({
       where: { testCaseId: healCase.id },
@@ -3510,13 +3530,27 @@ async function main() {
   const autopilotCrawl = autopilot.crawlId
     ? await db.crawlSession.findUnique({
         where: { id: autopilot.crawlId },
-        select: { status: true, pagesVisited: true, flowsMapped: true, targetUrl: true },
+        select: { status: true, pagesVisited: true, flowsMapped: true, targetUrl: true, requirementId: true },
       })
     : null;
   check(
     "PART 8 Autopilot persists a completed live crawl",
     autopilotCrawl?.status === "completed" && (autopilotCrawl?.flowsMapped ?? 0) > 0 && (autopilotCrawl?.pagesVisited ?? 0) > 0,
     `${autopilotCrawl?.status ?? "?"} · ${autopilotCrawl?.pagesVisited ?? 0} pages · ${autopilotCrawl?.flowsMapped ?? 0} flows`,
+  );
+  const autopilotRequirement = autopilotCrawl?.requirementId
+    ? await db.requirement.findUnique({
+        where: { id: autopilotCrawl.requirementId },
+        select: { linkedTestsCount: true, coverageStatus: true, testCases: { select: { id: true } } },
+      })
+    : null;
+  const autopilotLinkedCount = autopilotRequirement?.testCases.length ?? 0;
+  check(
+    "PART 8 Autopilot crawl requirement has linked test cases (> 0)",
+    (autopilotRequirement?.linkedTestsCount ?? 0) > 0 &&
+      autopilotLinkedCount > 0 &&
+      autopilotRequirement?.linkedTestsCount === autopilotLinkedCount,
+    `${autopilotRequirement?.linkedTestsCount ?? 0} linked · ${autopilotLinkedCount} relation(s) · ${autopilotRequirement?.coverageStatus ?? "?"}`,
   );
   const autopilotScan = autopilot.security?.scanId
     ? await db.securityScan.findUnique({
@@ -3607,6 +3641,15 @@ async function main() {
   check(
     "PART 8 Crawl page exposes 🚀 Launch Quality Autopilot",
     (await page.locator('[data-testid="autopilot-open"]').count()) > 0,
+  );
+  const autopilotCrawlRow = page.locator(`a[href="/dashboard/crawl/${autopilot.crawlId ?? "missing"}"]`).first();
+  const autopilotCrawlRowText = ((await autopilotCrawlRow.locator("xpath=ancestor::tr[1]").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 8 Crawl table shows the Autopilot linked test cases",
+    (await autopilotCrawlRow.count()) > 0 &&
+      autopilotCrawlRowText.includes(`${autopilotLinkedCount} Linked`) &&
+      autopilotLinkedCount > 0,
+    autopilotCrawlRowText.slice(0, 180),
   );
 
   // 8.5 — CI/CD PR Gate Markdown from a real pull-request row.
@@ -3798,6 +3841,16 @@ async function main() {
           (entry.status === "answered" || entry.status === "abstained"),
       ),
     `${orgLedger.length} entry(ies) · ${[...ledgerKinds].join(", ")}`,
+  );
+  const ledgerDir = path.dirname(ledgerPath);
+  const ledgerTempFiles = fs.existsSync(ledgerDir)
+    ? fs.readdirSync(ledgerDir).filter((name) => name.startsWith("bivia-telemetry.json.") && name.endsWith(".tmp"))
+    : [];
+  check(
+    "PART 8 telemetry compaction is atomic and leaves no partial ledger",
+    ledgerTempFiles.length === 0 &&
+      ledgerEntries.length === ledgerRaw.split(/\r?\n/).filter((line) => line.trim().length > 0).length,
+    `${ledgerEntries.length} NDJSON line(s) · ${ledgerTempFiles.length} temp file(s)`,
   );
 
   await goto(page, "/dashboard/billing/usage");

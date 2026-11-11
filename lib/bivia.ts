@@ -223,7 +223,13 @@ export function biviaConfigured(): boolean {
 /* Transport                                                           */
 /* ------------------------------------------------------------------ */
 
-let remoteCooldownUntil = 0;
+/**
+ * Circuit breakers are scoped to the exact credential + endpoint pair. A bad
+ * key from one tenant (or from the Integrations Test Connection probe) can
+ * never disable the live API for another tenant with a valid key.
+ */
+const REMOTE_COOLDOWN_MAX_KEYS = 64;
+const remoteCooldowns = new Map<number, number>();
 
 interface RemoteResponse {
   ok: boolean;
@@ -232,17 +238,37 @@ interface RemoteResponse {
   latencyMs: number;
 }
 
-function coolDown() {
-  remoteCooldownUntil = Date.now() + REMOTE_COOLDOWN_MS;
+function remoteCooldownKey(config: BiviaRuntimeConfig): number {
+  return hash32(`${config.endpoint}|${config.apiKey}`);
+}
+
+function cooldownActive(config: BiviaRuntimeConfig): boolean {
+  const key = remoteCooldownKey(config);
+  const until = remoteCooldowns.get(key) ?? 0;
+  if (until <= Date.now()) {
+    if (until > 0) remoteCooldowns.delete(key);
+    return false;
+  }
+  return true;
+}
+
+function coolDown(config: BiviaRuntimeConfig) {
+  const key = remoteCooldownKey(config);
+  if (!remoteCooldowns.has(key) && remoteCooldowns.size >= REMOTE_COOLDOWN_MAX_KEYS) {
+    const oldest = remoteCooldowns.keys().next().value;
+    if (oldest !== undefined) remoteCooldowns.delete(oldest);
+  }
+  remoteCooldowns.set(key, Date.now() + REMOTE_COOLDOWN_MS);
 }
 
 async function remoteRequest(
   config: BiviaRuntimeConfig,
   path: string,
   payload: Record<string, unknown>,
+  options?: { bypassCooldown?: boolean },
 ): Promise<RemoteResponse | null> {
   if (!config.apiKey || !config.remoteEnabled) return null;
-  if (Date.now() < remoteCooldownUntil) return null;
+  if (!options?.bypassCooldown && cooldownActive(config)) return null;
 
   const started = Date.now();
   const controller = new AbortController();
@@ -268,12 +294,14 @@ async function remoteRequest(
       }
     }
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403 || response.status >= 500) coolDown();
+      if (!options?.bypassCooldown && (response.status === 401 || response.status === 403 || response.status >= 500)) {
+        coolDown(config);
+      }
       return { ok: false, status: response.status, body, latencyMs: Date.now() - started };
     }
     return { ok: true, status: response.status, body, latencyMs: Date.now() - started };
   } catch {
-    coolDown();
+    if (!options?.bypassCooldown) coolDown(config);
     return { ok: false, status: 0, body: null, latencyMs: Date.now() - started };
   } finally {
     clearTimeout(timer);
@@ -1078,13 +1106,18 @@ export async function testBiviaConnection(
 
   let live = false;
   if (keyFormatOk && urlOk) {
-    const probe = await remoteRequest({ ...config, remoteEnabled: true }, "/boolean", {
-      question: "Connectivity probe: is the Bivia decision engine reachable?",
-      context: "QASyn integration Test Connection",
-      mode: config.mode,
-      allow_abstain: true,
-      allowAbstain: true,
-    });
+    const probe = await remoteRequest(
+      { ...config, remoteEnabled: true },
+      "/boolean",
+      {
+        question: "Connectivity probe: is the Bivia decision engine reachable?",
+        context: "QASyn integration Test Connection",
+        mode: config.mode,
+        allow_abstain: true,
+        allowAbstain: true,
+      },
+      { bypassCooldown: true },
+    );
     live = Boolean(probe?.ok);
   }
 

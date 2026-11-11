@@ -47,7 +47,9 @@ export async function POST(request: Request) {
   }
   if (!domSummary) {
     try {
-      const snapshot = await inspectTargetDom(targetUrl);
+      // Playwright already attempted this URL for the screenshot; skip a second
+      // headless Chromium launch and use the fast HTTP fetch fallback only.
+      const snapshot = await inspectTargetDom(targetUrl, { skipBrowser: true });
       if (snapshot) {
         domSummary = JSON.stringify(snapshot).slice(0, 8_000);
       }
