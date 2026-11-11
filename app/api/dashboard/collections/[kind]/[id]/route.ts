@@ -140,7 +140,7 @@ export async function PATCH(request: Request, { params }: Params) {
       await spendCredits(tx, ctx.org.id, CREDIT_COSTS.suiteRun);
       return r;
     },
-    { timeout: 30_000 },
+    { timeout: 60_000 },
   );
   await audit(prisma, ctx, kind === "suites" ? "test_suite.run" : "test_plan.run", `${item.name} · ${result.passed}/${result.total}`);
   return NextResponse.json(result);

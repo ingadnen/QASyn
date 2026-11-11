@@ -21,7 +21,7 @@ export interface IntegrationRow {
   connectedAt: string;
 }
 
-const TABS: IntegrationCategory[] = ["All Plugins", "Bug Reporting", "Product Management"];
+const TABS: IntegrationCategory[] = ["All Plugins", "Bug Reporting", "Product Management", "AI & Verification"];
 
 function BrandMark({ definition }: { definition: IntegrationDefinition }) {
   return (
@@ -98,6 +98,9 @@ function fieldInput(field: IntegrationField, value: string, onChange: (value: st
       placeholder={field.placeholder}
       required={field.required}
       disabled={disabled}
+      min={field.type === "number" ? field.min : undefined}
+      max={field.type === "number" ? field.max : undefined}
+      step={field.type === "number" ? field.step : undefined}
       autoComplete={field.type === "password" ? "new-password" : "off"}
       aria-label={field.label}
     />
@@ -108,12 +111,14 @@ function ConfigureModal({
   definition,
   row,
   readOnly,
+  biviaReady,
   onClose,
   onSaved,
 }: {
   definition: IntegrationDefinition;
   row: IntegrationRow | undefined;
   readOnly: boolean;
+  biviaReady: boolean;
   onClose: () => void;
   onSaved: (row: IntegrationRow) => void;
 }) {
@@ -130,6 +135,9 @@ function ConfigureModal({
   const [message, setMessage] = useState<string | null>(null);
   const [effects, setEffects] = useState<string[] | null>(null);
   const connected = row?.status === "CONNECTED" || row?.status === "INDEXING";
+  const biviaLive = definition.key === "BIVIA" && biviaReady;
+  const effectivelyConnected = connected || biviaLive;
+  const badge = effectivelyConnected ? "Pro · Connected" : "Pro · Available";
 
   useEffect(() => {
     const initial: Record<string, string> = {};
@@ -208,7 +216,7 @@ function ConfigureModal({
               <CqaIcon name="cable" className="text-[16px]" />
               {pending === "test" ? "Testing…" : "Test Connection"}
             </button>
-            {connected && (
+            {effectivelyConnected && (
               <>
                 <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending !== null} onClick={() => call("sync")}>
                   <CqaIcon name="sync" className="text-[16px]" />
@@ -231,7 +239,7 @@ function ConfigureModal({
               Cancel
             </button>
             <button type="button" className={cqaBtnPrimary} disabled={readOnly || pending !== null} onClick={() => call("connect")}>
-              {pending === "connect" ? "Saving…" : connected ? "Save changes" : "Save & Connect"}
+              {pending === "connect" ? "Saving…" : effectivelyConnected ? "Save changes" : "Save & Connect"}
             </button>
           </div>
         </div>
@@ -243,10 +251,21 @@ function ConfigureModal({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[13.5px] font-semibold text-[#111827]">{definition.name}</p>
-              <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">Pro · Available</span>
-              <ConnectedPill connected={connected} />
+              <span className={cn(
+                "rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
+                biviaLive ? "bg-[#ecfdf3] text-[#067647]" : "bg-[#eef2ff] text-[#4f46e5]",
+              )}>{badge}</span>
+              <ConnectedPill connected={effectivelyConnected} />
             </div>
             <p className="mt-1 text-[12px] leading-5 text-[#6b7280]">{definition.description}</p>
+            {definition.key === "BIVIA" && (
+              <p data-testid="bivia-grant" className="mt-1.5 inline-flex rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
+                1,000,000,000 Bivia tokens grant
+              </p>
+            )}
+            {biviaLive && (
+              <p className="mt-1 text-[11px] font-medium text-[#067647]">Connected through the workspace BIVIA_API_KEY.</p>
+            )}
             {row?.lastSyncAt && <p className="mt-1 text-[11px] text-[#9ca3af]">Last sync: {formatWhen(row.lastSyncAt)}</p>}
           </div>
         </div>
@@ -303,7 +322,15 @@ function ConfigureModal({
   );
 }
 
-export function Integrations({ integrations, readOnly }: { integrations: IntegrationRow[]; readOnly: boolean }) {
+export function Integrations({
+  integrations,
+  readOnly,
+  biviaReady = false,
+}: {
+  integrations: IntegrationRow[];
+  readOnly: boolean;
+  biviaReady?: boolean;
+}) {
   const [rows, setRows] = useState<IntegrationRow[]>(integrations);
   const [tab, setTab] = useState<IntegrationCategory>("All Plugins");
   const [query, setQuery] = useState("");
@@ -312,7 +339,11 @@ export function Integrations({ integrations, readOnly }: { integrations: Integra
   useEffect(() => setRows(integrations), [integrations]);
 
   const byProvider = useMemo(() => new Map(rows.map((row) => [row.provider, row])), [rows]);
-  const connectedCount = rows.filter((row) => row.status === "CONNECTED" || row.status === "INDEXING").length;
+  const biviaRow = byProvider.get("BIVIA");
+  const biviaRowConnected = biviaRow?.status === "CONNECTED" || biviaRow?.status === "INDEXING";
+  const connectedCount =
+    rows.filter((row) => row.status === "CONNECTED" || row.status === "INDEXING").length +
+    (biviaReady && !biviaRowConnected ? 1 : 0);
 
   const visible = INTEGRATION_PROVIDERS.filter((provider) => {
     if (!provider.categories.includes(tab)) return false;
@@ -378,6 +409,8 @@ export function Integrations({ integrations, readOnly }: { integrations: Integra
         {visible.map((definition) => {
           const row = byProvider.get(definition.key);
           const connected = row?.status === "CONNECTED" || row?.status === "INDEXING";
+          const biviaLive = definition.key === "BIVIA" && biviaReady;
+          const effectivelyConnected = connected || biviaLive;
           return (
             <article key={definition.key} className={cn(cqaCard, "flex flex-col overflow-hidden")}>
               <div className="flex flex-1 flex-col gap-3 px-4 py-4">
@@ -386,29 +419,43 @@ export function Integrations({ integrations, readOnly }: { integrations: Integra
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-[14px] font-semibold text-[#111827]">{definition.name}</h2>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full bg-[#eef2ff] px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-[#4f46e5]">
-                        Pro · Available
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide",
+                          effectivelyConnected ? "bg-[#ecfdf3] text-[#067647]" : "bg-[#eef2ff] text-[#4f46e5]",
+                        )}
+                      >
+                        {effectivelyConnected ? "Pro · Connected" : "Pro · Available"}
                       </span>
-                      <ConnectedPill connected={connected} />
+                      <ConnectedPill connected={effectivelyConnected} />
                     </div>
                   </div>
                 </div>
                 <p className="line-clamp-3 min-h-[48px] text-[12px] leading-5 text-[#6b7280]">{definition.description}</p>
+                {definition.key === "BIVIA" && (
+                  <p data-testid="bivia-grant" className="inline-flex w-fit rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
+                    1,000,000,000 Bivia tokens grant
+                  </p>
+                )}
                 <p className="truncate text-[11.5px] text-[#9ca3af]">
-                  {connected ? row?.detail || "Configured" : "Add credentials and project details to connect."}
+                  {connected
+                    ? row?.detail || "Configured"
+                    : biviaLive
+                      ? "Connected through the workspace BIVIA_API_KEY."
+                      : "Add credentials and project details to connect."}
                 </p>
               </div>
               <div className="flex items-center justify-between gap-2 border-t border-[#f0f1f3] bg-[#fcfcfd] px-4 py-2.5">
                 <span className="text-[10.5px] text-[#9ca3af]">
-                  {connected ? `Last sync ${formatWhen(row?.lastSyncAt ?? null)}` : "Not configured"}
+                  {connected ? `Last sync ${formatWhen(row?.lastSyncAt ?? null)}` : biviaLive ? "Workspace API key" : "Not configured"}
                 </span>
                 <button
                   type="button"
                   onClick={() => setActive(definition)}
                   className="inline-flex h-7 items-center gap-1 rounded-md border border-[#e5e7eb] bg-white px-2.5 text-[11.5px] font-semibold text-[#5b4ee8] transition hover:bg-[#f5f4ff]"
                 >
-                  <CqaIcon name={connected ? "settings" : "link"} className="text-[14px]" />
-                  {connected ? "Configure" : "Connect"}
+                  <CqaIcon name={effectivelyConnected ? "settings" : "link"} className="text-[14px]" />
+                  {effectivelyConnected ? "Configure" : "Connect"}
                 </button>
               </div>
             </article>
@@ -425,6 +472,7 @@ export function Integrations({ integrations, readOnly }: { integrations: Integra
           definition={active}
           row={byProvider.get(active.key)}
           readOnly={readOnly}
+          biviaReady={biviaReady}
           onClose={() => setActive(null)}
           onSaved={saved}
         />

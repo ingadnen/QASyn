@@ -112,6 +112,22 @@ export function MagicLocatorInspector({ step, readOnly, onApply }: Props) {
                 </span>
               </div>
               <p className="mt-1 text-[10.5px] leading-4 text-[#6b7280]">{candidate.reason}</p>
+              {index === 0 && result.bivia && (
+                <p
+                  data-testid="bivia-calibrated-locator"
+                  data-calibrated-probability={result.bivia.probabilityPct.toFixed(1)}
+                  className={cn(
+                    "mt-1 inline-flex flex-wrap items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                    result.bivia.status === "answered"
+                      ? "border-[#abefc6] bg-[#ecfdf3] text-[#067647]"
+                      : "border-[#fedf89] bg-[#fffaeb] text-[#b54708]",
+                  )}
+                >
+                  🧠 Calibrated by Articul8 Bivia · {result.bivia.probabilityPct.toFixed(1)}%
+                  {result.bivia.status === "abstained" ? " · abstained" : ""}
+                  {result.bivia.abstainReason ? ` · ${result.bivia.abstainReason}` : ""}
+                </p>
+              )}
             </div>
           ))}
 

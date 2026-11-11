@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   if (remaining <= 0) return jsonError("No credits left. Upgrade your plan in Billing.", 402);
 
   await delay(MOCK_LATENCY_MS * 2);
-  const result = await prisma.$transaction((tx) => runTestCases(tx, ctx, testCases), { timeout: 30_000 });
+  const result = await prisma.$transaction((tx) => runTestCases(tx, ctx, testCases), { timeout: 60_000 });
   await audit(prisma, ctx, "test_case.batch_run", `${module ?? "all modules"} · ${result.passed}/${result.total} passing`);
   return NextResponse.json(result);
 }

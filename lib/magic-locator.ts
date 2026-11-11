@@ -4,7 +4,11 @@
  * Produces the same family of resilient Playwright locators that the
  * 21st.dev magic-mcp workflow recommends, and scores them from most to least
  * resilient: accessible role/name > test id > label > text > raw CSS.
+ *
+ * Articul8 Bivia calibrates the final choice with an abstention-aware
+ * probability while the deterministic ranking remains the offline fallback.
  */
+import { biviaChoice, type BiviaConfigSources, type BiviaMode } from "./bivia";
 
 export interface LocatorStepInput {
   action: string;
@@ -19,6 +23,18 @@ export interface LocatorCandidate {
   score: number;
   component: string;
   reason: string;
+  /** Articul8 Bivia calibrated probability (0–100) for the chosen locator. */
+  calibratedProbability?: number;
+}
+
+export interface MagicBiviaCalibration {
+  status: "answered" | "abstained";
+  provider: string;
+  probability: number;
+  probabilityPct: number;
+  chosenSelector: string | null;
+  abstainReason?: string;
+  latencyMs: number;
 }
 
 export interface MagicLocatorResult {
@@ -27,6 +43,16 @@ export interface MagicLocatorResult {
   best: LocatorCandidate | null;
   candidates: LocatorCandidate[];
   guidance: string[];
+  /** Present when the request was calibrated by Articul8 Bivia. */
+  bivia?: MagicBiviaCalibration;
+}
+
+export interface MagicLocatorOptions {
+  organisationId?: string;
+  sources?: BiviaConfigSources;
+  mode?: BiviaMode;
+  /** Honours the Analysis Settings toggle; false skips Bivia entirely. */
+  enabled?: boolean;
 }
 
 function clean(value: string): string {
@@ -150,5 +176,64 @@ export function generateMagicLocators(step: LocatorStepInput): MagicLocatorResul
       "Add data-testid only where role/label cannot uniquely identify the element.",
       "Keep CSS selectors as a last-resort fallback, never as the primary locator.",
     ],
+  };
+}
+
+/**
+ * Generates candidate locators, then asks Articul8 Bivia to pick and calibrate
+ * the best one. The chosen candidate moves to the front so Studio's "Apply Best
+ * Locator" always uses the calibrated decision. Abstentions keep the
+ * deterministic ranking and surface the exact reason + confidence.
+ */
+export async function generateCalibratedMagicLocators(
+  step: LocatorStepInput,
+  options: MagicLocatorOptions = {},
+): Promise<MagicLocatorResult> {
+  const base = generateMagicLocators(step);
+  if (options.enabled === false || base.candidates.length === 0) return base;
+
+  const decision = await biviaChoice({
+    question: `Choose the most resilient Playwright locator for: ${base.intent}`,
+    options: base.candidates.map((candidate) => candidate.selector),
+    context: [
+      `Component: ${base.component}`,
+      `Action: ${step.action}`,
+      `Target: ${step.target}`,
+      `Value: ${step.value ?? ""}`,
+      `Existing selector: ${step.selector ?? ""}`,
+      "Priority: accessible role/name > test id > label > text > CSS.",
+    ].join("\n"),
+    organisationId: options.organisationId,
+    sources: options.sources,
+    mode: options.mode,
+    allowAbstain: true,
+  });
+
+  const probabilityPct = Math.round(decision.probability * 1000) / 10;
+  const calibrated = base.candidates.map((candidate, index) => ({
+    ...candidate,
+    ...(index === decision.optionIndex ? { calibratedProbability: probabilityPct } : {}),
+  }));
+  const selected =
+    decision.status === "answered" && decision.optionIndex >= 0 && decision.optionIndex < calibrated.length
+      ? calibrated[decision.optionIndex]
+      : null;
+  const candidates = selected
+    ? [selected, ...calibrated.filter((_, index) => index !== decision.optionIndex)]
+    : calibrated;
+
+  return {
+    ...base,
+    best: candidates[0] ?? base.best,
+    candidates,
+    bivia: {
+      status: decision.status,
+      provider: decision.provider,
+      probability: decision.probability,
+      probabilityPct,
+      chosenSelector: selected?.selector ?? null,
+      latencyMs: decision.latencyMs,
+      ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
+    },
   };
 }

@@ -161,6 +161,17 @@ export interface AnalysisCodeSettings {
   postPrComment: boolean;
   postStatusCheck: boolean;
   suppressPaths: string;
+  /** Use the live Articul8 Bivia API; off keeps the calibrated local fallback. */
+  biviaEnabled: boolean;
+  /** AI Verification / AI Assertion steps. */
+  biviaVerifyAi: boolean;
+  /** Smart Locator / Magic UI calibration. */
+  biviaMagicLocator: boolean;
+  /** PR risk score and recommended regression subset. */
+  biviaPrRisk: boolean;
+  biviaMode: "fast" | "deep";
+  /** 0–1 calibrated probability below which Bivia abstains. */
+  biviaAbstentionThreshold: number;
 }
 
 export const DEFAULT_ANALYSIS_CODE_SETTINGS: AnalysisCodeSettings = {
@@ -172,6 +183,12 @@ export const DEFAULT_ANALYSIS_CODE_SETTINGS: AnalysisCodeSettings = {
   postPrComment: true,
   postStatusCheck: true,
   suppressPaths: "",
+  biviaEnabled: true,
+  biviaVerifyAi: true,
+  biviaMagicLocator: true,
+  biviaPrRisk: true,
+  biviaMode: "fast",
+  biviaAbstentionThreshold: 0.35,
 };
 
 export interface BugReproductionSettings {

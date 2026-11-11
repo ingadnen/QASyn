@@ -1,8 +1,10 @@
 import type { CrawlSession, Prisma, PrismaClient, TestCase } from "@prisma/client";
+import { biviaBoolean } from "./bivia";
 import { CREDIT_COSTS } from "./constants";
 import { context7Guidance } from "./context7";
 import { buildCrawlLogs, crawlPlan, crawlProgress, hostFromUrl } from "./crawl";
 import { prisma } from "./db";
+import { parseIntegrationConfig, type IntegrationConfig } from "./integration-providers";
 import {
   generateGroundedTitles,
   groundedFlowsFromDom,
@@ -11,7 +13,7 @@ import {
   type GroundedFlow,
   type TargetDomSnapshot,
 } from "./web-executor";
-import { audit, spendCredits, type OrgContext } from "./tenant";
+import { audit, readSettings, spendCredits, type OrgContext } from "./tenant";
 import { normalizeWebsite } from "./utils";
 
 /**
@@ -294,14 +296,89 @@ export async function runTestCases(db: Db, actor: Actor, testCases: TestCase[]) 
   let failed = 0;
   const now = new Date();
   const logLines: Array<{ timestamp: Date; stream: string; tag: string; message: string }> = [];
+
+  // Bivia configuration is resolved through the transaction client (never the
+  // global Prisma client) so callers can wrap runTestCases in a transaction.
+  const analysisCode = readSettings(actor.org).analysisCode ?? null;
+  let biviaIntegrationConfig: IntegrationConfig | null = null;
+  try {
+    const row = await db.integration.findUnique({
+      where: { organisationId_provider: { organisationId: actor.org.id, provider: "BIVIA" } },
+      select: { configJson: true },
+    });
+    biviaIntegrationConfig = row ? parseIntegrationConfig(row.configJson) : null;
+  } catch {
+    biviaIntegrationConfig = null;
+  }
+  const biviaSources = { integrationConfig: biviaIntegrationConfig, analysisCode };
+  const biviaAiEnabled = analysisCode?.biviaVerifyAi !== false;
+
   for (const tc of testCases) {
     const roll = Math.random();
     const failRate = tc.status === "flaky" ? 0.35 : tc.criticality === "low" ? 0.08 : 0.14;
     const status = roll < failRate ? "failing" : roll < failRate + 0.04 ? "flaky" : "passing";
     if (status === "failing") failed++;
     else passed++;
-    await db.testCase.update({ where: { id: tc.id }, data: { status, lastRunAt: now } });
-    logLines.push({ timestamp: now, stream: status === "failing" ? "stderr" : "stdout", tag: status === "failing" ? "FAIL" : "TEST", message: `${tc.title} → ${status}` });
+
+    // Execute every AI Assertion step through Articul8 Bivia and persist the
+    // calibrated status, probability and abstain reason on the step itself.
+    const biviaNotes: string[] = [];
+    let stepsChanged = false;
+    let steps: Array<Record<string, unknown>> = [];
+    try {
+      const parsed = JSON.parse(tc.stepsJson || "[]") as unknown;
+      if (Array.isArray(parsed)) steps = parsed.filter((step): step is Record<string, unknown> => Boolean(step) && typeof step === "object");
+    } catch {
+      steps = [];
+    }
+    if (biviaAiEnabled) {
+      for (const step of steps) {
+        if (String(step.action ?? "") !== "AI Assertion") continue;
+        const question = String(step.target ?? "").trim() || `Verify ${tc.title}`;
+        const decision = await biviaBoolean({
+          question,
+          context: [
+            `Test case: ${tc.title}`,
+            `Module: ${tc.module}`,
+            `Criticality: ${tc.criticality}`,
+            `Step: ${question}`,
+            `Existing selector context: ${String(step.selector ?? "") || "(auto-resolved)"}`,
+          ].join("\n"),
+          organisationId: actor.org.id,
+          sources: biviaSources,
+          allowAbstain: true,
+        });
+        const probabilityPct = Math.round(decision.probability * 1000) / 10;
+        const stepStatus =
+          decision.status === "abstained" ? "abstained" : decision.value ? "passed" : "failed";
+        step.status = stepStatus;
+        step.bivia = {
+          status: stepStatus,
+          probability: probabilityPct,
+          probabilityRaw: decision.probability,
+          provider: decision.provider,
+          question,
+          latencyMs: decision.latencyMs,
+          verifiedAt: now.toISOString(),
+          ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
+        };
+        stepsChanged = true;
+        biviaNotes.push(
+          `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${decision.abstainReason ? ` · ${decision.abstainReason}` : ""}`,
+        );
+      }
+    }
+
+    await db.testCase.update({
+      where: { id: tc.id },
+      data: { status, lastRunAt: now, ...(stepsChanged ? { stepsJson: JSON.stringify(steps) } : {}) },
+    });
+    logLines.push({
+      timestamp: now,
+      stream: status === "failing" ? "stderr" : "stdout",
+      tag: status === "failing" ? "FAIL" : "TEST",
+      message: `${tc.title} → ${status}${biviaNotes.length ? ` · ${biviaNotes.join(" · ")}` : ""}`,
+    });
 
     if (status === "failing" && tc.status !== "failing") {
       await db.bugReport.create({

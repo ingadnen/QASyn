@@ -104,6 +104,15 @@ export const PROVIDER_META: Record<Provider, ProviderMeta> = {
     detailLabel: "Channel",
     detailPlaceholder: "#qa-alerts",
   },
+  BIVIA: {
+    name: "Articul8 Bivia",
+    short: "B8",
+    description: "Calibrated multimodal decisions for AI Verification, Smart Locator and PR impact.",
+    tile: "bg-[#111827] text-white",
+    indexes: false,
+    detailLabel: "Default mode",
+    detailPlaceholder: "fast",
+  },
 };
 
 export const CODE_PROVIDERS: Provider[] = ["GITHUB", "GITLAB"];

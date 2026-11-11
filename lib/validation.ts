@@ -375,6 +375,12 @@ export const analysisCodeSettingsSchema = z.object({
   postPrComment: z.boolean(),
   postStatusCheck: z.boolean(),
   suppressPaths: z.string().max(4000),
+  biviaEnabled: z.boolean().default(true),
+  biviaVerifyAi: z.boolean().default(true),
+  biviaMagicLocator: z.boolean().default(true),
+  biviaPrRisk: z.boolean().default(true),
+  biviaMode: z.enum(["fast", "deep"]).default("fast"),
+  biviaAbstentionThreshold: z.number().min(0).max(1).default(0.35),
 });
 
 export const bugReproductionSettingsSchema = z.object({

@@ -24,5 +24,11 @@ export default async function IntegrationsPage() {
     connectedAt: item.connectedAt.toISOString(),
   }));
 
-  return <Integrations integrations={integrations} readOnly={ctx.readOnly || !can(ctx.user.role, "integrationsManage")} />;
+  return (
+    <Integrations
+      integrations={integrations}
+      readOnly={ctx.readOnly || !can(ctx.user.role, "integrationsManage")}
+      biviaReady={Boolean(process.env.BIVIA_API_KEY?.trim())}
+    />
+  );
 }

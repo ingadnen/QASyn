@@ -24,6 +24,18 @@ export interface StudioStep {
   value: string;
   selector: string;
   disabled?: boolean;
+  /** Calibrated execution state persisted by Articul8 Bivia. */
+  status?: "passed" | "failed" | "abstained" | string;
+  bivia?: {
+    status: "passed" | "failed" | "abstained";
+    probability: number;
+    probabilityRaw?: number;
+    provider: string;
+    question?: string;
+    latencyMs?: number;
+    verifiedAt?: string;
+    abstainReason?: string;
+  };
 }
 
 export interface StudioVersion {
@@ -1450,6 +1462,22 @@ export function StudioWorkspace({
                   <CqaIcon name="auto_awesome" className="text-[12px]" /> AI Verification
                 </span>
               )}
+              {detailStep.bivia && (
+                <span
+                  data-testid="bivia-step-verification"
+                  title={`Articul8 Bivia (${detailStep.bivia.provider})`}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded border px-1.5 py-[1px] text-[10.5px] font-semibold",
+                    detailStep.bivia.status === "passed"
+                      ? "border-[#abefc6] bg-[#ecfdf3] text-[#067647]"
+                      : detailStep.bivia.status === "failed"
+                        ? "border-[#fecdca] bg-[#fef3f2] text-[#b42318]"
+                        : "border-[#fedf89] bg-[#fffaeb] text-[#b54708]",
+                  )}
+                >
+                  🧠 Bivia {detailStep.bivia.probability.toFixed(1)}% calibrated · {detailStep.bivia.status}
+                </span>
+              )}
             </div>
             <label className="block">
               <span className={labelCls}>Action type</span>
@@ -1528,6 +1556,12 @@ export function StudioWorkspace({
                 <div className="mt-2 max-h-24 overflow-y-auto rounded-md bg-[#10141c] px-2 py-1.5 font-mono text-[10.5px] leading-5 text-[#cbd5e1]">
                   <p>[{detailStep.action}] {sentenceForStep(detailStep, data.variables, orgUrl)}</p>
                   <p className="text-[#94a3b8]">selector: {detailStep.selector || "auto-resolved"}</p>
+                  {detailStep.bivia && (
+                    <p className="text-[#a7f3d0]">
+                      🧠 Bivia: {detailStep.bivia.probability.toFixed(1)}% calibrated · {detailStep.bivia.status}
+                    </p>
+                  )}
+                  {detailStep.bivia?.abstainReason && <p className="text-[#fbbf24]">abstain: {detailStep.bivia.abstainReason}</p>}
                   {data.runs[0]?.failedStepText && <p className="text-[#fca5a5]">{data.runs[0].failedStepText}</p>}
                   {!data.runs[0]?.failedStepText && <p className="text-[#86efac]">last run: passed</p>}
                 </div>

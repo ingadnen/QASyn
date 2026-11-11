@@ -7,6 +7,7 @@ export const INTEGRATION_CATEGORIES = [
   "CI/CD & infra",
   "Notifications",
   "AI assistants",
+  "AI & Verification",
   "Customer support",
 ] as const;
 
@@ -50,6 +51,7 @@ export const INTEGRATION_CATALOG: CatalogItem[] = [
   { id: "chatgpt", name: "ChatGPT", category: "AI assistants", mono: "GP", tile: "bg-emerald-700 text-white", description: "Ask about release quality from your assistant." },
   { id: "claude", name: "Claude", category: "AI assistants", mono: "CL", tile: "bg-orange-700 text-white", description: "MCP server exposing runs, logs and reports." },
   { id: "cursor", name: "Cursor", category: "AI assistants", mono: "CR", tile: "bg-neutral-900 text-white", description: "Generate tests from inside the editor." },
+  { id: "bivia", name: "Articul8 Bivia", category: "AI & Verification", mono: "B8", tile: "bg-[#111827] text-white", provider: "BIVIA", step: 3, description: "Calibrated multimodal decisions for AI Verification, Smart Locator healing and PR impact." },
   { id: "zendesk", name: "Zendesk", category: "Customer support", mono: "ZD", tile: "bg-teal-700 text-white", description: "Turn support tickets into reproductions." },
   { id: "intercom", name: "Intercom", category: "Customer support", mono: "IC", tile: "bg-blue-700 text-white", description: "Escalate customer-reported bugs automatically." },
 ];

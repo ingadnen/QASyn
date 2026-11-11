@@ -27,7 +27,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (input.action === "run") {
     await delay(MOCK_LATENCY_MS * 2);
-    const result = await prisma.$transaction((tx) => runTestCases(tx, ctx, [tc]));
+    const result = await prisma.$transaction((tx) => runTestCases(tx, ctx, [tc]), { timeout: 60_000 });
     await audit(prisma, ctx, "test_case.run", `${tc.title} · ${result.failed ? "failing" : "passing"}`);
     return NextResponse.json(result);
   }

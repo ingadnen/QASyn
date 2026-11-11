@@ -1,4 +1,5 @@
 import type { PullRequestCheck } from "@prisma/client";
+import { biviaScoreAndSet } from "./bivia";
 import { prisma } from "./db";
 import { runTestCases } from "./engine";
 import {
@@ -7,7 +8,7 @@ import {
   impactedModules,
   type ImpactSummary,
 } from "./pr-catalog";
-import type { OrgContext } from "./tenant";
+import { readSettings, type OrgContext } from "./tenant";
 
 type Actor = Pick<OrgContext, "org" | "user">;
 
@@ -42,7 +43,39 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
   const sorted = candidates.sort(
     (a, b) => rank(a.criticality) - rank(b.criticality) || (a.status === "failing" ? -1 : 1),
   );
-  const selected = sorted.slice(0, 10);
+  let selected = sorted.slice(0, 10);
+  let biviaRisk: { riskScore: number; riskLevel: "low" | "medium" | "high"; probabilityPct: number; provider: string } | null =
+    null;
+
+  // Articul8 Bivia scores the PR and selects the exact impacted regression set.
+  const analysisCode = readSettings(actor.org).analysisCode ?? null;
+  if (analysisCode?.biviaPrRisk !== false && candidates.length > 0) {
+    const decision = await biviaScoreAndSet({
+      prTitle: pr.title,
+      changedFiles: files,
+      candidateTests: candidates.map((test) => ({
+        id: test.id,
+        title: test.title,
+        module: test.module,
+        criticality: test.criticality,
+        status: test.status,
+      })),
+      organisationId: actor.org.id,
+    });
+    if (decision.status === "answered" && decision.selectedTestIds.length > 0) {
+      const byId = new Map(candidates.map((test) => [test.id, test]));
+      const calibrated = decision.selectedTestIds
+        .map((id) => byId.get(id))
+        .filter((test): test is (typeof candidates)[number] => Boolean(test));
+      if (calibrated.length > 0) selected = calibrated.slice(0, 10);
+    }
+    biviaRisk = {
+      riskScore: Math.round(decision.riskScore * 10) / 10,
+      riskLevel: decision.riskLevel,
+      probabilityPct: Math.round(decision.probability * 1000) / 10,
+      provider: decision.provider,
+    };
+  }
 
   const execution = selected.length > 0
     ? await runTestCases(prisma, actor, await prisma.testCase.findMany({ where: { id: { in: selected.map((test) => test.id) } } }))
@@ -63,7 +96,8 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
   const failed = executed.filter((test) => test.status === "failing").length;
   const passed = executed.length - failed;
   const verdict: ImpactSummary["verdict"] = failed > 0 ? "regression_caught" : "passed_baseline";
-  const riskLevel = failed > 0 || files.length >= 25 ? "high" : files.length >= 8 ? "medium" : "low";
+  const riskLevel =
+    biviaRisk?.riskLevel ?? (failed > 0 || files.length >= 25 ? "high" : files.length >= 8 ? "medium" : "low");
 
   const impact = {
     files,
@@ -82,6 +116,7 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
     total: executed.length,
     testsSelected: selected.length,
     verdict,
+    bivia: biviaRisk,
   };
 
   const comment = buildProviderComment({
@@ -94,6 +129,13 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
   const logs: Array<{ at: string; level: string; message: string }> = [
     { at: new Date().toISOString(), level: "info", message: `Blast radius: ${radius} — ${files.length} file(s) across ${modules.join(", ")}` },
     { at: new Date().toISOString(), level: "info", message: `Selected ${selected.length} impacted test case(s) by criticality` },
+    ...(biviaRisk
+      ? [{
+          at: new Date().toISOString(),
+          level: "info",
+          message: `🧠 Bivia risk ${biviaRisk.riskScore}/10 (${biviaRisk.riskLevel}) · ${biviaRisk.probabilityPct.toFixed(1)}% calibrated · ${selected.length} recommended test(s)`,
+        }]
+      : []),
     ...executed.map((test, index) => ({
       at: new Date(Date.now() + index * 120).toISOString(),
       level: test.status === "passing" ? "pass" : "fail",

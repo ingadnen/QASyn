@@ -14,6 +14,7 @@ import {
 import { audit } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
+import { testBiviaConnection } from "@/lib/bivia";
 
 const providerEnum = z.enum(PROVIDER_KEYS as [string, ...string[]]);
 
@@ -101,6 +102,10 @@ async function applySync(organisationId: string, provider: string, config: Integ
     effects.push("Figma frames indexed for Visual Testing");
   }
 
+  if (provider === "BIVIA") {
+    effects.push("Calibrated decision profile refreshed for AI Verification, Magic Locator and PR impact");
+  }
+
   return effects;
 }
 
@@ -159,6 +164,18 @@ export async function POST(request: Request) {
   }
 
   if (action === "test") {
+    if (provider === "BIVIA") {
+      const connection = await testBiviaConnection(config);
+      return NextResponse.json({
+        provider,
+        action: "test",
+        ok: connection.ok,
+        checks: connection.checks,
+        latencyMs: connection.latencyMs,
+        engine: connection.provider,
+        message: connection.message,
+      });
+    }
     await delay(350);
     const checks = testChecks(provider, config);
     return NextResponse.json({

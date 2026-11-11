@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T01:47:22.247Z",
+  "generatedAt": "2026-11-11T02:30:38.940Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -399,12 +399,12 @@
         {
           "check": "PR drawer computes a verdict",
           "ok": true,
-          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close 1 regression caught High risk AZURE_DEVOPS · cgi/digital-portal Open in provider "
+          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close Passed baseline High risk AZURE_DEVOPS · cgi/digital-portal Open in provider open"
         },
         {
           "check": "PR drawer posts a provider comment automatically",
           "ok": true,
-          "detail": "subscription - ✅ Retry a failed payment - ✅ Pay with a saved card - ✅ Pay with a wallet - ❌ Checkout session survives token refresh - ✅ Complete checkout - ✅ Log in with e-mail and password _Posted automatically by QASyn for CGI._ refresh Re-run analysis Close"
+          "detail": "ment method - ✅ Cancel a subscription - ✅ Complete checkout - ✅ Handle a declined card - ✅ Pay with a saved card - ✅ Session refresh keeps the user signed in - ❌ Upgrade from Starter to Pro _Posted automatically by QASyn for CGI._ refresh Re-run analysis Close"
         },
         {
           "check": "Pull requests shows no raw JSON",
@@ -920,12 +920,12 @@
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-51692\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-42081\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-51692\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-42081\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -940,7 +940,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-51692"
+          "detail": "https://www.cgi.com/parity-42081"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -2001,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for par13vwg close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
+          "detail": "Install command for parwgxa close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it "
         },
         {
           "check": "Install command one-time token",
@@ -2163,6 +2163,71 @@
           "detail": ""
         },
         {
+          "check": "Integrations AI & Verification tab",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Integrations list Articul8 Bivia",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bivia card shows the 1,000,000,000 Bivia tokens grant",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bivia integration card present",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bivia card is Pro · Connected through BIVIA_API_KEY",
+          "ok": true,
+          "detail": "B8 Articul8 Bivia (Multimodal Decision Engine) PRO · CONNECTED Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR impact. Bivia reads "
+        },
+        {
+          "check": "Bivia configuration modal opens",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bivia modal field \"API Key\"",
+          "ok": true,
+          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
+        },
+        {
+          "check": "Bivia modal field \"Endpoint URL\"",
+          "ok": true,
+          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
+        },
+        {
+          "check": "Bivia modal field \"Default Mode\"",
+          "ok": true,
+          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
+        },
+        {
+          "check": "Bivia modal field \"Abstention Threshold\"",
+          "ok": true,
+          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
+        },
+        {
+          "check": "Bivia modal field \"Pro · Connected\"",
+          "ok": true,
+          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
+        },
+        {
+          "check": "Bivia modal Test Connection action",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Bivia Test Connection returns real checks",
+          "ok": true,
+          "detail": ""
+        },
+        {
           "check": "Figma integration card present",
           "ok": true,
           "detail": ""
@@ -2230,7 +2295,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_51692\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_42081\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2458,7 +2523,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_7LHcBIXp"
+          "detail": "cqa_3d7BagoU"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2478,7 +2543,22 @@
         {
           "check": "MCP tools/list exposes the six required tools",
           "ok": true,
-          "detail": "qasyn_get_quality_summary, qasyn_list_test_cases, qasyn_run_test_case, qasyn_start_crawl, qasyn_analyze_pr, qasyn_list_bugs, qasyn_create_web_test, qasyn_run_test_plan, qasyn_get_execution_evidence, qasyn_trigger_api_chain, qasyn_list_pull_requests, qasyn_run_mobile_test, qasyn_ship_workflow, qasyn_reproduce_bug, qasyn_analyze_pr_impact, qasyn_context7_resolve"
+          "detail": "qasyn_get_quality_summary, qasyn_list_test_cases, qasyn_run_test_case, qasyn_start_crawl, qasyn_analyze_pr, qasyn_list_bugs, qasyn_create_web_test, qasyn_run_test_plan, qasyn_get_execution_evidence, qasyn_trigger_api_chain, qasyn_list_pull_requests, qasyn_run_mobile_test, qasyn_ship_workflow, qasyn_reproduce_bug, qasyn_analyze_pr_impact, qasyn_context7_resolve, qasyn_bivia_decide"
+        },
+        {
+          "check": "MCP tools/list exposes qasyn_bivia_decide",
+          "ok": true,
+          "detail": "qasyn_get_quality_summary, qasyn_list_test_cases, qasyn_run_test_case, qasyn_start_crawl, qasyn_analyze_pr, qasyn_list_bugs, qasyn_create_web_test, qasyn_run_test_plan, qasyn_get_execution_evidence, qasyn_trigger_api_chain, qasyn_list_pull_requests, qasyn_run_mobile_test, qasyn_ship_workflow, qasyn_reproduce_bug, qasyn_analyze_pr_impact, qasyn_context7_resolve, qasyn_bivia_decide"
+        },
+        {
+          "check": "MCP UI lists qasyn_bivia_decide",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "MCP qasyn_bivia_decide returns a calibrated Bivia response",
+          "ok": true,
+          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 192, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
         },
         {
           "check": "MCP role guide \"Admin\"",
@@ -2548,7 +2628,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 67, \"passRate\": 60, \"bugsReproduced\": 10, \"regressionsCaught\": 92, \"costAvo"
+          "detail": "200 { \"testCases\": 67, \"passRate\": 60, \"bugsReproduced\": 11, \"regressionsCaught\": 125, \"costAv"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2578,7 +2658,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwbgheva0051x9cgg9y9k5cp\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
+          "detail": "200 { \"id\": \"cmwbi0xtr00kfx9yo6h2xyj14\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2598,7 +2678,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwbgd4je0009x9cgd5oq6cum\", \"title\": \"Checkout session survives token refresh f"
+          "detail": "200 [ { \"id\": \"cmwbhnc3n0005x9yoxodcor8t\", \"title\": \"Complete checkout fails\", \"severity\":"
         },
         {
           "check": "MCP no page errors",
@@ -2816,6 +2896,46 @@
         },
         {
           "check": "Analysis Promotion, Governance",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia section",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia grant",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia control \"Use live Bivia API\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia control \"AI Verification\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia control \"Smart Locator / Magic UI\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia control \"PR impact analysis\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia control \"Abstention threshold\"",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "Analysis Bivia control \"Default mode\"",
           "ok": true,
           "detail": ""
         },
@@ -3700,7 +3820,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwbgj4za005tx9cgjlrf3vgi"
+          "detail": "status 201 · cmwbi2nqa00l7x9yo3ebuoobd"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3735,7 +3855,7 @@
         {
           "check": "PART 4 filter keeps only completed crawls",
           "ok": true,
-          "detail": "8 row(s)"
+          "detail": "10 row(s)"
         },
         {
           "check": "PART 4 filter chip can be removed",
@@ -3805,7 +3925,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 51692? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 42081? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -4074,12 +4194,12 @@
         {
           "check": "Plan run from list persists an execution",
           "ok": true,
-          "detail": "8 → 9"
+          "detail": "12 → 13"
         },
         {
           "check": "Plan run from list persists a TestRun",
           "ok": true,
-          "detail": "31 → 32"
+          "detail": "41 → 42"
         },
         {
           "check": "Plan detail lists every linked suite",
@@ -4104,37 +4224,37 @@
         {
           "check": "Plan run from detail persists an execution",
           "ok": true,
-          "detail": "9 → 10"
+          "detail": "13 → 14"
         },
         {
           "check": "Plan run from detail persists a TestRun",
           "ok": true,
-          "detail": "32 → 33"
+          "detail": "42 → 43"
         },
         {
           "check": "Plan execution has START and END",
           "ok": true,
-          "detail": "FAILED · 2026-11-11T01:46:59.363Z"
+          "detail": "FAILED · 2026-11-11T02:30:09.096Z"
         },
         {
           "check": "Plan execution persists the viewport",
           "ok": true,
-          "detail": "{\"total\":67,\"passed\":39,\"failed\":7,\"notExecuted\":21,\"autoFixed\":127,\"durationMs\":65395,\"viewport\":\"1440×900 · Chromium\","
+          "detail": "{\"total\":67,\"passed\":39,\"failed\":7,\"notExecuted\":21,\"autoFixed\":55,\"durationMs\":65395,\"viewport\":\"1440×900 · Chromium\",\""
         },
         {
           "check": "Plan counters refreshed after the run",
           "ok": true,
-          "detail": "lastRunAt 2026-11-11T01:46:59.363Z · passRate 84.8"
+          "detail": "lastRunAt 2026-11-11T02:30:09.096Z · passRate 84.8"
         },
         {
           "check": "Plan detail START card is populated",
           "ok": true,
-          "detail": "START Nov 10, 2026, 8:46 PM Latest run"
+          "detail": "START Nov 10, 2026, 9:30 PM Latest run"
         },
         {
           "check": "Plan detail END card is populated",
           "ok": true,
-          "detail": "END Nov 10, 2026, 8:46 PM Latest run"
+          "detail": "END Nov 10, 2026, 9:30 PM Latest run"
         },
         {
           "check": "Plan detail shows the latest viewport",
@@ -4234,7 +4354,7 @@
         {
           "check": "Tunnel connect persists connectedAt",
           "ok": true,
-          "detail": "2026-11-11T01:47:01.031Z"
+          "detail": "2026-11-11T02:30:10.760Z"
         },
         {
           "check": "Super Admin account exists",
@@ -4506,6 +4626,11 @@
           "detail": "3 candidate(s)"
         },
         {
+          "check": "PART 7 Magic UI shows the calibrated Bivia badge and exact confidence",
+          "ok": true,
+          "detail": "🧠 Calibrated by Articul8 Bivia · 83.5% · 83.5%"
+        },
+        {
           "check": "PART 7 Magic UI exposes Apply Best Locator",
           "ok": true,
           "detail": ""
@@ -4513,7 +4638,7 @@
         {
           "check": "PART 7 Apply Best Locator confirms the applied strategy",
           "ok": true,
-          "detail": "✨ Magic UI Component & Smart Locator Element · Navigate https://www.cgi.com Magic-MCP Test ID page.getByTestId('https-ww"
+          "detail": "✨ Magic UI Component & Smart Locator Element · Navigate https://www.cgi.com Magic-MCP Scoring selectors… Test ID page.ge"
         },
         {
           "check": "PART 7 Studio rail exposes Run History",
@@ -4528,22 +4653,22 @@
         {
           "check": "PART 7 Run History card shows #run and Passed/Failed",
           "ok": true,
-          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
+          "detail": "check_circle #14 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 09:30:09 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows automated trigger and author",
           "ok": true,
-          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
+          "detail": "check_circle #14 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 09:30:09 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows time and duration",
           "ok": true,
-          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
+          "detail": "check_circle #14 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 09:30:09 PM Nov 10 ⏳ 00:01.22 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows Standalone Run or plan pill",
           "ok": true,
-          "detail": "Release 2.8 sign-off · check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 08:46:59 PM Nov 10 ⏳ 00:01.22 Release 2"
+          "detail": "Release 2.8 sign-off · check_circle #14 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome Auto-fix rerun 09:30:09 PM Nov 10 ⏳ 00:01.22 Release 2"
         },
         {
           "check": "PART 7 Run History exposes Auto-fix rerun when applicable",
@@ -4633,7 +4758,7 @@
         {
           "check": "PART 7 MCP tool runner returns a live JSON-RPC 200",
           "ok": true,
-          "detail": "{ \"status\": 200, \"elapsedMs\": 15, \"jsonrpc\": \"2.0\", \"id\": 1794361636299, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 67,\\n \\\"passRate\\\": 58,\\n \\\"bugsRepr"
+          "detail": "{ \"status\": 200, \"elapsedMs\": 15, \"jsonrpc\": \"2.0\", \"id\": 1794364226660, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 67,\\n \\\"passRate\\\": 58,\\n \\\"bugsRepr"
         },
         {
           "check": "PART 7 Agent Skills export writes .claude/CLAUDE.md",
@@ -4643,12 +4768,12 @@
         {
           "check": "PART 7 Graphify API returns nodes and edges",
           "ok": true,
-          "detail": "61 node(s) · 38 edge(s)"
+          "detail": "62 node(s) · 38 edge(s)"
         },
         {
           "check": "PART 7 Graphify API covers URL/DOM/Requirement/Test/PR",
           "ok": true,
-          "detail": "{\"url\":7,\"dom\":15,\"requirement\":10,\"test\":24,\"pr\":5}"
+          "detail": "{\"url\":8,\"dom\":15,\"requirement\":10,\"test\":24,\"pr\":5}"
         },
         {
           "check": "PART 7 crawl details expose the Graphify Map tab",
@@ -4698,12 +4823,22 @@
         {
           "check": "PART 7 Magic Locator API scores Role/Test ID/Label/CSS",
           "ok": true,
-          "detail": "Role, Test ID, Text, CSS, Label"
+          "detail": "Test ID, Role, Text, CSS, Label"
         },
         {
           "check": "PART 7 Magic Locator returns a Best Locator",
           "ok": true,
-          "detail": "page.getByRole('button', { name: /Pay now/i }) · 96"
+          "detail": "page.getByTestId('pay-now') · 90"
+        },
+        {
+          "check": "PART 7 Magic Locator is calibrated by Articul8 Bivia",
+          "ok": true,
+          "detail": "answered · 66% · bivia-api"
+        },
+        {
+          "check": "PART 7 Magic Locator best locator exposes the exact calibrated confidence",
+          "ok": true,
+          "detail": "best=66 · bivia=66"
         },
         {
           "check": "PART 7 Strix refuses localhost (SSRF-safe)",
@@ -4749,11 +4884,16 @@
           "check": "Global: no 'Edit a all item'",
           "ok": true,
           "detail": ""
+        },
+        {
+          "check": "Global: no Articul8 Bivia secret in tracked Git files",
+          "ok": true,
+          "detail": ""
         }
       ],
       "pageErrors": [],
       "ok": true
     }
   ],
-  "totalChecks": 907
+  "totalChecks": 935
 }

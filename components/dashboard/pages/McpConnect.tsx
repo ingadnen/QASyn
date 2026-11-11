@@ -247,6 +247,18 @@ const TOOLS: ToolDefinition[] = [
     icon: "menu_book",
     sample: { query: "Playwright locator for the checkout pay button" },
   },
+  {
+    name: "qasyn_bivia_decide",
+    label: "Bivia calibrated decision",
+    description: "Calibrated decide / boolean / ground / PR score with abstention.",
+    icon: "psychology",
+    sample: {
+      mode: "decide",
+      question: "Is the checkout confirmation visible without errors?",
+      context: "DOM: <h1>Order confirmed</h1><p>Payment received</p>",
+      options: ["visible", "missing"],
+    },
+  },
 ];
 
 const ROLE_GUIDES: Array<{

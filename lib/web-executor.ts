@@ -7,10 +7,18 @@
  * Falls back to SSRF-guarded HTTP execution when Playwright is unavailable.
  * No request is made to private/loopback hosts.
  */
+import { biviaBoolean, type BiviaConfigSources, type BiviaMode } from "./bivia";
 import { healSelector, parseDom } from "./healing";
 import type { NlpStep } from "./engines";
 
 const GLOBAL_TIMEOUT_MS = 30_000;
+
+/** Organisation-scoped context used to execute AI Assertion steps with Bivia. */
+export interface WebExecutionOptions {
+  organisationId?: string;
+  sources?: BiviaConfigSources;
+  mode?: BiviaMode;
+}
 
 function isSafeUrl(raw: string): boolean {
   let url: URL;
@@ -34,6 +42,19 @@ export interface RealStepOutcome {
   newSelector: string | null;
   score: number;
   message: string;
+  /** Calibrated status persisted for AI Assertion steps. */
+  stepStatus?: "passed" | "failed" | "abstained";
+  /** Bivia decision metadata persisted with the step. */
+  bivia?: {
+    status: "passed" | "failed" | "abstained";
+    probability: number;
+    probabilityRaw: number;
+    provider: string;
+    question: string;
+    latencyMs: number;
+    verifiedAt: string;
+    abstainReason?: string;
+  };
   consoleLogs?: string[];
   networkErrors?: string[];
   screenshotBase64?: string | null;
@@ -72,7 +93,7 @@ async function loadPlaywright(): Promise<PwModule | null> {  try {
   }
 }
 
-async function runWithPlaywright(steps: NlpStep[], pw: PwModule): Promise<RealStepOutcome[]> {
+async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExecutionOptions = {}): Promise<RealStepOutcome[]> {
   const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
   const outcomes: RealStepOutcome[] = [];
   const started = Date.now();
@@ -121,6 +142,63 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule): Promise<RealSt
           const selector = step.selector ? toPlaywrightSelector(step.selector) : `:text("${step.target.replace(/"/g, '\\"')}")`;
           const text = await page.textContent(selector, { timeout: 10_000 });
           outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message: text ? `Verified "${text.trim().slice(0, 60)}"` : "Element found" });
+        } else if (step.action === "AI Assertion") {
+          // Multimodal verification through Articul8 Bivia: DOM excerpt plus a
+          // screenshot, then a calibrated answer with an explicit abstain path.
+          let screenshotBase64: string | null = null;
+          try {
+            const shot = await page.screenshot({ type: "png", fullPage: true });
+            screenshotBase64 = shot.toString("base64");
+          } catch {
+            screenshotBase64 = null;
+          }
+          let domSummary = "";
+          try {
+            domSummary = (await page.content()).slice(0, 8_000);
+          } catch {
+            domSummary = "";
+          }
+          const question = step.target || `Verify that ${currentUrl || "the page"} rendered correctly`;
+          const decision = await biviaBoolean({
+            question,
+            context: [
+              `URL: ${currentUrl || "(not navigated)"}`,
+              `DOM excerpt: ${domSummary}`,
+              `Selector: ${step.selector || "(auto-resolved)"}`,
+            ].join("\n"),
+            screenshotBase64,
+            organisationId: options.organisationId,
+            sources: options.sources,
+            mode: options.mode,
+            allowAbstain: true,
+          });
+          const probabilityPct = Math.round(decision.probability * 1000) / 10;
+          const stepStatus = decision.status === "abstained" ? "abstained" : decision.value ? "passed" : "failed";
+          outcomes.push({
+            step,
+            fetched: true,
+            status: 200,
+            healed: false,
+            newSelector: null,
+            score: decision.probability,
+            stepStatus,
+            bivia: {
+              status: stepStatus,
+              probability: probabilityPct,
+              probabilityRaw: decision.probability,
+              provider: decision.provider,
+              question,
+              latencyMs: decision.latencyMs,
+              verifiedAt: new Date().toISOString(),
+              ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
+            },
+            message: `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
+              decision.abstainReason ? ` · ${decision.abstainReason}` : ""
+            } · screenshot ${screenshotBase64 ? "captured" : "unavailable"}`,
+            consoleLogs: [...consoleLogs],
+            networkErrors: [...networkErrors],
+            screenshotBase64,
+          });
         } else {
           outcomes.push({ step, fetched: true, status: 200, healed: false, newSelector: null, score: 1, message: `Step executed: ${step.action}` });
         }
@@ -167,9 +245,49 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule): Promise<RealSt
   return outcomes.length ? outcomes : steps.map((step) => ({ step, fetched: false, status: null, healed: false, newSelector: null, score: 0, message: "No steps executed", screenshotBase64: null }));
 }
 
-async function runWithHttp(steps: NlpStep[]): Promise<RealStepOutcome[]> {
+async function runWithHttp(steps: NlpStep[], options: WebExecutionOptions = {}): Promise<RealStepOutcome[]> {
   const outcomes: RealStepOutcome[] = [];
+  let lastUrl = "";
+  let lastHtml = "";
   for (const step of steps) {
+    if (step.action === "AI Assertion") {
+      const question = step.target || `Verify that ${lastUrl || "the page"} rendered correctly`;
+      const decision = await biviaBoolean({
+        question,
+        context: [`URL: ${lastUrl || "(not navigated)"}`, `DOM excerpt: ${lastHtml}`].join("\n"),
+        screenshotBase64: null,
+        organisationId: options.organisationId,
+        sources: options.sources,
+        mode: options.mode,
+        allowAbstain: true,
+      });
+      const probabilityPct = Math.round(decision.probability * 1000) / 10;
+      const stepStatus = decision.status === "abstained" ? "abstained" : decision.value ? "passed" : "failed";
+      outcomes.push({
+        step,
+        fetched: Boolean(lastUrl),
+        status: lastUrl ? 200 : null,
+        healed: false,
+        newSelector: null,
+        score: decision.probability,
+        stepStatus,
+        bivia: {
+          status: stepStatus,
+          probability: probabilityPct,
+          probabilityRaw: decision.probability,
+          provider: decision.provider,
+          question,
+          latencyMs: decision.latencyMs,
+          verifiedAt: new Date().toISOString(),
+          ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
+        },
+        message: `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
+          decision.abstainReason ? ` · ${decision.abstainReason}` : ""
+        } · HTTP fallback context`,
+        screenshotBase64: null,
+      });
+      continue;
+    }
     if (step.action !== "Navigate") {
       outcomes.push({ step, fetched: false, status: null, healed: false, newSelector: null, score: 0, message: "Skipped (HTTP fallback executes Navigate steps only)", screenshotBase64: null });
       continue;
@@ -184,6 +302,8 @@ async function runWithHttp(steps: NlpStep[]): Promise<RealStepOutcome[]> {
       const res = await fetch(step.target, { signal: controller.signal, redirect: "manual" });
       clearTimeout(timer);
       const html = await res.text();
+      lastUrl = step.target;
+      lastHtml = html.slice(0, 8_000);
       const dom = parseDom(html);
       const heal = healSelector({ tag: "a", selector: step.selector || step.target, text: step.target }, dom);
       outcomes.push({
@@ -204,10 +324,13 @@ async function runWithHttp(steps: NlpStep[]): Promise<RealStepOutcome[]> {
 }
 
 /** Executes NLP steps: real Playwright when available, HTTP orchestrator otherwise. */
-export async function executeWebSteps(steps: NlpStep[]): Promise<RealStepOutcome[]> {
+export async function executeWebSteps(
+  steps: NlpStep[],
+  options: WebExecutionOptions = {},
+): Promise<RealStepOutcome[]> {
   const pw = await loadPlaywright();
-  if (pw) return runWithPlaywright(steps, pw);
-  return runWithHttp(steps);
+  if (pw) return runWithPlaywright(steps, pw, options);
+  return runWithHttp(steps, options);
 }
 
 /* ------------------------------------------------------------------ */

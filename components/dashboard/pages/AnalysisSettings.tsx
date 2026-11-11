@@ -18,15 +18,29 @@ const areaCls = cn(inputCls, "h-auto min-h-[92px] resize-y py-2.5 font-mono text
 const labelCls = "mb-2 block text-[14px] font-medium text-[#374151]";
 const helpCls = "mt-1.5 block text-[12.5px] leading-5 text-[#6b7280]";
 
-function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+function Switch({
+  checked,
+  onChange,
+  label,
+  disabled = false,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+      className={cn(
+        "relative h-[22px] w-[40px] shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60",
+        checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]",
+      )}
     >
       <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", checked ? "left-[21px]" : "left-[3px]")} />
     </button>
@@ -128,6 +142,69 @@ export function AnalysisSettings({ readOnly, initial, environments }: Props) {
               <strong className="font-semibold">Cases with a fixed URL will not test the new build.</strong> The environment above reaches steps that use environment variables. A step with a hard-coded URL, a global, or a URL written into an AI-agent instruction keeps pointing where it already pointed — so it will pass without having tested this deployment.
             </p>
           </div>
+        </div>
+      </div>
+
+      <div className="mt-8 rounded-[12px] border border-[#dbdee5] bg-white p-[25px] shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]" data-testid="bivia-settings">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="flex items-center gap-2 text-[18px] font-semibold text-[#262626]">
+              <span aria-hidden="true">🧠</span> Articul8 Bivia (Multimodal Decision Engine)
+            </h3>
+            <p className="mt-1 text-[13.5px] text-[#6b7280]">
+              Calibrated decisions for AI Verification, Smart Locator self-healing and PR impact. Bivia answers with a calibrated probability or abstains when evidence is insufficient.
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1.5">
+            <span className="rounded-full border border-[#ddd6fe] bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#4f46e5]">
+              1,000,000,000 Bivia tokens grant
+            </span>
+            <a href="/dashboard/integrations" className="text-[11.5px] font-semibold text-[#5b4ee8] hover:underline">
+              Manage Bivia credentials →
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-5 lg:grid-cols-2">
+          <label className="block">
+            <span className={labelCls}>Default mode</span>
+            <select className={inputCls} value={form.biviaMode} onChange={(e) => set("biviaMode", e.target.value as AnalysisCodeSettings["biviaMode"])} disabled={readOnly}>
+              <option value="fast">fast — low latency</option>
+              <option value="deep">deep — higher reasoning</option>
+            </select>
+            <span className={helpCls}>fast keeps each decision inside the 6-second budget; deep spends more reasoning on ambiguous screens.</span>
+          </label>
+          <label className="block">
+            <span className={labelCls}>Abstention threshold</span>
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step={0.01}
+              className={inputCls}
+              value={form.biviaAbstentionThreshold}
+              onChange={(e) => set("biviaAbstentionThreshold", Number(e.target.value))}
+              disabled={readOnly}
+            />
+            <span className={helpCls}>Calibrated probability (0–1) below which Bivia abstains instead of guessing. Default 0.35.</span>
+          </label>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {([
+            ["biviaEnabled", "Use live Bivia API", "Off keeps the deterministic calibrated fallback, so verification still runs offline."],
+            ["biviaVerifyAi", "AI Verification", "Calibrate every AI Assertion step with status, probability and abstain reason."],
+            ["biviaMagicLocator", "Smart Locator / Magic UI", "Calibrate the best Playwright locator in Studio."],
+            ["biviaPrRisk", "PR impact analysis", "Score PR risk and select the exact impacted regression tests."],
+          ] as const).map(([key, title, copy]) => (
+            <div key={key} className="flex items-center gap-3 rounded-lg border border-[#eef0f3] px-3.5 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-medium text-[#374151]">{title}</p>
+                <p className="mt-0.5 text-[11.5px] leading-5 text-[#6b7280]">{copy}</p>
+              </div>
+              <Switch checked={form[key]} onChange={(v) => set(key, v)} label={title} disabled={readOnly} />
+            </div>
+          ))}
         </div>
       </div>
 

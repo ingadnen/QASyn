@@ -4,6 +4,13 @@
  * Every tool is scoped to exactly one organisation.
  */
 import { prisma } from "./db";
+import {
+  biviaBoolean,
+  biviaChoice,
+  biviaGround,
+  biviaScoreAndSet,
+  type BiviaCandidateTest,
+} from "./bivia";
 import { resolveContext7 } from "./context7";
 import { analyzePrImpact, executeApiChain, reproduceBug, simulateMobileRun, simulateSteps, type ApiRequestStep } from "./engines";
 import { runTestCases } from "./engine";
@@ -36,6 +43,24 @@ export const QASYN_MCP_TOOLS: McpTool[] = [
   { name: "qasyn_reproduce_bug", description: "Reproduce a bug from a support ticket description.", inputSchema: obj({ title: { type: "string" }, description: { type: "string" } }, ["title", "description"]) },
   { name: "qasyn_analyze_pr_impact", description: "Alias of qasyn_analyze_pr kept for existing agent skills.", inputSchema: obj({ prNumber: { type: "number" }, branch: { type: "string" }, title: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["prNumber", "branch", "title", "files"]) },
   { name: "qasyn_context7_resolve", description: "Resolve Context7 live documentation for Playwright, Next.js, Tailwind, Prisma or TypeScript and return prompt-ready rules.", inputSchema: obj({ query: { type: "string" } }, ["query"]) },
+  {
+    name: "qasyn_bivia_decide",
+    description: "Ask Articul8 Bivia for a calibrated multimodal decision: decide (boolean/choice), boolean AI verification, ground an element, or score PR risk and select tests.",
+    inputSchema: obj(
+      {
+        mode: { type: "string", enum: ["decide", "boolean", "ground", "score"], default: "decide" },
+        question: { type: "string" },
+        context: { type: "string" },
+        options: { type: "array", items: { type: "string" } },
+        targetDescription: { type: "string" },
+        domSummary: { type: "string" },
+        screenshotBase64: { type: "string" },
+        changedFiles: { type: "array", items: { type: "string" } },
+        candidateTests: { type: "array", items: { type: "object" } },
+      },
+      ["mode"],
+    ),
+  },
 ];
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -154,6 +179,106 @@ export async function callMcpTool(organisationId: string, name: string, args: Re
     case "qasyn_reproduce_bug": {
       const { steps, rootCause, severity } = reproduceBug(str(args.description), str(args.title));
       return { steps, rootCause, severity };
+    }
+    case "qasyn_bivia_decide": {
+      const mode = str(args.mode) || "decide";
+      const question = str(args.question);
+      const context = str(args.context);
+      const options = Array.isArray(args.options)
+        ? (args.options as unknown[]).filter((option): option is string => typeof option === "string")
+        : [];
+      const badge = "🧠 Calibrated by Articul8 Bivia";
+
+      if (mode === "ground") {
+        const targetDescription = str(args.targetDescription) || question;
+        if (!targetDescription) throw new Error("targetDescription is required for mode=ground");
+        const decision = await biviaGround({
+          targetDescription,
+          domSummary: str(args.domSummary),
+          screenshotBase64: str(args.screenshotBase64) || null,
+          organisationId,
+        });
+        return {
+          ...decision,
+          mode,
+          badge,
+          calibratedProbabilityPct: Math.round(decision.confidence * 1000) / 10,
+        };
+      }
+
+      if (mode === "score") {
+        const supplied = Array.isArray(args.candidateTests) ? (args.candidateTests as Array<Record<string, unknown>>) : [];
+        const candidateTests: BiviaCandidateTest[] = supplied.length > 0
+          ? supplied
+              .filter((test) => typeof test.id === "string")
+              .map((test) => ({
+                id: String(test.id),
+                title: str(test.title) || String(test.id),
+                module: str(test.module) || undefined,
+                criticality: str(test.criticality) || undefined,
+                status: str(test.status) || undefined,
+              }))
+          : (await prisma.testCase.findMany({
+              where,
+              select: { id: true, title: true, module: true, criticality: true, status: true },
+              take: 50,
+            }));
+        const changedFiles = Array.isArray(args.changedFiles)
+          ? (args.changedFiles as unknown[]).filter((file): file is string => typeof file === "string")
+          : [];
+        const decision = await biviaScoreAndSet({
+          prTitle: str(args.question) || str(args.context) || "MCP PR impact analysis",
+          changedFiles,
+          candidateTests,
+          organisationId,
+        });
+        return {
+          ...decision,
+          mode,
+          badge,
+          calibratedProbabilityPct: Math.round(decision.probability * 1000) / 10,
+        };
+      }
+
+      if (mode === "boolean") {
+        if (!question) throw new Error("question is required for mode=boolean");
+        const decision = await biviaBoolean({
+          question,
+          context,
+          screenshotBase64: str(args.screenshotBase64) || null,
+          organisationId,
+        });
+        return {
+          ...decision,
+          mode,
+          badge,
+          calibratedProbabilityPct: Math.round(decision.probability * 1000) / 10,
+        };
+      }
+
+      if (options.length > 0) {
+        if (!question) throw new Error("question is required when options are supplied");
+        const decision = await biviaChoice({ question, options, context, organisationId });
+        return {
+          ...decision,
+          mode: "decide",
+          badge,
+          calibratedProbabilityPct: Math.round(decision.probability * 1000) / 10,
+        };
+      }
+      if (!question) throw new Error("question is required for mode=decide");
+      const decision = await biviaBoolean({
+        question,
+        context,
+        screenshotBase64: str(args.screenshotBase64) || null,
+        organisationId,
+      });
+      return {
+        ...decision,
+        mode: "decide",
+        badge,
+        calibratedProbabilityPct: Math.round(decision.probability * 1000) / 10,
+      };
     }
     case "qasyn_context7_resolve":
       return resolveContext7(str(args.query) || "playwright test generation");

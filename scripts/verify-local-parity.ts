@@ -115,6 +115,25 @@ function psRun(command: string): string {
   }
 }
 
+/**
+ * Searches tracked Git files. `ok` means the pattern is absent (git grep exits 1).
+ * The error message is never inspected because it contains the search pattern.
+ */
+function gitGrepAbsent(pattern: string): { ok: boolean; output: string } {
+  try {
+    const output = execSync(`git grep -n -- "${pattern.replace(/"/g, '\\"')}"`, {
+      encoding: "utf8",
+      timeout: 120_000,
+      windowsHide: true,
+    }).trim();
+    return { ok: output.length === 0, output };
+  } catch (error) {
+    const failure = error as { status?: number; stdout?: string | Buffer };
+    const output = String(failure.stdout ?? "").trim();
+    return { ok: failure.status === 1 && output.length === 0, output };
+  }
+}
+
 async function loadAccountSnapshot() {
   const client = new PrismaClient();
   try {
@@ -1369,6 +1388,41 @@ async function main() {
   check("Integrations have no enterprise lock text", !/Upgrade to the Enterprise plan|Enterprise plan required|Contact sales/i.test(intBody));
   check("Integrations have actionable Connect buttons", (await page.getByRole("button", { name: /^Connect$/ }).count()) > 0);
 
+  // Articul8 Bivia card, configuration modal and real Test Connection.
+  check("Integrations AI & Verification tab", intBody.includes("AI & Verification"));
+  check("Integrations list Articul8 Bivia", intBody.includes("Articul8 Bivia"));
+  check("Bivia card shows the 1,000,000,000 Bivia tokens grant", intBody.includes("1,000,000,000 Bivia tokens grant"));
+  const biviaCard = page.locator("article", { hasText: "Articul8 Bivia" }).first();
+  check("Bivia integration card present", (await biviaCard.count()) > 0);
+  if ((await biviaCard.count()) > 0) {
+    const biviaCardText = ((await biviaCard.innerText()) || "").replace(/\s+/g, " ");
+    check("Bivia card is Pro · Connected through BIVIA_API_KEY", /pro · connected/i.test(biviaCardText) && /connected/i.test(biviaCardText), biviaCardText.slice(0, 180));
+    await biviaCard.getByRole("button", { name: /Connect|Configure/ }).click().catch(() => undefined);
+    const biviaDlg = page.getByRole("dialog", { name: "Configure Articul8 Bivia (Multimodal Decision Engine)" });
+    await biviaDlg.waitFor({ state: "visible", timeout: 8000 }).catch(() => undefined);
+    check("Bivia configuration modal opens", (await biviaDlg.count()) > 0);
+    if ((await biviaDlg.count()) > 0) {
+      const bt = ((await biviaDlg.innerText()) || "").replace(/\s+/g, " ");
+      for (const field of ["API Key", "Endpoint URL", "Default Mode", "Abstention Threshold", "Pro · Connected"]) {
+        check(`Bivia modal field "${field}"`, bt.includes(field), bt.slice(0, 220));
+      }
+      check("Bivia modal Test Connection action", (await biviaDlg.getByRole("button", { name: "Test Connection" }).count()) > 0);
+      await biviaDlg.getByRole("button", { name: "Test Connection" }).click().catch(() => undefined);
+      let biviaTestOk = false;
+      for (let i = 0; i < 40; i++) {
+        await page.waitForTimeout(500);
+        const text = ((await biviaDlg.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+        if (/Credentials format accepted/.test(text) && /(Live Bivia API handshake|Calibrated local fallback ready)/.test(text)) {
+          biviaTestOk = true;
+          break;
+        }
+      }
+      check("Bivia Test Connection returns real checks", biviaTestOk);
+      await biviaDlg.getByRole("button", { name: "Cancel" }).click().catch(() => undefined);
+      await page.waitForTimeout(300);
+    }
+  }
+
   // Configure Figma end-to-end: Test Connection -> Save & Connect -> Sync -> Disconnect.
   const figmaCard = page.locator("article", { hasText: "Figma" }).first();
   check("Figma integration card present", (await figmaCard.count()) > 0);
@@ -1539,6 +1593,35 @@ async function main() {
   const listedTools = (((toolsList.body.result as Record<string, unknown> | undefined)?.tools as Array<Record<string, unknown>> | undefined) ?? []).map((tool) => String(tool.name));
   const sixTools = ["qasyn_get_quality_summary", "qasyn_list_test_cases", "qasyn_run_test_case", "qasyn_start_crawl", "qasyn_analyze_pr", "qasyn_list_bugs"];
   check("MCP tools/list exposes the six required tools", sixTools.every((name) => listedTools.includes(name)), listedTools.join(", "));
+  check("MCP tools/list exposes qasyn_bivia_decide", listedTools.includes("qasyn_bivia_decide"), listedTools.join(", "));
+  check("MCP UI lists qasyn_bivia_decide", ((await body(page)) || "").includes("qasyn_bivia_decide"));
+  const biviaMcp = await rpc("tools/call", {
+    name: "qasyn_bivia_decide",
+    arguments: {
+      mode: "decide",
+      question: "Is the checkout confirmation visible without errors?",
+      context: "DOM: <h1>Order confirmed</h1><p>Payment received</p>",
+      options: ["visible", "missing"],
+    },
+  });
+  const biviaMcpText = String(
+    (((biviaMcp.body.result as Record<string, unknown> | undefined)?.content as Array<Record<string, unknown>> | undefined) ?? [])[0]?.text ?? "",
+  );
+  let biviaMcpData: Record<string, unknown> | null = null;
+  try {
+    biviaMcpData = JSON.parse(biviaMcpText) as Record<string, unknown>;
+  } catch {
+    biviaMcpData = null;
+  }
+  check(
+    "MCP qasyn_bivia_decide returns a calibrated Bivia response",
+    biviaMcp.status === 200 &&
+      Boolean(biviaMcpData) &&
+      typeof biviaMcpData?.calibratedProbabilityPct === "number" &&
+      String(biviaMcpData?.provider ?? "").includes("bivia") &&
+      String(biviaMcpData?.badge ?? "").includes("Calibrated by Articul8 Bivia"),
+    biviaMcpText.slice(0, 220).replace(/\s+/g, " "),
+  );
 
   // Role guides.
   const roleGuide = page.getByRole("region", { name: "Role guides" });
@@ -1665,6 +1748,11 @@ async function main() {
   check("Analysis Settings heading", analysisBody.includes("Analysis Settings"));
   check("Analysis Targets & Execution per repo", analysisBody.includes("Targets & Execution per repo"));
   check("Analysis Promotion, Governance", analysisBody.includes("Promotion, Governance & Operations"));
+  check("Analysis Bivia section", analysisBody.includes("Articul8 Bivia (Multimodal Decision Engine)"));
+  check("Analysis Bivia grant", analysisBody.includes("1,000,000,000 Bivia tokens grant"));
+  for (const label of ["Use live Bivia API", "AI Verification", "Smart Locator / Magic UI", "PR impact analysis", "Abstention threshold", "Default mode"]) {
+    check(`Analysis Bivia control "${label}"`, analysisBody.includes(label));
+  }
   check("Analysis Update button", (await page.getByRole("button", { name: /Update/ }).count()) > 0);
   if ((await page.getByRole("button", { name: /Update/ }).count()) > 0) {
     await page.getByRole("button", { name: /Update/ }).first().click().catch(() => undefined);
@@ -2892,8 +2980,22 @@ async function main() {
           const magic = stepDialog.locator('[data-testid="magic-locator"]');
           await magic.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
           check("PART 7 Magic UI inspector is present in Step Details", (await magic.count()) > 0);
+          // Bivia calibrates the choice asynchronously; wait for scored candidates.
+          await magic.locator("[data-locator-strategy]").first().waitFor({ state: "visible", timeout: 20_000 }).catch(() => undefined);
           const strategyCount = await magic.locator("[data-locator-strategy]").count();
           check("PART 7 Magic UI scores locator candidates", strategyCount >= 3, `${strategyCount} candidate(s)`);
+          const magicBiviaBadge = magic.locator('[data-testid="bivia-calibrated-locator"]').first();
+          await magicBiviaBadge.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+          const magicBiviaText = ((await magicBiviaBadge.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+          const magicBiviaPct = await magicBiviaBadge.getAttribute("data-calibrated-probability").catch(() => null);
+          check(
+            "PART 7 Magic UI shows the calibrated Bivia badge and exact confidence",
+            (await magicBiviaBadge.count()) > 0 &&
+              magicBiviaText.includes("Calibrated by Articul8 Bivia") &&
+              Boolean(magicBiviaPct) &&
+              magicBiviaText.includes(`${magicBiviaPct}%`),
+            `${magicBiviaText.slice(0, 140)} · ${magicBiviaPct ?? "?"}%`,
+          );
           const magicApply = magic.locator('[data-testid="magic-apply"]');
           check("PART 7 Magic UI exposes Apply Best Locator", (await magicApply.count()) > 0);
           if ((await magicApply.count()) > 0 && (await magicApply.isEnabled().catch(() => false))) {
@@ -3086,6 +3188,27 @@ async function main() {
       [...magicStrategies].join(", "),
     );
     check("PART 7 Magic Locator returns a Best Locator", Boolean(magicBest?.selector) && Number(magicBest?.score ?? 0) > 0, `${magicBest?.selector ?? "missing"} · ${magicBest?.score ?? 0}`);
+    const magicBivia = (magicClick.body as {
+      bivia?: { status?: string; provider?: string; probabilityPct?: number; abstainReason?: string };
+    }).bivia;
+    check(
+      "PART 7 Magic Locator is calibrated by Articul8 Bivia",
+      magicClick.status === 200 &&
+        Boolean(magicBivia) &&
+        ["answered", "abstained"].includes(String(magicBivia?.status)) &&
+        typeof magicBivia?.probabilityPct === "number" &&
+        magicBivia.probabilityPct > 0 &&
+        String(magicBivia?.provider ?? "").includes("bivia"),
+      `${magicBivia?.status ?? "missing"} · ${magicBivia?.probabilityPct ?? "?"}% · ${magicBivia?.provider ?? "?"}`,
+    );
+    if (magicBivia?.status === "answered") {
+      const calibratedBest = (magicClick.body as { best?: { calibratedProbability?: number } }).best;
+      check(
+        "PART 7 Magic Locator best locator exposes the exact calibrated confidence",
+        calibratedBest?.calibratedProbability === magicBivia.probabilityPct,
+        `best=${calibratedBest?.calibratedProbability ?? "?"} · bivia=${magicBivia.probabilityPct}`,
+      );
+    }
 
     // 7.9 — Strix passive scanner: SSRF refusal, graceful public scan, both pages.
     const strixBlocked = await apiJson(page, "/api/dashboard/strix", "POST", { url: "http://localhost:3000" });
@@ -3128,6 +3251,13 @@ async function main() {
   check("Global: no example.com anywhere", !JSON.stringify(allCasesFinal.body).includes("example.com"));
   check("Global: no module 'all'", !(((allCasesFinal.body.testCases as Array<Record<string, unknown>>) ?? [])).some((c) => String(c.module) === "all"));
   check("Global: no 'Edit a all item'", !JSON.stringify(allCasesFinal.body).includes("Edit a all"));
+
+  const providerSecret = gitGrepAbsent(["ory", "at_"].join("_"));
+  check(
+    "Global: no Articul8 Bivia secret in tracked Git files",
+    providerSecret.ok,
+    providerSecret.output.slice(0, 200).replace(/\s+/g, " "),
+  );
 
   const report = { generatedAt: new Date().toISOString(), base: BASE, failures, modules, totalChecks: modules.reduce((n, m) => n + m.checks.length, 0) };
   fs.writeFileSync(path.join(OUT, "full-19-modules-parity.json"), JSON.stringify(report, null, 2));

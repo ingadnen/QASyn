@@ -3,7 +3,7 @@
  * "Enum" values are stored as String in SQLite (see prisma/schema.prisma).
  */
 
-export const PROVIDERS = ["GITHUB", "GITLAB", "JIRA", "LINEAR", "SLACK"] as const;
+export const PROVIDERS = ["GITHUB", "GITLAB", "JIRA", "LINEAR", "SLACK", "BIVIA"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export const INTEGRATION_STATUSES = ["CONNECTED", "INDEXING", "FAILED"] as const;

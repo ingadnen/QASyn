@@ -5,7 +5,7 @@
  * used by the configuration modal and by the route handler that validates and
  * persists provider configuration.
  */
-export type IntegrationCategory = "All Plugins" | "Bug Reporting" | "Product Management";
+export type IntegrationCategory = "All Plugins" | "Bug Reporting" | "Product Management" | "AI & Verification";
 
 export type IntegrationFieldType = "text" | "url" | "password" | "textarea" | "number" | "select";
 
@@ -18,6 +18,9 @@ export interface IntegrationField {
   required?: boolean;
   options?: Array<{ value: string; label: string }>;
   defaultValue?: string;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 export interface IntegrationDefinition {
@@ -367,6 +370,58 @@ export const INTEGRATION_PROVIDERS: IntegrationDefinition[] = [
     ],
   },
   {
+    key: "BIVIA",
+    name: "Articul8 Bivia (Multimodal Decision Engine)",
+    mark: "B8",
+    color: "#111827",
+    description:
+      "Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR impact. Bivia reads the DOM, screenshots and test context, then answers, grounds elements or abstains with a calibrated probability.",
+    categories: ["All Plugins", "AI & Verification"],
+    pro: true,
+    fields: [
+      {
+        key: "apiKey",
+        label: "API Key",
+        type: "password",
+        placeholder: "Paste your Bivia API key",
+        required: false,
+        help: "Leave empty to use the workspace BIVIA_API_KEY environment variable.",
+      },
+      {
+        key: "endpointUrl",
+        label: "Endpoint URL",
+        type: "url",
+        placeholder: "https://api.articul8.ai/bivia",
+        required: false,
+        defaultValue: "https://api.articul8.ai/bivia",
+      },
+      {
+        key: "defaultMode",
+        label: "Default Mode",
+        type: "select",
+        required: false,
+        defaultValue: "fast",
+        options: [
+          { value: "fast", label: "fast — low latency" },
+          { value: "deep", label: "deep — higher reasoning" },
+        ],
+        help: "fast keeps every verification step under the 6-second budget; deep spends more reasoning on ambiguous screens.",
+      },
+      {
+        key: "abstentionThreshold",
+        label: "Abstention Threshold",
+        type: "number",
+        placeholder: "0.35",
+        required: false,
+        defaultValue: "0.35",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        help: "Calibrated probability (0–1) below which Bivia abstains instead of guessing.",
+      },
+    ],
+  },
+  {
     key: "QASYN_LAB",
     name: "QASyn Lab",
     mark: "QL",
@@ -426,7 +481,9 @@ export function validateIntegrationConfig(provider: string, config: IntegrationC
     }
     if (field.type === "number") {
       const n = Number(value);
-      if (!Number.isFinite(n) || n < 1 || n > 500) errors.push(`${field.label} must be between 1 and 500.`);
+      const min = field.min ?? 1;
+      const max = field.max ?? 500;
+      if (!Number.isFinite(n) || n < min || n > max) errors.push(`${field.label} must be between ${min} and ${max}.`);
     }
     if (field.type === "password" && value.length < 4) {
       errors.push(`${field.label} looks too short.`);
@@ -480,6 +537,8 @@ export function integrationDetail(provider: string, config: IntegrationConfig): 
       return config.channel || "Channel connected";
     case "CLICKUP":
       return `Workspace ${config.workspaceId || "connected"}`;
+    case "BIVIA":
+      return `${config.defaultMode || "fast"} mode · ${config.abstentionThreshold || "0.35"} threshold`;
     case "QASYN_LAB":
       return config.labUrl || "Lab connected";
     default:
