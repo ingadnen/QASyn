@@ -1,8 +1,83 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
+import { formatDateTime, timeAgo } from "@/lib/format";
+
+export interface UploadTableRow {
+  id: string;
+  fileName: string;
+  kind: string;
+  sizeBytes: number;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+/** Phase 10 — uploads grid with full per-column header filtering. */
+export function UploadsTable({ rows, readOnly }: { rows: UploadTableRow[]; readOnly: boolean }) {
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const visibleRows = useMemo(
+    () =>
+      rows.filter((row) =>
+        matchesColumnFilters(columnFilters, {
+          "File Name": `${row.fileName} ${row.uploadedBy}`,
+          Type: row.kind === "other" && row.sizeBytes === 0 ? "folder" : row.kind,
+          Size: row.sizeBytes === 0 ? "—" : `${(row.sizeBytes / 1024).toFixed(0)} KB`,
+          "Uploaded by": row.uploadedBy,
+          Created: formatDateTime(row.createdAt),
+        }),
+      ),
+    [rows, columnFilters],
+  );
+  const setFilter = (column: string, value: string) => setColumnFilters((current) => ({ ...current, [column]: value }));
+
+  return (
+    <div data-testid="uploads-table">
+      {visibleRows.length === 0 ? (
+        <div className="px-4 py-14 text-center">
+          <p className="text-[14px] font-medium text-[#374151]">No data available</p>
+          <p className="mt-1 text-[12.5px] text-[#9ca3af]">There is no data available to display.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-[#f0f1f3]">
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">File Name<ColumnFilter column="File Name" value={columnFilters["File Name"] ?? ""} onChange={(value) => setFilter("File Name", value)} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => setFilter("Type", value)} options={[...new Set(rows.map((row) => (row.kind === "other" && row.sizeBytes === 0 ? "folder" : row.kind)))]} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Size<ColumnFilter column="Size" value={columnFilters.Size ?? ""} onChange={(value) => setFilter("Size", value)} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Uploaded by<ColumnFilter column="Uploaded by" value={columnFilters["Uploaded by"] ?? ""} onChange={(value) => setFilter("Uploaded by", value)} options={[...new Set(rows.map((row) => row.uploadedBy))]} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created<ColumnFilter column="Created" value={columnFilters.Created ?? ""} onChange={(value) => setFilter("Created", value)} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((upload) => (
+                <tr key={upload.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <CqaIcon name={upload.sizeBytes === 0 ? "folder" : "draft"} className="text-[18px] text-[#9ca3af]" />
+                      <span className="font-medium text-[#1f2937]">{upload.fileName}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-[12.5px] capitalize text-[#4b5563]">{upload.kind === "other" && upload.sizeBytes === 0 ? "Folder" : upload.kind}</td>
+                  <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{upload.sizeBytes === 0 ? "—" : `${(upload.sizeBytes / 1024).toFixed(0)} KB`}</td>
+                  <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{upload.uploadedBy}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]" title={formatDateTime(upload.createdAt)}>
+                    {timeAgo(upload.createdAt)}
+                  </td>
+                  <td className="px-4 py-3"><DeleteUploadButton id={upload.id} name={upload.fileName} readOnly={readOnly} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function CreateFolderButton({ readOnly }: { readOnly: boolean }) {
   const router = useRouter();

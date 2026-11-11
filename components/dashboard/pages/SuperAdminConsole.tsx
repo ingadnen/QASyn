@@ -11,6 +11,7 @@ interface ConsoleOrg {
   name: string;
   slug: string;
   plan: string;
+  website: string;
   trialCredits: number;
   creditsUsed: number;
   trialEndsAt: string;
@@ -49,6 +50,7 @@ const emptyProvisionDraft = {
 
 const emptyConfigureDraft = {
   plan: "enterprise",
+  website: "",
   trialCredits: "",
   grantCredits: "0",
   seats: "25",
@@ -212,6 +214,7 @@ export function SuperAdminConsole() {
     setConfigureOrg(org);
     setConfigureDraft({
       plan: org.plan,
+      website: org.website ?? "",
       trialCredits: String(org.trialCredits),
       grantCredits: "0",
       seats: "25",
@@ -232,6 +235,7 @@ export function SuperAdminConsole() {
           action: "configure_enterprise_plan",
           organisationId: configureOrg.id,
           plan: configureDraft.plan,
+          website: configureDraft.website || undefined,
           trialCredits: configureDraft.trialCredits ? Number(configureDraft.trialCredits) : undefined,
           grantCredits: Number(configureDraft.grantCredits) || 0,
           seats: Number(configureDraft.seats) || undefined,
@@ -521,6 +525,10 @@ export function SuperAdminConsole() {
               <select className={cqaInput} value={configureDraft.plan} onChange={(e) => setConfigureDraft((current) => ({ ...current, plan: e.target.value }))}>
                 {(data.plans.length ? data.plans : ["enterprise"]).map((plan) => <option key={plan} value={plan}>{plan}</option>)}
               </select>
+            </label>
+            <label className="block">
+              <span className={cqaLabel}>Website (https://...)</span>
+              <input className={cqaInput} value={configureDraft.website} onChange={(e) => setConfigureDraft((current) => ({ ...current, website: e.target.value }))} placeholder="https://www.bdc.ca" />
             </label>
             <label className="block">
               <span className={cqaLabel}>Total credits</span>

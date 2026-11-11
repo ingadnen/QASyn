@@ -137,6 +137,21 @@ The type can be selected when creating a case (manual or AI), edited in Test Stu
 
 **Storage note:** `TestCase` intentionally has no `testType` column, to keep existing SQLite databases compatible. The value is stored in `variablesJson._testType` and defaults to `Functional` when absent.
 
+### Type-aware execution engine (Phase 10)
+
+`buildStepsJson(targetUrl, stepsCount, module, title, testType)` always emits **exactly `stepsCount` steps** and tailors the flow to the selected taxonomy:
+
+| Test type | What the generated steps execute |
+| --- | --- |
+| **Penetration** | Navigate → verify the input/form surface → enter a benign XSS/SQLi reflection probe → AI-assert the payload is escaped and CSP/WAF blocks unescaped script execution. |
+| **Security** | Navigate → audit `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options` → verify `Secure`/`HttpOnly` cookies → AI-assert OWASP Top-10 posture. |
+| **Accessibility** | Navigate → verify WCAG 2.2 landmarks (`main`, `nav`, `h1`) and `alt` attributes → keyboard-tab/focus the primary control → AI-assert AA contrast and screen-reader labels. |
+| **Performance / Load** | Navigate → assert TTFB < 800 ms and DOMContentLoaded < 2500 ms → exercise the primary route transition → AI-assert zero layout shift (CLS) and responsive paint. |
+| **API** | Navigate → `GET` the target and assert `200 OK` + `content-type` → verify payload structure → AI-assert contract schema and latency budget. |
+| **Functional / E2E / Regression / Smoke / Sanity** | The historical four-step flow plus deterministic secondary-section and end-to-end state-integrity steps, so `stepsCount: 6` produces six real steps. |
+
+Live execution: when a case is not intentionally seeded to fail, `run_steps` executes the flow through real Playwright inside a 12-second budget and persists a **PNG live capture** (`data:image/png;base64,…`) per step. Unreachable hosts and deterministic/offline runs fall back to a viewport capture or generated SVG evidence, so every step always carries a valid `data:image/…` payload.
+
 ---
 
 ## Bivia: grounded decisions and self-healing
@@ -156,7 +171,7 @@ Articul8 **Bivia** is the multimodal decision engine behind several capabilities
 3. The first `Navigate` step target.
 4. The organisation website (`orgUrl`).
 
-Screenshot capture uses a desktop user agent, a 1440×900 viewport, a 15-second timeout with `domcontentloaded → commit` fallback, and a 400 ms settle before capture. Failures still return generated visual evidence so the UI never shows an empty state.
+Screenshot capture uses a desktop user agent, a 1280×720 viewport, a 15-second timeout with `domcontentloaded → commit` fallback, and a 400 ms settle before capture. Failures still return generated visual evidence so the UI never shows an empty state.
 
 Configure Bivia with `BIVIA_API_KEY` and `BIVIA_API_URL` (server-side only). The placeholder in `.env.example` is deliberately not a real token and the repository secret scan must stay clean.
 
@@ -188,6 +203,73 @@ It resolves the deployed URL (explicit override → selected environment → def
 
 In the UI, open a PR row → **PR auto-regression** → choose environment → **Run PR auto-regression**. The result panel shows pass/fail counts, the target URL, created cases and where screenshots are stored.
 
+### Autonomous CI/CD PR webhook (Phase 10)
+
+`POST /api/webhooks/ci-pr` lets GitHub Actions, GitLab CI, Azure DevOps or any pipeline run the full gate in one call. Authenticate with `x-qasyn-token: cqa_…`, `Authorization: Bearer cqa_…`, or an existing dashboard session cookie.
+
+```json
+{
+  "prNumber": 402,
+  "title": "Feat: BDC commercial loan calculator & checkout",
+  "branch": "feat/loan-calculator",
+  "branchTarget": "main",
+  "author": "ci-bot",
+  "repository": "org/web-portal",
+  "changedFiles": ["src/checkout/loan.ts", "src/ui/Header.tsx"],
+  "previewUrl": "https://www.bdc.ca",
+  "environmentName": "Staging",
+  "createTests": true,
+  "failOnRegression": false
+}
+```
+
+The endpoint upserts the `PullRequestCheck`, maps changed files to impacted modules, auto-creates `PR #<n> · Smoke check …` (4 steps) and `PR #<n> · Regression flow` (6 steps), executes impacted + PR cases against `previewUrl` with per-step screenshots, scores risk with Bivia `/score` + `/set`, runs the Strix header scan, and returns:
+
+```json
+{
+  "ok": true,
+  "verdict": "APPROVED",
+  "prId": "…",
+  "prNumber": 402,
+  "targetUrl": "https://www.bdc.ca",
+  "passed": 6,
+  "failed": 0,
+  "total": 6,
+  "regressions": 0,
+  "createdTestCases": [{ "id": "…", "title": "PR #402 · Regression flow", "testType": "Regression" }],
+  "markdownReport": "## QASyn CI/CD PR Gate — ✅ APPROVED FOR MERGE …"
+}
+```
+
+**GitHub Actions example**
+
+```yaml
+name: QASyn autonomous PR gate
+on: pull_request
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run QASyn gate
+        run: |
+          curl -sS -X POST "${{ secrets.QASYN_URL }}/api/webhooks/ci-pr" \
+            -H "content-type: application/json" \
+            -H "x-qasyn-token: ${{ secrets.QASYN_TOKEN }}" \
+            -d '{
+              "prNumber": ${{ github.event.pull_request.number }},
+              "title": "${{ github.event.pull_request.title }}",
+              "branch": "${{ github.head_ref }}",
+              "branchTarget": "${{ github.base_ref }}",
+              "author": "${{ github.actor }}",
+              "repository": "${{ github.repository }}",
+              "changedFiles": [],
+              "previewUrl": "${{ secrets.QASYN_PREVIEW_URL }}",
+              "createTests": true
+            }'
+```
+
+The same snippet, pre-filled for the selected PR and environment, is copy-ready inside the PR drawer under **🔗 CI/CD Webhook & GitHub Actions Snippet**.
+
 ---
 
 ## Super Admin and multi-tenancy
@@ -208,7 +290,7 @@ Creates, in one transaction:
 
 ### `configure_enterprise_plan`
 
-Updates plan and credits, optionally grants extra credits (ledger entry), updates seats/SSO/SLA under `settingsJson.enterprise`, and binds/updates the tenant's default deployed environment.
+Updates plan and credits, optionally grants extra credits (ledger entry), updates seats/SSO/SLA under `settingsJson.enterprise`, changes the tenant's default **website** (with automatic propagation to the default environment `baseUrl` when no explicit `environmentUrl` is supplied), and binds/updates the tenant's default deployed environment.
 
 Both actions are available from the console UI (**Provision enterprise** and per-organisation **Configure**) and are guarded by `requireSuperAdmin()`.
 
@@ -224,6 +306,14 @@ QASyn treats visual evidence as a first-class artifact:
 - Run history and the run modal render thumbnails (`run-history-screenshot`, `studio-run-log-screenshot`).
 - Self-heal renders `studio-heal-screenshot` and persists the capture on the healed step and the API response.
 - Deterministic/offline runs generate an SVG data URL per step, so no executed step is ever left with “captured during the next run”.
+
+### Visual time-travel evidence lightbox (Phase 10)
+
+Clicking any evidence thumbnail (`studio-step-screenshot`, `studio-heal-screenshot`, `run-history-screenshot`, `studio-run-log-screenshot`) opens `data-testid="studio-evidence-lightbox"`:
+
+- **Single view** — full-resolution capture with Step `#`, action, target URL, status (`PASSED` / `FAILED` / `HEALED` / `SKIPPED`), MIME badge (`PNG Live Capture` vs `SVG Deterministic Evidence`) and timestamp.
+- **Time travel** — `🔀 Compare with Previous Run` (`studio-evidence-compare-toggle`) renders the previous run and the latest run side by side for the same step, with an opacity slider overlay and a **Stable** / **Visual change detected** badge.
+- **Download** — `⬇ Download Evidence` saves `step-<n>-evidence.png` (or `.svg`).
 
 Screenshots are stored as base64 data URLs in SQLite alongside the step/run payload. Keep an eye on database size when running very large suites; the execution engine caps and compresses captures before persistence.
 

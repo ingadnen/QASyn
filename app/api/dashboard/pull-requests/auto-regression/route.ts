@@ -119,7 +119,7 @@ export async function POST(request: Request) {
           status: "passing",
           stepsCount: definition.stepsCount,
           source: "manual",
-          stepsJson: buildStepsJson(targetUrl, definition.stepsCount, module, definition.title),
+          stepsJson: buildStepsJson(targetUrl, definition.stepsCount, module, definition.title, definition.testType),
           variablesJson: JSON.stringify({
             url: targetUrl,
             _testType: definition.testType,

@@ -416,6 +416,7 @@
             <li>Open the case in <b>Test Studio</b>. Confirm the Navigate step points at your real URL and add Click, Enter Text or AI Assertion steps.</li>
             <li>Click <b>Run</b>. QASyn resolves the target URL, executes each step, and writes a scoped <code>TestCaseRun</code>.</li>
             <li>Open <b>Step Details</b> or <b>Run history</b> and confirm the screenshot thumbnail is present for every executed step.</li>
+            <li>Click any thumbnail to open the <b>Visual Evidence Lightbox</b>: status, MIME badge, timestamp, 🔀 <b>Compare with Previous Run</b> time travel and ⬇ <b>Download Evidence</b>.</li>
           </ol>
           <div class="callout win">Evidence is persisted twice: on <code>stepsJson[i].screenshotBase64</code> and in the run’s <code>logJson</code>. The Type column always shows the exact type you chose.</div>
         </div>
@@ -431,6 +432,7 @@
             <li>Review the returned bounding box, confidence and screenshot.</li>
             <li>Click <b>Simulate Self-Healing</b>. Bivia proposes a new selector; QASyn persists it on the step, writes a version entry and creates an “Auto-fix rerun”.</li>
             <li>Confirm the healed screenshot card and the updated run history show the new evidence.</li>
+            <li>Click the healed or step thumbnail to open the <b>Visual Evidence Lightbox</b> and compare the previous vs latest run side by side with the opacity slider.</li>
           </ol>
           <div class="callout info">If the target site is unreachable, grounding still returns generated visual evidence and explains whether the DOM/screenshot was live or synthetic.</div>
         </div>
@@ -560,6 +562,13 @@
   "environmentId": "env_id",
   "targetUrl": "https://staging.example.com",
   "createTests": true }</pre></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/webhooks/ci-pr</code></div><p>Autonomous CI/CD gatekeeper for GitHub Actions, GitLab CI and Azure DevOps. Authenticate with <code>x-qasyn-token: cqa_…</code>, <code>Authorization: Bearer cqa_…</code> or a session cookie. Upserts the PR, auto-creates Smoke + Regression cases, runs the suite with per-step screenshots and returns <code>verdict</code> + <code>markdownReport</code>.</p><pre>{ "prNumber": 402, "title": "Feat: BDC loan calculator",
+  "branch": "feat/loan-calculator", "branchTarget": "main",
+  "author": "ci-bot", "repository": "org/web-portal",
+  "changedFiles": ["src/checkout/loan.ts"],
+  "previewUrl": "https://www.bdc.ca",
+  "environmentName": "Staging",
+  "createTests": true, "failOnRegression": false }</pre></div>
       <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/super-admin</code></div><p>Enterprise provisioning and configuration.</p><pre>{ "action": "create_enterprise_tenant",
   "organisationName": "Acme Enterprise",
   "adminName": "Jordan Lee", "adminEmail": "admin@acme.com",

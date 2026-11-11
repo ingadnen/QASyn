@@ -38,7 +38,7 @@ export async function POST(request: Request) {
           criticality: input.criticality,
           stepsCount: input.stepsCount,
           source: "manual",
-          stepsJson: buildStepsJson(targetUrl, input.stepsCount, input.module, input.title),
+          stepsJson: buildStepsJson(targetUrl, input.stepsCount, input.module, input.title, testType),
           variablesJson: JSON.stringify({ url: targetUrl, _testType: testType }),
         },
       });
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
             criticality: input.criticality,
             stepsCount,
             source: "ai",
-            stepsJson: buildStepsJson(targetUrl, stepsCount, input.module, title),
+            stepsJson: buildStepsJson(targetUrl, stepsCount, input.module, title, testType),
             variablesJson: JSON.stringify({ url: targetUrl, _testType: testType }),
           },
         }),

@@ -5,6 +5,8 @@ import { getSession } from "./auth";
 const TOKEN_PATTERN = /^cqa_[A-Za-z0-9_-]{20,64}$/;
 
 function extractToken(request: Request): string | null {
+  const explicit = request.headers.get("x-qasyn-token") ?? "";
+  if (TOKEN_PATTERN.test(explicit)) return explicit;
   const auth = request.headers.get("authorization") ?? "";
   const bearer = /^Bearer (cqa_[A-Za-z0-9_-]{20,64})$/.exec(auth)?.[1];
   if (bearer) return bearer;

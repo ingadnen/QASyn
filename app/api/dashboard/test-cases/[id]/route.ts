@@ -10,7 +10,7 @@ import { audit, guardApi, readSettings, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateTestCaseSchema } from "@/lib/validation";
-import { captureTargetScreenshot, generatedStepEvidenceSvgBase64, screenshotDataUrl } from "@/lib/web-executor";
+import { captureTargetScreenshot, executeWebSteps, generatedStepEvidenceSvgBase64, screenshotDataUrl } from "@/lib/web-executor";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -425,6 +425,43 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     const runUrl = resolveGroundingUrl({ variables, steps, orgUrl: ctx.org.website });
     const now = new Date();
+    // Deliverable 1 (Phase 10): execute reachable targets with real Playwright
+    // inside a 12 s budget so every step gets a live PNG capture. Deterministic
+    // failures and unreachable hosts degrade to captureTargetScreenshot() or the
+    // synthetic SVG evidence — execution never hangs and never lacks evidence.
+    let stepShots: Array<string | null> = steps.map(() => null);
+    if (!shouldFail && runUrl) {
+      try {
+        const realSteps = steps.map((s) => ({
+          id: s.id,
+          action: s.action,
+          target: s.action === "Navigate" ? runUrl : s.target,
+          value: s.value,
+          selector: s.selector,
+        }));
+        // Keep the live capture deterministic and inside the 12 s budget: the
+        // remote Bivia decision layer is disabled for this evidence pass only.
+        const liveAnalysis = readSettings(ctx.org).analysisCode;
+        const realOutcomes = await executeWebSteps(realSteps, {
+          organisationId: ctx.org.id,
+          timeoutMs: 12_000,
+          sources: { integrationConfig: null, analysisCode: liveAnalysis ? { ...liveAnalysis, biviaEnabled: false } : null },
+        });
+        stepShots = steps.map((_, index) => {
+          const shot = realOutcomes[index]?.screenshotBase64;
+          return typeof shot === "string" && shot.startsWith("data:image/") ? shot : null;
+        });
+      } catch {
+        stepShots = steps.map(() => null);
+      }
+      if (stepShots.every((shot) => !shot)) {
+        // No live capture at all (Playwright unavailable / blocked host): take
+        // one viewport capture and reuse it as the visual evidence for every step.
+        const captured = await captureTargetScreenshot(runUrl);
+        const capturedShot = screenshotDataUrl(captured?.screenshotBase64, "image/png");
+        stepShots = stepShots.map(() => capturedShot);
+      }
+    }
     // Every executed step persists visual evidence, including skipped steps, so
     // Studio Step Details and run history never show an empty placeholder.
     const log = steps.map((s, i) => {
@@ -432,10 +469,12 @@ export async function PATCH(request: Request, { params }: Params) {
       const failed = failedStep === stepNo;
       const status = failed ? "failed" : failedStep && stepNo > failedStep ? "skipped" : "passed";
       const healed = !failed && Boolean(input.autoFix) && tc.status === "flaky";
+      const liveEvidence = stepShots[i];
       const existingEvidence =
-        typeof s.screenshotBase64 === "string" && s.screenshotBase64.startsWith("data:image/")
+        liveEvidence ??
+        (typeof s.screenshotBase64 === "string" && s.screenshotBase64.startsWith("data:image/")
           ? s.screenshotBase64
-          : null;
+          : null);
       const evidence =
         existingEvidence ??
         generatedStepEvidenceSvgBase64({
@@ -456,7 +495,7 @@ export async function PATCH(request: Request, { params }: Params) {
         });
       s.status = status;
       s.screenshotBase64 = evidence;
-      s.screenshotMime = existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml";
+      s.screenshotMime = liveEvidence ? "image/png" : existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml";
       s.lastScreenshot = evidence;
       s.screenshot = evidence;
       s.lastRunStatus = status;
@@ -476,7 +515,7 @@ export async function PATCH(request: Request, { params }: Params) {
               ? "Selector re-resolved by AI auto-heal."
               : "OK",
         screenshotBase64: evidence,
-        screenshotMime: existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml",
+        screenshotMime: liveEvidence ? "image/png" : existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml",
         screenshot: evidence,
         lastScreenshot: evidence,
       };

@@ -26,6 +26,8 @@ export interface WebExecutionOptions {
   organisationId?: string;
   sources?: BiviaConfigSources;
   mode?: BiviaMode;
+  /** Total execution budget in ms (defaults to the 30 s global timeout). */
+  timeoutMs?: number;
 }
 
 function isSafeUrl(raw: string): boolean {
@@ -114,8 +116,10 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
   const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
   const outcomes: RealStepOutcome[] = [];
   const started = Date.now();
+  const budgetMs = Math.max(4_000, Math.min(options.timeoutMs ?? GLOBAL_TIMEOUT_MS, GLOBAL_TIMEOUT_MS));
+  const remaining = () => Math.max(1_500, budgetMs - (Date.now() - started));
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const consoleLogs: string[] = [];
     const networkErrors: string[] = [];
     page.on("console", (msg) => {
@@ -179,31 +183,31 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
         case "Navigate": {
           if (!isSafeUrl(step.target)) throw new Error("URL blocked (invalid scheme or private host)");
           currentUrl = step.target;
-          await page.goto(currentUrl, { timeout: GLOBAL_TIMEOUT_MS, waitUntil: "domcontentloaded" });
+          await page.goto(currentUrl, { timeout: remaining(), waitUntil: "domcontentloaded" });
           return `Navigated to ${currentUrl}`;
         }
         case "Click": {
           const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? `text=${step.target}`);
-          await page.click(selector, { timeout: 10_000 });
+          await page.click(selector, { timeout: Math.min(10_000, remaining()) });
           return `Clicked ${selector}`;
         }
         case "Enter Text":
         case "Type":
         case "Fill": {
           const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? "input");
-          await page.fill(selector, step.value || step.target, { timeout: 10_000 });
+          await page.fill(selector, step.value || step.target, { timeout: Math.min(10_000, remaining()) });
           return `Filled ${selector}`;
         }
         case "Select": {
           const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? "select");
           const value = step.value || step.target;
-          await page.selectOption(selector, value, { timeout: 10_000 });
+          await page.selectOption(selector, value, { timeout: Math.min(10_000, remaining()) });
           return `Selected "${value}" in ${selector}`;
         }
         case "Verify":
         case "Verify Element": {
           const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? `:text("${step.target.replace(/"/g, '\\"')}")`);
-          const text = await page.textContent(selector, { timeout: 10_000 });
+          const text = await page.textContent(selector, { timeout: Math.min(10_000, remaining()) });
           const expected = (step.value || "").trim();
           if (expected && !(text ?? "").includes(expected)) {
             throw new Error(`Expected "${expected}" inside ${selector}`);
@@ -216,7 +220,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
     }
 
     for (const step of steps) {
-      if (Date.now() - started > GLOBAL_TIMEOUT_MS) {
+      if (Date.now() - started > budgetMs) {
         outcomes.push({ step, fetched: false, status: null, healed: false, newSelector: null, score: 0, message: "Global 30s timeout reached", consoleLogs: [...consoleLogs], networkErrors: [...networkErrors], screenshotBase64: null });
         continue;
       }
@@ -539,7 +543,13 @@ export async function executeWebSteps(
   const outcomes = pw ? await runWithPlaywright(steps, pw, options) : await runWithHttp(steps, options);
   return outcomes.map((outcome, index) => {
     if (outcome.screenshotBase64) {
-      return { ...outcome, screenshotMime: outcome.screenshotMime ?? "image/png" };
+      // Normalise real Playwright PNG captures into inline data URLs so callers
+      // can persist them verbatim without rejecting a valid live screenshot.
+      return {
+        ...outcome,
+        screenshotBase64: screenshotDataUrl(outcome.screenshotBase64, outcome.screenshotMime ?? "image/png"),
+        screenshotMime: outcome.screenshotMime ?? "image/png",
+      };
     }
     return {
       ...outcome,
@@ -788,7 +798,7 @@ export async function captureTargetScreenshot(targetUrl: string): Promise<Target
     const page = await browser.newPage({
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 QASyn/1.0",
-      viewport: { width: 1440, height: 900 },
+      viewport: { width: 1280, height: 720 },
     });
     // Real sites often keep analytics requests open: never wait for networkidle.
     // Try DOMContentLoaded first, then fall back to `commit` so a slow asset can

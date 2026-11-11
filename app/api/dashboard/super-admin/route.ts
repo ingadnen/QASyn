@@ -8,6 +8,7 @@ import { isSuperAdmin } from "@/lib/rbac";
 import { guardPermission } from "@/lib/rbac-server";
 import { ETERNAL_TRIAL_CREDITS, SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
 import { PLANS, USER_ROLES } from "@/lib/types";
+import { normalizeWebsite } from "@/lib/utils";
 
 /**
  * Super-Admin Console API.
@@ -23,6 +24,7 @@ const schema = z.discriminatedUnion("action", [
     trialCredits: z.number().int().min(0).max(999_999_999).optional(),
     creditsUsed: z.number().int().min(0).max(999_999_999).optional(),
     trialEndsAt: z.string().min(4).max(40).optional(),
+    website: z.string().trim().max(300).optional(),
   }),
   z.object({
     action: z.literal("user"),
@@ -53,6 +55,7 @@ const enterpriseSchema = z.discriminatedUnion("action", [
     grantCredits: z.number().int().min(0).max(999_999_999).optional(),
     trialEndsAt: z.string().min(4).max(40).optional(),
     seats: z.number().int().min(1).max(10_000).optional(),
+    website: z.string().trim().max(300).optional(),
     environmentName: z.string().trim().max(80).optional(),
     environmentUrl: z.string().trim().max(300).optional(),
     ssoEnabled: z.boolean().optional(),
@@ -95,7 +98,7 @@ export async function GET() {
 
   const [organisations, users] = await Promise.all([
     prisma.organisation.findMany({
-      select: { id: true, name: true, slug: true, plan: true, trialCredits: true, creditsUsed: true, trialEndsAt: true },
+      select: { id: true, name: true, slug: true, plan: true, website: true, trialCredits: true, creditsUsed: true, trialEndsAt: true },
       orderBy: { createdAt: "asc" },
     }),
     prisma.user.findMany({
@@ -266,6 +269,8 @@ export async function POST(request: Request) {
   if (!org) return jsonError("Organisation not found.", 404);
   const trialEndsAt = input.trialEndsAt ? new Date(input.trialEndsAt) : undefined;
   if (trialEndsAt && Number.isNaN(trialEndsAt.getTime())) return jsonError("Invalid trial end date.", 400);
+  const nextWebsite = input.website !== undefined ? normalizeWebsite(input.website) : null;
+  if (input.website !== undefined && !nextWebsite) return jsonError("Enter a valid website URL.", 400);
 
   const settings = parseJson<Record<string, unknown>>(org.settingsJson, {});
   const enterprise = {
@@ -286,21 +291,22 @@ export async function POST(request: Request) {
         plan: input.plan,
         trialCredits: nextCredits,
         ...(trialEndsAt ? { trialEndsAt } : {}),
+        ...(nextWebsite ? { website: nextWebsite } : {}),
         settingsJson: JSON.stringify({ ...settings, enterprise }),
       },
-      select: { id: true, name: true, slug: true, plan: true, trialCredits: true, creditsUsed: true, trialEndsAt: true },
+      select: { id: true, name: true, slug: true, plan: true, website: true, trialCredits: true, creditsUsed: true, trialEndsAt: true },
     });
 
     let environment = await tx.environmentConfig.findFirst({
       where: { organisationId: org.id, ...(input.environmentName ? { name: input.environmentName } : { isDefault: true }) },
     });
-    if (input.environmentName || input.environmentUrl) {
+    if (input.environmentName || input.environmentUrl || nextWebsite) {
       if (environment) {
         environment = await tx.environmentConfig.update({
           where: { id: environment.id },
           data: {
             ...(input.environmentName ? { name: input.environmentName } : {}),
-            ...(input.environmentUrl ? { baseUrl: input.environmentUrl } : {}),
+            ...(input.environmentUrl ? { baseUrl: input.environmentUrl } : nextWebsite ? { baseUrl: nextWebsite } : {}),
           },
         });
       } else {
@@ -308,7 +314,7 @@ export async function POST(request: Request) {
           data: {
             organisationId: org.id,
             name: input.environmentName ?? "Production",
-            baseUrl: input.environmentUrl ?? org.website ?? "https://www.cgi.com",
+            baseUrl: input.environmentUrl ?? nextWebsite ?? org.website ?? "https://www.cgi.com",
             description: "Configured by Super Admin",
             isDefault: true,
           },
@@ -365,6 +371,8 @@ export async function PATCH(request: Request) {
     if (!org) return jsonError("Organisation not found.", 404);
     const trialEndsAt = data.trialEndsAt ? new Date(data.trialEndsAt) : undefined;
     if (trialEndsAt && Number.isNaN(trialEndsAt.getTime())) return jsonError("Invalid trial end date.", 400);
+    const nextWebsite = data.website !== undefined ? normalizeWebsite(data.website) : null;
+    if (data.website !== undefined && !nextWebsite) return jsonError("Enter a valid website URL.", 400);
     const updated = await prisma.organisation.update({
       where: { id: org.id },
       data: {
@@ -372,6 +380,7 @@ export async function PATCH(request: Request) {
         ...(data.trialCredits !== undefined ? { trialCredits: data.trialCredits } : {}),
         ...(data.creditsUsed !== undefined ? { creditsUsed: data.creditsUsed } : {}),
         ...(trialEndsAt ? { trialEndsAt } : {}),
+        ...(nextWebsite ? { website: nextWebsite } : {}),
       },
       select: { id: true, name: true, plan: true, trialCredits: true, creditsUsed: true, trialEndsAt: true },
     });

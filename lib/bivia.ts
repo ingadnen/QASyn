@@ -746,11 +746,22 @@ function fallbackScore(
 /* ------------------------------------------------------------------ */
 
 /**
+ * Strips an inline `data:image/...;base64,` prefix so remote Bivia APIs always
+ * receive raw base64 (`b64`) even when callers pass a stored data URL.
+ */
+export function stripDataUrlPrefix(value?: string | null): string | null {
+  if (!value) return null;
+  const comma = value.startsWith("data:") ? value.indexOf(",") : -1;
+  return comma >= 0 ? value.slice(comma + 1) : value;
+}
+
+/**
  * Answers a visual/functional yes/no question (AI Verification, AI Assertion).
  * Tries POST /boolean, then POST /decide with options ["passed","failed"].
  */
 export async function biviaBoolean(input: BiviaBooleanInput): Promise<BiviaBooleanResult> {
   const started = Date.now();
+  input = { ...input, screenshotBase64: stripDataUrlPrefix(input.screenshotBase64) };
   const config = await resolveBiviaConfig(input.organisationId, input.sources);
   const mode = input.mode ?? config.mode;
   const allowAbstain = input.allowAbstain !== false;
@@ -900,6 +911,7 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
 /** Grounds a target description to screenshot coordinates. */
 export async function biviaGround(input: BiviaGroundInput): Promise<BiviaGroundResult> {
   const started = Date.now();
+  input = { ...input, screenshotBase64: stripDataUrlPrefix(input.screenshotBase64) };
   const config = await resolveBiviaConfig(input.organisationId, input.sources);
   const mode = input.mode ?? config.mode;
   const telemetry = (result: BiviaGroundResult) => {

@@ -156,6 +156,23 @@ function PrDetailDrawer({
   const modules = row.impact.modules ?? [];
   const commentPosted = row.commentPosted && Boolean(row.commentBody);
 
+  // Phase 10 — ready-to-copy CI/CD webhook snippet for this exact PR.
+  const webhookPreviewUrl =
+    autoUrl || environments.find((environment) => environment.id === autoEnv)?.baseUrl || row.externalUrl || "https://www.cgi.com";
+  const webhookPayload = JSON.stringify({
+    prNumber: row.prNumber,
+    title: row.title,
+    branch: row.branch,
+    branchTarget: row.branchTarget,
+    author: "ci-bot",
+    repository: row.repository ?? undefined,
+    changedFiles: row.files,
+    previewUrl: webhookPreviewUrl,
+    createTests: true,
+  });
+  const webhookCurl = `curl -X POST http://localhost:3000/api/webhooks/ci-pr -H "content-type: application/json" -H "x-qasyn-token: cqa_your_api_token" -d '${webhookPayload}'`;
+  const githubWorkflow = `- name: QASyn autonomous PR gate\n  run: |\n    curl -X POST http://localhost:3000/api/webhooks/ci-pr \\\n      -H "content-type: application/json" \\\n      -H "x-qasyn-token: \${{ secrets.QASYN_TOKEN }}" \\\n      -d '${webhookPayload.replace(/'/g, "'\\''")}'`;
+
   async function generateGate() {
     setGateOpen(true);
     setGatePending(true);
@@ -430,6 +447,24 @@ function PrDetailDrawer({
               {autoPending ? "Running auto-regression…" : "Run PR auto-regression"}
             </button>
           </section>
+
+          <details data-testid="pr-webhook-snippet" className="rounded-lg border border-[#bfdbfe] bg-[#eff6ff] p-3">
+            <summary className="cursor-pointer list-none text-[12.5px] font-semibold text-[#1d4ed8]">
+              🔗 CI/CD Webhook &amp; GitHub Actions Snippet
+            </summary>
+            <p className="mt-1 text-[11.5px] leading-4 text-[#1e40af]">
+              Trigger this PR&apos;s autonomous gate from GitHub Actions, GitLab CI, Azure DevOps or any pipeline in one call.
+              Authenticate with an API token (<code>x-qasyn-token: cqa_…</code>) or an existing session cookie.
+            </p>
+            <p className="mt-2 text-[10.5px] font-semibold uppercase tracking-wide text-[#1e40af]">cURL</p>
+            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-[#0f172a] p-2.5 font-mono text-[10.5px] leading-4 text-[#d1d5db]">
+              {webhookCurl}
+            </pre>
+            <p className="mt-2 text-[10.5px] font-semibold uppercase tracking-wide text-[#1e40af]">GitHub Actions</p>
+            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-[#0f172a] p-2.5 font-mono text-[10.5px] leading-4 text-[#d1d5db]">
+              {githubWorkflow}
+            </pre>
+          </details>
 
           <section>
             <div className="flex items-center justify-between">

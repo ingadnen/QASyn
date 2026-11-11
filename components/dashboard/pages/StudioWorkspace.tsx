@@ -48,6 +48,12 @@ export interface StudioStep {
   /** Visual evidence persisted after execution (PNG or generated SVG). */
   screenshotBase64?: string | null;
   screenshotMime?: string;
+  /** Phase 10 evidence aliases persisted on stepsJson. */
+  lastScreenshot?: string | null;
+  screenshot?: string | null;
+  lastRunStatus?: string;
+  lastRunAt?: string;
+  lastError?: string;
   message?: string;
 }
 
@@ -385,6 +391,17 @@ export function StudioWorkspace({
   const [runAutoFix, setRunAutoFix] = useState(false);
   const [selfHealing, setSelfHealing] = useState(false);
   const [selfHealEvidence, setSelfHealEvidence] = useState<{ stepId: string; dataUrl: string } | null>(null);
+  // Phase 10 — Visual Time-Travel Evidence Lightbox.
+  const [evidenceLightbox, setEvidenceLightbox] = useState<{
+    stepNumber: number;
+    action: string;
+    target: string;
+    status: string;
+    capturedAt: string;
+    src: string;
+  } | null>(null);
+  const [evidenceCompare, setEvidenceCompare] = useState(false);
+  const [evidenceOpacity, setEvidenceOpacity] = useState(50);
   const [groundBox, setGroundBox] = useState<GroundingBoxView | null>(null);
   const [groundImage, setGroundImage] = useState<string | null>(null);
   const [groundMeta, setGroundMeta] = useState("");
@@ -473,6 +490,54 @@ export function StudioWorkspace({
     evidenceDataUrl(detailStep?.biviaHeal?.screenshotBase64, detailStep?.biviaHeal?.screenshotMime) ??
     evidenceDataUrl(detailRunEvidence?.base64, detailRunEvidence?.mime) ??
     (detailStep && selfHealEvidence?.stepId === detailStep.id ? selfHealEvidence.dataUrl : null);
+
+  // Phase 10 — Time-travel comparison: latest run vs the previous run for the
+  // lightboxed step. Runs are ordered newest-first by the Studio server page.
+  const evidenceCompareData = useMemo(() => {
+    if (!evidenceLightbox) return { latest: null as null | { src: string; status: string; capturedAt: string }, previous: null as null | { src: string; status: string; capturedAt: string } };
+    const pick = (run: StudioData["runs"][number]) => {
+      const line = run.log?.find((entry) => entry.step === evidenceLightbox.stepNumber && entry.screenshotBase64);
+      if (!line) return null;
+      const src = evidenceDataUrl(line.screenshotBase64, line.screenshotMime);
+      return src ? { src, status: String(line.status ?? run.status), capturedAt: run.createdAt } : null;
+    };
+    return {
+      latest: data.runs[0] ? pick(data.runs[0]) : null,
+      previous: data.runs[1] ? pick(data.runs[1]) : null,
+    };
+  }, [evidenceLightbox, data.runs]);
+
+  function openEvidenceLightbox(input: {
+    src?: string | null;
+    stepNumber: number;
+    action: string;
+    target: string;
+    status: string;
+    capturedAt?: string | null;
+  }) {
+    if (!input.src) return;
+    setEvidenceCompare(false);
+    setEvidenceOpacity(50);
+    setEvidenceLightbox({
+      stepNumber: input.stepNumber,
+      action: input.action,
+      target: input.target,
+      status: input.status,
+      capturedAt: input.capturedAt ?? data.runs[0]?.createdAt ?? new Date().toISOString(),
+      src: input.src,
+    });
+  }
+
+  function downloadEvidence() {
+    if (!evidenceLightbox) return;
+    const extension = evidenceLightbox.src.startsWith("data:image/svg") ? "svg" : "png";
+    const anchor = document.createElement("a");
+    anchor.href = evidenceLightbox.src;
+    anchor.download = `step-${evidenceLightbox.stepNumber}-evidence.${extension}`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
 
   // A grounding overlay is only meaningful for the step that produced it.
   useEffect(() => {
@@ -1571,7 +1636,17 @@ export function StudioWorkspace({
                             src={evidenceUrl}
                             alt={`Screenshot evidence for run ${runItem.runNumber}`}
                             data-testid="run-history-screenshot"
-                            className="mx-3 mt-1 h-16 w-[calc(100%-1.5rem)] rounded border border-[#e5e7eb] object-cover object-top"
+                            onClick={() =>
+                              openEvidenceLightbox({
+                                src: evidenceUrl,
+                                stepNumber: firstEvidence?.step ?? 1,
+                                action: firstEvidence?.action ?? "Run evidence",
+                                target: firstEvidence?.target ?? "",
+                                status: String(firstEvidence?.status ?? (passed ? "passed" : "failed")),
+                                capturedAt: runItem.createdAt,
+                              })
+                            }
+                            className="mx-3 mt-1 h-16 w-[calc(100%-1.5rem)] cursor-zoom-in rounded border border-[#e5e7eb] object-cover object-top"
                           />
                         )}
                         <div className="mt-1 flex items-center justify-between gap-2 px-3 text-[11px] text-[#6b7280]">
@@ -1754,7 +1829,19 @@ export function StudioWorkspace({
                     }
                     alt="Self-heal screenshot evidence"
                     data-testid="studio-heal-screenshot"
-                    className="mt-2 max-h-32 w-full rounded-md border border-[#e9d5ff] object-cover object-top"
+                    onClick={() =>
+                      openEvidenceLightbox({
+                        src:
+                          evidenceDataUrl(detailStep.biviaHeal?.screenshotBase64, detailStep.biviaHeal?.screenshotMime) ??
+                          (selfHealEvidence?.stepId === detailStep.id ? selfHealEvidence.dataUrl : null),
+                        stepNumber: detailIndex + 1,
+                        action: `${detailStep.action} (self-healed)`,
+                        target: detailStep.target,
+                        status: "healed",
+                        capturedAt: detailStep.biviaHeal?.healedAt,
+                      })
+                    }
+                    className="mt-2 max-h-32 w-full cursor-zoom-in rounded-md border border-[#e9d5ff] object-cover object-top"
                   />
                 )}
               </div>
@@ -1820,7 +1907,17 @@ export function StudioWorkspace({
                       src={detailScreenshot}
                       alt={`Screenshot evidence for step ${detailIndex + 1}`}
                       data-testid="studio-step-screenshot"
-                      className="h-full w-full object-cover object-top"
+                      onClick={() =>
+                        openEvidenceLightbox({
+                          src: detailScreenshot,
+                          stepNumber: detailIndex + 1,
+                          action: detailStep.action,
+                          target: detailStep.target,
+                          status: String(detailStep.status ?? "passed"),
+                          capturedAt: detailStep.lastRunAt ?? data.runs[0]?.createdAt,
+                        })
+                      }
+                      className="h-full w-full cursor-zoom-in object-cover object-top"
                     />
                   ) : (
                     "Run the test to capture visual evidence"
@@ -2057,7 +2154,17 @@ export function StudioWorkspace({
                           src={evidenceDataUrl(line.screenshotBase64, line.screenshotMime) ?? ""}
                           alt={`Run screenshot for step ${line.step}`}
                           data-testid="studio-run-log-screenshot"
-                          className="h-8 w-14 shrink-0 rounded border border-[#334155] object-cover object-top"
+                          onClick={() =>
+                            openEvidenceLightbox({
+                              src: evidenceDataUrl(line.screenshotBase64, line.screenshotMime),
+                              stepNumber: line.step,
+                              action: line.action,
+                              target: line.target,
+                              status: String(line.status),
+                              capturedAt: data.runs[0]?.createdAt,
+                            })
+                          }
+                          className="h-8 w-14 shrink-0 cursor-zoom-in rounded border border-[#334155] object-cover object-top"
                         />
                       )}
                       {line.healed && <span className="rounded bg-[#78350f] px-1.5 py-[1px] text-[10px] text-[#fcd34d]">auto-healed</span>}
@@ -2078,6 +2185,130 @@ export function StudioWorkspace({
           </div>
         </div>
       </Modal>
+
+      {evidenceLightbox && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4"
+          role="dialog"
+          aria-label="Visual evidence lightbox"
+          data-testid="studio-evidence-lightbox"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setEvidenceLightbox(null);
+          }}
+        >
+          <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#e5e7eb] px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-[#111827]">🕰 Visual Evidence Lightbox</p>
+                <p className="mt-0.5 text-[11.5px] text-[#6b7280]">
+                  {evidenceLightbox.action} · {evidenceLightbox.target || "no target"} · {new Date(evidenceLightbox.capturedAt).toLocaleString("en-GB")}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#4f46e5]">Step #{evidenceLightbox.stepNumber}</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase",
+                    evidenceLightbox.status === "failed"
+                      ? "bg-[#fef2f2] text-[#b42318]"
+                      : evidenceLightbox.status === "healed"
+                        ? "bg-[#faf5ff] text-[#7e22ce]"
+                        : evidenceLightbox.status === "skipped"
+                          ? "bg-[#f3f4f6] text-[#6b7280]"
+                          : "bg-[#ecfdf3] text-[#067647]",
+                  )}
+                >
+                  {evidenceLightbox.status}
+                </span>
+                <span className="rounded-full bg-[#f8fafc] px-2.5 py-1 text-[10.5px] font-medium text-[#475569]">
+                  {evidenceLightbox.src.startsWith("data:image/svg") ? "SVG Deterministic Evidence" : "PNG Live Capture"}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Close evidence lightbox"
+                  onClick={() => setEvidenceLightbox(null)}
+                  className="ml-1 inline-flex size-7 items-center justify-center rounded-md border border-[#e5e7eb] text-[#6b7280] hover:bg-[#fafafa]"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 border-b border-[#f0f1f3] bg-[#fcfcfd] px-4 py-2.5">
+              <button
+                type="button"
+                data-testid="studio-evidence-compare-toggle"
+                aria-pressed={evidenceCompare}
+                disabled={!evidenceCompareData.previous}
+                onClick={() => setEvidenceCompare((current) => !current)}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-[12px] font-medium transition",
+                  evidenceCompare ? "border-[#a9a1f7] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#4b5563] hover:bg-[#fafafa]",
+                  !evidenceCompareData.previous && "cursor-not-allowed opacity-50",
+                )}
+                title={evidenceCompareData.previous ? "Compare the latest run with the previous run" : "Run the test twice to compare"}
+              >
+                🔀 Compare with Previous Run
+              </button>
+              {evidenceCompare && evidenceCompareData.previous && (
+                <>
+                  <label className="inline-flex items-center gap-2 text-[11.5px] text-[#6b7280]">
+                    Overlay opacity
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={evidenceOpacity}
+                      data-testid="studio-evidence-opacity"
+                      onChange={(event) => setEvidenceOpacity(Number(event.target.value))}
+                      className="h-1.5 w-32 accent-[#5b4ee8]"
+                    />
+                    <span className="tabular-nums">{evidenceOpacity}%</span>
+                  </label>
+                  <span className="rounded-full bg-[#f0fdf4] px-2 py-0.5 text-[10.5px] font-semibold text-[#067647]">
+                    {evidenceCompareData.previous.src === evidenceCompareData.latest?.src ? "Stable" : "Visual change detected"}
+                  </span>
+                </>
+              )}
+              <button
+                type="button"
+                data-testid="studio-evidence-download"
+                onClick={downloadEvidence}
+                className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-md border border-[#e5e7eb] bg-white px-3 text-[12px] font-medium text-[#374151] hover:bg-[#fafafa]"
+              >
+                ⬇ Download Evidence
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto bg-[#0b0f1a] p-3">
+              {evidenceCompare && evidenceCompareData.previous ? (
+                <div className="grid gap-3 lg:grid-cols-2">
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                      Previous run · {new Date(evidenceCompareData.previous.capturedAt).toLocaleString("en-GB")}
+                    </p>
+                    <img src={evidenceCompareData.previous.src} alt="Previous run evidence" className="max-h-[52vh] w-full rounded border border-[#334155] object-contain" />
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                      Latest run · {new Date(evidenceLightbox.capturedAt).toLocaleString("en-GB")}
+                    </p>
+                    <div className="relative">
+                      <img src={evidenceLightbox.src} alt="Latest run evidence" className="max-h-[52vh] w-full rounded border border-[#334155] object-contain" />
+                      <img
+                        src={evidenceCompareData.previous.src}
+                        alt="Previous run overlay"
+                        style={{ opacity: evidenceOpacity / 100 }}
+                        className="pointer-events-none absolute inset-0 h-full w-full rounded object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <img src={evidenceLightbox.src} alt="Step evidence" className="mx-auto max-h-[62vh] w-full rounded object-contain" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

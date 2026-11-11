@@ -761,30 +761,107 @@ export function buildContext7GenerationContext(module: string, title = ""): stri
   return context7Guidance(`playwright nextjs e2e ${module} ${title}`.trim(), 3);
 }
 
-/** Builds exactly `count` realistic NLP steps anchored on the organisation URL. */
-export function buildStepsJson(orgUrl: string, count: number, module: string, title = ""): string {
+/** One deterministic step seed: [action, target, value]. */
+type StepSeed = [string, string, string];
+
+/**
+ * Builds exactly `count` realistic NLP steps anchored on the organisation URL.
+ * Steps are tailored to the selected test type so Penetration, Security,
+ * Accessibility, Performance/Load and API cases exercise the capabilities their
+ * taxonomy promises, while the Functional family keeps its historical first
+ * four steps for backwards compatibility.
+ */
+export function buildStepsJson(
+  orgUrl: string,
+  count: number,
+  module: string,
+  title = "",
+  testType = "Functional",
+): string {
   const base = normalizeWebsite((orgUrl || "").trim()) ?? "";
   const host = base ? base.replace(/^https?:\/\//, "") : "the application";
   const goTo = base || "the application";
   const context7 = buildContext7GenerationContext(module, title);
-  const flows: Array<[string, string, string]> = [
+  const moduleLower = module.toLowerCase();
+  const generic: StepSeed[] = [
     ["Navigate", `Navigate to ${goTo}`, ""],
     ["Verify Element", base ? `Verify that the current page URL contains ${host}` : "Verify that the application home page is displayed", ""],
     ["Click", "Click on the primary navigation link", ""],
     ["AI Assertion", "Verify that the main heading is visible", ""],
     ["Enter Text", `Enter ${title || "test value"} in the search field`, ""],
     ["Click", `Click on ${module} module link`, ""],
-    ["AI Assertion", `Verify that the ${module.toLowerCase()} page loads correctly`, ""],
+    ["AI Assertion", `Verify that the ${moduleLower} page loads correctly`, ""],
     ["Click", "Click on the submit button", ""],
     ["Verify Element", "Verify the confirmation message is visible", ""],
     ["Navigate", `Navigate to ${base ? `${base}/settings` : "the settings page"}`, ""],
   ];
+  // Functional family: historical four steps + deterministic 5/6 extension.
+  const functional: StepSeed[] = [
+    generic[0],
+    generic[1],
+    generic[2],
+    generic[3],
+    ["Verify Element", `Verify the ${moduleLower} secondary section and its form controls are visible`, ""],
+    ["AI Assertion", `Verify end-to-end state integrity for the ${moduleLower} flow after the primary journey`, ""],
+    ...generic.slice(4),
+  ];
+  const specialized: Record<string, StepSeed[]> = {
+    Penetration: [
+      ["Navigate", `Navigate to ${goTo}`, ""],
+      ["Verify Element", "Verify the search input and login form expose sanitised input surfaces", ""],
+      ["Enter Text", "Enter the benign XSS/SQLi reflection probe into the search field", "' OR '1'='1 <qasyn-probe>"],
+      ["AI Assertion", "Verify the probe payload is escaped and CSP/WAF blocks unescaped script execution", ""],
+      ["Verify Element", "Verify the response does not reflect raw script tags into the DOM", ""],
+      ["AI Assertion", "Verify no reflected XSS or SQL error leakage is observable", ""],
+    ],
+    Security: [
+      ["Navigate", `Navigate to ${goTo}`, ""],
+      ["API Call", `Audit security headers for ${goTo}`, "Strict-Transport-Security, Content-Security-Policy, X-Frame-Options"],
+      ["Verify Element", "Verify session cookies are marked Secure and HttpOnly", ""],
+      ["AI Assertion", "Verify the OWASP Top-10 posture across headers, cookies and transport", ""],
+      ["Verify Element", "Verify HSTS max-age and CSP frame-ancestors are present", ""],
+      ["AI Assertion", "Verify no mixed content or insecure form action is present", ""],
+    ],
+    Accessibility: [
+      ["Navigate", `Navigate to ${goTo}`, ""],
+      ["Verify Element", "Verify WCAG 2.2 landmarks (main, nav, h1) and alt attributes are present", ""],
+      ["Click", "Keyboard-tab to the primary interactive control and activate it", ""],
+      ["AI Assertion", "Verify WCAG 2.2 AA contrast, focus visibility and screen-reader labels", ""],
+      ["Verify Element", "Verify every image exposes a meaningful alt attribute", ""],
+      ["AI Assertion", "Verify the page reports no critical accessibility violations", ""],
+    ],
+    Performance: [
+      ["Navigate", `Navigate to ${goTo}`, ""],
+      ["Verify Element", "Verify TTFB < 800ms and DOMContentLoaded < 2500ms", ""],
+      ["Click", "Click the primary route transition under load", ""],
+      ["AI Assertion", "Verify zero layout shift (CLS) and responsive paint", ""],
+      ["Verify Element", "Verify no render-blocking resource exceeds the performance budget", ""],
+      ["AI Assertion", "Verify sustained responsiveness under concurrent load", ""],
+    ],
+    Load: [
+      ["Navigate", `Navigate to ${goTo}`, ""],
+      ["Verify Element", "Verify TTFB < 800ms and DOMContentLoaded < 2500ms under concurrent load", ""],
+      ["Click", "Click the primary route transition under load", ""],
+      ["AI Assertion", "Verify zero layout shift (CLS) and responsive paint", ""],
+      ["Verify Element", "Verify no render-blocking resource exceeds the load budget", ""],
+      ["AI Assertion", "Verify sustained responsiveness under concurrent load", ""],
+    ],
+    API: [
+      ["Navigate", `Navigate to ${goTo}`, ""],
+      ["API Call", `GET ${goTo}`, "Assert HTTP 200 OK and content-type header"],
+      ["Verify Element", "Verify the response payload exposes the documented top-level structure", ""],
+      ["AI Assertion", "Verify the API contract schema and latency budget", ""],
+      ["Verify Element", "Verify error responses use the standard problem+json envelope", ""],
+      ["AI Assertion", "Verify pagination and rate-limit headers are present", ""],
+    ],
+  };
+  const seeds = specialized[testType] ?? functional;
   const steps: NlpStepLike[] = Array.from({ length: Math.max(1, count) }, (_, i) => {
-    const [action, target, value] = flows[i % flows.length];
+    const [action, target, value] = seeds[i % seeds.length];
     return {
       id: `s${i + 1}`,
       action,
-      target: action === "Navigate" && i > 0 && i % 5 === 4 ? `${base}/settings` : target,
+      target,
       value,
       selector: "",
       ...(action === "AI Assertion" ? { context7 } : {}),

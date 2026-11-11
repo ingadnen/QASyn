@@ -1,9 +1,8 @@
 ﻿import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
-import { CreateFolderButton, DeleteUploadButton } from "@/components/dashboard/pages/UploadsClient";
+import { CreateFolderButton, UploadsTable } from "@/components/dashboard/pages/UploadsClient";
 import { CqaIcon, PageHeader, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
-import { formatDateTime, timeAgo } from "@/lib/format";
 import { requireOrgContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Uploads" };
@@ -50,43 +49,17 @@ export default async function UploadsPage({ searchParams }: { searchParams: Prom
       </div>
 
       <div className={cqaCard}>
-        {filtered.length === 0 ? (
-          <div className="px-4 py-14 text-center">
-            <p className="text-[14px] font-medium text-[#374151]">No data available</p>
-            <p className="mt-1 text-[12.5px] text-[#9ca3af]">There is no data available to display.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-[#f0f1f3]">
-                  {["File Name", "Type", "Size", "Uploaded by", "Created", "Action"].map((h) => (
-                    <th key={h} className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((u) => (
-                  <tr key={u.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <CqaIcon name={u.sizeBytes === 0 ? "folder" : "draft"} className="text-[18px] text-[#9ca3af]" />
-                        <span className="font-medium text-[#1f2937]">{u.fileName}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-[12.5px] capitalize text-[#4b5563]">{u.kind === "other" && u.sizeBytes === 0 ? "Folder" : u.kind}</td>
-                    <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{u.sizeBytes === 0 ? "—" : `${(u.sizeBytes / 1024).toFixed(0)} KB`}</td>
-                    <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{u.uploadedBy}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]" title={formatDateTime(u.createdAt)}>
-                      {timeAgo(u.createdAt)}
-                    </td>
-                    <td className="px-4 py-3"><DeleteUploadButton id={u.id} name={u.fileName} readOnly={ctx.readOnly} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <UploadsTable
+          readOnly={ctx.readOnly}
+          rows={filtered.map((upload) => ({
+            id: upload.id,
+            fileName: upload.fileName,
+            kind: upload.kind,
+            sizeBytes: upload.sizeBytes,
+            uploadedBy: upload.uploadedBy,
+            createdAt: upload.createdAt.toISOString(),
+          }))}
+        />
       </div>
     </div>
   );

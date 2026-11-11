@@ -14,6 +14,7 @@ import {
   cqaLabel,
   useAction,
 } from "@/components/dashboard/ui";
+import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { CREDIT_ACTIONS } from "@/lib/credits";
 import type { BiviaObservatorySummary } from "@/lib/bivia-telemetry";
 import { BiviaObservatory } from "@/components/dashboard/pages/BiviaObservatory";
@@ -326,6 +327,30 @@ function BillingView({
   const consumed = Math.abs(entries.filter((entry) => entry.credits < 0).reduce((sum, entry) => sum + entry.credits, 0));
   const periodKey = `t${trialStart.getFullYear()}-${String(trialStart.getMonth() + 1).padStart(2, "0")}-${String(trialStart.getDate()).padStart(2, "0")}`;
   const [historyPageSize, setHistoryPageSize] = useState(25);
+  const [creditColumnFilters, setCreditColumnFilters] = useState<Record<string, string>>({});
+  const creditHistoryRows = [
+    {
+      period: periodKey,
+      event: isTrial ? "Trial" : planName,
+      granted: trialCredits.toLocaleString("en-US"),
+      consumed: consumed.toLocaleString("en-US"),
+      expired: "—",
+      paid: "—",
+      created: longDay(trialStart),
+    },
+  ];
+  const visibleCreditRows = creditHistoryRows.filter((row) =>
+    matchesColumnFilters(creditColumnFilters, {
+      Period: row.period,
+      Event: row.event,
+      Granted: row.granted,
+      Consumed: row.consumed,
+      "Expired unused": row.expired,
+      Paid: row.paid,
+      Created: row.created,
+    }),
+  );
+  const creditFilter = (column: string) => (value: string) => setCreditColumnFilters((current) => ({ ...current, [column]: value }));
 
   return (
     <div className="space-y-4">
@@ -476,26 +501,37 @@ function BillingView({
           <table className="w-full min-w-[720px] text-left text-[12px]">
             <thead className="border-y border-[#e5e7eb] bg-[#fafafa] text-[10.5px] uppercase tracking-[0.06em] text-[#9ca3af]">
               <tr>
-                {["Period", "Event", "Granted", "Consumed", "Expired unused", "Paid", "Created"].map((column) => (
-                  <th key={column} className="px-4 py-2 font-medium">{column}</th>
-                ))}
+                <th className="px-4 py-2 font-medium">Period<ColumnFilter column="Period" value={creditColumnFilters.Period ?? ""} onChange={creditFilter("Period")} /></th>
+                <th className="px-4 py-2 font-medium">Event<ColumnFilter column="Event" value={creditColumnFilters.Event ?? ""} onChange={creditFilter("Event")} options={[...new Set(creditHistoryRows.map((row) => row.event))]} /></th>
+                <th className="px-4 py-2 font-medium">Granted<ColumnFilter column="Granted" value={creditColumnFilters.Granted ?? ""} onChange={creditFilter("Granted")} /></th>
+                <th className="px-4 py-2 font-medium">Consumed<ColumnFilter column="Consumed" value={creditColumnFilters.Consumed ?? ""} onChange={creditFilter("Consumed")} /></th>
+                <th className="px-4 py-2 font-medium">Expired unused<ColumnFilter column="Expired unused" value={creditColumnFilters["Expired unused"] ?? ""} onChange={creditFilter("Expired unused")} /></th>
+                <th className="px-4 py-2 font-medium">Paid<ColumnFilter column="Paid" value={creditColumnFilters.Paid ?? ""} onChange={creditFilter("Paid")} /></th>
+                <th className="px-4 py-2 font-medium">Created<ColumnFilter column="Created" value={creditColumnFilters.Created ?? ""} onChange={creditFilter("Created")} /></th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-[#f3f4f6]">
-                <td className="px-4 py-3 font-mono text-[11.5px] text-[#374151]">{periodKey}</td>
-                <td className="px-4 py-3">
-                  <span className="inline-flex items-center gap-1.5 text-[#374151]">
-                    <CqaIcon name="calendar_month" className="text-[15px] text-[#9ca3af]" />
-                    {isTrial ? "Trial" : planName}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-[#374151]">{trialCredits.toLocaleString("en-US")}</td>
-                <td className="px-4 py-3 text-[#374151]">{consumed.toLocaleString("en-US")}</td>
-                <td className="px-4 py-3 text-[#9ca3af]">—</td>
-                <td className="px-4 py-3 text-[#9ca3af]">—</td>
-                <td className="px-4 py-3 text-[#6b7280]">{longDay(trialStart)}</td>
-              </tr>
+              {visibleCreditRows.length === 0 && (
+                <tr className="border-b border-[#f3f4f6]">
+                  <td colSpan={7} className="px-4 py-8 text-center text-[12px] text-[#9ca3af]">No credit history matches the current filters.</td>
+                </tr>
+              )}
+              {visibleCreditRows.map((creditRow) => (
+                <tr key={creditRow.period} className="border-b border-[#f3f4f6]">
+                  <td className="px-4 py-3 font-mono text-[11.5px] text-[#374151]">{creditRow.period}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 text-[#374151]">
+                      <CqaIcon name="calendar_month" className="text-[15px] text-[#9ca3af]" />
+                      {creditRow.event}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[#374151]">{creditRow.granted}</td>
+                  <td className="px-4 py-3 text-[#374151]">{creditRow.consumed}</td>
+                  <td className="px-4 py-3 text-[#9ca3af]">{creditRow.expired}</td>
+                  <td className="px-4 py-3 text-[#9ca3af]">{creditRow.paid}</td>
+                  <td className="px-4 py-3 text-[#6b7280]">{creditRow.created}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

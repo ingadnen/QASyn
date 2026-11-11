@@ -4684,6 +4684,247 @@ async function main() {
   check("PART 9 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part9-deliverables");
 
+  // ── PART 10 — Phase 10 architectural deliverables ────────────────
+  moduleErrors = [];
+  mod(
+    "part10-deliverables",
+    "Phase 10 - Real PNG capture, type-aware 11-test-type engine, time-travel evidence lightbox, CI/CD webhook, table filters",
+    "/dashboard/test-cases",
+  );
+
+  // 10.1 — buildStepsJson exact step count + type-aware steps + screenshots.
+  const p10Target = `https://www.cgi.com/parity-phase10-${RUN_ID}`;
+  const p10Create = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: `PART10 TYPED ${RUN_ID}`,
+    module: "Core",
+    criticality: "high",
+    stepsCount: 6,
+    targetUrl: p10Target,
+    testType: "Regression",
+  });
+  const p10CaseId = String(p10Create.body.testCases?.[0]?.id ?? "");
+  check("PART 10 a 6-step Regression case is available", p10Create.status === 201 && Boolean(p10CaseId), `status ${p10Create.status} · ${p10CaseId || "none"}`);
+  if (p10CaseId) {
+    const p10Stored = await db.testCase.findUnique({ where: { id: p10CaseId }, select: { stepsJson: true } });
+    const p10Steps = jsonArray(p10Stored?.stepsJson);
+    check("PART 10 buildStepsJson emits exactly 6 steps for stepsCount 6", p10Steps.length === 6, `${p10Steps.length} step(s)`);
+
+    // A passing case is executed through real Playwright (draft/failing cases
+    // are intentionally seeded to fail and keep deterministic evidence).
+    await db.testCase.update({ where: { id: p10CaseId }, data: { status: "passing" } });
+    const p10Run1 = await apiJson(page, `/api/dashboard/test-cases/${p10CaseId}`, "PATCH", { action: "run_steps" });
+    const p10RunRow = await db.testCaseRun.findFirst({ where: { testCaseId: p10CaseId }, orderBy: { runNumber: "desc" }, select: { logJson: true } });
+    const p10Log = jsonArray(p10RunRow?.logJson);
+    check(
+      "PART 10 run_steps persists 6/6 logJson lines with screenshots",
+      p10Run1.status === 200 && p10Log.length === 6 && p10Log.every((line) => isScreenshot(line.screenshotBase64)),
+      `${p10Log.length} line(s) · ${p10Log.filter((line) => isScreenshot(line.screenshotBase64)).length} shot(s)`,
+    );
+    const p10PngLines = p10Log.filter((line) => String(line.screenshotBase64 ?? "").startsWith("data:image/png")).length;
+    check(
+      "PART 10 passing runs capture real Playwright PNG evidence",
+      p10PngLines >= 1,
+      `${p10PngLines}/${p10Log.length} PNG live capture(s)`,
+    );
+    const p10PersistedSteps = jsonArray((await db.testCase.findUnique({ where: { id: p10CaseId }, select: { stepsJson: true } }))?.stepsJson);
+    check(
+      "PART 10 stepsJson keeps a screenshot on all 6 executed steps",
+      p10PersistedSteps.length === 6 && p10PersistedSteps.every((step) => isScreenshot(step.screenshotBase64)),
+      `${p10PersistedSteps.filter((step) => isScreenshot(step.screenshotBase64)).length}/${p10PersistedSteps.length} step(s)`,
+    );
+
+    const p10Pen = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+      mode: "manual",
+      title: `PART10 PEN ${RUN_ID}`,
+      module: "Core",
+      criticality: "high",
+      stepsCount: 4,
+      targetUrl: p10Target,
+      testType: "Penetration",
+    });
+    const p10PenId = String(p10Pen.body.testCases?.[0]?.id ?? "");
+    const p10PenSteps = p10PenId
+      ? jsonArray((await db.testCase.findUnique({ where: { id: p10PenId }, select: { stepsJson: true } }))?.stepsJson)
+      : [];
+    check(
+      "PART 10 Penetration cases generate specialised probe and escaping steps",
+      p10Pen.status === 201 && p10PenSteps.length === 4 && /XSS|probe|CSP/i.test(JSON.stringify(p10PenSteps)),
+      `${p10PenSteps.length} step(s)`,
+    );
+    if (p10PenId) await apiJson(page, `/api/dashboard/test-cases/${p10PenId}`, "DELETE");
+
+    // 10.3 — Visual Time-Travel Evidence Lightbox needs two runs for compare.
+    await apiJson(page, `/api/dashboard/test-cases/${p10CaseId}`, "PATCH", { action: "run_steps" });
+    await goto(page, `/dashboard/test-studio/${p10CaseId}`);
+    const p10StepRow = page.locator('[data-testid="studio-step-row"]').first();
+    await p10StepRow.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+    if ((await p10StepRow.count()) > 0) {
+      const p10Details = p10StepRow.getByRole("button", { name: /View Details/ }).first();
+      if ((await p10Details.count()) > 0) await p10Details.click().catch(() => undefined);
+      else await p10StepRow.click().catch(() => undefined);
+      const p10Dialog = page.getByRole("dialog", { name: "Step Details" });
+      await p10Dialog.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+      const p10Thumb = p10Dialog.locator('[data-testid="studio-step-screenshot"]').first();
+      if ((await p10Thumb.count()) > 0) await p10Thumb.click({ force: true }).catch(() => undefined);
+      const p10Lightbox = page.locator('[data-testid="studio-evidence-lightbox"]').first();
+      await p10Lightbox.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+      const p10CompareToggle = page.locator('[data-testid="studio-evidence-compare-toggle"]').first();
+      check(
+        "PART 10 clicking a step screenshot opens the Visual Evidence Lightbox with time-travel compare",
+        (await p10Lightbox.count()) > 0 && (await p10Lightbox.isVisible().catch(() => false)) && (await p10CompareToggle.count()) > 0,
+        `${await p10Lightbox.count()} lightbox · ${await p10CompareToggle.count()} compare toggle`,
+      );
+      if ((await p10CompareToggle.count()) > 0) await p10CompareToggle.click().catch(() => undefined);
+      await page.waitForTimeout(350);
+      const p10CompareImages = await p10Lightbox.locator("img").count();
+      check(
+        "PART 10 time-travel mode renders previous and latest run captures",
+        p10CompareImages >= 2,
+        `${p10CompareImages} image(s)`,
+      );
+      const p10Close = p10Lightbox.getByRole("button", { name: "Close evidence lightbox" }).first();
+      if ((await p10Close.count()) > 0) await p10Close.click().catch(() => undefined);
+      await page.waitForTimeout(250);
+    } else {
+      check("PART 10 clicking a step screenshot opens the Visual Evidence Lightbox with time-travel compare", false, "no studio step row");
+      check("PART 10 time-travel mode renders previous and latest run captures", false, "no studio step row");
+    }
+    await apiJson(page, `/api/dashboard/test-cases/${p10CaseId}`, "DELETE");
+  } else {
+    check("PART 10 buildStepsJson emits exactly 6 steps for stepsCount 6", false, "case missing");
+    check("PART 10 run_steps persists 6/6 logJson lines with screenshots", false, "case missing");
+    check("PART 10 passing runs capture real Playwright PNG evidence", false, "case missing");
+    check("PART 10 stepsJson keeps a screenshot on all 6 executed steps", false, "case missing");
+    check("PART 10 Penetration cases generate specialised probe and escaping steps", false, "case missing");
+    check("PART 10 clicking a step screenshot opens the Visual Evidence Lightbox with time-travel compare", false, "case missing");
+    check("PART 10 time-travel mode renders previous and latest run captures", false, "case missing");
+  }
+
+  // 10.2 — Super Admin configures the tenant website and propagates it.
+  const p10Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
+  const p10TenantKey = String(Date.now() % 100000);
+  const p10Tenant = await apiJson(p10Super.page, "/api/dashboard/super-admin", "POST", {
+    action: "create_enterprise_tenant",
+    organisationName: `PART10 Tenant ${p10TenantKey}`,
+    website: "https://www.cgi.com",
+    adminName: "Part Ten Admin",
+    adminEmail: `part10-${p10TenantKey}@qasyn.test`,
+    adminPassword: "PartTenDemo2026!",
+    seats: 12,
+    trialCredits: 120000,
+  });
+  const p10OrgId = String((p10Tenant.body.organisation as Record<string, unknown> | undefined)?.id ?? "");
+  check("PART 10 a disposable enterprise tenant is provisioned", p10Tenant.status === 201 && Boolean(p10OrgId), `status ${p10Tenant.status}`);
+  if (p10OrgId) {
+    const p10Configure = await apiJson(p10Super.page, "/api/dashboard/super-admin", "POST", {
+      action: "configure_enterprise_plan",
+      organisationId: p10OrgId,
+      plan: "enterprise",
+      website: "https://www.bdc.ca",
+      seats: 30,
+    });
+    const p10Org = await db.organisation.findUnique({ where: { id: p10OrgId }, select: { website: true } });
+    const p10Env = await db.environmentConfig.findFirst({ where: { organisationId: p10OrgId, isDefault: true }, select: { baseUrl: true } });
+    check(
+      "PART 10 Super Admin configure_enterprise_plan updates the tenant website and default environment",
+      p10Configure.status === 200 && p10Org?.website === "https://www.bdc.ca" && String(p10Env?.baseUrl ?? "").includes("bdc.ca"),
+      `${p10Org?.website ?? "?"} · ${p10Env?.baseUrl ?? "?"}`,
+    );
+  } else {
+    check("PART 10 Super Admin configure_enterprise_plan updates the tenant website and default environment", false, "tenant missing");
+  }
+  await p10Super.context.close().catch(() => undefined);
+  if (p10OrgId) {
+    await db.user.deleteMany({ where: { organisationId: p10OrgId } }).catch(() => undefined);
+    await db.environmentConfig.deleteMany({ where: { organisationId: p10OrgId } }).catch(() => undefined);
+    await db.creditEntry.deleteMany({ where: { organisationId: p10OrgId } }).catch(() => undefined);
+    await db.systemAuditLog.deleteMany({ where: { organisationId: p10OrgId } }).catch(() => undefined);
+    await db.organisation.delete({ where: { id: p10OrgId } }).catch(() => undefined);
+  }
+
+  // 10.4 — Autonomous CI/CD PR webhook.
+  const p10PrNumber = 930000 + (Date.now() % 60000);
+  const p10Hook = await apiJson(page, "/api/webhooks/ci-pr", "POST", {
+    prNumber: p10PrNumber,
+    title: `PART10 CI webhook ${RUN_ID}`,
+    branch: `feature/part10-${RUN_ID}`,
+    branchTarget: "main",
+    author: "ci-bot",
+    repository: "cgi/digital-portal",
+    changedFiles: ["src/app/checkout/page.tsx", "src/ui/Header.tsx"],
+    previewUrl: "https://www.cgi.com",
+    createTests: true,
+  });
+  interface Part10HookBody {
+    ok?: boolean;
+    verdict?: string;
+    prId?: string;
+    total?: number;
+    passed?: number;
+    failed?: number;
+    regressions?: number;
+    createdTestCases?: Array<{ id?: string; title?: string; testType?: string; steps?: number }>;
+    markdownReport?: string;
+  }
+  const p10HookBody = p10Hook.body as unknown as Part10HookBody;
+  const p10Created = p10HookBody.createdTestCases ?? [];
+  check(
+    "PART 10 the CI/CD webhook returns a verdict, PR-specific tests and a Markdown report",
+    p10Hook.status === 200 &&
+      p10HookBody.ok === true &&
+      (p10HookBody.verdict === "APPROVED" || p10HookBody.verdict === "BLOCKED") &&
+      p10Created.length === 2 &&
+      p10Created.some((testCase) => testCase.testType === "Smoke" && testCase.steps === 4) &&
+      p10Created.some((testCase) => testCase.testType === "Regression" && testCase.steps === 6) &&
+      String(p10HookBody.markdownReport ?? "").includes("QASyn CI/CD PR Gate"),
+    `${p10Hook.status} · ${p10HookBody.verdict ?? "?"} · ${p10Created.map((testCase) => `${testCase.testType}:${testCase.steps}`).join("/")} · ${String(p10HookBody.markdownReport ?? "").length} chars`,
+  );
+  const p10StoredPr = p10HookBody.prId
+    ? await db.pullRequestCheck.findUnique({ where: { id: p10HookBody.prId }, select: { status: true, testsRun: true, regressions: true, commentBody: true } })
+    : null;
+  check(
+    "PART 10 the webhook persists the gate result on PullRequestCheck",
+    Boolean(p10StoredPr) &&
+      (p10StoredPr?.status === "passed_baseline" || p10StoredPr?.status === "regression_caught") &&
+      p10StoredPr?.testsRun === p10HookBody.total &&
+      p10StoredPr?.regressions === p10HookBody.failed &&
+      String(p10StoredPr?.commentBody ?? "").includes("QASyn CI/CD PR Gate"),
+    `${p10StoredPr?.status ?? "?"} · ${p10StoredPr?.testsRun ?? 0} run · ${p10StoredPr?.regressions ?? 0} regression(s)`,
+  );
+  const p10HookCases = await db.testCase.findMany({
+    where: { organisationId: cgiId, title: { startsWith: `PR #${p10PrNumber} ·` } },
+    select: { id: true, title: true },
+  });
+  const p10HookRuns = await Promise.all(
+    p10HookCases.map((testCase) =>
+      db.testCaseRun.findFirst({ where: { testCaseId: testCase.id }, orderBy: { runNumber: "desc" }, select: { logJson: true } }),
+    ),
+  );
+  check(
+    "PART 10 webhook PR cases store 6/6 screenshot lines (Smoke 4 + Regression 6)",
+    p10HookCases.length === 2 &&
+      p10HookRuns.every((run) => jsonArray(run?.logJson).length > 0 && jsonArray(run?.logJson).every((line) => isScreenshot(line.screenshotBase64))) &&
+      p10HookRuns.some((run) => jsonArray(run?.logJson).length === 6),
+    `${p10HookCases.length} case(s) · ${p10HookRuns.map((run) => jsonArray(run?.logJson).length).join("/")} line(s)`,
+  );
+  if (p10HookBody.prId) {
+    await db.pullRequestCheck.delete({ where: { id: p10HookBody.prId } }).catch(() => undefined);
+    if (p10HookCases.length > 0) {
+      await db.testCase.deleteMany({ where: { id: { in: p10HookCases.map((testCase) => testCase.id) } } }).catch(() => undefined);
+    }
+  }
+
+  // 10.5 — Uploads and Billing credit-history column filters.
+  await goto(page, "/dashboard/uploads");
+  const p10UploadFilters = await page.locator("[data-column-filter]").count();
+  check("PART 10 the Uploads table exposes per-column header filters", p10UploadFilters >= 5, `${p10UploadFilters} filter(s) · expected ≥5`);
+  await goto(page, "/dashboard/billing");
+  const p10BillingFilters = await page.locator("[data-column-filter]").count();
+  check("PART 10 the Billing credit history exposes per-column header filters", p10BillingFilters >= 7, `${p10BillingFilters} filter(s) · expected ≥7`);
+  check("PART 10 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part10-deliverables");
+
   await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────
