@@ -5,7 +5,7 @@ import { CqaIcon, cqaBtnPrimary, cqaCard, cqaInput } from "@/components/dashboar
 import { apiFetch, errorMessage } from "@/lib/api";
 import type { StrixFinding, StrixReport, StrixSeverity } from "@/lib/strix";
 import { cn } from "@/lib/utils";
-import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
+import { ColumnFilter, ColumnSort, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 
 const SEVERITY_STYLE: Record<StrixSeverity, string> = {
   critical: "bg-[#fef2f2] text-[#b42318] border-[#fecdca]",
@@ -70,19 +70,30 @@ export function StrixScanner({ readOnly = false, defaultTarget = "https://www.cg
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cookieColumnFilters, setCookieColumnFilters] = useState<Record<string, string>>({});
+  const [cookieSort, setCookieSort] = useState<TableSortState>(null);
 
   const visibleCookies = useMemo(
     () =>
-      (report?.cookies ?? []).filter((cookie) =>
-        matchesColumnFilters(cookieColumnFilters, {
-          Name: cookie.name,
-          Secure: cookie.secure ? "yes" : "no",
-          HttpOnly: cookie.httpOnly ? "yes" : "no",
-          SameSite: cookie.sameSite,
-        }),
+      sortTableRows(
+        (report?.cookies ?? []).filter((cookie) =>
+          matchesColumnFilters(cookieColumnFilters, {
+            Name: cookie.name,
+            Secure: cookie.secure ? "yes" : "no",
+            HttpOnly: cookie.httpOnly ? "yes" : "no",
+            SameSite: cookie.sameSite,
+          }),
+        ),
+        cookieSort,
+        {
+          Name: (cookie) => cookie.name,
+          Secure: (cookie) => (cookie.secure ? 1 : 0),
+          HttpOnly: (cookie) => (cookie.httpOnly ? 1 : 0),
+          SameSite: (cookie) => cookie.sameSite,
+        },
       ),
-    [report, cookieColumnFilters],
+    [report, cookieColumnFilters, cookieSort],
   );
+  const cookieSortColumn = (column: string) => setCookieSort((current) => nextTableSort(current, column));
 
   async function scan() {
     setLoading(true);
@@ -182,10 +193,10 @@ export function StrixScanner({ readOnly = false, defaultTarget = "https://www.cg
                 <table className="w-full min-w-[420px] text-left text-[11.5px]">
                   <thead className="bg-[#fafafa] text-[10.5px] uppercase tracking-wide text-[#9ca3af]">
                     <tr>
-                      <th className="px-3 py-1.5 font-semibold">Name<ColumnFilter column="Name" value={cookieColumnFilters.Name ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, Name: value }))} /></th>
-                      <th className="px-3 py-1.5 font-semibold">Secure<ColumnFilter column="Secure" value={cookieColumnFilters.Secure ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, Secure: value }))} options={["yes", "no"]} /></th>
-                      <th className="px-3 py-1.5 font-semibold">HttpOnly<ColumnFilter column="HttpOnly" value={cookieColumnFilters.HttpOnly ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, HttpOnly: value }))} options={["yes", "no"]} /></th>
-                      <th className="px-3 py-1.5 font-semibold">SameSite<ColumnFilter column="SameSite" value={cookieColumnFilters.SameSite ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, SameSite: value }))} /></th>
+                      <th className="px-3 py-1.5 font-semibold">Name<ColumnFilter column="Name" value={cookieColumnFilters.Name ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, Name: value }))} /><ColumnSort column="Name" sort={cookieSort} onSort={cookieSortColumn} /></th>
+                      <th className="px-3 py-1.5 font-semibold">Secure<ColumnFilter column="Secure" value={cookieColumnFilters.Secure ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, Secure: value }))} options={["yes", "no"]} /><ColumnSort column="Secure" sort={cookieSort} onSort={cookieSortColumn} /></th>
+                      <th className="px-3 py-1.5 font-semibold">HttpOnly<ColumnFilter column="HttpOnly" value={cookieColumnFilters.HttpOnly ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, HttpOnly: value }))} options={["yes", "no"]} /><ColumnSort column="HttpOnly" sort={cookieSort} onSort={cookieSortColumn} /></th>
+                      <th className="px-3 py-1.5 font-semibold">SameSite<ColumnFilter column="SameSite" value={cookieColumnFilters.SameSite ?? ""} onChange={(value) => setCookieColumnFilters((current) => ({ ...current, SameSite: value }))} /><ColumnSort column="SameSite" sort={cookieSort} onSort={cookieSortColumn} /></th>
                     </tr>
                   </thead>
                   <tbody>

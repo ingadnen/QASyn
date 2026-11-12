@@ -170,6 +170,144 @@ export interface StepEvidencePayload {
   shouldClick: boolean;
 }
 
+const STEP_RESOLVER_JS = `
+    const norm = (value) => String(value || "").replace(/\\s+/g, " ").trim().toLowerCase();
+    const visible = (el) => {
+      if (!el || !el.getBoundingClientRect) return false;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return rect.width > 1 && rect.height > 1 && style.visibility !== "hidden" && style.display !== "none";
+    };
+    const leafSelector = "a, button, [role=button], summary, input, select, textarea, h1, h2, h3, h4, label";
+    const containerSelector = "main, nav, header, footer, section, form, article";
+    const resolveStepElement = (p) => {
+      const allowHidden = p.allowHidden === true;
+      const leaves = Array.from(document.querySelectorAll(leafSelector));
+      const containers = Array.from(document.querySelectorAll(containerSelector));
+      const quoted = Array.isArray(p.quoted) ? p.quoted : [];
+      const keywords = Array.isArray(p.keywords) ? p.keywords : [];
+      const hiddenNavigable = (node) => {
+        if (!allowHidden || !node || !node.closest) return false;
+        const anchor = node.closest("a[href]");
+        if (!anchor) return false;
+        const href = String(anchor.getAttribute("href") || "");
+        return Boolean(href) && !href.startsWith("#") && !/^javascript:/i.test(href);
+      };
+      const usable = (node) => visible(node) || hiddenNavigable(node);
+      let el = null;
+      if (p.selector) {
+        const rawSelector = String(p.selector);
+        const css = rawSelector.replace(/^css:/, "").trim();
+        const broad = /^(?:css:)?(?:a|button|nav a|header a|main a|\\[role=button\\])$/i.test(rawSelector.trim());
+        if (!/getBy|locator|:text/.test(css) && !(broad && quoted.length > 0)) {
+          try {
+            const found = document.querySelector(css);
+            if (found && visible(found)) el = found;
+          } catch (e) {}
+          if (!el) {
+            const hrefMatch = /a\\[href\\s*=\\s*["']([^"']+)["']\\]/i.exec(css);
+            if (hrefMatch) {
+              const wanted = hrefMatch[1].replace(/\\\\"/g, '"');
+              let wantedUrl = null;
+              try { wantedUrl = new URL(wanted, location.origin); } catch (e) {}
+              const normalizePath = (value) => String(value || "").replace(/\\/$/, "");
+              const anchors = Array.from(document.querySelectorAll("a[href]"));
+              el = anchors.find((anchor) => {
+                if (!usable(anchor)) return false;
+                const raw = String(anchor.getAttribute("href") || "");
+                try {
+                  const abs = new URL(raw, location.origin);
+                  if (abs.href === wanted) return true;
+                  if (!wantedUrl) return false;
+                  return abs.origin === wantedUrl.origin && normalizePath(abs.pathname) === normalizePath(wantedUrl.pathname);
+                } catch (e) {
+                  return raw === wanted;
+                }
+              }) || null;
+            }
+          }
+        }
+      }
+      if (!el) {
+        for (const quotedText of quoted) {
+          const needle = norm(quotedText);
+          if (!needle) continue;
+          el = leaves.find((node) => {
+            if (!usable(node)) return false;
+            const aria = norm(node.getAttribute("aria-label"));
+            return norm(node.textContent) === needle || aria === needle;
+          }) || null;
+          if (el) break;
+        }
+      }
+      if (!el) {
+        for (const quotedText of quoted) {
+          const needle = norm(quotedText);
+          if (!needle) continue;
+          let best = null;
+          let bestLength = Number.MAX_SAFE_INTEGER;
+          for (const node of leaves) {
+            if (!visible(node)) continue;
+            const text = norm(node.textContent);
+            const aria = norm(node.getAttribute("aria-label"));
+            if (!text.includes(needle) && !aria.includes(needle)) continue;
+            const length = Math.min(text.length || 9999, aria.length || 9999);
+            if (length < bestLength) {
+              best = node;
+              bestLength = length;
+            }
+          }
+          el = best;
+          if (el) break;
+        }
+      }
+      const scoreNode = (node) => {
+        const haystack = norm(
+          node.textContent + " " +
+          (node.getAttribute("aria-label") || "") + " " +
+          (node.getAttribute("placeholder") || "") + " " +
+          (node.getAttribute("name") || ""),
+        );
+        let score = 0;
+        for (const keyword of keywords) if (haystack.includes(norm(keyword))) score += 1;
+        return score;
+      };
+      if (!el && keywords.length > 0) {
+        let bestScore = 0;
+        for (const node of leaves) {
+          if (!visible(node)) continue;
+          const score = scoreNode(node);
+          if (score > bestScore) {
+            bestScore = score;
+            el = node;
+          }
+        }
+        if (bestScore === 0) el = null;
+      }
+      if (!el && keywords.length > 0) {
+        let bestScore = 0;
+        for (const node of containers) {
+          if (!visible(node)) continue;
+          const score = scoreNode(node);
+          if (score > bestScore) {
+            bestScore = score;
+            el = node;
+          }
+        }
+        if (bestScore === 0) el = null;
+      }
+      if (!el) {
+        for (const quotedText of quoted) {
+          const needle = norm(quotedText);
+          if (!needle) continue;
+          el = containers.find((node) => visible(node) && norm(node.textContent).includes(needle)) || null;
+          if (el) break;
+        }
+      }
+      return el;
+    };
+`;
+
 /**
  * In-page script: resolve the best visible element for the step, scroll it into
  * view, optionally interact (menu/search toggles, links, inputs), then draw the
@@ -182,40 +320,8 @@ export function buildStepHighlightScript(payload: StepEvidencePayload): string {
     if (previous) previous.remove();
     const hudPrevious = document.getElementById("__qasyn_step_hud");
     if (hudPrevious) hudPrevious.remove();
-    const norm = (value) => String(value || "").replace(/\\s+/g, " ").trim().toLowerCase();
-    const visible = (el) => {
-      if (!el || !el.getBoundingClientRect) return false;
-      const rect = el.getBoundingClientRect();
-      const style = getComputedStyle(el);
-      return rect.width > 1 && rect.height > 1 && style.visibility !== "hidden" && style.display !== "none";
-    };
-    const pool = Array.from(document.querySelectorAll("a, button, h1, h2, h3, [role=button], input, select, textarea, main, nav, header, footer, section, form, article"));
-    let el = null;
-    if (p.selector) {
-      const css = p.selector.replace(/^css:/, "");
-      if (!/getBy|locator|:text/.test(css)) {
-        try { const found = document.querySelector(css); if (found && visible(found)) el = found; } catch (e) {}
-      }
-    }
-    if (!el) {
-      for (const quoted of p.quoted) {
-        const needle = norm(quoted);
-        if (!needle) continue;
-        el = pool.find((node) => visible(node) && norm(node.textContent).includes(needle)) || null;
-        if (el) break;
-      }
-    }
-    if (!el && p.keywords.length > 0) {
-      let bestScore = 0;
-      for (const node of pool) {
-        if (!visible(node)) continue;
-        const haystack = norm(node.textContent + " " + (node.getAttribute("aria-label") || "") + " " + (node.getAttribute("placeholder") || "") + " " + (node.getAttribute("name") || ""));
-        let score = 0;
-        for (const keyword of p.keywords) if (haystack.includes(keyword)) score += 1;
-        if (score > bestScore) { bestScore = score; el = node; }
-      }
-      if (bestScore === 0) el = null;
-    }
+    ${STEP_RESOLVER_JS}
+    let el = resolveStepElement(p);
     if (!el) {
       const landmarks = ["header", "h1", "nav a", "main section:nth-of-type(2)", "form", "footer", "main section:nth-of-type(3)", "main"];
       for (let attempt = 0; attempt < landmarks.length && !el; attempt += 1) {
@@ -273,6 +379,51 @@ export function buildStepHighlightScript(payload: StepEvidencePayload): string {
     overlay.appendChild(hud);
     document.body.appendChild(overlay);
     return { matched: true, label: String(el.textContent || el.getAttribute("aria-label") || el.tagName || "").replace(/\\s+/g, " ").trim().slice(0, 80), interacted: interacted, scrollY: Math.round(window.scrollY) };
+  })()`;
+}
+
+/** Resolves and marks the live clickable leaf so Playwright can perform a real click. */
+export function buildStepClickResolverScript(payload: {
+  selector: string;
+  quoted: string[];
+  keywords: string[];
+  index: number;
+}): string {
+  return `(() => {
+    const p = ${JSON.stringify({ ...payload, allowHidden: true })};
+    ${STEP_RESOLVER_JS}
+    document.querySelectorAll("[data-qasyn-step-click]").forEach((node) => node.removeAttribute("data-qasyn-step-click"));
+    const el = resolveStepElement(p);
+    if (!el) return { found: false, label: "", tag: "", href: "", absoluteHref: "", samePage: false, isToggle: false };
+    const clickable = el.closest("a, button, [role=button], summary") || el;
+    clickable.setAttribute("data-qasyn-step-click", "1");
+    const tag = (clickable.tagName || "").toUpperCase();
+    const href = tag === "A" ? String(clickable.getAttribute("href") || "") : "";
+    let absoluteHref = "";
+    if (href && !href.startsWith("#") && !/^javascript:/i.test(href)) {
+      try {
+        const url = new URL(href, location.origin);
+        if (url.protocol === "http:" || url.protocol === "https:") absoluteHref = url.href;
+      } catch (e) {}
+    }
+    let samePage = !href || href.startsWith("#") || /^javascript:/i.test(href);
+    if (!samePage && absoluteHref) {
+      try {
+        const url = new URL(absoluteHref);
+        samePage = url.pathname === location.pathname && url.search === location.search && Boolean(url.hash);
+      } catch (e) {}
+    }
+    const role = String(clickable.getAttribute("role") || "").toLowerCase();
+    const isToggle = clickable.hasAttribute("aria-expanded") || clickable.hasAttribute("aria-controls") || tag === "BUTTON" || tag === "SUMMARY" || role === "button";
+    return {
+      found: true,
+      label: String(clickable.textContent || clickable.getAttribute("aria-label") || tag).replace(/\\s+/g, " ").trim().slice(0, 80),
+      tag,
+      href,
+      absoluteHref,
+      samePage: Boolean(samePage),
+      isToggle,
+    };
   })()`;
 }
 
@@ -368,7 +519,10 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
         keywords,
         index: stepIndex,
         fillValue: ["Enter Text", "Fill", "Type"].includes(step.action) ? step.value || "" : "",
-        shouldClick: step.action === "Click",
+        // Real interactions are performed by performStep before evidence is drawn,
+        // so the highlight pass must never click a second time (which would
+        // re-trigger navigation on the destination page).
+        shouldClick: false,
       };
       try {
         const result = await page.evaluate(buildStepHighlightScript(payload));
@@ -415,15 +569,40 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
     async function dismissCookieConsent(): Promise<boolean> {
       try {
         const result = await page.evaluate(`(() => {
-          const wanted = ["accept all", "accept all cookies", "accept", "i agree", "tout accepter", "accepter", "allow all"];
-          const nodes = Array.from(document.querySelectorAll("button, [role=button], a"));
-          const match = nodes.find((node) => {
-            const label = String((node.textContent || "") + " " + (node.getAttribute("aria-label") || "")).replace(/\\s+/g, " ").trim().toLowerCase();
-            return wanted.some((text) => label === text || label.startsWith(text + " ") || label.includes(text));
+          const visible = (node) => {
+            if (!node || !node.getBoundingClientRect) return false;
+            const rect = node.getBoundingClientRect();
+            const style = getComputedStyle(node);
+            return rect.width > 1 && rect.height > 1 && style.visibility !== "hidden" && style.display !== "none";
+          };
+          const explicit = Array.from(document.querySelectorAll("#onetrust-accept-btn-handler, .cookie-consent button, [aria-label*='cookie' i] button, #accept-cookie, .cc-btn.cc-allow"));
+          const direct = explicit.find((node) => visible(node));
+          if (direct) { try { direct.click(); return true; } catch (e) {} }
+          const wanted = ["i understand", "j'ai compris", "got it", "allow all", "accept cookies", "accept all cookies", "accept all", "i agree", "tout accepter", "accepter", "agree", "accept"];
+          const nodes = Array.from(document.querySelectorAll("button, [role=button], a, input[type=button], input[type=submit]"));
+          const labelOf = (node) => String((node.textContent || "") + " " + (node.getAttribute("aria-label") || "") + " " + (node.getAttribute("value") || "")).replace(/\\s+/g, " ").trim().toLowerCase();
+          const inConsentContext = (node) => Boolean(node.closest("[class*='cookie' i], [id*='cookie' i], [class*='consent' i], [id*='consent' i], [class*='privacy' i], [id*='privacy' i], [role='dialog']"));
+          let match = nodes.find((node) => {
+            if (!visible(node)) return false;
+            const label = labelOf(node);
+            return wanted.some((text) => label === text || label.startsWith(text + " "));
           });
+          if (!match) {
+            match = nodes.find((node) => {
+              if (!visible(node)) return false;
+              const label = labelOf(node);
+              if (label !== "continue" && !label.startsWith("continue ")) return false;
+              return inConsentContext(node);
+            });
+          }
+          if (!match) {
+            match = nodes.find((node) => {
+              if (!visible(node) || !inConsentContext(node)) return false;
+              const label = labelOf(node);
+              return /accept|agree|understand|got it|allow|continue/.test(label);
+            });
+          }
           if (match) { try { match.click(); return true; } catch (e) {} }
-          const oneTrust = document.querySelector("#onetrust-accept-btn-handler");
-          if (oneTrust) { try { oneTrust.click(); return true; } catch (e) {} }
           return false;
         })()`);
         return Boolean(result);
@@ -446,13 +625,62 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
           }
           // Let fonts and above-the-fold paint settle before the first capture.
           await page.waitForTimeout(350);
+          // Phase 15 — dismiss the privacy banner BEFORE Step 1's screenshot and
+          // after every real navigation so the evidence PNG is never blocked by
+          // BDC "I understand" / OneTrust overlays.
+          await dismissCookieConsent();
+          await page.waitForTimeout(220);
+          await dismissCookieConsent();
           return `Navigated to ${currentUrl}`;
         }
         case "Click": {
+          const { quoted, keywords } = extractStepTargetCandidates(step);
           const explicit = overrideSelector ?? step.selector ?? (isNaturalLanguageTarget(step.target) ? "" : step.target);
+          const resolved = (await page
+            .evaluate(buildStepClickResolverScript({ selector: explicit || "", quoted, keywords, index: stepIndex }))
+            .catch(() => null)) as {
+            found?: boolean;
+            label?: string;
+            absoluteHref?: string;
+            samePage?: boolean;
+            isToggle?: boolean;
+          } | null;
+          if (resolved?.found) {
+            const label = resolved.label || step.target.slice(0, 60);
+            if (resolved.absoluteHref && !resolved.samePage) {
+              // The matched leaf is a real anchor: navigate to its resolved URL
+              // and wait for the destination document before taking evidence.
+              const destination = resolved.absoluteHref;
+              try {
+                await page.goto(destination, { timeout: fastTimeout, waitUntil: "domcontentloaded" });
+              } catch {
+                await page.goto(destination, { timeout: fastTimeout, waitUntil: "commit" });
+              }
+              currentUrl = destination;
+              await page.waitForTimeout(350);
+              await dismissCookieConsent();
+              await page.waitForTimeout(180);
+              return `Clicked "${label}" → real navigation to ${destination}`;
+            }
+            try {
+              await page.click('[data-qasyn-step-click="1"]', { timeout: fastTimeout });
+              await page.waitForTimeout(resolved.isToggle ? 350 : 250);
+              await dismissCookieConsent();
+              try {
+                currentUrl = String(await page.evaluate(`location.href`));
+              } catch {
+                /* keep the previous URL */
+              }
+              return `Clicked "${label}" · ${resolved.isToggle ? "control expanded with live DOM update" : "interaction completed"}`;
+            } catch {
+              /* fall through to the legacy selector attempt */
+            }
+          }
           const selector = explicit ? toPlaywrightSelector(explicit) : `text=${step.target}`;
           try {
             await page.click(selector, { timeout: fastTimeout });
+            await page.waitForTimeout(250);
+            await dismissCookieConsent();
             return `Clicked ${selector}`;
           } catch {
             await page.evaluate(() => window.scrollBy(0, 120)).catch(() => undefined);
@@ -1369,7 +1597,7 @@ export function groundedStepsForFlow(
     steps.push({
       id: "s6",
       action: "AI Assertion",
-      target: `Verify "${title}" completes with expected content rendered and zero console or network errors`,
+      target: `Verify "${title.slice(0, 80)}" completes with zero console or network errors`,
       value: "",
       selector: "",
       expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors.",
@@ -1380,13 +1608,13 @@ export function groundedStepsForFlow(
       { id: "s3", action: "Click", target: 'Click "Services" in the main navigation', value: "", selector: "css:nav a", expectedResult: "Clicking 'Services' activates the navigation link or opens the target section." },
       { id: "s4", action: "Verify Element", target: "Verify the main content and interactive controls are visible", value: "", selector: "css:main", expectedResult: "Target section content and interactive controls are visible in the viewport." },
       { id: "s5", action: "Verify Element", target: "Verify the global footer and regional navigation landmarks are visible", value: "", selector: "css:footer", expectedResult: "Global navigation and footer landmarks remain accessible and properly aligned." },
-      { id: "s6", action: "AI Assertion", target: `Verify "${title}" completes with expected content rendered and zero console or network errors`, value: "", selector: "", expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors." },
+      { id: "s6", action: "AI Assertion", target: `Verify "${title.slice(0, 80)}" completes with zero console or network errors`, value: "", selector: "", expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors." },
     );
   }
 
   const fillers = [
     { action: "Verify Element", target: `Verify the main content on ${host} and navigation landmarks remain visible`, value: "", selector: "css:main" },
-    { action: "AI Assertion", target: `Verify "${title}" completed with no console or network errors`, value: "", selector: "" },
+    { action: "AI Assertion", target: `Verify "${title.slice(0, 80)}" completed with no console or network errors`, value: "", selector: "" },
   ];
   let index = 0;
   while (steps.length < Math.max(1, count)) {

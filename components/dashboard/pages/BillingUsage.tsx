@@ -14,7 +14,7 @@ import {
   cqaLabel,
   useAction,
 } from "@/components/dashboard/ui";
-import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
+import { ColumnFilter, ColumnSort, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { CREDIT_ACTIONS } from "@/lib/credits";
 import type { BiviaObservatorySummary } from "@/lib/bivia-telemetry";
 import { BiviaObservatory } from "@/components/dashboard/pages/BiviaObservatory";
@@ -328,6 +328,7 @@ function BillingView({
   const periodKey = `t${trialStart.getFullYear()}-${String(trialStart.getMonth() + 1).padStart(2, "0")}-${String(trialStart.getDate()).padStart(2, "0")}`;
   const [historyPageSize, setHistoryPageSize] = useState(25);
   const [creditColumnFilters, setCreditColumnFilters] = useState<Record<string, string>>({});
+  const [creditSort, setCreditSort] = useState<TableSortState>(null);
   const creditHistoryRows = [
     {
       period: periodKey,
@@ -339,18 +340,31 @@ function BillingView({
       created: longDay(trialStart),
     },
   ];
-  const visibleCreditRows = creditHistoryRows.filter((row) =>
-    matchesColumnFilters(creditColumnFilters, {
-      Period: row.period,
-      Event: row.event,
-      Granted: row.granted,
-      Consumed: row.consumed,
-      "Expired unused": row.expired,
-      Paid: row.paid,
-      Created: row.created,
-    }),
+  const visibleCreditRows = sortTableRows(
+    creditHistoryRows.filter((row) =>
+      matchesColumnFilters(creditColumnFilters, {
+        Period: row.period,
+        Event: row.event,
+        Granted: row.granted,
+        Consumed: row.consumed,
+        "Expired unused": row.expired,
+        Paid: row.paid,
+        Created: row.created,
+      }),
+    ),
+    creditSort,
+    {
+      Period: (row) => row.period,
+      Event: (row) => row.event,
+      Granted: (row) => row.granted,
+      Consumed: (row) => row.consumed,
+      "Expired unused": (row) => row.expired,
+      Paid: (row) => row.paid,
+      Created: (row) => row.created,
+    },
   );
   const creditFilter = (column: string) => (value: string) => setCreditColumnFilters((current) => ({ ...current, [column]: value }));
+  const creditSortColumn = (column: string) => setCreditSort((current) => nextTableSort(current, column));
 
   return (
     <div className="space-y-4">
@@ -501,13 +515,13 @@ function BillingView({
           <table className="w-full min-w-[720px] text-left text-[12px]">
             <thead className="border-y border-[#e5e7eb] bg-[#fafafa] text-[10.5px] uppercase tracking-[0.06em] text-[#9ca3af]">
               <tr>
-                <th className="px-4 py-2 font-medium">Period<ColumnFilter column="Period" value={creditColumnFilters.Period ?? ""} onChange={creditFilter("Period")} /></th>
-                <th className="px-4 py-2 font-medium">Event<ColumnFilter column="Event" value={creditColumnFilters.Event ?? ""} onChange={creditFilter("Event")} options={[...new Set(creditHistoryRows.map((row) => row.event))]} /></th>
-                <th className="px-4 py-2 font-medium">Granted<ColumnFilter column="Granted" value={creditColumnFilters.Granted ?? ""} onChange={creditFilter("Granted")} /></th>
-                <th className="px-4 py-2 font-medium">Consumed<ColumnFilter column="Consumed" value={creditColumnFilters.Consumed ?? ""} onChange={creditFilter("Consumed")} /></th>
-                <th className="px-4 py-2 font-medium">Expired unused<ColumnFilter column="Expired unused" value={creditColumnFilters["Expired unused"] ?? ""} onChange={creditFilter("Expired unused")} /></th>
-                <th className="px-4 py-2 font-medium">Paid<ColumnFilter column="Paid" value={creditColumnFilters.Paid ?? ""} onChange={creditFilter("Paid")} /></th>
-                <th className="px-4 py-2 font-medium">Created<ColumnFilter column="Created" value={creditColumnFilters.Created ?? ""} onChange={creditFilter("Created")} /></th>
+                <th className="px-4 py-2 font-medium">Period<ColumnFilter column="Period" value={creditColumnFilters.Period ?? ""} onChange={creditFilter("Period")} /><ColumnSort column="Period" sort={creditSort} onSort={creditSortColumn} /></th>
+                <th className="px-4 py-2 font-medium">Event<ColumnFilter column="Event" value={creditColumnFilters.Event ?? ""} onChange={creditFilter("Event")} options={[...new Set(creditHistoryRows.map((row) => row.event))]} /><ColumnSort column="Event" sort={creditSort} onSort={creditSortColumn} /></th>
+                <th className="px-4 py-2 font-medium">Granted<ColumnFilter column="Granted" value={creditColumnFilters.Granted ?? ""} onChange={creditFilter("Granted")} /><ColumnSort column="Granted" sort={creditSort} onSort={creditSortColumn} /></th>
+                <th className="px-4 py-2 font-medium">Consumed<ColumnFilter column="Consumed" value={creditColumnFilters.Consumed ?? ""} onChange={creditFilter("Consumed")} /><ColumnSort column="Consumed" sort={creditSort} onSort={creditSortColumn} /></th>
+                <th className="px-4 py-2 font-medium">Expired unused<ColumnFilter column="Expired unused" value={creditColumnFilters["Expired unused"] ?? ""} onChange={creditFilter("Expired unused")} /><ColumnSort column="Expired unused" sort={creditSort} onSort={creditSortColumn} /></th>
+                <th className="px-4 py-2 font-medium">Paid<ColumnFilter column="Paid" value={creditColumnFilters.Paid ?? ""} onChange={creditFilter("Paid")} /><ColumnSort column="Paid" sort={creditSort} onSort={creditSortColumn} /></th>
+                <th className="px-4 py-2 font-medium">Created<ColumnFilter column="Created" value={creditColumnFilters.Created ?? ""} onChange={creditFilter("Created")} /><ColumnSort column="Created" sort={creditSort} onSort={creditSortColumn} /></th>
               </tr>
             </thead>
             <tbody>

@@ -127,7 +127,7 @@ export const integrationBodySchema = z.object({
 });
 
 // ---------- Dashboard ----------
-const title = z.string().trim().min(3, "Title is too short.").max(160);
+const title = z.string().trim().min(3, "Title is too short.").max(500);
 const moduleName = z.string().trim().min(2).max(40).regex(/^[\w &/-]+$/, "Use letters, numbers and spaces.");
 
 export const createTestCaseSchema = z.discriminatedUnion("mode", [
@@ -163,7 +163,7 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
     title: title.optional(),
     module: moduleName.optional(),
     criticality: z.enum(CRITICALITIES).optional(),
-    description: z.string().max(4000).optional(),
+    description: z.string().max(5000).optional(),
     labels: z.array(z.string().trim().max(40)).max(20).optional(),
     environment: z.string().trim().max(80).optional(),
     version: z.string().trim().max(20).optional(),
@@ -175,12 +175,12 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
     steps: z
       .array(
         z.object({
-          id: z.string().max(40),
-          action: z.enum(["Navigate", "Click", "Enter Text", "Verify Element", "API Call", "AI Assertion", "OCR/Document Validation", "KYC Check", "Salesforce Workflow Steps"]),
-          target: z.string().trim().max(200),
-          value: z.string().trim().max(500).default(""),
-          selector: z.string().trim().max(200).default(""),
-          expectedResult: z.string().trim().max(500).optional(),
+          id: z.string().min(1).max(120),
+          action: z.string().min(1).max(120),
+          target: z.string().trim().max(2000),
+          value: z.string().trim().max(2000).default(""),
+          selector: z.string().trim().max(1000).default(""),
+          expectedResult: z.string().trim().max(2000).optional(),
         }).passthrough(),
       )
       .max(50),

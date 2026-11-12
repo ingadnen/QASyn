@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CqaIcon, cqaBtnPrimary, cqaCard, cqaIconBtn, useAction } from "@/components/dashboard/ui";
-import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
+import { ColumnFilter, ColumnSort, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { scopeLabel } from "@/lib/api-scopes";
 import { cn } from "@/lib/utils";
 
@@ -30,23 +30,35 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All statuses");
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState<TableSortState>(null);
 
   const rows = useMemo(() => {
     const now = Date.now();
-    return tokens
-      .map((t) => ({ ...t, status: t.expiresAt && new Date(t.expiresAt).getTime() < now ? "Expired" : "Active" }))
-      .filter((t) => (status === "All statuses" ? true : t.status === status))
-      .filter((t) => !query.trim() || `${t.name} ${t.prefix} ${t.scopes.join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()))
-      .filter((t) =>
-        matchesColumnFilters(columnFilters, {
-          Name: `${t.name} ${t.prefix}`,
-          Scopes: t.scopes.map(scopeLabel).join(" "),
-          Created: fmt(t.createdAt),
-          Expires: t.status,
-          "Last used": fmt(t.lastUsedAt),
-        }),
-      );
-  }, [tokens, query, status, columnFilters]);
+    return sortTableRows(
+      tokens
+        .map((t) => ({ ...t, status: t.expiresAt && new Date(t.expiresAt).getTime() < now ? "Expired" : "Active" }))
+        .filter((t) => (status === "All statuses" ? true : t.status === status))
+        .filter((t) => !query.trim() || `${t.name} ${t.prefix} ${t.scopes.join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()))
+        .filter((t) =>
+          matchesColumnFilters(columnFilters, {
+            Name: `${t.name} ${t.prefix}`,
+            Scopes: t.scopes.map(scopeLabel).join(" "),
+            Created: fmt(t.createdAt),
+            Expires: t.status,
+            "Last used": fmt(t.lastUsedAt),
+          }),
+        ),
+      sort,
+      {
+        Name: (t) => t.name,
+        Scopes: (t) => t.scopes.map(scopeLabel).join(" "),
+        Created: (t) => t.createdAt,
+        Expires: (t) => t.status,
+        "Last used": (t) => t.lastUsedAt ?? "",
+      },
+    );
+  }, [tokens, query, status, columnFilters, sort]);
+  const sortColumn = (column: string) => setSort((current) => nextTableSort(current, column));
 
   async function revoke(id: string) {
     if (!window.confirm("Revoke this token? Scripts using it will stop working immediately.")) return;
@@ -104,12 +116,12 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
             <table className="w-full min-w-[900px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#f0f1f3] bg-white">
-                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Name: value }))} /></th>
-                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Scopes<ColumnFilter column="Scopes" value={columnFilters.Scopes ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Scopes: value }))} /></th>
-                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created<ColumnFilter column="Created" value={columnFilters.Created ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Created: value }))} /></th>
-                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Expires<ColumnFilter column="Expires" value={columnFilters.Expires ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Expires: value }))} /></th>
-                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last used<ColumnFilter column="Last used" value={columnFilters["Last used"] ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, "Last used": value }))} /></th>
-                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Actions</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Name: value }))} /><ColumnSort column="Name" sort={sort} onSort={sortColumn} /></th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Scopes<ColumnFilter column="Scopes" value={columnFilters.Scopes ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Scopes: value }))} /><ColumnSort column="Scopes" sort={sort} onSort={sortColumn} /></th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created<ColumnFilter column="Created" value={columnFilters.Created ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Created: value }))} /><ColumnSort column="Created" sort={sort} onSort={sortColumn} /></th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Expires<ColumnFilter column="Expires" value={columnFilters.Expires ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Expires: value }))} /><ColumnSort column="Expires" sort={sort} onSort={sortColumn} /></th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last used<ColumnFilter column="Last used" value={columnFilters["Last used"] ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, "Last used": value }))} /><ColumnSort column="Last used" sort={sort} onSort={sortColumn} /></th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Actions<ColumnSort column="Actions" sort={sort} onSort={sortColumn} /></th>
                 </tr>
               </thead>
               <tbody className="text-[13px] text-[#374151]">

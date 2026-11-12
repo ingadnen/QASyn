@@ -13,7 +13,7 @@ import {
   cqaLabel,
 } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { ColumnFilter, distinctColumnValues, matchesColumnFilters } from "@/components/contextqa/table-ui";
+import { ColumnFilter, ColumnSort, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import type { CatalogPullRequest } from "@/lib/pr-catalog";
 import { toast } from "@/lib/toast";
@@ -864,6 +864,7 @@ export function PullRequestsBoard({
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState<TableSortState>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detail, setDetail] = useState<PrDetailRow | null>(null);
 
@@ -875,18 +876,30 @@ export function PullRequestsBoard({
 
   const filteredRows = useMemo(
     () =>
-      rows.filter((row) =>
-        matchesColumnFilters(columnFilters, {
-          "Pull request": `#${row.prNumber} ${row.title} ${row.branch} ${row.branchTarget} ${row.author}`,
-          Risk: riskLabel(row.riskLevel),
-          Files: row.filesChanged,
-          "Tests run": row.status === "running" ? "Running" : row.testsRun,
-          Verdict: verdictLabel(row),
-          Opened: shortDate(row.createdAt),
-        }),
+      sortTableRows(
+        rows.filter((row) =>
+          matchesColumnFilters(columnFilters, {
+            "Pull request": `#${row.prNumber} ${row.title} ${row.branch} ${row.branchTarget} ${row.author}`,
+            Risk: riskLabel(row.riskLevel),
+            Files: row.filesChanged,
+            "Tests run": row.status === "running" ? "Running" : row.testsRun,
+            Verdict: verdictLabel(row),
+            Opened: shortDate(row.createdAt),
+          }),
+        ),
+        sort,
+        {
+          "Pull request": (row) => `${row.prNumber} ${row.title}`,
+          Risk: (row) => riskLabel(row.riskLevel),
+          Files: (row) => row.filesChanged,
+          "Tests run": (row) => (row.status === "running" ? "Running" : row.testsRun),
+          Verdict: (row) => verdictLabel(row),
+          Opened: (row) => row.createdAt,
+        },
       ),
-    [rows, columnFilters],
+    [rows, columnFilters, sort],
   );
+  const sortColumn = (column: string) => setSort((current) => nextTableSort(current, column));
 
   const columnOptions = useMemo(
     () => ({
@@ -930,28 +943,34 @@ export function PullRequestsBoard({
                   <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
                     Pull request
                     <ColumnFilter column="Pull request" value={columnFilters["Pull request"] ?? ""} onChange={(value) => setColumnFilter("Pull request", value)} placeholder="Search title, branch or author…" />
+                    <ColumnSort column="Pull request" sort={sort} onSort={sortColumn} />
                   </th>
                   <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
                     Risk
                     <ColumnFilter column="Risk" value={columnFilters.Risk ?? ""} onChange={(value) => setColumnFilter("Risk", value)} options={columnOptions.Risk} />
+                    <ColumnSort column="Risk" sort={sort} onSort={sortColumn} />
                   </th>
                   <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
                     Files
                     <ColumnFilter column="Files" value={columnFilters.Files ?? ""} onChange={(value) => setColumnFilter("Files", value)} />
+                    <ColumnSort column="Files" sort={sort} onSort={sortColumn} />
                   </th>
                   <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
                     Tests run
                     <ColumnFilter column="Tests run" value={columnFilters["Tests run"] ?? ""} onChange={(value) => setColumnFilter("Tests run", value)} />
+                    <ColumnSort column="Tests run" sort={sort} onSort={sortColumn} />
                   </th>
                   <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
                     Verdict
                     <ColumnFilter column="Verdict" value={columnFilters.Verdict ?? ""} onChange={(value) => setColumnFilter("Verdict", value)} options={columnOptions.Verdict} />
+                    <ColumnSort column="Verdict" sort={sort} onSort={sortColumn} />
                   </th>
                   <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">
                     Opened
                     <ColumnFilter column="Opened" value={columnFilters.Opened ?? ""} onChange={(value) => setColumnFilter("Opened", value)} />
+                    <ColumnSort column="Opened" sort={sort} onSort={sortColumn} />
                   </th>
-                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
                 </tr>
               </thead>
               <tbody>

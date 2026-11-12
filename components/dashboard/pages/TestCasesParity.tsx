@@ -16,7 +16,7 @@ import {
   useAction,
 } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { BulkButton, ColumnFilter, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, matchesColumnFilters, tableCardClass } from "@/components/contextqa/table-ui";
+import { BulkButton, ColumnFilter, ColumnSort, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, matchesColumnFilters, nextTableSort, sortTableRows, tableCardClass, type TableSortState } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { TEST_TYPES } from "@/lib/constants";
 import { toast } from "@/lib/toast";
@@ -699,6 +699,27 @@ function CasesTable({
   onPage: (page: number) => void;
   onPageSize: (size: number) => void;
 }) {
+  const [sort, setSort] = useState<TableSortState>(null);
+  const sortedRows = useMemo(
+    () =>
+      sortTableRows(rows, sort, {
+        "Test Cases": (row) => `${row.code} ${row.title}`,
+        Action: (row) => (row.source === "manual" ? "Manual" : "Automated"),
+        Type: (row) => row.testType,
+        Priority: (row) => priorityOf(row.criticality),
+        Result: (row) => resultOf(row.status),
+        Status: (row) => stateOf(row.status),
+        Module: (row) => row.module,
+        Labels: (row) => row.labels.join(" "),
+        "Created By": (row) => row.createdBy,
+        Folder: (row) => row.folder || "Unfiled",
+        "Created At": (row) => row.createdAt,
+        "Updated At": (row) => row.updatedAt,
+        "Last Run": (row) => row.lastRunAt ?? "",
+      }),
+    [rows, sort],
+  );
+  const sortColumn = (column: string) => setSort((current) => nextTableSort(current, column));
   return (
     <div className={tableCardClass()}>
       <div className="overflow-x-auto">
@@ -708,24 +729,24 @@ function CasesTable({
               <th className="w-9 px-3 py-3">
                 <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={onToggleAll} label="Select all test cases" />
               </th>
-              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => onColumnFilter("Test Cases", value)} /></th>
-              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
-              {visible.Type && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => onColumnFilter("Type", value)} options={columnOptions.Type} testId="test-cases-type-column-filter" /></th>}
-              {visible.Priority && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Priority<ColumnFilter column="Priority" value={columnFilters.Priority ?? ""} onChange={(value) => onColumnFilter("Priority", value)} options={columnOptions.Priority} /></th>}
-              {visible.Result && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Result<ColumnFilter column="Result" value={columnFilters.Result ?? ""} onChange={(value) => onColumnFilter("Result", value)} options={columnOptions.Result} /></th>}
-              {visible.Status && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={columnFilters.Status ?? ""} onChange={(value) => onColumnFilter("Status", value)} options={columnOptions.Status} /></th>}
-              {visible.Module && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Module<ColumnFilter column="Module" value={columnFilters.Module ?? ""} onChange={(value) => onColumnFilter("Module", value)} options={columnOptions.Module} /></th>}
-              {visible.Labels && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Labels<ColumnFilter column="Labels" value={columnFilters.Labels ?? ""} onChange={(value) => onColumnFilter("Labels", value)} options={columnOptions.Labels} /></th>}
-              {visible["Created By"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created By<ColumnFilter column="Created By" value={columnFilters["Created By"] ?? ""} onChange={(value) => onColumnFilter("Created By", value)} options={columnOptions["Created By"]} /></th>}
-              {visible.Folder && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => onColumnFilter("Folder", value)} options={columnOptions.Folder} /></th>}
-              {visible["Created At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created At<ColumnFilter column="Created At" value={columnFilters["Created At"] ?? ""} onChange={(value) => onColumnFilter("Created At", value)} /></th>}
-              {visible["Updated At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Updated At<ColumnFilter column="Updated At" value={columnFilters["Updated At"] ?? ""} onChange={(value) => onColumnFilter("Updated At", value)} /></th>}
-              {visible["Last Run"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => onColumnFilter("Last Run", value)} /></th>}
+              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => onColumnFilter("Test Cases", value)} /><ColumnSort column="Test Cases" sort={sort} onSort={sortColumn} /></th>
+              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
+              {visible.Type && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => onColumnFilter("Type", value)} options={columnOptions.Type} testId="test-cases-type-column-filter" /><ColumnSort column="Type" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Priority && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Priority<ColumnFilter column="Priority" value={columnFilters.Priority ?? ""} onChange={(value) => onColumnFilter("Priority", value)} options={columnOptions.Priority} /><ColumnSort column="Priority" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Result && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Result<ColumnFilter column="Result" value={columnFilters.Result ?? ""} onChange={(value) => onColumnFilter("Result", value)} options={columnOptions.Result} /><ColumnSort column="Result" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Status && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={columnFilters.Status ?? ""} onChange={(value) => onColumnFilter("Status", value)} options={columnOptions.Status} /><ColumnSort column="Status" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Module && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Module<ColumnFilter column="Module" value={columnFilters.Module ?? ""} onChange={(value) => onColumnFilter("Module", value)} options={columnOptions.Module} /><ColumnSort column="Module" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Labels && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Labels<ColumnFilter column="Labels" value={columnFilters.Labels ?? ""} onChange={(value) => onColumnFilter("Labels", value)} options={columnOptions.Labels} /><ColumnSort column="Labels" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Created By"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created By<ColumnFilter column="Created By" value={columnFilters["Created By"] ?? ""} onChange={(value) => onColumnFilter("Created By", value)} options={columnOptions["Created By"]} /><ColumnSort column="Created By" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Folder && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => onColumnFilter("Folder", value)} options={columnOptions.Folder} /><ColumnSort column="Folder" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Created At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created At<ColumnFilter column="Created At" value={columnFilters["Created At"] ?? ""} onChange={(value) => onColumnFilter("Created At", value)} /><ColumnSort column="Created At" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Updated At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Updated At<ColumnFilter column="Updated At" value={columnFilters["Updated At"] ?? ""} onChange={(value) => onColumnFilter("Updated At", value)} /><ColumnSort column="Updated At" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Last Run"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => onColumnFilter("Last Run", value)} /><ColumnSort column="Last Run" sort={sort} onSort={sortColumn} /></th>}
               <th className="w-10 px-3 py-3" />
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {sortedRows.length === 0 && (
               <tr>
                 <td colSpan={14} className="px-4 py-16 text-center">
                   <p className="text-[14px] font-medium text-[#374151]">No data available</p>
@@ -733,7 +754,7 @@ function CasesTable({
                 </td>
               </tr>
             )}
-            {rows.map((r) => {
+            {sortedRows.map((r) => {
               const priority = priorityOf(r.criticality);
               return (
                 <tr key={r.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
@@ -821,28 +842,39 @@ function StepGroupsTable({
   insertHref: string;
 }) {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState<TableSortState>(null);
   const visibleGroups = useMemo(
     () =>
-      groups.filter((g) =>
-        matchesColumnFilters(columnFilters, {
-          Name: `${g.name} ${g.stepsCount} steps`,
-          Description: g.description,
-          Steps: String(g.stepsCount),
-          "Created Date": fmt(g.createdAt),
-        }),
+      sortTableRows(
+        groups.filter((g) =>
+          matchesColumnFilters(columnFilters, {
+            Name: `${g.name} ${g.stepsCount} steps`,
+            Description: g.description,
+            Steps: String(g.stepsCount),
+            "Created Date": fmt(g.createdAt),
+          }),
+        ),
+        sort,
+        {
+          Name: (g) => g.name,
+          Description: (g) => g.description,
+          Steps: (g) => g.stepsCount,
+          "Created Date": (g) => g.createdAt,
+        },
       ),
-    [groups, columnFilters],
+    [groups, columnFilters, sort],
   );
+  const sortColumn = (column: string) => setSort((current) => nextTableSort(current, column));
   return (
     <div className={tableCardClass()}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#f0f1f3]">
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Name: value }))} /></th>
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Description<ColumnFilter column="Description" value={columnFilters.Description ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Description: value }))} /></th>
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Steps<ColumnFilter column="Steps" value={columnFilters.Steps ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Steps: value }))} options={[...new Set(groups.map((g) => String(g.stepsCount)))]} /></th>
-              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, "Created Date": value }))} /></th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Name: value }))} /><ColumnSort column="Name" sort={sort} onSort={sortColumn} /></th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Description<ColumnFilter column="Description" value={columnFilters.Description ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Description: value }))} /><ColumnSort column="Description" sort={sort} onSort={sortColumn} /></th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Steps<ColumnFilter column="Steps" value={columnFilters.Steps ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, Steps: value }))} options={[...new Set(groups.map((g) => String(g.stepsCount)))]} /><ColumnSort column="Steps" sort={sort} onSort={sortColumn} /></th>
+              <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilters((current) => ({ ...current, "Created Date": value }))} /><ColumnSort column="Created Date" sort={sort} onSort={sortColumn} /></th>
               <th className="w-10 px-4 py-3" />
             </tr>
           </thead>

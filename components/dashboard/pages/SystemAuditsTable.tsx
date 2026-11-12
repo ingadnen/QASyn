@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ColumnFilter, distinctColumnValues, matchesColumnFilters } from "@/components/contextqa/table-ui";
+import { ColumnFilter, ColumnSort, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { CqaIcon, cqaBtnGhost, cqaCard } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 
@@ -23,18 +23,27 @@ export function SystemAuditsTable({ rows }: { rows: AuditRow[] }) {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const [sort, setSort] = useState<TableSortState>(null);
 
   const filtered = useMemo(
     () =>
-      rows.filter((row) => {
-        if (module !== "All modules" && row.module !== module) return false;
-        return matchesColumnFilters(columnFilters, {
-          Date: row.date,
-          "Module & ID": `${row.module} ${row.moduleId}`,
-          Details: row.details,
-        });
-      }),
-    [rows, module, columnFilters],
+      sortTableRows(
+        rows.filter((row) => {
+          if (module !== "All modules" && row.module !== module) return false;
+          return matchesColumnFilters(columnFilters, {
+            Date: row.date,
+            "Module & ID": `${row.module} ${row.moduleId}`,
+            Details: row.details,
+          });
+        }),
+        sort,
+        {
+          Date: (row) => row.date,
+          "Module & ID": (row) => `${row.module} ${row.moduleId}`,
+          Details: (row) => row.details,
+        },
+      ),
+    [rows, module, columnFilters, sort],
   );
 
   const columnOptions = useMemo(() => ({ "Module & ID": distinctColumnValues(rows.map((row) => row.module)) }), [rows]);
@@ -43,6 +52,10 @@ export function SystemAuditsTable({ rows }: { rows: AuditRow[] }) {
     setColumnFilters((current) => ({ ...current, [column]: value }));
     setPage(1);
   }
+  const sortColumn = (column: string) => {
+    setSort((current) => nextTableSort(current, column));
+    setPage(1);
+  };
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const current = Math.min(page, pages);
   const visible = filtered.slice((current - 1) * size, current * size);
@@ -88,6 +101,7 @@ export function SystemAuditsTable({ rows }: { rows: AuditRow[] }) {
                 <th className="whitespace-nowrap px-5 py-3 text-[12.5px] font-medium text-[#4a5565]">
                   Date
                   <ColumnFilter column="Date" value={columnFilters.Date ?? ""} onChange={(value) => setColumnFilter("Date", value)} />
+                  <ColumnSort column="Date" sort={sort} onSort={sortColumn} />
                 </th>
                 <th className="whitespace-nowrap px-5 py-3 text-[12.5px] font-medium text-[#4a5565]">
                   Module &amp; ID
@@ -98,10 +112,12 @@ export function SystemAuditsTable({ rows }: { rows: AuditRow[] }) {
                     options={columnOptions["Module & ID"]}
                     placeholder="Search module or ID…"
                   />
+                  <ColumnSort column="Module & ID" sort={sort} onSort={sortColumn} />
                 </th>
                 <th className="whitespace-nowrap px-5 py-3 text-[12.5px] font-medium text-[#4a5565]">
                   Details
                   <ColumnFilter column="Details" value={columnFilters.Details ?? ""} onChange={(value) => setColumnFilter("Details", value)} />
+                  <ColumnSort column="Details" sort={sort} onSort={sortColumn} />
                 </th>
               </tr>
             </thead>

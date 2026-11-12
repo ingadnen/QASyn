@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { CreateCollectionButton } from "@/components/dashboard/pages/CreateCollectionButton";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { BulkButton, ColumnFilter, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, tableCardClass } from "@/components/contextqa/table-ui";
+import { BulkButton, ColumnFilter, ColumnSort, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, tableCardClass, type TableSortState } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -69,6 +69,7 @@ export function SuitesClient({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [localRows, setLocalRows] = useState(suites);
+  const [sort, setSort] = useState<TableSortState>(null);
   const [deleteTarget, setDeleteTarget] = useState<SuiteRow | null>(null);
   const [editTarget, setEditTarget] = useState<SuiteRow | null>(null);
 
@@ -76,7 +77,7 @@ export function SuitesClient({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return localRows.filter((suite) => {
+    const rowsFiltered = localRows.filter((suite) => {
       if (q && ![suite.name, suite.module, suite.platform].some((value) => value.toLowerCase().includes(q))) return false;
       if (filters.platform && suite.platform !== filters.platform) return false;
       if (filters.module && (suite.module || "Unorganised") !== filters.module) return false;
@@ -96,7 +97,20 @@ export function SuitesClient({
       }
       return true;
     });
-  }, [localRows, search, filters, columnFilters]);
+    return sortTableRows(rowsFiltered, sort, {
+      "Suite Name": (suite) => suite.name,
+      Platform: (suite) => suite.platform,
+      "Test Cases": (suite) => suite.testCasesCount,
+      "Latest Result": (suite) => liveResult(suite),
+      "Created Date": (suite) => suite.createdAt,
+      Modified: (suite) => suite.lastRunAt ?? suite.createdAt,
+      Folder: (suite) => suite.module || "Unorganised",
+    });
+  }, [localRows, search, filters, columnFilters, sort]);
+  const sortColumn = (column: string) => {
+    setSort((current) => nextTableSort(current, column));
+    setPage(1);
+  };
 
   const columnOptions = useMemo(
     () => ({
@@ -366,14 +380,14 @@ export function SuitesClient({
                   <th className="w-9 px-4 py-3">
                     <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleAll} label="Select all suites" />
                   </th>
-                  <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suite Name<ColumnFilter column="Suite Name" value={columnFilters["Suite Name"] ?? ""} onChange={(value) => setColumnFilter("Suite Name", value)} /></th>
-                  {visible.platform && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Platform<ColumnFilter column="Platform" value={columnFilters.Platform ?? ""} onChange={(value) => setColumnFilter("Platform", value)} options={columnOptions.Platform} /></th>}
-                  {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /></th>}
-                  {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result<ColumnFilter column="Latest Result" value={columnFilters["Latest Result"] ?? ""} onChange={(value) => setColumnFilter("Latest Result", value)} options={columnOptions["Latest Result"]} /></th>}
-                  {visible.created && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilter("Created Date", value)} /></th>}
-                  {visible.modified && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Modified<ColumnFilter column="Modified" value={columnFilters.Modified ?? ""} onChange={(value) => setColumnFilter("Modified", value)} /></th>}
-                  {visible.folder && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => setColumnFilter("Folder", value)} options={columnOptions.Folder} /></th>}
-                  <th className="w-[72px] px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
+                  <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suite Name<ColumnFilter column="Suite Name" value={columnFilters["Suite Name"] ?? ""} onChange={(value) => setColumnFilter("Suite Name", value)} /><ColumnSort column="Suite Name" sort={sort} onSort={sortColumn} /></th>
+                  {visible.platform && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Platform<ColumnFilter column="Platform" value={columnFilters.Platform ?? ""} onChange={(value) => setColumnFilter("Platform", value)} options={columnOptions.Platform} /><ColumnSort column="Platform" sort={sort} onSort={sortColumn} /></th>}
+                  {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /><ColumnSort column="Test Cases" sort={sort} onSort={sortColumn} /></th>}
+                  {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result<ColumnFilter column="Latest Result" value={columnFilters["Latest Result"] ?? ""} onChange={(value) => setColumnFilter("Latest Result", value)} options={columnOptions["Latest Result"]} /><ColumnSort column="Latest Result" sort={sort} onSort={sortColumn} /></th>}
+                  {visible.created && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilter("Created Date", value)} /><ColumnSort column="Created Date" sort={sort} onSort={sortColumn} /></th>}
+                  {visible.modified && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Modified<ColumnFilter column="Modified" value={columnFilters.Modified ?? ""} onChange={(value) => setColumnFilter("Modified", value)} /><ColumnSort column="Modified" sort={sort} onSort={sortColumn} /></th>}
+                  {visible.folder && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => setColumnFilter("Folder", value)} options={columnOptions.Folder} /><ColumnSort column="Folder" sort={sort} onSort={sortColumn} /></th>}
+                  <th className="w-[72px] px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
                 </tr>
               </thead>
               <tbody>

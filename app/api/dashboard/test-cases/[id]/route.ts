@@ -428,6 +428,7 @@ export async function PATCH(request: Request, { params }: Params) {
     // failed, skipped or healed) gets an authentic PNG of the live page.
     // Unreachable hosts degrade to captureTargetScreenshot() or SVG evidence.
     let stepShots: Array<string | null> = steps.map(() => null);
+    let stepMessages: Array<string | null> = steps.map(() => null);
     if (runUrl) {
       try {
         const realSteps = steps.map((s) => ({
@@ -449,6 +450,13 @@ export async function PATCH(request: Request, { params }: Params) {
         stepShots = steps.map((_, index) => {
           const shot = realOutcomes[index]?.screenshotBase64;
           return typeof shot === "string" && shot.startsWith("data:image/") ? shot : null;
+        });
+        // Phase 15 — preserve the real step interaction message (e.g. "Clicked
+        // \"FR\" → real navigation to …") so Studio run logs and parity checks
+        // can confirm that a real navigation actually happened.
+        stepMessages = steps.map((_, index) => {
+          const message = realOutcomes[index]?.message;
+          return typeof message === "string" && message.trim() ? message : null;
         });
       } catch {
         stepShots = steps.map(() => null);
@@ -512,7 +520,7 @@ export async function PATCH(request: Request, { params }: Params) {
             ? "Skipped after the previous step failed."
             : input.autoFix && tc.status === "flaky"
               ? "Selector re-resolved by AI auto-heal."
-              : "OK",
+              : stepMessages[i] ?? "OK",
         screenshotBase64: evidence,
         screenshotMime: liveEvidence ? "image/png" : existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml",
       };

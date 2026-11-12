@@ -321,7 +321,7 @@ export async function runQualityAutopilot(
       steps.push({
         id: `s${steps.length + 1}`,
         action: "AI Assertion",
-        target: `Verify "${flow.name}" completes with no console or network errors`,
+        target: `Verify "${flow.name.slice(0, 80)}" completes with no console or network errors`,
         value: "",
         selector: "",
         expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors.",

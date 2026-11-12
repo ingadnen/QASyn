@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { CqaIcon, Modal, StatusPill, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
-import { BulkButton, ColumnFilter, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, tableCardClass } from "@/components/contextqa/table-ui";
+import { BulkButton, ColumnFilter, ColumnSort, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, tableCardClass, type TableSortState } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -55,6 +55,7 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [localRows, setLocalRows] = useState(rows);
+  const [sort, setSort] = useState<TableSortState>(null);
   const [deleteTarget, setDeleteTarget] = useState<PlanRow | null>(null);
   const [editTarget, setEditTarget] = useState<PlanRow | null>(null);
 
@@ -62,7 +63,7 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return localRows.filter((plan) => {
+    const rowsFiltered = localRows.filter((plan) => {
       if (q && ![plan.name, plan.module, plan.environment, plan.schedule].some((value) => value.toLowerCase().includes(q))) return false;
       if (filters.result && planResult(plan) !== filters.result) return false;
       if (filters.environment && (plan.environment || "Any") !== filters.environment) return false;
@@ -82,7 +83,20 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
       }
       return true;
     });
-  }, [localRows, search, filters, columnFilters]);
+    return sortTableRows(rowsFiltered, sort, {
+      Name: (plan) => plan.name,
+      Suites: (plan) => plan.suites,
+      "Test Cases": (plan) => plan.cases,
+      "Latest Result": (plan) => planResult(plan) ?? "Not Executed",
+      Environment: (plan) => plan.environment || "Any",
+      Schedule: (plan) => plan.schedule.replace("_", " "),
+      "Last Run": (plan) => plan.lastRunAt ?? "",
+    });
+  }, [localRows, search, filters, columnFilters, sort]);
+  const sortColumn = (column: string) => {
+    setSort((current) => nextTableSort(current, column));
+    setPage(1);
+  };
 
   const columnOptions = useMemo(
     () => ({
@@ -276,14 +290,14 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
                 <th className="w-9 px-4 py-3">
                   <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleAll} label="Select all test plans" />
                 </th>
-                <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilter("Name", value)} /></th>
-                {visible.suites && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suites<ColumnFilter column="Suites" value={columnFilters.Suites ?? ""} onChange={(value) => setColumnFilter("Suites", value)} /></th>}
-                {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /></th>}
-                {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result<ColumnFilter column="Latest Result" value={columnFilters["Latest Result"] ?? ""} onChange={(value) => setColumnFilter("Latest Result", value)} options={columnOptions["Latest Result"]} /></th>}
-                {visible.environment && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Environment<ColumnFilter column="Environment" value={columnFilters.Environment ?? ""} onChange={(value) => setColumnFilter("Environment", value)} options={columnOptions.Environment} /></th>}
-                {visible.schedule && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Schedule<ColumnFilter column="Schedule" value={columnFilters.Schedule ?? ""} onChange={(value) => setColumnFilter("Schedule", value)} options={columnOptions.Schedule} /></th>}
-                {visible.lastRun && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => setColumnFilter("Last Run", value)} /></th>}
-                <th className="w-10 px-4 py-3" />
+                <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Name<ColumnFilter column="Name" value={columnFilters.Name ?? ""} onChange={(value) => setColumnFilter("Name", value)} /><ColumnSort column="Name" sort={sort} onSort={sortColumn} /></th>
+                {visible.suites && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Suites<ColumnFilter column="Suites" value={columnFilters.Suites ?? ""} onChange={(value) => setColumnFilter("Suites", value)} /><ColumnSort column="Suites" sort={sort} onSort={sortColumn} /></th>}
+                {visible.cases && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /><ColumnSort column="Test Cases" sort={sort} onSort={sortColumn} /></th>}
+                {visible.result && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Latest Result<ColumnFilter column="Latest Result" value={columnFilters["Latest Result"] ?? ""} onChange={(value) => setColumnFilter("Latest Result", value)} options={columnOptions["Latest Result"]} /><ColumnSort column="Latest Result" sort={sort} onSort={sortColumn} /></th>}
+                {visible.environment && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Environment<ColumnFilter column="Environment" value={columnFilters.Environment ?? ""} onChange={(value) => setColumnFilter("Environment", value)} options={columnOptions.Environment} /><ColumnSort column="Environment" sort={sort} onSort={sortColumn} /></th>}
+                {visible.schedule && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Schedule<ColumnFilter column="Schedule" value={columnFilters.Schedule ?? ""} onChange={(value) => setColumnFilter("Schedule", value)} options={columnOptions.Schedule} /><ColumnSort column="Schedule" sort={sort} onSort={sortColumn} /></th>}
+                {visible.lastRun && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => setColumnFilter("Last Run", value)} /><ColumnSort column="Last Run" sort={sort} onSort={sortColumn} /></th>}
+                <th className="w-10 px-4 py-3"><ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
               </tr>
             </thead>
             <tbody>

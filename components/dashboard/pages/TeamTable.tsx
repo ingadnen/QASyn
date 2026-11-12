@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { MemberActions } from "@/components/dashboard/pages/TeamParity";
-import { ColumnFilter, distinctColumnValues, matchesColumnFilters } from "@/components/contextqa/table-ui";
+import { ColumnFilter, ColumnSort, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { CqaIcon, StatusPill, cqaCard, cqaIconBtn } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 
@@ -28,19 +28,30 @@ export function TeamTable({
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState<TableSortState>(null);
 
   const filtered = useMemo(
     () =>
-      rows.filter((member) =>
-        matchesColumnFilters(columnFilters, {
-          NAME: member.name,
-          EMAIL: member.email,
-          ROLES: member.role,
-          VERIFIED: member.verified ? "Verified" : "Invited",
-          ADMIN: member.role === "Admin" ? "Admin" : "Member",
-        }),
+      sortTableRows(
+        rows.filter((member) =>
+          matchesColumnFilters(columnFilters, {
+            NAME: member.name,
+            EMAIL: member.email,
+            ROLES: member.role,
+            VERIFIED: member.verified ? "Verified" : "Invited",
+            ADMIN: member.role === "Admin" ? "Admin" : "Member",
+          }),
+        ),
+        sort,
+        {
+          NAME: (member) => member.name,
+          EMAIL: (member) => member.email,
+          ROLES: (member) => member.role,
+          VERIFIED: (member) => (member.verified ? "Verified" : "Invited"),
+          ADMIN: (member) => (member.role === "Admin" ? "Admin" : "Member"),
+        },
       ),
-    [rows, columnFilters],
+    [rows, columnFilters, sort],
   );
 
   const columnOptions = useMemo(
@@ -56,6 +67,10 @@ export function TeamTable({
     setColumnFilters((current) => ({ ...current, [column]: value }));
     setPage(1);
   }
+  const sortColumn = (column: string) => {
+    setSort((current) => nextTableSort(current, column));
+    setPage(1);
+  };
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pages);
@@ -83,9 +98,10 @@ export function TeamTable({
                     onChange={(value) => setColumnFilter(header.key, value)}
                     options={header.options}
                   />
+                  <ColumnSort column={header.key} sort={sort} onSort={sortColumn} />
                 </th>
               ))}
-              <th className="whitespace-nowrap px-4 py-2.5 text-[10px] font-semibold tracking-[0.08em] text-[#9ca3af]">{""}</th>
+              <th className="whitespace-nowrap px-4 py-2.5 text-[10px] font-semibold tracking-[0.08em] text-[#9ca3af]">{""}<ColumnSort column="Actions" sort={sort} onSort={sortColumn} /></th>
             </tr>
           </thead>
           <tbody>

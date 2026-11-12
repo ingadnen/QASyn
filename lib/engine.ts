@@ -62,13 +62,28 @@ export async function startCrawl(db: Db, actor: Actor, targetUrl: string, opts?:
       createPlan: opts?.createPlan ?? false,
     },
   });
-  // Auto-create the associated requirement (REQ-00X <date>_crawl)
-  const count = await db.requirement.count({ where: { organisationId: actor.org.id } });
-  const code = `REQ-${String(count + 1).padStart(3, "0")}`;
+  // Auto-create the associated requirement (REQ-00X <date>_crawl). Derive the
+  // next code from the highest existing numeric suffix instead of the row count:
+  // deletions or concurrent crawls must never collide on
+  // (organisationId, code) and silently drop the requirement link.
+  const existingRequirementCodes = await db.requirement.findMany({
+    where: { organisationId: actor.org.id },
+    select: { code: true },
+  });
+  let nextRequirementNumber = 1;
+  for (const existing of existingRequirementCodes) {
+    const match = /^REQ-(\d+)$/.exec(existing.code);
+    if (match) nextRequirementNumber = Math.max(nextRequirementNumber, Number(match[1]) + 1);
+  }
   const requirementTitle = opts?.requirementName?.trim() || `${new Date().toISOString().slice(0, 10)}_crawl — ${hostFromUrl(targetUrl)}`;
-  const requirement = await db.requirement
-    .create({ data: { organisationId: actor.org.id, code, title: requirementTitle, source: "doc", coverageStatus: "uncovered" } })
-    .catch(() => null);
+  const createRequirement = (code: string) =>
+    db.requirement.create({
+      data: { organisationId: actor.org.id, code, title: requirementTitle, source: "doc", coverageStatus: "uncovered" },
+    });
+  let requirement = await createRequirement(`REQ-${String(nextRequirementNumber).padStart(3, "0")}`).catch(() => null);
+  if (!requirement) {
+    requirement = await createRequirement(`REQ-${Date.now().toString(36).toUpperCase()}`).catch(() => null);
+  }
   if (requirement) {
     await db.crawlSession.update({ where: { id: crawl.id }, data: { requirementId: requirement.id } });
   }

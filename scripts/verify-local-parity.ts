@@ -2144,13 +2144,24 @@ async function main() {
     );
     const itemCount = await rowMenu.locator('[role="menuitem"]').count();
     check("PART 4 RowMenu renders every action item", itemCount >= 6, `${itemCount} items`);
+    // Read every item rectangle in one pass: sequential locator.boundingBox()
+    // calls can race a menu that closes itself and time out.
+    const itemBoxes = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("[data-row-menu] [role='menuitem']")).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          label: String(element.textContent || "").replace(/\s+/g, " ").trim(),
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+        };
+      }),
+    );
     const itemProblems: string[] = [];
-    for (let i = 0; i < itemCount; i++) {
-      const item = rowMenu.locator('[role="menuitem"]').nth(i);
-      const box = await item.boundingBox();
+    for (const box of itemBoxes) {
       if (!boxInViewport(box, { width: 1440, height: 900 })) {
-        const label = ((await item.innerText().catch(() => "")) || `item ${i}`).replace(/\s+/g, " ").trim();
-        itemProblems.push(`${label}${box ? ` @ ${box.x.toFixed(0)},${box.y.toFixed(0)} ${box.width.toFixed(0)}×${box.height.toFixed(0)}` : " has no box"}`);
+        itemProblems.push(`${box.label || "item"}${box.width ? ` @ ${box.x.toFixed(0)},${box.y.toFixed(0)} ${box.width.toFixed(0)}×${box.height.toFixed(0)}` : " has no box"}`);
       }
     }
     check("PART 4 every RowMenu item is fully visible via boundingBox", itemProblems.length === 0, itemProblems.join(" | "));
@@ -5460,6 +5471,122 @@ async function main() {
 
   check("PART 14 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part14-deliverables");
+
+  // ── PART 15 — Long validation, real leaf navigation & universal sorting ──
+  moduleErrors = [];
+  mod(
+    "part15-deliverables",
+    "Phase 15 - Long step validation, real leaf navigation and universal table sorting",
+    "/dashboard/test-studio",
+  );
+
+  // 15.1 / 15.2 — A >120-char title and a >205-char step target must save and
+  // execute, and the Click step must navigate to the French page for real.
+  const p15LongTitle = `PART15 LONG ${RUN_ID} — ${"Verify Canadian entrepreneurs landing page and hero CTA render with primary content, navigation, footer and zero console or network errors ".repeat(2)}`.slice(0, 220);
+  const p15LongTarget = `Verify "${p15LongTitle.slice(0, 90)}" completes with expected content rendered and zero console or network errors — ${"long-form target validation ".repeat(3)}`.slice(0, 260);
+  const p15Steps: Array<Record<string, string>> = [
+    { id: "s1", action: "Navigate", target: "https://www.cgi.com", value: "", selector: "", expectedResult: "The CGI landing page loads with HTTP 200." },
+    { id: "s2", action: "Verify Element", target: "Verify the main heading is visible", value: "", selector: "css:h1", expectedResult: "The primary heading is visible above the fold." },
+    {
+      id: "s3",
+      action: "Click",
+      target: 'Click "FR" in the main navigation',
+      value: "",
+      selector: 'css:a[href="https://www.cgi.com/fr/node/120605"]',
+      expectedResult: "The French version of the CGI site opens.",
+    },
+    { id: "s4", action: "Verify Element", target: "Verify the French page content is visible", value: "", selector: "css:body", expectedResult: "The French page content is visible." },
+    { id: "s5", action: "Verify Element", target: "Verify the French page navigation is visible", value: "", selector: "css:nav", expectedResult: "The French navigation landmark is visible." },
+    { id: "s6", action: "Verify Element", target: p15LongTarget, value: "", selector: "css:body", expectedResult: "The long-form expected result is accepted without validation errors." },
+  ];
+  const p15Create = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: p15LongTitle,
+    module: "Core",
+    criticality: "high",
+    stepsCount: 6,
+    targetUrl: "https://www.cgi.com",
+    testType: "Functional",
+  });
+  const p15CaseId = String(p15Create.body.testCases?.[0]?.id ?? "");
+  check(
+    "PART 15 a test case with a >120-char title is created",
+    p15Create.status === 201 && Boolean(p15CaseId) && p15LongTitle.length > 120,
+    `HTTP ${p15Create.status} · title ${p15LongTitle.length} chars`,
+  );
+  if (p15CaseId) {
+    const p15Save = await apiJson(page, `/api/dashboard/test-cases/${p15CaseId}`, "PATCH", { action: "steps", steps: p15Steps });
+    const p15PersistedRow = await db.testCase.findUnique({ where: { id: p15CaseId }, select: { title: true, stepsJson: true } });
+    const p15PersistedSteps = jsonArray(p15PersistedRow?.stepsJson);
+    check(
+      "PART 15 a >205-char Step 6 target saves with HTTP 200 (no max-200 error)",
+      p15Save.status === 200 &&
+        p15LongTarget.length > 205 &&
+        String(p15PersistedRow?.title ?? "").length > 120 &&
+        String(p15PersistedSteps[5]?.target ?? "").length > 205,
+      `HTTP ${p15Save.status} · target ${p15LongTarget.length} chars · saved ${String(p15PersistedSteps[5]?.target ?? "").length} chars`,
+    );
+
+    await db.testCase.update({ where: { id: p15CaseId }, data: { status: "passing" } });
+    const p15Run = await apiJson(page, `/api/dashboard/test-cases/${p15CaseId}`, "PATCH", { action: "run_steps" });
+    const p15RunRow = await db.testCaseRun.findFirst({
+      where: { testCaseId: p15CaseId },
+      orderBy: { runNumber: "desc" },
+      select: { logJson: true },
+    });
+    const p15Log = jsonArray(p15RunRow?.logJson);
+    const p15Shots = p15Log.map((line) => String(line.screenshotBase64 ?? ""));
+    const p15Step3Message = String(p15Log[2]?.message ?? "");
+    check(
+      "PART 15 run_steps executes the long steps and captures 6/6 live PNG screenshots",
+      p15Run.status === 200 &&
+        p15Log.length === 6 &&
+        p15Shots.every((value) => value.startsWith("data:image/png;base64,")),
+      `HTTP ${p15Run.status} · ${p15Log.length} line(s) · ${p15Shots.filter((value) => value.startsWith("data:image/png")).length} PNG`,
+    );
+    check(
+      'PART 15 clicking "FR" performs a real navigation to the French page',
+      /real navigation/i.test(p15Step3Message) && /\/fr\b|\/fr\//i.test(p15Step3Message),
+      p15Step3Message.slice(0, 180) || "no step-3 message",
+    );
+    await apiJson(page, `/api/dashboard/test-cases/${p15CaseId}`, "DELETE");
+  } else {
+    check("PART 15 a >205-char Step 6 target saves with HTTP 200 (no max-200 error)", false, "case missing");
+    check("PART 15 run_steps executes the long steps and captures 6/6 live PNG screenshots", false, "case missing");
+    check('PART 15 clicking "FR" performs a real navigation to the French page', false, "case missing");
+  }
+
+  // 15.3 — Universal column sorting across the five primary dashboard tables.
+  const p15SortRoutes: Array<{ route: string; column: string }> = [
+    { route: "/dashboard/test-cases", column: "Test Cases" },
+    { route: "/dashboard/crawl", column: "Name" },
+    { route: "/dashboard/requirements", column: "Name" },
+    { route: "/dashboard/pull-requests", column: "Pull request" },
+    { route: "/dashboard/uploads", column: "File Name" },
+  ];
+  for (const { route, column } of p15SortRoutes) {
+    await goto(page, route);
+    const sortableCount = await page.locator("[data-column-sort]").count();
+    const sortButton = page.locator(`[data-column-sort="${column}"]`).first();
+    const before = await page.locator("tbody tr").allInnerTexts().catch(() => [] as string[]);
+    let direction = "";
+    let after: string[] = [];
+    if ((await sortButton.count()) > 0) {
+      await sortButton.scrollIntoViewIfNeeded().catch(() => undefined);
+      await sortButton.click().catch(() => undefined);
+      await page.waitForTimeout(300);
+      direction = (await sortButton.getAttribute("data-sort-direction").catch(() => "")) ?? "";
+      after = await page.locator("tbody tr").allInnerTexts().catch(() => [] as string[]);
+    }
+    const orderChanged = before.length > 1 && after.length === before.length && before.join("|") !== after.join("|");
+    check(
+      `PART 15 ${route} exposes sortable headers and reorders rows`,
+      sortableCount >= 2 && orderChanged && direction === "asc",
+      `${sortableCount} sortable header(s) · ${before.length} row(s) · orderChanged=${orderChanged} · dir=${direction || "none"}`,
+    );
+  }
+  check("PART 15 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part15-deliverables");
 
   await db.$disconnect();
 

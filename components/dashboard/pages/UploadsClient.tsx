@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
+import { ColumnFilter, ColumnSort, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
 import { formatDateTime, timeAgo } from "@/lib/format";
 
@@ -18,20 +18,32 @@ export interface UploadTableRow {
 /** Phase 10 — uploads grid with full per-column header filtering. */
 export function UploadsTable({ rows, readOnly }: { rows: UploadTableRow[]; readOnly: boolean }) {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState<TableSortState>(null);
   const visibleRows = useMemo(
     () =>
-      rows.filter((row) =>
-        matchesColumnFilters(columnFilters, {
-          "File Name": `${row.fileName} ${row.uploadedBy}`,
-          Type: row.kind === "other" && row.sizeBytes === 0 ? "folder" : row.kind,
-          Size: row.sizeBytes === 0 ? "—" : `${(row.sizeBytes / 1024).toFixed(0)} KB`,
-          "Uploaded by": row.uploadedBy,
-          Created: formatDateTime(row.createdAt),
-        }),
+      sortTableRows(
+        rows.filter((row) =>
+          matchesColumnFilters(columnFilters, {
+            "File Name": `${row.fileName} ${row.uploadedBy}`,
+            Type: row.kind === "other" && row.sizeBytes === 0 ? "folder" : row.kind,
+            Size: row.sizeBytes === 0 ? "—" : `${(row.sizeBytes / 1024).toFixed(0)} KB`,
+            "Uploaded by": row.uploadedBy,
+            Created: formatDateTime(row.createdAt),
+          }),
+        ),
+        sort,
+        {
+          "File Name": (row) => row.fileName,
+          Type: (row) => (row.kind === "other" && row.sizeBytes === 0 ? "folder" : row.kind),
+          Size: (row) => row.sizeBytes,
+          "Uploaded by": (row) => row.uploadedBy,
+          Created: (row) => row.createdAt,
+        },
       ),
-    [rows, columnFilters],
+    [rows, columnFilters, sort],
   );
   const setFilter = (column: string, value: string) => setColumnFilters((current) => ({ ...current, [column]: value }));
+  const sortColumn = (column: string) => setSort((current) => nextTableSort(current, column));
 
   return (
     <div data-testid="uploads-table">
@@ -45,12 +57,12 @@ export function UploadsTable({ rows, readOnly }: { rows: UploadTableRow[]; readO
           <table className="w-full min-w-[800px] border-collapse text-left">
             <thead>
               <tr className="border-b border-[#f0f1f3]">
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">File Name<ColumnFilter column="File Name" value={columnFilters["File Name"] ?? ""} onChange={(value) => setFilter("File Name", value)} /></th>
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => setFilter("Type", value)} options={[...new Set(rows.map((row) => (row.kind === "other" && row.sizeBytes === 0 ? "folder" : row.kind)))]} /></th>
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Size<ColumnFilter column="Size" value={columnFilters.Size ?? ""} onChange={(value) => setFilter("Size", value)} /></th>
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Uploaded by<ColumnFilter column="Uploaded by" value={columnFilters["Uploaded by"] ?? ""} onChange={(value) => setFilter("Uploaded by", value)} options={[...new Set(rows.map((row) => row.uploadedBy))]} /></th>
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created<ColumnFilter column="Created" value={columnFilters.Created ?? ""} onChange={(value) => setFilter("Created", value)} /></th>
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action</th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">File Name<ColumnFilter column="File Name" value={columnFilters["File Name"] ?? ""} onChange={(value) => setFilter("File Name", value)} /><ColumnSort column="File Name" sort={sort} onSort={sortColumn} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => setFilter("Type", value)} options={[...new Set(rows.map((row) => (row.kind === "other" && row.sizeBytes === 0 ? "folder" : row.kind)))]} /><ColumnSort column="Type" sort={sort} onSort={sortColumn} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Size<ColumnFilter column="Size" value={columnFilters.Size ?? ""} onChange={(value) => setFilter("Size", value)} /><ColumnSort column="Size" sort={sort} onSort={sortColumn} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Uploaded by<ColumnFilter column="Uploaded by" value={columnFilters["Uploaded by"] ?? ""} onChange={(value) => setFilter("Uploaded by", value)} options={[...new Set(rows.map((row) => row.uploadedBy))]} /><ColumnSort column="Uploaded by" sort={sort} onSort={sortColumn} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created<ColumnFilter column="Created" value={columnFilters.Created ?? ""} onChange={(value) => setFilter("Created", value)} /><ColumnSort column="Created" sort={sort} onSort={sortColumn} /></th>
+                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
               </tr>
             </thead>
             <tbody>

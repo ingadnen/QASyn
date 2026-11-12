@@ -467,3 +467,94 @@ export function tableCardClass(className?: string) {
   // handled by the inner overflow-x-auto wrapper.
   return cn(cqaCard, className);
 }
+
+/* ------------------------------------------------------------------ */
+/* Phase 15 — universal table sorting                                  */
+/* ------------------------------------------------------------------ */
+
+export type SortDirection = "asc" | "desc";
+export type TableSortState = {
+  column: string;
+  direction: SortDirection;
+} | null;
+
+/** Cycles a column between ascending, descending and unsorted. */
+export function nextTableSort(current: TableSortState, column: string): TableSortState {
+  if (!current || current.column !== column) return { column, direction: "asc" };
+  if (current.direction === "asc") return { column, direction: "desc" };
+  return null;
+}
+
+function comparableSortValue(value: string | number | null | undefined): number | string {
+  if (typeof value === "number") return value;
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (/^[\s$€£%(),.\d-]+$/.test(text)) {
+    const numeric = Number(text.replace(/[$,€£%\s]/g, "").replace(/,/g, ""));
+    if (Number.isFinite(numeric)) return numeric;
+  }
+  if (/\d{4}|\d{1,2}[\s/.-][A-Za-z]{3}/.test(text)) {
+    const timestamp = Date.parse(text);
+    if (!Number.isNaN(timestamp)) return timestamp;
+  }
+  return text.toLowerCase();
+}
+
+/** Stable comparator for numbers, currency/percentages, dates and strings. */
+export function sortTableRows<T>(
+  rows: T[],
+  sort: TableSortState,
+  accessors: Record<string, (row: T) => string | number | null | undefined>,
+): T[] {
+  if (!sort) return rows;
+  const accessor = accessors[sort.column];
+  if (!accessor) return rows;
+  const factor = sort.direction === "asc" ? 1 : -1;
+  return [...rows].sort((left, right) => {
+    const a = comparableSortValue(accessor(left));
+    const b = comparableSortValue(accessor(right));
+    if (typeof a === "number" && typeof b === "number") return (a - b) * factor;
+    return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" }) * factor;
+  });
+}
+
+/**
+ * Compact sort trigger rendered beside ColumnFilter. The arrow is an inline SVG
+ * so the header's accessible/text content (used by parity checks) is unchanged.
+ */
+export function ColumnSort({
+  column,
+  sort,
+  onSort,
+}: {
+  column: string;
+  sort: TableSortState;
+  onSort: (column: string) => void;
+}) {
+  const active = sort?.column === column;
+  const direction = active ? sort.direction : null;
+  const label = direction === "asc" ? "ascending" : direction === "desc" ? "descending" : "unsorted";
+  return (
+    <button
+      type="button"
+      aria-label={`Sort ${column}`}
+      title={`Sort ${column} · ${label}`}
+      data-column-sort={column}
+      data-sort-direction={direction ?? "none"}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSort(column);
+      }}
+      className={cn(
+        "ml-0.5 inline-flex size-5 items-center justify-center rounded transition hover:bg-[#eef2ff]",
+        active ? "text-[#4f46e5]" : "text-[#9ca3af]",
+      )}
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3 fill-current">
+        {direction === "asc" && <path d="M12 5l6 8H6z" />}
+        {direction === "desc" && <path d="M12 19l6-8H6z" />}
+        {direction === null && <path d="M12 4l4 6H8zM12 20l-4-6h8z" />}
+      </svg>
+    </button>
+  );
+}

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T03:32:49.877Z",
+  "generatedAt": "2026-11-12T04:45:43.498Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -915,17 +915,17 @@
         {
           "check": "UI-created test case persisted",
           "ok": true,
-          "detail": "90 cases"
+          "detail": "106 cases"
         },
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-1094\",\"value\":\"\",\"selector\":\"\",\"expectedResult\":\"Target URL loads with HTTP 200"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-65925\",\"value\":\"\",\"selector\":\"\",\"expectedResult\":\"Target URL loads with HTTP 20"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-1094\",\"_testType\":\"Functional\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-65925\",\"_testType\":\"Functional\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -940,7 +940,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-1094"
+          "detail": "https://www.cgi.com/parity-65925"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -1297,7 +1297,7 @@
         {
           "check": "Suite created via wizard",
           "ok": true,
-          "detail": "8 suites"
+          "detail": "9 suites"
         },
         {
           "check": "Suite wizard dropdown propagation (cases fetched)",
@@ -1337,7 +1337,7 @@
         {
           "check": "Manage Test Cases modal content",
           "ok": true,
-          "detail": "Manage Test Cases close search TC-089 Verify billing journey Billing TC-088 Update the payment method Billing TC-087 Download the latest invoice (PDF) Billing T"
+          "detail": "Manage Test Cases close search TC-105 Upgrade to a paid plan Billing TC-104 Compare pricing plans Billing TC-103 Verify billing journey Billing TC-102 Update th"
         },
         {
           "check": "Suite deleted via API (id gone)",
@@ -1416,7 +1416,7 @@
         {
           "check": "Plan wizard suite options listed",
           "ok": true,
-          "detail": "7 checkboxes"
+          "detail": "8 checkboxes"
         },
         {
           "check": "Plan wizard shows suite dropdown options",
@@ -1431,12 +1431,12 @@
         {
           "check": "Plan created via wizard",
           "ok": true,
-          "detail": "6 plans"
+          "detail": "7 plans"
         },
         {
           "check": "Plan wizard suite selection used",
           "ok": true,
-          "detail": "www.cgi.com crawl suite 35 cases"
+          "detail": "www.bdc.ca crawl suite 47 cases"
         },
         {
           "check": "Plan detail shows name",
@@ -2001,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for parue3 close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it d"
+          "detail": "Install command for par1ev9f close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
         },
         {
           "check": "Install command one-time token",
@@ -2295,7 +2295,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_1094\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_65925\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2523,7 +2523,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_h4BkK-0K"
+          "detail": "cqa_585PkED9"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2558,7 +2558,7 @@
         {
           "check": "MCP qasyn_bivia_decide returns a calibrated Bivia response",
           "ok": true,
-          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 335, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
+          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 197, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
         },
         {
           "check": "MCP role guide \"Admin\"",
@@ -2628,7 +2628,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 89, \"passRate\": 57, \"bugsReproduced\": 22, \"regressionsCaught\": 557, \"costAv"
+          "detail": "200 { \"testCases\": 105, \"passRate\": 53, \"bugsReproduced\": 24, \"regressionsCaught\": 605, \"costA"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2638,7 +2638,7 @@
         {
           "check": "MCP tool \"qasyn_list_test_cases\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwczj4gn0015x98crrzlju5j\", \"title\": \"Verify CGI at 50 years Landing Page & Her"
+          "detail": "200 [ { \"id\": \"cmwd0hfqj00w2x98c7s128vf7\", \"title\": \"PR #743 · Regression flow\", \"module\":"
         },
         {
           "check": "MCP tool selector \"qasyn_run_test_case\"",
@@ -2648,7 +2648,7 @@
         {
           "check": "MCP tool \"qasyn_run_test_case\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCaseId\": \"cmwczj4gn0015x98crrzlju5j\", \"title\": \"Verify CGI at 50 years Landing Page & Her"
+          "detail": "200 { \"testCaseId\": \"cmwd0hfqj00w2x98c7s128vf7\", \"title\": \"PR #743 · Regression flow\", \"status\": \""
         },
         {
           "check": "MCP tool selector \"qasyn_start_crawl\"",
@@ -2658,7 +2658,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwczn6t1006ax98cpo8gbpba\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
+          "detail": "200 { \"id\": \"cmwd28ufx0064x9gwev5azonw\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2678,7 +2678,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwcx4bsl00n0x9os0au01hfu\", \"title\": \"Verify CGI at 50 years landing page — Aut"
+          "detail": "200 [ { \"id\": \"cmwd1i3ym000px93kzgmpebix\", \"title\": \"Pay with a wallet fails\", \"severity\":"
         },
         {
           "check": "MCP no page errors",
@@ -3785,7 +3785,7 @@
         {
           "check": "PART 4 RowMenu itself is inside the viewport",
           "ok": true,
-          "detail": "1178,257 208×253"
+          "detail": "1199,267 208×253"
         },
         {
           "check": "PART 4 RowMenu renders every action item",
@@ -3810,7 +3810,7 @@
         {
           "check": "PART 4 RowMenu flips upward when space below is short",
           "ok": true,
-          "detail": "trigger y 330 · menu 73–326"
+          "detail": "trigger y 310 · menu 53–306"
         },
         {
           "check": "PART 4 crawl table has no vertical scrollbar",
@@ -3820,7 +3820,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwczo79z0072x98crj27y66a"
+          "detail": "status 201 · cmwd29vs9006wx9gwo9932oad"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3925,7 +3925,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 1094? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 65925? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -4179,7 +4179,7 @@
         {
           "check": "Plan run from list executes every linked case",
           "ok": true,
-          "detail": "total 89 · counted 89 · passed 49 · failed 7 · not executed 33"
+          "detail": "total 105 · counted 105 · passed 55 · failed 9 · not executed 41"
         },
         {
           "check": "Plan run from list returns a viewport",
@@ -4194,12 +4194,12 @@
         {
           "check": "Plan run from list persists an execution",
           "ok": true,
-          "detail": "56 → 57"
+          "detail": "60 → 61"
         },
         {
           "check": "Plan run from list persists a TestRun",
           "ok": true,
-          "detail": "236 → 237"
+          "detail": "267 → 268"
         },
         {
           "check": "Plan detail lists every linked suite",
@@ -4219,42 +4219,42 @@
         {
           "check": "Plan run from detail executes every linked case",
           "ok": true,
-          "detail": "total 89 · passed 49 · failed 7"
+          "detail": "total 105 · passed 55 · failed 9"
         },
         {
           "check": "Plan run from detail persists an execution",
           "ok": true,
-          "detail": "57 → 58"
+          "detail": "61 → 62"
         },
         {
           "check": "Plan run from detail persists a TestRun",
           "ok": true,
-          "detail": "237 → 238"
+          "detail": "268 → 269"
         },
         {
           "check": "Plan execution has START and END",
           "ok": true,
-          "detail": "FAILED · 2026-11-12T03:30:18.521Z"
+          "detail": "FAILED · 2026-11-12T04:43:11.696Z"
         },
         {
           "check": "Plan execution persists the viewport",
           "ok": true,
-          "detail": "{\"total\":89,\"passed\":49,\"failed\":7,\"notExecuted\":33,\"autoFixed\":6,\"durationMs\":88140,\"viewport\":\"1440×900 · Chromium\",\"b"
+          "detail": "{\"total\":105,\"passed\":55,\"failed\":9,\"notExecuted\":41,\"autoFixed\":221,\"durationMs\":106436,\"viewport\":\"1440×900 · Chromium"
         },
         {
           "check": "Plan counters refreshed after the run",
           "ok": true,
-          "detail": "lastRunAt 2026-11-12T03:30:18.521Z · passRate 87.5"
+          "detail": "lastRunAt 2026-11-12T04:43:11.696Z · passRate 85.9"
         },
         {
           "check": "Plan detail START card is populated",
           "ok": true,
-          "detail": "START Nov 11, 2026, 10:30 PM Latest run"
+          "detail": "START Nov 11, 2026, 11:43 PM Latest run"
         },
         {
           "check": "Plan detail END card is populated",
           "ok": true,
-          "detail": "END Nov 11, 2026, 10:30 PM Latest run"
+          "detail": "END Nov 11, 2026, 11:43 PM Latest run"
         },
         {
           "check": "Plan detail shows the latest viewport",
@@ -4354,7 +4354,7 @@
         {
           "check": "Tunnel connect persists connectedAt",
           "ok": true,
-          "detail": "2026-11-12T03:30:20.353Z"
+          "detail": "2026-11-12T04:43:13.626Z"
         },
         {
           "check": "Super Admin account exists",
@@ -4538,7 +4538,7 @@
         {
           "check": "PART 7 a test case with steps is available",
           "ok": true,
-          "detail": "cmwczijqx000dx98cg8zo1n4l"
+          "detail": "cmwd0hfqj00w2x98c7s128vf7"
         },
         {
           "check": "PART 7 Studio title is visible",
@@ -4583,7 +4583,7 @@
         {
           "check": "PART 7 Studio renders step rows",
           "ok": true,
-          "detail": "7 row(s)"
+          "detail": "6 row(s)"
         },
         {
           "check": "PART 7 Studio step row has a selection checkbox",
@@ -4628,7 +4628,7 @@
         {
           "check": "PART 7 Magic UI shows the calibrated Bivia badge and exact confidence",
           "ok": true,
-          "detail": "🧠 Calibrated by Articul8 Bivia · 83.9% · 83.9%"
+          "detail": "🧠 Calibrated by Articul8 Bivia · 82.1% · 82.1%"
         },
         {
           "check": "PART 7 Magic UI exposes Apply Best Locator",
@@ -4638,7 +4638,7 @@
         {
           "check": "PART 7 Apply Best Locator confirms the applied strategy",
           "ok": true,
-          "detail": "✨ Magic UI Component & Smart Locator Element · Navigate https://www.cgi.com Magic-MCP Scoring selectors… Test ID page.ge"
+          "detail": "✨ Magic UI Component & Smart Locator Element · Navigate https://staging.www.cgi.com Magic-MCP Scoring selectors… Test ID"
         },
         {
           "check": "PART 7 Studio rail exposes Run History",
@@ -4648,27 +4648,27 @@
         {
           "check": "PART 7 Run History renders cards",
           "ok": true,
-          "detail": "3 card(s)"
+          "detail": "8 card(s)"
         },
         {
           "check": "PART 7 Run History card shows #run and Passed/Failed",
           "ok": true,
-          "detail": "check_circle #3 Passed ⚙ Automated · 👤 cgi@cgi.com 10:30:18 PM Nov 11 ⏳ 00:01.29 Release 2.8 sign-off"
+          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows automated trigger and author",
           "ok": true,
-          "detail": "check_circle #3 Passed ⚙ Automated · 👤 cgi@cgi.com 10:30:18 PM Nov 11 ⏳ 00:01.29 Release 2.8 sign-off"
+          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows time and duration",
           "ok": true,
-          "detail": "check_circle #3 Passed ⚙ Automated · 👤 cgi@cgi.com 10:30:18 PM Nov 11 ⏳ 00:01.29 Release 2.8 sign-off"
+          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows Standalone Run or plan pill",
           "ok": true,
-          "detail": "Release 2.8 sign-off · check_circle #3 Passed ⚙ Automated · 👤 cgi@cgi.com 10:30:18 PM Nov 11 ⏳ 00:01.29 Release 2.8 sign-off"
+          "detail": "Release 2.8 sign-off · check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History exposes Auto-fix rerun when applicable",
@@ -4758,7 +4758,7 @@
         {
           "check": "PART 7 MCP tool runner returns a live JSON-RPC 200",
           "ok": true,
-          "detail": "{ \"status\": 200, \"elapsedMs\": 14, \"jsonrpc\": \"2.0\", \"id\": 1794454236750, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 89,\\n \\\"passRate\\\": 55,\\n \\\"bugsRepr"
+          "detail": "{ \"status\": 200, \"elapsedMs\": 14, \"jsonrpc\": \"2.0\", \"id\": 1794458611191, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 105,\\n \\\"passRate\\\": 52,\\n \\\"bugsRep"
         },
         {
           "check": "PART 7 Agent Skills export writes .claude/CLAUDE.md",
@@ -4768,7 +4768,7 @@
         {
           "check": "PART 7 Graphify API returns nodes and edges",
           "ok": true,
-          "detail": "63 node(s) · 36 edge(s)"
+          "detail": "63 node(s) · 32 edge(s)"
         },
         {
           "check": "PART 7 Graphify API covers URL/DOM/Requirement/Test/PR",
@@ -4902,22 +4902,22 @@
         {
           "check": "PART 8 a test case is available for self-healing",
           "ok": true,
-          "detail": "Verify CGI at 50 years Landing Page & Hero CTA on www.cgi.com → Primary Content & Navigation Render"
+          "detail": "PR #743 · Regression flow"
         },
         {
           "check": "PART 8 Simulate Self-Healing re-grounds the broken selector with Bivia",
           "ok": true,
-          "detail": "#broken-legacy-selector-999 → page.getByTestId('the-cgi-at-50-years-heading-is-visible') · 96.8%"
+          "detail": "#broken-legacy-selector-999 → page.getByText(/the current page URL contains staging\\.www\\.cgi\\.com/i) · 61.6%"
         },
         {
           "check": "PART 8 healed step keeps the raw grounding box and confidence",
           "ok": true,
-          "detail": "{\"x\":967,\"y\":344,\"width\":20,\"height\":40,\"rawBox\":[967,344,987,384],\"space\":\"milli\",\"label\":\"Verify the \\\"CGI at 50 years\\\" heading is visible\",\"confidence\":0.76"
+          "detail": "{\"x\":351,\"y\":172,\"width\":241,\"height\":54,\"rawBox\":[351,172,592,226],\"space\":\"milli\",\"label\":\"Verify that the current page URL contains staging.www.cgi.com\",\"con"
         },
         {
           "check": "PART 8 healed selector is persisted in SQLite",
           "ok": true,
-          "detail": "passing · page.getByTestId('the-cgi-at-50-years-heading-is-visible')"
+          "detail": "passing · page.getByText(/the current page URL contains staging\\.www\\.cgi\\.com/i)"
         },
         {
           "check": "PART 8 self-heal creates an ✨ Auto-fix rerun",
@@ -4927,12 +4927,12 @@
         {
           "check": "PART 8 self-heal run number is scoped to its test case",
           "ok": true,
-          "detail": "run #2 · case max #2"
+          "detail": "run #11 · case max #11"
         },
         {
           "check": "PART 8 Version History documents the old → new selector",
           "ok": true,
-          "detail": "✨ Bivia self-healed selector: #broken-legacy-selector-999 → page.getByTestId('the-cgi-at-50-years-heading-is-visible') (96.8% calibrated)"
+          "detail": "✨ Bivia self-healed selector: #broken-legacy-selector-999 → page.getByText(/the current page URL contains staging\\.www\\.cgi\\.com/i) (61.6% calibrated)"
         },
         {
           "check": "PART 8 Studio exposes 🧪 Simulate Self-Healing",
@@ -4947,12 +4947,12 @@
         {
           "check": "PART 8 Step Details shows the healed selector evidence",
           "ok": true,
-          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 96.8% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
+          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 61.6% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
         },
         {
           "check": "PART 8 Step Details renders the neon bounding-box overlay",
           "ok": true,
-          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 96.8% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
+          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 61.6% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
         },
         {
           "check": "PART 8 Step Details exposes 🎯 Run Bivia Visual Grounding",
@@ -4967,7 +4967,7 @@
         {
           "check": "PART 8 Version History shows the Bivia self-heal entry",
           "ok": true,
-          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium CG Verify CGI at 50 "
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium CG PR #743 · Regress"
         },
         {
           "check": "PART 8 visual testing embeds the Bivia grounding canvas",
@@ -5007,22 +5007,22 @@
         {
           "check": "PART 8 Autopilot builds the Graphify topology",
           "ok": true,
-          "detail": "56 nodes · 38 edges"
+          "detail": "56 nodes · 32 edges"
         },
         {
           "check": "PART 8 Autopilot authors a Context7 + Bivia-calibrated test case",
           "ok": true,
-          "detail": "Verify CGI at 50 years Landing Page & Hero CTA → Primary Content & Navigation Render Without Errors — Autopilot · 1 AI verification · 2 calibrated · 48.3%"
+          "detail": "Verify CGI at 50 years Landing Page & Hero CTA → Primary Content & Navigation Render Without Errors — Autopilot · 1 AI verification · 2 calibrated · 85.7%"
         },
         {
           "check": "PART 8 authored case persists AI Verification, Context7 and scored locators",
           "ok": true,
-          "detail": "ai · 2668557 chars"
+          "detail": "ai · 795599 chars"
         },
         {
           "check": "PART 8 Autopilot executes the new cases immediately in Studio",
           "ok": true,
-          "detail": "1/2 passed"
+          "detail": "2/2 passed"
         },
         {
           "check": "PART 8 Autopilot returns Crawl, Strix, Graphify and Studio links",
@@ -5047,22 +5047,22 @@
         {
           "check": "PART 8 Crawl table shows the Autopilot linked test cases",
           "ok": true,
-          "detail": " REQ-098 12-Nov-2026-3-30-54-AM_crawl Auto Crawl language Crawl - Completed 2 Linked Claire Girard 11 Nov 2026, 22:30 more_horiz"
+          "detail": " REQ-505 12-Nov-2026-4-43-46-AM_crawl Auto Crawl language Crawl - Completed 2 Linked Claire Girard 11 Nov 2026, 23:43 more_horiz"
         },
         {
           "check": "PART 8 PR Gate API returns a calibrated Markdown report",
           "ok": true,
-          "detail": "200 · 1658 chars · bivia-api"
+          "detail": "200 · 1573 chars · bivia-calibrated-fallback"
         },
         {
           "check": "PART 8 PR Gate emits the Bivia verdict + risk score + confidence",
           "ok": true,
-          "detail": "2.9/10 · 28.6% · low"
+          "detail": "10/10 · 97% · high"
         },
         {
           "check": "PART 8 PR Gate lists the Bivia /set impacted tests with Passed/Failed",
           "ok": true,
-          "detail": "| Test case | Module | Result | / | --- | --- | --- | / | Verify CGI at 50 years Landing Page & Hero CTA on www.cgi.com → Primary Content & Navigation Render | Core | ✅ Passed | / | Navigate FR Journey on www.cgi.com → Target Section & Interactive Controls Load | Core | ❌ Failed |"
+          "detail": "| Test case | Module | Result | / | --- | --- | --- | / | PR #743 · Regression flow | Core | ✅ Passed | / | PR #743 · Smoke check on Staging | Core | ❌ Failed |"
         },
         {
           "check": "PART 8 PR Gate includes the Strix security summary",
@@ -5072,7 +5072,7 @@
         {
           "check": "PART 8 PR list shows the gate pull request",
           "ok": true,
-          "detail": "#965406"
+          "detail": "#926748"
         },
         {
           "check": "PART 8 PR drawer exposes 📋 Generate CI/CD PR Gate Comment",
@@ -5087,27 +5087,27 @@
         {
           "check": "PART 8 PR gate modal renders the generated Markdown",
           "ok": true,
-          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #965406 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
+          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #926748 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
         },
         {
           "check": "PART 8 Bivia telemetry ledger meters boolean/choice/ground/score/set",
           "ok": true,
-          "detail": "947 entry(ies) · score, set, boolean, choice, ground"
+          "detail": "1156 entry(ies) · score, set, boolean, choice, ground"
         },
         {
           "check": "PART 8 telemetry compaction is atomic and leaves no partial ledger",
           "ok": true,
-          "detail": "947 NDJSON line(s) · 0 temp file(s)"
+          "detail": "1160 NDJSON line(s) · 0 temp file(s)"
         },
         {
           "check": "PART 8 billing usage renders the 1B token grant observatory",
           "ok": true,
-          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. Live ledger Tokens Grant 1,000,000,000 Tokens Used 6,329,316 947 decision(s) Toke"
+          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. Live ledger Tokens Grant 1,000,000,000 Tokens Used 8,238,631 1,156 decision(s) To"
         },
         {
           "check": "PART 8 observatory reports confidence, abstention, latency and cost saved",
           "ok": true,
-          "detail": "PI · 391 fallback savings ESTIMATED LLM COST SAVED ($) $6.01 5,754,242 image · 514,466 text tokens Derived estimates only · the ledger stores no prompt text, image bytes or API key. Last decision 11/11/2026, 10:31:05 PM."
+          "detail": "PI · 437 fallback savings ESTIMATED LLM COST SAVED ($) $7.64 7,516,810 image · 647,837 text tokens Derived estimates only · the ledger stores no prompt text, image bytes or API key. Last decision 11/11/2026, 11:43:56 PM."
         },
         {
           "check": "PART 8 Integrations Bivia card embeds the token observatory",
@@ -5136,7 +5136,7 @@
         {
           "check": "PART 9 a disposable test case is available for screenshot evidence",
           "ok": true,
-          "detail": "status 201 · cmwczqnwj00kcx98cgdjbh57d"
+          "detail": "status 201 · cmwd2cciy00lwx9gwt68l8yxl"
         },
         {
           "check": "PART 9 failed and skipped steps persist screenshot evidence in the run response",
@@ -5156,7 +5156,7 @@
         {
           "check": "PART 9 self-heal captures a screenshot and grounds the test case URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-evidence-1094 · image/png"
+          "detail": "https://www.cgi.com/parity-evidence-65925 · image/png"
         },
         {
           "check": "PART 9 Studio renders the executed steps",
@@ -5226,7 +5226,7 @@
         {
           "check": "PART 9 categorical columns expose a distinct-value dropdown",
           "ok": true,
-          "detail": "3 option(s)"
+          "detail": "5 option(s)"
         },
         {
           "check": "PART 9 selecting a distinct value filters rows and marks the column",
@@ -5261,7 +5261,7 @@
         {
           "check": "PART 9 the selected test type persists in variablesJson._testType",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-1094\",\"_testType\":\"Penetration\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-65925\",\"_testType\":\"Penetration\"}"
         },
         {
           "check": "PART 9 the Type column displays the exact selected type",
@@ -5271,7 +5271,7 @@
         {
           "check": "PART 9 editing a test type persists the new value",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-1094\",\"_testType\":\"Accessibility\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-65925\",\"_testType\":\"Accessibility\"}"
         },
         {
           "check": "PART 9 the Type column follows the edited type",
@@ -5286,7 +5286,7 @@
         {
           "check": "PART 9 PR auto-regression creates PR-specific Smoke and Regression cases",
           "ok": true,
-          "detail": "Smoke:PR #967876 · Smoke check on Staging | Regression:PR #967876 · Regression flow"
+          "detail": "Smoke:PR #932374 · Smoke check on Staging | Regression:PR #932374 · Regression flow"
         },
         {
           "check": "PART 9 PR auto-regression runs against the selected deployed environment",
@@ -5306,7 +5306,7 @@
         {
           "check": "PART 9 PR-specific cases persist their test type and target URL",
           "ok": true,
-          "detail": "PR #967876 · Smoke check on Staging | PR #967876 · Regression flow"
+          "detail": "PR #932374 · Smoke check on Staging | PR #932374 · Regression flow"
         },
         {
           "check": "PART 9 PR-specific case runs store screenshots in TestCaseRun.logJson",
@@ -5316,7 +5316,7 @@
         {
           "check": "PART 9 the pull-request list shows the auto-regression PR",
           "ok": true,
-          "detail": "#967876"
+          "detail": "#932374"
         },
         {
           "check": "PART 9 PR drawer exposes auto-regression with an environment selector",
@@ -5336,7 +5336,7 @@
         {
           "check": "PART 9 Super Admin provisions an enterprise tenant",
           "ok": true,
-          "detail": "PART9 Enterprise 1094 · enterprise · 250000 credits"
+          "detail": "PART9 Enterprise 65925 · enterprise · 250000 credits"
         },
         {
           "check": "PART 9 provisioning seeds Production + Staging environments, a credit ledger and an admin",
@@ -5381,7 +5381,7 @@
         {
           "check": "PART 9 the Configure modal exposes plan, seats, SSO/SLA and default environment",
           "ok": true,
-          "detail": "Configure enterprise · PART9 Enterprise 1094 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free star"
+          "detail": "Configure enterprise · PART9 Enterprise 65925 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free sta"
         },
         {
           "check": "PART 9 README documents architecture, modules, test types, Bivia, PR gate, Super Admin and operations",
@@ -5435,7 +5435,7 @@
         {
           "check": "PART 10 a 6-step Regression case is available",
           "ok": true,
-          "detail": "status 201 · cmwczrj2k00mlx98css2janvj"
+          "detail": "status 201 · cmwd2d20y00o5x9gw7hne9w1w"
         },
         {
           "check": "PART 10 buildStepsJson emits exactly 6 steps for stepsCount 6",
@@ -5485,7 +5485,7 @@
         {
           "check": "PART 10 the CI/CD webhook returns a verdict, PR-specific tests and a Markdown report",
           "ok": true,
-          "detail": "200 · APPROVED · Smoke:4/Regression:6 · 1821 chars"
+          "detail": "200 · APPROVED · Smoke:4/Regression:6 · 1855 chars"
         },
         {
           "check": "PART 10 the webhook persists the gate result on PullRequestCheck",
@@ -5594,7 +5594,7 @@
         {
           "check": "PART 11 the PR drawer webhook snippet uses the dynamic browser origin",
           "ok": true,
-          "detail": "44191 chars"
+          "detail": "45403 chars"
         },
         {
           "check": "PART 11 has no page errors",
@@ -5687,7 +5687,7 @@
         {
           "check": "PART 13 the Visual Evidence Lightbox badge reads PNG Live Capture",
           "ok": true,
-          "detail": "🕰 Visual Evidence Lightbox Navigate · Navigate to https://www.cgi.com · 11/11/2026, 22:32:26 ✓ Expected: Target URL loads with HTTP 200 OK and renders the prim"
+          "detail": "🕰 Visual Evidence Lightbox Navigate · Navigate to https://www.cgi.com · 11/11/2026, 23:45:09 ✓ Expected: Target URL loads with HTTP 200 OK and renders the prim"
         },
         {
           "check": "PART 13 small-batch runTestCases (CI webhook) persists real PNG evidence",
@@ -5747,6 +5747,65 @@
           "check": "PART 14 has no page errors",
           "ok": true,
           "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "part15-deliverables",
+      "name": "Phase 15 - Long step validation, real leaf navigation and universal table sorting",
+      "route": "/dashboard/test-studio",
+      "checks": [
+        {
+          "check": "PART 15 a test case with a >120-char title is created",
+          "ok": true,
+          "detail": "HTTP 201 · title 220 chars"
+        },
+        {
+          "check": "PART 15 a >205-char Step 6 target saves with HTTP 200 (no max-200 error)",
+          "ok": true,
+          "detail": "HTTP 200 · target 260 chars · saved 260 chars"
+        },
+        {
+          "check": "PART 15 run_steps executes the long steps and captures 6/6 live PNG screenshots",
+          "ok": true,
+          "detail": "HTTP 200 · 6 line(s) · 6 PNG"
+        },
+        {
+          "check": "PART 15 clicking \"FR\" performs a real navigation to the French page",
+          "ok": true,
+          "detail": "Clicked \"FR\" → real navigation to https://www.cgi.com/fr/node/120605 · screenshot captured"
+        },
+        {
+          "check": "PART 15 /dashboard/test-cases exposes sortable headers and reorders rows",
+          "ok": true,
+          "detail": "13 sortable header(s) · 10 row(s) · orderChanged=true · dir=asc"
+        },
+        {
+          "check": "PART 15 /dashboard/crawl exposes sortable headers and reorders rows",
+          "ok": true,
+          "detail": "9 sortable header(s) · 10 row(s) · orderChanged=true · dir=asc"
+        },
+        {
+          "check": "PART 15 /dashboard/requirements exposes sortable headers and reorders rows",
+          "ok": true,
+          "detail": "9 sortable header(s) · 10 row(s) · orderChanged=true · dir=asc"
+        },
+        {
+          "check": "PART 15 /dashboard/pull-requests exposes sortable headers and reorders rows",
+          "ok": true,
+          "detail": "7 sortable header(s) · 5 row(s) · orderChanged=true · dir=asc"
+        },
+        {
+          "check": "PART 15 /dashboard/uploads exposes sortable headers and reorders rows",
+          "ok": true,
+          "detail": "6 sortable header(s) · 3 row(s) · orderChanged=true · dir=asc"
+        },
+        {
+          "check": "PART 15 has no page errors",
+          "ok": true,
+          "detail": ""
         },
         {
           "check": "Global: no example.com anywhere",
@@ -5773,5 +5832,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 1098
+  "totalChecks": 1108
 }

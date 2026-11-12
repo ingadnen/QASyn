@@ -7,11 +7,15 @@ export const tableCls = {
   tr: "border-t border-slate-100",
 };
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 /** Deterministic (UTC) so server and client render the same text. */
 export function formatDate(iso: string | Date | null | undefined) {
   if (!iso) return "—";
   const d = typeof iso === "string" ? new Date(iso) : iso;
-  return `${d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" })} UTC`;
+  const hour = String(d.getUTCHours()).padStart(2, "0");
+  const minute = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${hour}:${minute} UTC`;
 }
 
 /** Deterministic UTC date-time in the live QASyn style: "07 Nov 2026 4:07:16 PM". */
@@ -19,9 +23,13 @@ export function formatDateTime(iso: string | Date | null | undefined) {
   if (!iso) return "—";
   const d = typeof iso === "string" ? new Date(iso) : iso;
   const day = String(d.getUTCDate()).padStart(2, "0");
-  const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
-  const time = d.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true, timeZone: "UTC" });
-  return `${day} ${month} ${d.getUTCFullYear()} ${time}`;
+  const month = MONTHS[d.getUTCMonth()];
+  const hours24 = d.getUTCHours();
+  const suffix = hours24 >= 12 ? "PM" : "AM";
+  const hour = hours24 % 12 || 12;
+  const minute = String(d.getUTCMinutes()).padStart(2, "0");
+  const second = String(d.getUTCSeconds()).padStart(2, "0");
+  return `${day} ${month} ${d.getUTCFullYear()} ${hour}:${minute}:${second} ${suffix}`;
 }
 
 export function formatBytes(bytes: number) {

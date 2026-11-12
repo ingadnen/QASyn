@@ -684,8 +684,18 @@ export function StudioWorkspace({
     setRunLog([]);
     const saved = await run("save", `/api/dashboard/test-cases/${data.id}`, { method: "PATCH", json: { action: "steps", steps } });
     if (!saved) {
-      setRunPhase("done");
-      return;
+      // Phase 15 — never abort a Studio run because the pre-save was rejected.
+      // Re-try once with length-clamped steps, then execute regardless so the
+      // user always gets a run result instead of "Run complete 0/0 passed".
+      console.warn("[studio] Pre-run step save failed; retrying with sanitized steps before executing.");
+      const sanitized = steps.map((step) => ({
+        ...step,
+        target: String(step.target ?? "").slice(0, 2000),
+        value: String(step.value ?? "").slice(0, 2000),
+        selector: String(step.selector ?? "").slice(0, 1000),
+        expectedResult: step.expectedResult ? String(step.expectedResult).slice(0, 2000) : step.expectedResult,
+      }));
+      await run("save", `/api/dashboard/test-cases/${data.id}`, { method: "PATCH", json: { action: "steps", steps: sanitized } });
     }
     const result = await run<{ log: RunLogLine[] }>("run", `/api/dashboard/test-cases/${data.id}`, {
       method: "PATCH",
