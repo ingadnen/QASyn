@@ -14,7 +14,7 @@ export default async function AcademyPage({ searchParams }: { searchParams: Prom
     verified = !!record;
   }
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-12">
       <p className="text-xs font-semibold tracking-[0.16em] text-brand-600 uppercase">Resources · Academy</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">QA Certification Academy</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">Interactive courses, quizzes and digital certificates for autonomous quality engineering.</p>

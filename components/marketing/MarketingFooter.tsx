@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
 const COLUMNS = [
@@ -71,7 +71,7 @@ const QUICK_LINKS = [
 export function MarketingFooter() {
   return (
     <footer className="border-t border-white/10 bg-[#05070e] text-slate-400">
-      <div className="mx-auto max-w-6xl px-5 pt-14">
+      <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 pt-14">
         <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-quantum-500/10 via-cobalt-500/10 to-transparent px-5 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="inline-flex items-center gap-2 text-xs font-medium text-emerald-300">
@@ -88,7 +88,7 @@ export function MarketingFooter() {
           </div>
         </div>
       </div>
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[1.4fr_repeat(5,1fr)]">
+      <div className="mx-auto grid max-w-[1440px] gap-10 px-6 sm:px-8 lg:px-12 py-12 lg:grid-cols-[1.4fr_repeat(5,1fr)]">
         <div>
           <Logo inverted />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
@@ -134,7 +134,7 @@ export function MarketingFooter() {
         ))}
       </div>
       <div className="border-t border-white/5">
-        <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-5 py-5 text-xs text-slate-500">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap justify-between gap-2 px-6 sm:px-8 lg:px-12 py-5 text-xs text-slate-500">
           <span>© {new Date().getFullYear()} QASyn — local prototype, not affiliated with any vendor.</span>
           <span>Next.js 15 · Prisma · SQLite · Articul8 Bivia</span>
         </div>

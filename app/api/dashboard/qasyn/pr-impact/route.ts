@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { analyzePrImpact } from "@/lib/engines";
 import { analyzeBlastRadius } from "@/lib/qasyn-engine";

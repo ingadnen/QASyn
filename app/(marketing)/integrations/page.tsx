@@ -45,7 +45,7 @@ export default async function IntegrationsPage() {
   return (
     <div className="bg-white">
       <section className="border-b border-line bg-slate-50/60">
-        <div className="mx-auto max-w-6xl px-5 pt-16 pb-12">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 pt-16 pb-12">
           <p className="text-sm font-semibold text-brand-600">Integrations</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
             Plug QASyn into the tools <span className="font-serif font-normal italic text-brand-600">you already use.</span>
@@ -72,7 +72,7 @@ export default async function IntegrationsPage() {
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-6xl px-5 py-12">
+      <section className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-12">
         <IntegrationsCatalog workspace={workspace} />
       </section>
     </div>

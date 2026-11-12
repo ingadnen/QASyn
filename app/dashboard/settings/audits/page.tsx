@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { SystemAuditsTable, type AuditRow } from "@/components/dashboard/pages/SystemAuditsTable";
 import { prisma } from "@/lib/db";

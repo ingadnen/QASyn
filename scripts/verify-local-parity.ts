@@ -5078,6 +5078,152 @@ async function main() {
   check("PART 11 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part11-deliverables");
 
+  // ── PART 12 — Widescreen marketing, mojibake repair & contrast harmony ──
+  moduleErrors = [];
+  mod(
+    "part12-deliverables",
+    "Phase 12 - Widescreen marketing, UTF-8 repair, hero overlap fix and standalone contrast",
+    "/",
+  );
+
+  // 12.1 — Zero mojibake in app/, components/ and lib/.
+  const p12MojibakePatterns = ["â€”", "Â·", "âœ", "ðŸ©¹", "â–¶", "â‰¥"];
+  const p12SourceFiles: string[] = [];
+  const p12Walk = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) p12Walk(full);
+      else if (/\.(ts|tsx)$/.test(entry.name)) p12SourceFiles.push(full);
+    }
+  };
+  for (const root of ["app", "components", "lib"]) p12Walk(path.join(process.cwd(), root));
+  const p12MojibakeFiles = p12SourceFiles.filter((file) => {
+    const source = fs.readFileSync(file, "utf8");
+    return p12MojibakePatterns.some((pattern) => source.includes(pattern));
+  });
+  check(
+    "PART 12 zero UTF-8 mojibake remains in app/, components/ and lib/",
+    p12MojibakeFiles.length === 0,
+    p12MojibakeFiles.slice(0, 3).join(", ") || `${p12SourceFiles.length} file(s) clean`,
+  );
+  check(
+    "PART 12 no accidental derniers-commits.txt in the repository root",
+    !fs.existsSync(path.join(process.cwd(), "derniers-commits.txt")),
+  );
+  check(
+    "PART 12 .gitignore ignores local commit dumps",
+    fs.readFileSync(path.join(process.cwd(), ".gitignore"), "utf8").includes("derniers-commits*.txt"),
+  );
+
+  // 12.2 — Widescreen hero + non-overlapping KPI cards and telemetry strip.
+  await goto(page, "/");
+  const p12Wide = Boolean(
+    await page.evaluate(
+      `Array.from(document.querySelectorAll("main *")).some((element) => String(element.className ?? "").includes("max-w-[1440px]"))`,
+    ),
+  );
+  const p12KpiCards = page.locator('[data-testid="marketing-kpi-card"]');
+  const p12KpiCount = await p12KpiCards.count();
+  const p12Telemetry = page.locator('[data-testid="marketing-hero-telemetry"]').first();
+  const p12TelemetryVisible = (await p12Telemetry.count()) > 0 && (await p12Telemetry.isVisible().catch(() => false));
+  const p12TelemetryBox = p12TelemetryVisible ? await p12Telemetry.boundingBox() : null;
+  let p12AnyOverlap = false;
+  if (p12TelemetryBox) {
+    for (let index = 0; index < p12KpiCount; index++) {
+      const box = await p12KpiCards.nth(index).boundingBox();
+      if (
+        box &&
+        box.x < p12TelemetryBox.x + p12TelemetryBox.width &&
+        box.x + box.width > p12TelemetryBox.x &&
+        box.y < p12TelemetryBox.y + p12TelemetryBox.height &&
+        box.y + box.height > p12TelemetryBox.y
+      ) {
+        p12AnyOverlap = true;
+      }
+    }
+  }
+  check(
+    "PART 12 the homepage hero uses the 1440px widescreen container",
+    p12Wide,
+    p12Wide ? "max-w-[1440px]" : "missing",
+  );
+  check(
+    "PART 12 the hero KPI cards and telemetry strip are visible and do not overlap",
+    p12KpiCount === 3 && p12TelemetryVisible && !p12AnyOverlap,
+    `${p12KpiCount} KPI card(s) · telemetry=${p12TelemetryVisible} · overlap=${p12AnyOverlap}`,
+  );
+  const p12HomeText = ((await body(page)) || "").replace(/\s+/g, " ");
+  check(
+    "PART 12 the homepage copy contains QASyn and no legacy ship wording",
+    p12HomeText.includes("QASyn") && !/ship daily/i.test(p12HomeText) && !/Ready to ship/i.test(p12HomeText),
+    p12HomeText.slice(0, 120),
+  );
+  const p12NavWrap = JSON.parse(
+    (await page.evaluate(`(() => {
+      const header = document.querySelector("header");
+      if (!header) return JSON.stringify({ ok: false, detail: "header missing" });
+      const links = Array.from(header.querySelectorAll("a")).filter((link) => (link.textContent ?? "").trim().length > 0);
+      const wrapped = links.filter((link) => link.getClientRects().length > 1).map((link) => (link.textContent ?? "").trim().slice(0, 40));
+      return JSON.stringify({ ok: wrapped.length === 0, detail: wrapped.join(" | ") || links.length + " link(s) single-line" });
+    })()`)) as string,
+  ) as { ok: boolean; detail: string };
+  check("PART 12 no marketing nav link wraps onto two lines", p12NavWrap.ok, p12NavWrap.detail);
+
+  // 12.3 — Standalone marketing pages: HTTP 200, light contrast, zero page errors.
+  const p12Routes = ["/pricing", "/roi-calculator", "/comparison", "/faqs", "/integrations", "/about-us"];
+  const p12BadRoutes: string[] = [];
+  const p12LowContrast: string[] = [];
+  for (const route of p12Routes) {
+    moduleErrors = [];
+    const response = await page.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.waitForTimeout(500);
+    const status = response?.status() ?? 0;
+    const contrast = JSON.parse(
+      (await page.evaluate(`(() => {
+        const main = document.querySelector("main");
+        const heading = document.querySelector("main h1, main h2");
+        if (!main || !heading) return JSON.stringify({ ratio: 0, mainBg: "", headingFg: "" });
+        let bgNode = heading;
+        let effectiveBg = "";
+        while (bgNode) {
+          const candidate = getComputedStyle(bgNode).backgroundColor;
+          if (/^rgba?\\(/.test(candidate) && candidate !== "rgba(0, 0, 0, 0)" && candidate !== "transparent") {
+            effectiveBg = candidate;
+            break;
+          }
+          bgNode = bgNode.parentElement;
+        }
+        if (!effectiveBg) effectiveBg = "rgb(255, 255, 255)";
+        const headingFg = getComputedStyle(heading).color;
+        const bgParts = effectiveBg.replace(/[^0-9.,]/g, " ").trim().split(/[ ,]+/).map(Number);
+        const fgParts = headingFg.replace(/[^0-9.,]/g, " ").trim().split(/[ ,]+/).map(Number);
+        const bg = bgParts.length >= 3 && bgParts.every(Number.isFinite) ? bgParts.slice(0, 3) : [255, 255, 255];
+        const fg = fgParts.length >= 3 && fgParts.every(Number.isFinite) ? fgParts.slice(0, 3) : [0, 0, 0];
+        const lum = (rgb) => rgb.map((channel) => {
+          const value = channel / 255;
+          return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+        }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+        const l1 = lum(bg);
+        const l2 = lum(fg);
+        return JSON.stringify({ ratio: (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05), mainBg: effectiveBg, headingFg });
+      })()`)) as string,
+    ) as { ratio: number; mainBg: string; headingFg: string };
+    if (status !== 200 || moduleErrors.length > 0) p12BadRoutes.push(`${route}:${status}${moduleErrors.length ? `·${moduleErrors.length}err` : ""}`);
+    if (contrast.ratio < 4.5) p12LowContrast.push(`${route}:${contrast.ratio.toFixed(2)}(${contrast.mainBg}/${contrast.headingFg})`);
+  }
+  check(
+    "PART 12 standalone marketing pages return HTTP 200 with zero page errors",
+    p12BadRoutes.length === 0,
+    p12BadRoutes.join(", ") || p12Routes.join(", "),
+  );
+  check(
+    "PART 12 standalone marketing pages keep AA heading contrast on the light canvas",
+    p12LowContrast.length === 0,
+    p12LowContrast.join(", ") || "≥4.5:1 on all sampled pages",
+  );
+  check("PART 12 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part12-deliverables");
+
   await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────

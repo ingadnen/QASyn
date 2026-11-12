@@ -1,4 +1,4 @@
-﻿export interface ApiScope {
+export interface ApiScope {
   id: string;
   label: string;
   routes: string;

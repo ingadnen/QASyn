@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function BlogPage() {
   const posts = await prisma.blogPost.findMany({ orderBy: [{ featured: "desc" }, { publishedAt: "desc" }], take: 20 });
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-12">
       <p className="text-xs font-semibold tracking-[0.16em] text-brand-600 uppercase">Resources · Blog</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">QA engineering blog</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">High-yield, opinionated essays on agentic testing, self-healing and release engineering.</p>

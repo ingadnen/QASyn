@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { InviteUserButton } from "@/components/dashboard/pages/TeamParity";
 import { PermissionsMatrix } from "@/components/dashboard/pages/TeamClients";

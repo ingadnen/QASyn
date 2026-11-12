@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -33,7 +33,7 @@ const RANGES = ["Last 7 days", "Last 30 days", "This billing period", "Custom ra
 type Range = (typeof RANGES)[number];
 
 const DAY = 86_400_000;
-const MINUS = "âˆ’";
+const MINUS = "−";
 
 function startOfDay(date: Date) {
   const copy = new Date(date);

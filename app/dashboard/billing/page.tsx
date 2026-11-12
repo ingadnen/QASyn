@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { BillingUsage } from "@/components/dashboard/pages/BillingUsage";
 import { getBiviaObservatory } from "@/lib/bivia-telemetry";

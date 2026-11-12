@@ -14,7 +14,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </Link>
       </div>
       <MarketingNav />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 bg-alabaster text-[#0F172A]">{children}</main>
       <MarketingFooter />
       <FinQAWidget />
     </div>

@@ -124,7 +124,7 @@ function TypesPanel() {
   );
 }
 
-/** Phase 11 flagship hero: interactive, tabbed live-command showcase. */
+/** Phase 11 hero: interactive, tabbed live-command showcase. */
 export function HeroShowcase() {
   const [tab, setTab] = useState<TabId>("grounding");
   return (

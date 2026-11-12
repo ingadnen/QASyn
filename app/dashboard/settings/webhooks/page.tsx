@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { SettingsSimpleForm } from "@/components/dashboard/pages/SettingsClients";
 import { Card, EmptyState, PageHeader, ActionButton } from "@/components/dashboard/ui";

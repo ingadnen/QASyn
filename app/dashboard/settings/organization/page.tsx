@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { OrganizationSettings } from "@/components/dashboard/pages/OrganizationSettings";
 import { SuperAdminConsole } from "@/components/dashboard/pages/SuperAdminConsole";

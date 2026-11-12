@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { NewRequirementButton } from "@/components/dashboard/pages/NewRequirementButton";
 import { RequirementsTable, type RequirementRow } from "@/components/dashboard/pages/RequirementsTable";

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Learning catalog — structure extracted from https://learning.contextqa.com/
  * (QASyn Documentation / Learning Hub, GitBook): sections, roles and workflows.
  * Each module maps to an in-app destination so it can be launched directly.

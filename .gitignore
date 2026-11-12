@@ -17,3 +17,6 @@ contextqa-dump/*.png
 
 # Local persistent telemetry ledger (Bivia token observatory)
 .qasyn-data/
+
+# Local commit dumps
+derniers-commits*.txt

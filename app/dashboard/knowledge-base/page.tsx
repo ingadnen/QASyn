@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { DeleteKnowledgeButton, KnowledgeCreateButton } from "@/components/dashboard/pages/KnowledgeCreateButton";
 import { CqaIcon, PageHeader, StatusPill, cqaBtnSecondary, cqaCard } from "@/components/dashboard/ui";

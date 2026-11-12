@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { SuitesClient, type SuiteRow } from "@/components/dashboard/pages/SuitesClient";
 import { PageHeader } from "@/components/dashboard/ui";

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -162,7 +162,7 @@ function DesktopMenu({ menu, pathname }: { menu: Menu; pathname: string }) {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "rounded-full px-3.5 py-1.5 text-sm font-medium transition",
+          "whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition",
           active || open ? "bg-white/10 text-white" : "text-slate-300 hover:text-white",
         )}
       >
@@ -211,25 +211,25 @@ export function MarketingNav() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#06080f]/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <Link href="/" aria-label="QASyn home">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 sm:px-8 lg:px-12">
+        <Link href="/" aria-label="QASyn home" className="shrink-0">
           <Logo inverted />
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
+        <nav aria-label="Main" className="hidden items-center gap-1.5 xl:flex">
           {MENUS.map((menu) => (
             <DesktopMenu key={menu.label} menu={menu} pathname={pathname} />
           ))}
           <Link
             href="/pricing"
-            className={cn("rounded-full px-3.5 py-1.5 text-sm font-medium transition", pathname === "/pricing" ? "bg-white/10 text-white" : "text-slate-300 hover:text-white")}
+            className={cn("whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition", pathname === "/pricing" ? "bg-white/10 text-white" : "text-slate-300 hover:text-white")}
           >
             Pricing
           </Link>
           <Link
             href="/qasyn"
             className={cn(
-              "ml-1 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition",
+              "ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-semibold transition",
               pathname === "/qasyn"
                 ? "border-quantum-400/60 bg-quantum-500/15 text-quantum-200"
                 : "border-quantum-500/30 bg-quantum-500/5 text-quantum-300 hover:border-quantum-400/60 hover:text-white",
@@ -240,16 +240,16 @@ export function MarketingNav() {
           </Link>
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          <Link href="/guide" className="px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
+        <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
+          <Link href="/guide" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
             Interactive Guide
           </Link>
-          <Link href="/login" className="px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
+          <Link href="/login" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
             Sign in
           </Link>
           <Link
             href="/signup"
-            className="rounded-full bg-gradient-to-r from-quantum-500 via-cobalt-500 to-cobalt-400 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-quantum-500/25 transition hover:brightness-110"
+            className="whitespace-nowrap rounded-full bg-gradient-to-r from-quantum-500 via-cobalt-500 to-cobalt-400 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-quantum-500/25 transition hover:brightness-110"
           >
             Start Free Trial →
           </Link>
@@ -257,7 +257,7 @@ export function MarketingNav() {
 
         <button
           type="button"
-          className="rounded-lg p-2 text-white lg:hidden"
+          className="rounded-lg p-2 text-white xl:hidden"
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -270,7 +270,7 @@ export function MarketingNav() {
       </div>
 
       {open && (
-        <nav id="mobile-nav" aria-label="Mobile" className="max-h-[70vh] overflow-y-auto border-t border-white/10 bg-[#06080f] px-5 py-3 lg:hidden">
+        <nav id="mobile-nav" aria-label="Mobile" className="max-h-[70vh] overflow-y-auto border-t border-white/10 bg-[#06080f] px-5 py-3 xl:hidden">
           <Link href="/qasyn" className="flex items-center gap-2 rounded-lg border border-quantum-500/30 bg-quantum-500/10 px-3 py-2 text-sm font-semibold text-quantum-200">
             <span className="quantum-pulse size-1.5 rounded-full bg-emerald-400" aria-hidden="true" /> ⚡ QASyn Agent
           </Link>

@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { WebinarsClient } from "@/components/marketing/WebinarsClient";
 
 export const metadata: Metadata = { title: "Webinars" };

@@ -39,7 +39,7 @@ const BENTO = [
     key: "strix",
     kicker: "Strix Security",
     title: "OWASP posture on every target.",
-    body: "CSP, HSTS, frame protection and cookie posture graded A–F before a release ever ships.",
+    body: "CSP, HSTS, frame protection and cookie posture graded A-F before a release ever goes live.",
     accent: "from-signal-amber/15 to-transparent",
     span: "md:col-span-2",
     icon: "🛡️",
@@ -91,7 +91,7 @@ export default async function HomePage() {
       {/* HERO — Obsidian Void */}
       <section className="obsidian-spotlight relative overflow-hidden">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-70" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-5 pt-16 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
+        <div className="relative mx-auto grid max-w-[1440px] items-center gap-14 px-6 sm:px-8 lg:px-12 pt-16 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
           <div className="animate-fade-in">
             <span className="inline-flex items-center gap-2 rounded-full border border-quantum-500/30 bg-quantum-500/10 px-3 py-1 text-[11px] font-medium text-quantum-200">
               <span className="quantum-pulse size-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
@@ -125,34 +125,37 @@ export default async function HomePage() {
             <p className="mt-6 text-xs text-slate-500">No credit card · 3,000 free credits · Works with localhost · 11 test types</p>
           </div>
 
-          <div className="relative">
+          <div>
             <HeroShowcase />
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div data-testid="marketing-kpi-row" className="mt-3 grid grid-cols-3 gap-2">
               {[
                 { k: "Quality score", v: `${score}/100` },
                 { k: "Coverage", v: `${report?.latest.coverage ?? 94}%` },
                 { k: "Cost avoided", v: formatUsdCompact(report?.latest.costAvoided ?? 18400) },
               ].map((metric) => (
-                <div key={metric.k} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                <div key={metric.k} data-testid="marketing-kpi-card" className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{metric.k}</p>
                   <p className="mt-0.5 font-semibold text-white">{metric.v}</p>
                 </div>
               ))}
             </div>
+            <div
+              data-testid="marketing-hero-telemetry"
+              className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0b1120]/90 px-4 py-3 font-mono text-[11.5px] leading-relaxed text-slate-400"
+            >
+              <span><span className="text-quantum-300">DEPLOY</span> {report?.latest.version ?? "v2.8.1"} detected</span>
+              <span><span className="text-emerald-300">TEST</span> {report?.latest.testsPassed ?? 145}/{report?.latest.testsTotal ?? 148} passed</span>
+              <span><span className="text-amber-300">HEAL</span> stale token · auth/refresh.ts:87</span>
+              <span><span className="text-cobalt-300">GATE</span> ✅ approved · 3 regressions caught</span>
+            </div>
             <p className="mt-2 text-[10.5px] text-slate-500">
               Live from SQLite · {report ? `${report.org} workspace` : "demo data"}
             </p>
-            <div className="absolute -bottom-10 -left-6 hidden w-72 rounded-[10px] border border-white/10 bg-[#0b1120] p-4 font-mono text-[11px] leading-relaxed text-slate-400 shadow-2xl shadow-black/60 sm:block">
-              <p><span className="text-quantum-300">DEPLOY</span> {report?.latest.version ?? "v2.8.1"} detected</p>
-              <p><span className="text-emerald-300">TEST</span> {report?.latest.testsPassed ?? 145}/{report?.latest.testsTotal ?? 148} passed</p>
-              <p><span className="text-amber-300">HEAL</span> stale token · auth/refresh.ts:87</p>
-              <p><span className="text-cobalt-300">GATE</span> ✅ approved · 3 regressions caught</p>
-            </div>
           </div>
         </div>
 
         {/* Live release ring, integrated into the hero as a precision strip */}
-        <div className="relative mx-auto max-w-6xl px-5 pb-14">
+        <div className="relative mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 pb-14">
           <div className="flex flex-wrap items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 backdrop-blur-xl">
             <svg viewBox="0 0 100 100" className="size-16 -rotate-90" aria-hidden="true">
               <circle cx="50" cy="50" r="42" fill="none" strokeWidth="9" className="stroke-white/10" />
@@ -202,7 +205,7 @@ export default async function HomePage() {
 
       {/* BENTO — Alabaster editorial contrast */}
       <section className="bg-alabaster py-24 text-[#0F172A]">
-        <div className="mx-auto max-w-6xl px-5">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-quantum-600">Precision by construction</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -247,7 +250,7 @@ export default async function HomePage() {
 
       {/* AQE LOOP + METRICS */}
       <section className="bg-obsidian-900 text-white">
-        <div className="mx-auto max-w-6xl px-5 py-24">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-24">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr]">
             <div>
               <p className="text-sm font-semibold text-quantum-300">The autonomous loop</p>
@@ -288,9 +291,9 @@ export default async function HomePage() {
 
       {/* TESTIMONIALS */}
       <section className="bg-alabaster py-24 text-[#0F172A]">
-        <div className="mx-auto max-w-6xl px-5">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12">
           <h2 className="text-center text-3xl font-semibold tracking-tight">
-            Loved by teams that <span className="font-serif font-normal italic text-quantum-600">ship daily</span>
+            Loved by teams that <span className="font-serif font-normal italic text-quantum-600">build with QASyn daily</span>
           </h2>
           <p className="mt-2 text-center text-sm text-slate-500">Illustrative quotes from fictional demo customers.</p>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -311,7 +314,7 @@ export default async function HomePage() {
       {/* CTA */}
       <section className="relative overflow-hidden bg-[#06080f] px-5 py-24">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-quantum-500/20 via-cobalt-500/15 to-transparent px-8 py-14 text-center sm:px-16">
+        <div className="relative mx-auto max-w-[1440px] overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-quantum-500/20 via-cobalt-500/15 to-transparent px-8 py-14 text-center sm:px-16">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_0%,rgba(6,182,212,0.22),transparent_70%)]" />
           <h2 className="relative text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             Your next release, <span className="font-serif font-normal italic text-quantum-300">already tested.</span>

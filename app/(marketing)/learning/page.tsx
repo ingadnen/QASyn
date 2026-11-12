@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { LEARNING_SECTIONS } from "@/lib/learning";
 
@@ -9,7 +9,7 @@ const KIND_LABEL: Record<string, string> = { guide: "Guide", tutorial: "Tutorial
 
 export default function PublicLearningPage() {
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10">
+    <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-10">
       <p className="text-xs font-semibold tracking-[0.16em] text-brand-600">QASYN LEARNING HUB</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Learn AI-powered test automation</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">

@@ -1,4 +1,4 @@
-﻿import type { OsKey } from "./types";
+import type { OsKey } from "./types";
 
 /**
  * Install commands shown at onboarding step 2 (localhost).

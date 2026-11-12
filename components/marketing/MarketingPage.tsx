@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Shared marketing page renderer: dark-glass hero, capability bento, workflow
  * steps, FAQ and CTA — driven by a small typed content object.
  * Used by every /platform, /solutions, /integrations and company page, so the
@@ -25,7 +25,7 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
     <div className="bg-[#06080f] text-slate-100">
       <section className="obsidian-spotlight relative overflow-hidden border-b border-white/5">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
-        <div className="relative mx-auto max-w-6xl px-5 py-16">
+        <div className="relative mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-16">
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-quantum-300">{data.kicker}</p>
           <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">{data.title}</h1>
           <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-400">{data.lede}</p>
@@ -47,7 +47,7 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
       </section>
 
       <section className="bg-alabaster py-16 text-[#0F172A]">
-        <div className="mx-auto max-w-6xl px-5">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.features.map((f) => (
               <article key={f.title} className="rounded-2xl border border-hairline bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-quantum-500/40 hover:shadow-lg hover:shadow-slate-900/5">
@@ -83,7 +83,7 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-16">
+      <section className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-16">
         <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-quantum-500/20 via-cobalt-500/15 to-transparent p-8">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_0%,rgba(6,182,212,0.18),transparent_70%)]" />
           <h2 className="relative text-xl font-semibold text-white">See QASyn test your application in 30 minutes</h2>

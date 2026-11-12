@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { TestCasesParity, type ParityFolder, type ParityStep } from "@/components/dashboard/pages/TestCasesParity";
 import { prisma } from "@/lib/db";

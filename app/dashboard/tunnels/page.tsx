@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { Tunnels } from "@/components/dashboard/pages/TunnelsParity";
 import { prisma } from "@/lib/db";

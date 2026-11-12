@@ -50,7 +50,7 @@ export default function QasynPage() {
       {/* HERO */}
       <section className="obsidian-spotlight relative overflow-hidden border-b border-white/5">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-16 lg:grid-cols-[1fr_1.15fr] lg:pt-24">
+        <div className="relative mx-auto grid max-w-[1440px] items-center gap-12 px-6 sm:px-8 lg:px-12 pb-20 pt-16 lg:grid-cols-[1fr_1.15fr] lg:pt-24">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-quantum-500/30 bg-quantum-500/10 px-3 py-1 text-[11px] font-semibold text-quantum-200">
               <span className="quantum-pulse size-1.5 rounded-full bg-emerald-400" /> ⚡ QASyn · Autonomous Quality Engineer
@@ -87,7 +87,7 @@ export default function QasynPage() {
 
       {/* METRICS */}
       <section className="border-b border-white/5 bg-[#05070e]">
-        <dl className="mx-auto grid max-w-6xl gap-px px-5 sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="mx-auto grid max-w-[1440px] gap-px px-6 sm:px-8 lg:px-12 sm:grid-cols-2 lg:grid-cols-4">
           {KEY_METRICS.map((m) => (
             <div key={m.label} className="px-4 py-10 text-center">
               <dt className="sr-only">{m.label}</dt>
@@ -99,7 +99,7 @@ export default function QasynPage() {
       </section>
 
       {/* WORKFLOWS */}
-      <section className="mx-auto max-w-6xl px-5 py-24">
+      <section className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-24">
         <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-white">Three workflows. One agent that never forgets a regression.</h2>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {WORKFLOWS.map((w) => (
@@ -115,7 +115,7 @@ export default function QasynPage() {
 
       {/* RISK ANALYSIS */}
       <section className="border-y border-white/5 bg-[#05070e] py-24">
-        <div className="mx-auto max-w-6xl px-5">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold text-quantum-300">Release risk analysis</p>
             <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white">Know the blast radius before you merge.</h2>
@@ -128,7 +128,7 @@ export default function QasynPage() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-24">
+      <section id="pricing" className="mx-auto max-w-[1440px] scroll-mt-24 px-6 sm:px-8 lg:px-12 py-24">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold text-quantum-300">Pricing</p>
           <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white">Pay for the quality work QASyn actually does.</h2>

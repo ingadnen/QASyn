@@ -1,4 +1,4 @@
-﻿/** Formatting helpers shared by server and client components (pure). */
+/** Formatting helpers shared by server and client components (pure). */
 
 export const tableCls = {
   table: "w-full text-left text-sm",

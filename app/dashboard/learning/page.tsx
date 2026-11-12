@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { LearningBrowser } from "@/components/dashboard/pages/LearningBrowser";
 import { Card, PageHeader } from "@/components/dashboard/ui";

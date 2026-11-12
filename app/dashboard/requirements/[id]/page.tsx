@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RequirementDetail, type RequirementDetailData } from "@/components/dashboard/pages/RequirementDetail";

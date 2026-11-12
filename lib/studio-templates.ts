@@ -1,4 +1,4 @@
-﻿/** Action-step template catalogue captured from QASyn Test Studio. */
+/** Action-step template catalogue captured from QASyn Test Studio. */
 export const STUDIO_STEP_TEMPLATES: string[] = [
   "Wait until the current page is loaded completely",
   "REST_API:  #{method}  -  #{title}",

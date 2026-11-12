@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { simulateSteps, type NlpStep } from "@/lib/engines";
 import { jsonError, readJson, validationError } from "@/lib/http";

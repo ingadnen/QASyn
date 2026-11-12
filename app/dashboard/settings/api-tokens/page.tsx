@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { ApiTokensList } from "@/components/dashboard/pages/ApiTokensList";
 import { prisma } from "@/lib/db";

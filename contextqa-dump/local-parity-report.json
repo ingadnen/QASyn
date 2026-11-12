@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T00:07:56.912Z",
+  "generatedAt": "2026-11-12T01:46:24.528Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -920,12 +920,12 @@
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-76976\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-73581\",\"value\":\"\",\"selector\":\"\"},{\"id\":\"s2\",\"action\":\"Verify Element\",\"target\":"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-76976\",\"_testType\":\"Functional\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-73581\",\"_testType\":\"Functional\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -940,7 +940,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-76976"
+          "detail": "https://www.cgi.com/parity-73581"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -1297,7 +1297,7 @@
         {
           "check": "Suite created via wizard",
           "ok": true,
-          "detail": "6 suites"
+          "detail": "7 suites"
         },
         {
           "check": "Suite wizard dropdown propagation (cases fetched)",
@@ -1416,7 +1416,7 @@
         {
           "check": "Plan wizard suite options listed",
           "ok": true,
-          "detail": "5 checkboxes"
+          "detail": "6 checkboxes"
         },
         {
           "check": "Plan wizard shows suite dropdown options",
@@ -1431,12 +1431,12 @@
         {
           "check": "Plan created via wizard",
           "ok": true,
-          "detail": "4 plans"
+          "detail": "5 plans"
         },
         {
           "check": "Plan wizard suite selection used",
           "ok": true,
-          "detail": "www.cgi.com crawl suite 25 cases"
+          "detail": "QASyn full execution suite 77 cases"
         },
         {
           "check": "Plan detail shows name",
@@ -2001,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for par1ne8z close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
+          "detail": "Install command for par1krxa close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
         },
         {
           "check": "Install command one-time token",
@@ -2295,7 +2295,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_76976\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_73581\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2523,7 +2523,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_RYpIgLVh"
+          "detail": "cqa_h17czzFs"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2558,7 +2558,7 @@
         {
           "check": "MCP qasyn_bivia_decide returns a calibrated Bivia response",
           "ok": true,
-          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 550, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
+          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 173, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
         },
         {
           "check": "MCP role guide \"Admin\"",
@@ -2628,7 +2628,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 77, \"passRate\": 62, \"bugsReproduced\": 19, \"regressionsCaught\": 409, \"costAv"
+          "detail": "200 { \"testCases\": 77, \"passRate\": 62, \"bugsReproduced\": 21, \"regressionsCaught\": 483, \"costAv"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2658,7 +2658,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwcscumn004sx9rk95f1yos6\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
+          "detail": "200 { \"id\": \"cmwcvv6dz01s4x90gywxj0isn\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2678,7 +2678,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwcs57w700hpx950k6ejtyd0\", \"title\": \"Open Menu from the main navigation — Auto"
+          "detail": "200 [ { \"id\": \"cmwcvp44f01dbx90gmki5tq4j\", \"title\": \"Verify CGI at 50 years landing page — Aut"
         },
         {
           "check": "MCP no page errors",
@@ -3820,7 +3820,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwcsduje005kx9rkvwl4751u"
+          "detail": "status 201 · cmwcvw5we01swx90ga2eqm43r"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3925,7 +3925,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 76976? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 73581? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -4194,12 +4194,12 @@
         {
           "check": "Plan run from list persists an execution",
           "ok": true,
-          "detail": "44 → 45"
+          "detail": "50 → 51"
         },
         {
           "check": "Plan run from list persists a TestRun",
           "ok": true,
-          "detail": "168 → 169"
+          "detail": "199 → 200"
         },
         {
           "check": "Plan detail lists every linked suite",
@@ -4224,37 +4224,37 @@
         {
           "check": "Plan run from detail persists an execution",
           "ok": true,
-          "detail": "45 → 46"
+          "detail": "51 → 52"
         },
         {
           "check": "Plan run from detail persists a TestRun",
           "ok": true,
-          "detail": "169 → 170"
+          "detail": "200 → 201"
         },
         {
           "check": "Plan execution has START and END",
           "ok": true,
-          "detail": "FAILED · 2026-11-12T00:06:16.709Z"
+          "detail": "FAILED · 2026-11-12T01:44:29.974Z"
         },
         {
           "check": "Plan execution persists the viewport",
           "ok": true,
-          "detail": "{\"total\":77,\"passed\":46,\"failed\":8,\"notExecuted\":23,\"autoFixed\":11,\"durationMs\":74083,\"viewport\":\"1440×900 · Chromium\",\""
+          "detail": "{\"total\":77,\"passed\":46,\"failed\":8,\"notExecuted\":23,\"autoFixed\":6,\"durationMs\":74083,\"viewport\":\"1440×900 · Chromium\",\"b"
         },
         {
           "check": "Plan counters refreshed after the run",
           "ok": true,
-          "detail": "lastRunAt 2026-11-12T00:06:16.709Z · passRate 85.2"
+          "detail": "lastRunAt 2026-11-12T01:44:29.974Z · passRate 85.2"
         },
         {
           "check": "Plan detail START card is populated",
           "ok": true,
-          "detail": "START Nov 11, 2026, 7:06 PM Latest run"
+          "detail": "START Nov 11, 2026, 8:44 PM Latest run"
         },
         {
           "check": "Plan detail END card is populated",
           "ok": true,
-          "detail": "END Nov 11, 2026, 7:06 PM Latest run"
+          "detail": "END Nov 11, 2026, 8:44 PM Latest run"
         },
         {
           "check": "Plan detail shows the latest viewport",
@@ -4354,7 +4354,7 @@
         {
           "check": "Tunnel connect persists connectedAt",
           "ok": true,
-          "detail": "2026-11-12T00:06:18.403Z"
+          "detail": "2026-11-12T01:44:31.653Z"
         },
         {
           "check": "Super Admin account exists",
@@ -4653,22 +4653,22 @@
         {
           "check": "PART 7 Run History card shows #run and Passed/Failed",
           "ok": true,
-          "detail": "check_circle #8 Passed ⚙ Automated · 👤 cgi@cgi.com 07:06:16 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
+          "detail": "check_circle #23 Passed ⚙ Automated · 👤 cgi@cgi.com 08:44:29 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows automated trigger and author",
           "ok": true,
-          "detail": "check_circle #8 Passed ⚙ Automated · 👤 cgi@cgi.com 07:06:16 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
+          "detail": "check_circle #23 Passed ⚙ Automated · 👤 cgi@cgi.com 08:44:29 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows time and duration",
           "ok": true,
-          "detail": "check_circle #8 Passed ⚙ Automated · 👤 cgi@cgi.com 07:06:16 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
+          "detail": "check_circle #23 Passed ⚙ Automated · 👤 cgi@cgi.com 08:44:29 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows Standalone Run or plan pill",
           "ok": true,
-          "detail": "Release 2.8 sign-off · check_circle #8 Passed ⚙ Automated · 👤 cgi@cgi.com 07:06:16 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
+          "detail": "Release 2.8 sign-off · check_circle #23 Passed ⚙ Automated · 👤 cgi@cgi.com 08:44:29 PM Nov 11 ⏳ 00:00.65 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History exposes Auto-fix rerun when applicable",
@@ -4758,7 +4758,7 @@
         {
           "check": "PART 7 MCP tool runner returns a live JSON-RPC 200",
           "ok": true,
-          "detail": "{ \"status\": 200, \"elapsedMs\": 14, \"jsonrpc\": \"2.0\", \"id\": 1794441993131, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 77,\\n \\\"passRate\\\": 60,\\n \\\"bugsRepr"
+          "detail": "{ \"status\": 200, \"elapsedMs\": 13, \"jsonrpc\": \"2.0\", \"id\": 1794447886942, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 77,\\n \\\"passRate\\\": 60,\\n \\\"bugsRepr"
         },
         {
           "check": "PART 7 Agent Skills export writes .claude/CLAUDE.md",
@@ -4833,12 +4833,12 @@
         {
           "check": "PART 7 Magic Locator is calibrated by Articul8 Bivia",
           "ok": true,
-          "detail": "answered · 66% · bivia-api"
+          "detail": "answered · 68.8% · bivia-api"
         },
         {
           "check": "PART 7 Magic Locator best locator exposes the exact calibrated confidence",
           "ok": true,
-          "detail": "best=66 · bivia=66"
+          "detail": "best=68.8 · bivia=68.8"
         },
         {
           "check": "PART 7 Strix refuses localhost (SSRF-safe)",
@@ -4907,17 +4907,17 @@
         {
           "check": "PART 8 Simulate Self-Healing re-grounds the broken selector with Bivia",
           "ok": true,
-          "detail": "#broken-legacy-selector-999 → page.getByRole('button', { name: /primary action/i }) · 95.2%"
+          "detail": "#broken-legacy-selector-999 → page.getByTestId('primary-action') · 85.2%"
         },
         {
           "check": "PART 8 healed step keeps the raw grounding box and confidence",
           "ok": true,
-          "detail": "{\"x\":350,\"y\":198,\"width\":164,\"height\":32,\"rawBox\":[350,198,514,230],\"space\":\"milli\",\"label\":\"primary action\",\"confidence\":0.707,\"provider\":\"bivia-calibrated-fal"
+          "detail": "{\"x\":835,\"y\":809,\"width\":83,\"height\":31,\"rawBox\":[835,809,918,840],\"space\":\"milli\",\"label\":\"primary action\",\"confidence\":0.76,\"provider\":\"bivia-api\",\"status\":\"a"
         },
         {
           "check": "PART 8 healed selector is persisted in SQLite",
           "ok": true,
-          "detail": "passing · page.getByRole('button', { name: /primary action/i })"
+          "detail": "passing · page.getByTestId('primary-action')"
         },
         {
           "check": "PART 8 self-heal creates an ✨ Auto-fix rerun",
@@ -4927,12 +4927,12 @@
         {
           "check": "PART 8 self-heal run number is scoped to its test case",
           "ok": true,
-          "detail": "run #9 · case max #9"
+          "detail": "run #24 · case max #24"
         },
         {
           "check": "PART 8 Version History documents the old → new selector",
           "ok": true,
-          "detail": "✨ Bivia self-healed selector: #broken-legacy-selector-999 → page.getByRole('button', { name: /primary action/i }) (95.2% calibrated)"
+          "detail": "✨ Bivia self-healed selector: #broken-legacy-selector-999 → page.getByTestId('primary-action') (85.2% calibrated)"
         },
         {
           "check": "PART 8 Studio exposes 🧪 Simulate Self-Healing",
@@ -4947,12 +4947,12 @@
         {
           "check": "PART 8 Step Details shows the healed selector evidence",
           "ok": true,
-          "detail": "Step Details close 2 Click ✨ Healed by Bivia · 95.2% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforce Workflo"
+          "detail": "Step Details close 2 Click ✨ Healed by Bivia · 85.2% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforce Workflo"
         },
         {
           "check": "PART 8 Step Details renders the neon bounding-box overlay",
           "ok": true,
-          "detail": "Step Details close 2 Click ✨ Healed by Bivia · 95.2% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforce Workflo"
+          "detail": "Step Details close 2 Click ✨ Healed by Bivia · 85.2% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforce Workflo"
         },
         {
           "check": "PART 8 Step Details exposes 🎯 Run Bivia Visual Grounding",
@@ -5012,12 +5012,12 @@
         {
           "check": "PART 8 Autopilot authors a Context7 + Bivia-calibrated test case",
           "ok": true,
-          "detail": "Verify CGI at 50 years landing page — Autopilot · 1 AI verification · 2 calibrated · 96.8%"
+          "detail": "Verify CGI at 50 years landing page — Autopilot · 1 AI verification · 2 calibrated · 70.8%"
         },
         {
           "check": "PART 8 authored case persists AI Verification, Context7 and scored locators",
           "ok": true,
-          "detail": "ai · 20395 chars"
+          "detail": "ai · 20390 chars"
         },
         {
           "check": "PART 8 Autopilot executes the new cases immediately in Studio",
@@ -5047,17 +5047,17 @@
         {
           "check": "PART 8 Crawl table shows the Autopilot linked test cases",
           "ok": true,
-          "detail": " REQ-075 12-Nov-2026-12-06-47-AM_crawl Auto Crawl language Crawl - Completed 2 Linked Claire Girard 11 Nov 2026, 19:06 more_horiz"
+          "detail": " REQ-085 12-Nov-2026-1-45-05-AM_crawl Auto Crawl language Crawl - Completed 2 Linked Claire Girard 11 Nov 2026, 20:45 more_horiz"
         },
         {
           "check": "PART 8 PR Gate API returns a calibrated Markdown report",
           "ok": true,
-          "detail": "200 · 1560 chars · bivia-calibrated-fallback"
+          "detail": "200 · 1524 chars · bivia-api"
         },
         {
           "check": "PART 8 PR Gate emits the Bivia verdict + risk score + confidence",
           "ok": true,
-          "detail": "10/10 · 97% · high"
+          "detail": "2.9/10 · 28.6% · low"
         },
         {
           "check": "PART 8 PR Gate lists the Bivia /set impacted tests with Passed/Failed",
@@ -5072,7 +5072,7 @@
         {
           "check": "PART 8 PR list shows the gate pull request",
           "ok": true,
-          "detail": "#949832"
+          "detail": "#908230"
         },
         {
           "check": "PART 8 PR drawer exposes 📋 Generate CI/CD PR Gate Comment",
@@ -5087,27 +5087,27 @@
         {
           "check": "PART 8 PR gate modal renders the generated Markdown",
           "ok": true,
-          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #949832 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
+          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #908230 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
         },
         {
           "check": "PART 8 Bivia telemetry ledger meters boolean/choice/ground/score/set",
           "ok": true,
-          "detail": "543 entry(ies) · score, set, boolean, choice, ground"
+          "detail": "718 entry(ies) · score, set, boolean, choice, ground"
         },
         {
           "check": "PART 8 telemetry compaction is atomic and leaves no partial ledger",
           "ok": true,
-          "detail": "543 NDJSON line(s) · 0 temp file(s)"
+          "detail": "718 NDJSON line(s) · 0 temp file(s)"
         },
         {
           "check": "PART 8 billing usage renders the 1B token grant observatory",
           "ok": true,
-          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. Live ledger Tokens Grant 1,000,000,000 Tokens Used 4,113,207 543 decision(s) Toke"
+          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. Live ledger Tokens Grant 1,000,000,000 Tokens Used 4,856,562 718 decision(s) Toke"
         },
         {
           "check": "PART 8 observatory reports confidence, abstention, latency and cost saved",
           "ok": true,
-          "detail": "API · 250 fallback savings ESTIMATED LLM COST SAVED ($) $3.73 3,793,942 image · 284,513 text tokens Derived estimates only · the ledger stores no prompt text, image bytes or API key. Last decision 11/11/2026, 7:06:49 PM."
+          "detail": "API · 318 fallback savings ESTIMATED LLM COST SAVED ($) $4.59 4,425,616 image · 384,994 text tokens Derived estimates only · the ledger stores no prompt text, image bytes or API key. Last decision 11/11/2026, 8:45:08 PM."
         },
         {
           "check": "PART 8 Integrations Bivia card embeds the token observatory",
@@ -5136,7 +5136,7 @@
         {
           "check": "PART 9 a disposable test case is available for screenshot evidence",
           "ok": true,
-          "detail": "status 201 · cmwcsfz2d00hwx9rkk32skwye"
+          "detail": "status 201 · cmwcvyegz0258x90gzth0ki23"
         },
         {
           "check": "PART 9 failed and skipped steps persist screenshot evidence in the run response",
@@ -5156,7 +5156,7 @@
         {
           "check": "PART 9 self-heal captures a screenshot and grounds the test case URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-evidence-76976 · image/png"
+          "detail": "https://www.cgi.com/parity-evidence-73581 · image/png"
         },
         {
           "check": "PART 9 Studio renders the executed steps",
@@ -5261,7 +5261,7 @@
         {
           "check": "PART 9 the selected test type persists in variablesJson._testType",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-76976\",\"_testType\":\"Penetration\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-73581\",\"_testType\":\"Penetration\"}"
         },
         {
           "check": "PART 9 the Type column displays the exact selected type",
@@ -5271,7 +5271,7 @@
         {
           "check": "PART 9 editing a test type persists the new value",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-76976\",\"_testType\":\"Accessibility\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-73581\",\"_testType\":\"Accessibility\"}"
         },
         {
           "check": "PART 9 the Type column follows the edited type",
@@ -5286,7 +5286,7 @@
         {
           "check": "PART 9 PR auto-regression creates PR-specific Smoke and Regression cases",
           "ok": true,
-          "detail": "Smoke:PR #939666 · Smoke check on Staging | Regression:PR #939666 · Regression flow"
+          "detail": "Smoke:PR #922503 · Smoke check on Staging | Regression:PR #922503 · Regression flow"
         },
         {
           "check": "PART 9 PR auto-regression runs against the selected deployed environment",
@@ -5306,7 +5306,7 @@
         {
           "check": "PART 9 PR-specific cases persist their test type and target URL",
           "ok": true,
-          "detail": "PR #939666 · Smoke check on Staging | PR #939666 · Regression flow"
+          "detail": "PR #922503 · Smoke check on Staging | PR #922503 · Regression flow"
         },
         {
           "check": "PART 9 PR-specific case runs store screenshots in TestCaseRun.logJson",
@@ -5316,7 +5316,7 @@
         {
           "check": "PART 9 the pull-request list shows the auto-regression PR",
           "ok": true,
-          "detail": "#939666"
+          "detail": "#922503"
         },
         {
           "check": "PART 9 PR drawer exposes auto-regression with an environment selector",
@@ -5336,7 +5336,7 @@
         {
           "check": "PART 9 Super Admin provisions an enterprise tenant",
           "ok": true,
-          "detail": "PART9 Enterprise 76976 · enterprise · 250000 credits"
+          "detail": "PART9 Enterprise 73581 · enterprise · 250000 credits"
         },
         {
           "check": "PART 9 provisioning seeds Production + Staging environments, a credit ledger and an admin",
@@ -5381,7 +5381,7 @@
         {
           "check": "PART 9 the Configure modal exposes plan, seats, SSO/SLA and default environment",
           "ok": true,
-          "detail": "Configure enterprise · PART9 Enterprise 76976 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free sta"
+          "detail": "Configure enterprise · PART9 Enterprise 73581 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free sta"
         },
         {
           "check": "PART 9 README documents architecture, modules, test types, Bivia, PR gate, Super Admin and operations",
@@ -5435,7 +5435,7 @@
         {
           "check": "PART 10 a 6-step Regression case is available",
           "ok": true,
-          "detail": "status 201 · cmwcsgh5800k5x9rk5dvr2vo1"
+          "detail": "status 201 · cmwcvz0x2027hx90gddeoyufq"
         },
         {
           "check": "PART 10 buildStepsJson emits exactly 6 steps for stepsCount 6",
@@ -5600,6 +5600,65 @@
           "check": "PART 11 has no page errors",
           "ok": true,
           "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "part12-deliverables",
+      "name": "Phase 12 - Widescreen marketing, UTF-8 repair, hero overlap fix and standalone contrast",
+      "route": "/",
+      "checks": [
+        {
+          "check": "PART 12 zero UTF-8 mojibake remains in app/, components/ and lib/",
+          "ok": true,
+          "detail": "460 file(s) clean"
+        },
+        {
+          "check": "PART 12 no accidental derniers-commits.txt in the repository root",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 12 .gitignore ignores local commit dumps",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 12 the homepage hero uses the 1440px widescreen container",
+          "ok": true,
+          "detail": "max-w-[1440px]"
+        },
+        {
+          "check": "PART 12 the hero KPI cards and telemetry strip are visible and do not overlap",
+          "ok": true,
+          "detail": "3 KPI card(s) · telemetry=true · overlap=false"
+        },
+        {
+          "check": "PART 12 the homepage copy contains QASyn and no legacy ship wording",
+          "ok": true,
+          "detail": "NEWMeet QASyn — your autonomous AI quality engineer. Try it now → QASyn Platform ▾ Solutions ▾ Resources ▾ Company ▾ Pri"
+        },
+        {
+          "check": "PART 12 no marketing nav link wraps onto two lines",
+          "ok": true,
+          "detail": "6 link(s) single-line"
+        },
+        {
+          "check": "PART 12 standalone marketing pages return HTTP 200 with zero page errors",
+          "ok": true,
+          "detail": "/pricing, /roi-calculator, /comparison, /faqs, /integrations, /about-us"
+        },
+        {
+          "check": "PART 12 standalone marketing pages keep AA heading contrast on the light canvas",
+          "ok": true,
+          "detail": "≥4.5:1 on all sampled pages"
+        },
+        {
+          "check": "PART 12 has no page errors",
+          "ok": true,
+          "detail": ""
         },
         {
           "check": "Global: no example.com anywhere",
@@ -5626,5 +5685,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 1074
+  "totalChecks": 1084
 }

@@ -1,4 +1,4 @@
-﻿import { requirePermission } from "@/lib/rbac-server";
+import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { CrawlTable, type CrawlRow } from "@/components/dashboard/pages/CrawlTable";
 import { NewCrawlButton } from "@/components/dashboard/pages/NewCrawlButton";

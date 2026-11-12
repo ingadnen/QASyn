@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -48,7 +48,7 @@ export function PricingGrid() {
           <p className="font-mono text-3xl font-semibold text-white">{credits.toLocaleString("en-US")}</p>
           <p className="mt-2 text-sm text-slate-300">
             Best fit: <strong className="text-quantum-200">{recommended.name}</strong>
-            {monthly !== null && <> Â· â‰ˆ {usd(monthly)}/mo</>}
+            {monthly !== null && <> · ≈ {usd(monthly)}/mo</>}
           </p>
           <p className="mt-1 text-xs text-slate-500">Extra credits billed at ${CREDIT_PRICE_USD} each.</p>
         </div>
@@ -81,7 +81,7 @@ export function PricingGrid() {
               <ul className="mt-5 flex-1 space-y-2 text-sm text-slate-300">
                 {plan.features.map((f) => (
                   <li key={f} className="flex gap-2">
-                    <span className="text-quantum-400" aria-hidden="true">âœ“</span>
+                    <span className="text-quantum-400" aria-hidden="true">✓</span>
                     {f}
                   </li>
                 ))}
