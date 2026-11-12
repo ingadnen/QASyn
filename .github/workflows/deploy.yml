@@ -1,0 +1,15 @@
+name: Auto-Deploy to Hostinger VPS
+on:
+  push:
+    branches: ["main"]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy on VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 179.66.142.196
+          username: root
+          password: ${{ secrets.VPS_ROOT_PASSWORD }}
+          script: /usr/local/bin/deploy-qasyn
