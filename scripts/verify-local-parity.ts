@@ -5224,6 +5224,118 @@ async function main() {
   check("PART 12 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part12-deliverables");
 
+  // ── PART 13 — Real live PNG evidence for passing, failing, flaky & In Review ──
+  moduleErrors = [];
+  mod(
+    "part13-deliverables",
+    "Phase 13 - Real Playwright PNG evidence for every executed step",
+    "/dashboard/test-studio",
+  );
+
+  const p13Target = "https://www.cgi.com";
+  const p13Create = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: `PART13 LIVE ${RUN_ID}`,
+    module: "Core",
+    criticality: "high",
+    stepsCount: 6,
+    targetUrl: p13Target,
+    testType: "Functional",
+  });
+  const p13CaseId = String(p13Create.body.testCases?.[0]?.id ?? "");
+  check("PART 13 a draft 6-step case is available for live evidence", p13Create.status === 201 && Boolean(p13CaseId), `status ${p13Create.status}`);
+  if (p13CaseId) {
+    await db.testCase.update({ where: { id: p13CaseId }, data: { status: "draft" } });
+    const p13Run = await apiJson(page, `/api/dashboard/test-cases/${p13CaseId}`, "PATCH", { action: "run_steps" });
+    const p13RunRow = await db.testCaseRun.findFirst({
+      where: { testCaseId: p13CaseId },
+      orderBy: { runNumber: "desc" },
+      select: { logJson: true },
+    });
+    const p13Log = jsonArray(p13RunRow?.logJson);
+    const p13Steps = jsonArray((await db.testCase.findUnique({ where: { id: p13CaseId }, select: { stepsJson: true } }))?.stepsJson);
+    const p13IsPng = (value: unknown) => String(value ?? "").startsWith("data:image/png;base64,");
+    const p13Statuses = p13Log.map((line) => String(line.status ?? "?")).join(",");
+    check(
+      "PART 13 In-Review (draft) runs capture real PNG screenshots on 6/6 log lines",
+      p13Run.status === 200 &&
+        p13Log.length === 6 &&
+        p13Log.every((line) => p13IsPng(line.screenshotBase64) && line.screenshotMime === "image/png"),
+      `${p13Log.length} line(s) · ${p13Statuses} · ${p13Log.filter((line) => p13IsPng(line.screenshotBase64)).length} PNG`,
+    );
+    check(
+      "PART 13 stepsJson persists real PNG evidence on all 6 steps (passed, failed, skipped)",
+      p13Steps.length === 6 && p13Steps.every((step) => p13IsPng(step.screenshotBase64) && step.screenshotMime === "image/png"),
+      `${p13Steps.filter((step) => p13IsPng(step.screenshotBase64)).length}/${p13Steps.length} PNG · ${p13Steps.map((step) => String(step.status ?? "?")).join(",")}`,
+    );
+
+    await goto(page, `/dashboard/test-studio/${p13CaseId}`);
+    const p13StepRow = page.locator('[data-testid="studio-step-row"]').first();
+    await p13StepRow.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+    if ((await p13StepRow.count()) > 0) {
+      const p13Details = p13StepRow.getByRole("button", { name: /View Details/ }).first();
+      if ((await p13Details.count()) > 0) await p13Details.click().catch(() => undefined);
+      else await p13StepRow.click().catch(() => undefined);
+      const p13Dialog = page.getByRole("dialog", { name: "Step Details" });
+      await p13Dialog.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+      const p13Thumb = p13Dialog.locator('[data-testid="studio-step-screenshot"]').first();
+      if ((await p13Thumb.count()) > 0) await p13Thumb.click({ force: true }).catch(() => undefined);
+      const p13Lightbox = page.locator('[data-testid="studio-evidence-lightbox"]').first();
+      await p13Lightbox.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+      const p13LightboxText = ((await p13Lightbox.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+      check(
+        "PART 13 the Visual Evidence Lightbox badge reads PNG Live Capture",
+        (await p13Lightbox.count()) > 0 &&
+          p13LightboxText.includes("PNG Live Capture") &&
+          !p13LightboxText.includes("SVG Deterministic Evidence"),
+        p13LightboxText.slice(0, 160),
+      );
+      const p13Close = p13Lightbox.getByRole("button", { name: "Close evidence lightbox" }).first();
+      if ((await p13Close.count()) > 0) await p13Close.click().catch(() => undefined);
+      await page.waitForTimeout(250);
+    } else {
+      check("PART 13 the Visual Evidence Lightbox badge reads PNG Live Capture", false, "no studio step row");
+    }
+    await apiJson(page, `/api/dashboard/test-cases/${p13CaseId}`, "DELETE");
+  } else {
+    check("PART 13 In-Review (draft) runs capture real PNG screenshots on 6/6 log lines", false, "case missing");
+    check("PART 13 stepsJson persists real PNG evidence on all 6 steps (passed, failed, skipped)", false, "case missing");
+    check("PART 13 the Visual Evidence Lightbox badge reads PNG Live Capture", false, "case missing");
+  }
+
+  // Small-batch runTestCases (CI webhook / PR regression) must use live PNG too.
+  const p13PrNumber = 990000 + (Date.now() % 9000);
+  const p13Hook = await apiJson(page, "/api/webhooks/ci-pr", "POST", {
+    prNumber: p13PrNumber,
+    title: `PART13 batch PNG ${RUN_ID}`,
+    branch: `feature/part13-${RUN_ID}`,
+    author: "ci-bot",
+    repository: "cgi/digital-portal",
+    changedFiles: ["src/checkout/loan.ts"],
+    previewUrl: p13Target,
+    createTests: true,
+  });
+  const p13HookBody = p13Hook.body as unknown as { prId?: string; createdTestCases?: Array<{ id?: string }> };
+  const p13HookCaseIds = (p13HookBody.createdTestCases ?? []).map((testCase) => String(testCase.id ?? "")).filter(Boolean);
+  const p13HookRuns = await Promise.all(
+    p13HookCaseIds.map((id) =>
+      db.testCaseRun.findFirst({ where: { testCaseId: id }, orderBy: { runNumber: "desc" }, select: { logJson: true } }),
+    ),
+  );
+  const p13IsPngHook = (value: unknown) => String(value ?? "").startsWith("data:image/png;base64,");
+  check(
+    "PART 13 small-batch runTestCases (CI webhook) persists real PNG evidence",
+    p13Hook.status === 200 &&
+      p13HookCaseIds.length === 2 &&
+      p13HookRuns.every((run) => jsonArray(run?.logJson).length > 0 && jsonArray(run?.logJson).every((line) => p13IsPngHook(line.screenshotBase64))),
+    `hook ${p13Hook.status} · ${p13HookRuns.map((run) => `${jsonArray(run?.logJson).length}:${jsonArray(run?.logJson).filter((line) => p13IsPngHook(line.screenshotBase64)).length}`).join(" / ")}`,
+  );
+  if (p13HookBody.prId) await db.pullRequestCheck.delete({ where: { id: p13HookBody.prId } }).catch(() => undefined);
+  if (p13HookCaseIds.length > 0) await db.testCase.deleteMany({ where: { id: { in: p13HookCaseIds } } }).catch(() => undefined);
+
+  check("PART 13 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part13-deliverables");
+
   await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────

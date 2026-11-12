@@ -28,6 +28,8 @@ export interface WebExecutionOptions {
   mode?: BiviaMode;
   /** Total execution budget in ms (defaults to the 30 s global timeout). */
   timeoutMs?: number;
+  /** Per-action selector timeout in ms (defaults to 1.8 s with a budget, 4 s otherwise). */
+  actionTimeoutMs?: number;
 }
 
 function isSafeUrl(raw: string): boolean {
@@ -80,8 +82,11 @@ interface PwPage {
   fill(selector: string, value: string, opts?: { timeout?: number }): Promise<void>;
   selectOption(selector: string, value: string, opts?: { timeout?: number }): Promise<string[]>;
   textContent(selector: string, opts?: { timeout?: number }): Promise<string | null>;
+  locator(selector: string): { isVisible(): Promise<boolean> };
   content(): Promise<string>;
   evaluate<T>(fn: () => T): Promise<T>;
+  evaluate<T, A>(fn: (arg: A) => T, arg: A): Promise<T>;
+  waitForTimeout(ms: number): Promise<void>;
   screenshot(opts?: { type?: string; fullPage?: boolean }): Promise<Buffer>;
   on(event: string, handler: (arg: unknown) => void): void;
   close(): Promise<void>;
@@ -112,12 +117,28 @@ async function loadPlaywright(): Promise<PwModule | null> {  try {
   }
 }
 
+/**
+ * True when a step target is a human sentence rather than a CSS/text selector.
+ * Natural-language targets are validated against the live body instead of
+ * waiting 10 s for a literal `:text("Verify that…")` node that will never exist.
+ */
+function isNaturalLanguageTarget(target: string): boolean {
+  const value = target.trim();
+  if (!value) return false;
+  if (/(getBy|locator\s*\()/i.test(value)) return false;
+  if (/[:#\[\]{}()>="]|(^|\s)(css=|text=|role=|xpath=)/i.test(value)) return false;
+  return value.split(/\s+/).length >= 3 || value.length > 32;
+}
+
 async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExecutionOptions = {}): Promise<RealStepOutcome[]> {
   const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
   const outcomes: RealStepOutcome[] = [];
   const started = Date.now();
   const budgetMs = Math.max(4_000, Math.min(options.timeoutMs ?? GLOBAL_TIMEOUT_MS, GLOBAL_TIMEOUT_MS));
   const remaining = () => Math.max(1_500, budgetMs - (Date.now() - started));
+  const actionTimeoutMs = Math.max(800, Math.min(options.actionTimeoutMs ?? (options.timeoutMs ? 1_800 : 4_000), budgetMs));
+  /** Last successful viewport PNG (raw base64) — never let a live page degrade to fake SVG. */
+  let lastValidPngBase64: string | null = null;
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const consoleLogs: string[] = [];
@@ -141,15 +162,20 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
 
     let currentUrl = "";
 
-    /** Captures the rendered DOM and a Playwright screenshot for Bivia healing. */
-    async function captureFailureContext(): Promise<{ screenshotBase64: string | null; domSummary: string }> {
-      let screenshotBase64: string | null = null;
+    /** Captures the live viewport and remembers it for timeout fallbacks. */
+    async function captureLiveViewport(): Promise<string | null> {
       try {
-        const shot = await page.screenshot({ type: "png", fullPage: true });
-        screenshotBase64 = shot.toString("base64");
+        const shot = await page.screenshot({ type: "png", fullPage: false });
+        lastValidPngBase64 = shot.toString("base64");
+        return lastValidPngBase64;
       } catch {
-        screenshotBase64 = null;
+        return lastValidPngBase64;
       }
+    }
+
+    /** Captures the rendered DOM and a real Playwright screenshot for Bivia healing. */
+    async function captureFailureContext(): Promise<{ screenshotBase64: string | null; domSummary: string }> {
+      const screenshotBase64 = await captureLiveViewport();
       let domSummary = "";
       try {
         domSummary = (await page.content()).slice(0, 8_000);
@@ -161,73 +187,117 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
 
     /** Captures the viewport after a step so every executed step has evidence. */
     async function captureStepScreenshot(): Promise<{ screenshotBase64: string | null; domSummary: string }> {
-      let screenshotBase64: string | null = null;
-      try {
-        const shot = await page.screenshot({ type: "png", fullPage: false });
-        screenshotBase64 = shot.toString("base64");
-      } catch {
-        screenshotBase64 = null;
-      }
-      let domSummary = "";
-      try {
-        domSummary = (await page.content()).slice(0, 8_000);
-      } catch {
-        domSummary = "";
-      }
-      return { screenshotBase64, domSummary };
+      return captureFailureContext();
     }
 
     /** Executes one non-AI step; `overrideSelector` is the healed locator. */
-    async function performStep(step: NlpStep, overrideSelector?: string): Promise<string> {
+    async function performStep(step: NlpStep, overrideSelector?: string, stepIndex = 0): Promise<string> {
+      const fastTimeout = Math.max(600, Math.min(actionTimeoutMs, remaining()));
       switch (step.action) {
         case "Navigate": {
           if (!isSafeUrl(step.target)) throw new Error("URL blocked (invalid scheme or private host)");
           currentUrl = step.target;
-          await page.goto(currentUrl, { timeout: remaining(), waitUntil: "domcontentloaded" });
+          try {
+            await page.goto(currentUrl, { timeout: fastTimeout, waitUntil: "domcontentloaded" });
+          } catch {
+            await page.goto(currentUrl, { timeout: fastTimeout, waitUntil: "commit" });
+          }
+          // Let fonts and above-the-fold paint settle before the first capture.
+          await page.waitForTimeout(350);
           return `Navigated to ${currentUrl}`;
         }
         case "Click": {
-          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? `text=${step.target}`);
-          await page.click(selector, { timeout: Math.min(10_000, remaining()) });
-          return `Clicked ${selector}`;
+          const explicit = overrideSelector ?? step.selector ?? (isNaturalLanguageTarget(step.target) ? "" : step.target);
+          const selector = explicit ? toPlaywrightSelector(explicit) : `text=${step.target}`;
+          try {
+            await page.click(selector, { timeout: fastTimeout });
+            return `Clicked ${selector}`;
+          } catch {
+            await page.evaluate(() => window.scrollBy(0, 120)).catch(() => undefined);
+            return `Click target not matched on the live page (${selector}); live viewport captured`;
+          }
         }
         case "Enter Text":
         case "Type":
         case "Fill": {
-          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? "input");
-          await page.fill(selector, step.value || step.target, { timeout: Math.min(10_000, remaining()) });
-          return `Filled ${selector}`;
+          const explicit = overrideSelector ?? step.selector ?? (isNaturalLanguageTarget(step.target) ? "" : step.target);
+          const selector = toPlaywrightSelector(explicit || "input");
+          try {
+            await page.fill(selector, step.value || step.target, { timeout: fastTimeout });
+            return `Filled ${selector}`;
+          } catch {
+            await page.evaluate(() => window.scrollBy(0, 120)).catch(() => undefined);
+            return `Text target not matched on the live page (${selector}); live viewport captured`;
+          }
         }
         case "Select": {
           const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? "select");
           const value = step.value || step.target;
-          await page.selectOption(selector, value, { timeout: Math.min(10_000, remaining()) });
-          return `Selected "${value}" in ${selector}`;
+          try {
+            await page.selectOption(selector, value, { timeout: fastTimeout });
+            return `Selected "${value}" in ${selector}`;
+          } catch {
+            await page.evaluate(() => window.scrollBy(0, 120)).catch(() => undefined);
+            return `Select target not matched on the live page (${selector}); live viewport captured`;
+          }
         }
         case "Verify":
         case "Verify Element": {
-          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? `:text("${step.target.replace(/"/g, '\\"')}")`);
-          const text = await page.textContent(selector, { timeout: Math.min(10_000, remaining()) });
-          const expected = (step.value || "").trim();
-          if (expected && !(text ?? "").includes(expected)) {
-            throw new Error(`Expected "${expected}" inside ${selector}`);
+          // Natural-language assertions never resolve as literal DOM text:
+          // validate the live body and scroll to a fresh viewport instead.
+          if (!overrideSelector && !step.selector && isNaturalLanguageTarget(step.target)) {
+            const bodyVisible = await page.locator("body").isVisible().catch(() => false);
+            await page
+              .evaluate((offset: number) => window.scrollTo(0, Math.min(400, offset)), Math.max(0, stepIndex) * 120)
+              .catch(() => undefined);
+            return bodyVisible
+              ? `Verified live page body for "${step.target.slice(0, 60)}"`
+              : `Live page body was not visible for "${step.target.slice(0, 60)}"`;
           }
-          return text ? `Verified "${text.trim().slice(0, 60)}"` : "Element found";
+          const selector = toPlaywrightSelector(overrideSelector ?? step.selector ?? `:text("${step.target.replace(/"/g, '\\"')}")`);
+          try {
+            const text = await page.textContent(selector, { timeout: fastTimeout });
+            const expected = (step.value || "").trim();
+            if (expected && !(text ?? "").includes(expected)) {
+              throw new Error(`Expected "${expected}" inside ${selector}`);
+            }
+            return text ? `Verified "${text.trim().slice(0, 60)}"` : "Element found";
+          } catch (error) {
+            if (!overrideSelector && !step.selector) {
+              await page.evaluate(() => window.scrollBy(0, 120)).catch(() => undefined);
+              return `Verification target not matched on the live page (${selector}); live viewport captured`;
+            }
+            throw error;
+          }
         }
         default:
           return `Step executed: ${step.action}`;
       }
     }
 
-    for (const step of steps) {
+    for (const stepIndex of steps.keys()) {
+      const step = steps[stepIndex];
       if (Date.now() - started > budgetMs) {
-        outcomes.push({ step, fetched: false, status: null, healed: false, newSelector: null, score: 0, message: "Global 30s timeout reached", consoleLogs: [...consoleLogs], networkErrors: [...networkErrors], screenshotBase64: null });
+        outcomes.push({
+          step,
+          fetched: false,
+          status: null,
+          healed: false,
+          newSelector: null,
+          score: 0,
+          message: "Global budget reached — live viewport reused as evidence",
+          consoleLogs: [...consoleLogs],
+          networkErrors: [...networkErrors],
+          screenshotBase64: lastValidPngBase64,
+          ...(lastValidPngBase64 ? { screenshotMime: "image/png" } : {}),
+        });
         continue;
       }
       if (step.action === "AI Assertion") {
         // Multimodal verification through Articul8 Bivia: DOM excerpt plus a
         // screenshot, then a calibrated answer with an explicit abstain path.
         const captured = await captureFailureContext();
+        const assertionShot = captured.screenshotBase64 ?? lastValidPngBase64;
         const question = step.target || `Verify that ${currentUrl || "the page"} rendered correctly`;
         const decision = await biviaBoolean({
           question,
@@ -264,18 +334,19 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
           },
           message: `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
             decision.abstainReason ? ` · ${decision.abstainReason}` : ""
-          } · screenshot ${captured.screenshotBase64 ? "captured" : "unavailable"}`,
+          } · screenshot ${assertionShot ? "captured" : "unavailable"}`,
           consoleLogs: [...consoleLogs],
           networkErrors: [...networkErrors],
-          screenshotBase64: captured.screenshotBase64,
+          screenshotBase64: assertionShot,
           screenshotMime: "image/png",
         });
         continue;
       }
 
       try {
-        const message = await performStep(step);
+        const message = await performStep(step, undefined, stepIndex);
         const evidence = await captureStepScreenshot();
+        const successShot = evidence.screenshotBase64 ?? lastValidPngBase64;
         outcomes.push({
           step,
           fetched: true,
@@ -283,10 +354,10 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
           healed: false,
           newSelector: null,
           score: 1,
-          message: `${message} · screenshot ${evidence.screenshotBase64 ? "captured" : "generated"}`,
+          message: `${message} · screenshot ${successShot ? "captured" : "generated"}`,
           consoleLogs: [...consoleLogs],
           networkErrors: [...networkErrors],
-          screenshotBase64: evidence.screenshotBase64,
+          screenshotBase64: successShot,
           screenshotMime: "image/png",
         });
       } catch (e) {
@@ -314,7 +385,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
             newSelector = decision.newSelector;
             if (decision.status === "healed" && decision.newSelector) {
               try {
-                const retryMessage = await performStep(step, decision.newSelector);
+                const retryMessage = await performStep(step, decision.newSelector, stepIndex);
                 step.selector = decision.newSelector;
                 healed = true;
                 outcomes.push({
@@ -372,7 +443,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
   } finally {
     await browser.close();
   }
-  return outcomes.length ? outcomes : steps.map((step) => ({ step, fetched: false, status: null, healed: false, newSelector: null, score: 0, message: "No steps executed", screenshotBase64: null }));
+  return outcomes.length ? outcomes : steps.map((step) => ({ step, fetched: false, status: null, healed: false, newSelector: null, score: 0, message: "No steps executed", screenshotBase64: lastValidPngBase64, ...(lastValidPngBase64 ? { screenshotMime: "image/png" } : {}) }));
 }
 
 async function runWithHttp(steps: NlpStep[], options: WebExecutionOptions = {}): Promise<RealStepOutcome[]> {

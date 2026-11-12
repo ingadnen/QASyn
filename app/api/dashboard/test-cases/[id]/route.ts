@@ -419,12 +419,12 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     const runUrl = resolveGroundingUrl({ variables, steps, orgUrl: ctx.org.website });
     const now = new Date();
-    // Deliverable 1 (Phase 10): execute reachable targets with real Playwright
-    // inside a 12 s budget so every step gets a live PNG capture. Deterministic
-    // failures and unreachable hosts degrade to captureTargetScreenshot() or the
-    // synthetic SVG evidence — execution never hangs and never lacks evidence.
+    // Phase 13: ALWAYS execute reachable targets with real Playwright — even
+    // In Review (draft), failing and flaky cases — so every step (passed,
+    // failed, skipped or healed) gets an authentic PNG of the live page.
+    // Unreachable hosts degrade to captureTargetScreenshot() or SVG evidence.
     let stepShots: Array<string | null> = steps.map(() => null);
-    if (!shouldFail && runUrl) {
+    if (runUrl) {
       try {
         const realSteps = steps.map((s) => ({
           id: s.id,
@@ -439,6 +439,7 @@ export async function PATCH(request: Request, { params }: Params) {
         const realOutcomes = await executeWebSteps(realSteps, {
           organisationId: ctx.org.id,
           timeoutMs: 12_000,
+          actionTimeoutMs: 1_500,
           sources: { integrationConfig: null, analysisCode: liveAnalysis ? { ...liveAnalysis, biviaEnabled: false } : null },
         });
         stepShots = steps.map((_, index) => {
@@ -448,12 +449,12 @@ export async function PATCH(request: Request, { params }: Params) {
       } catch {
         stepShots = steps.map(() => null);
       }
-      if (stepShots.every((shot) => !shot)) {
-        // No live capture at all (Playwright unavailable / blocked host): take
-        // one viewport capture and reuse it as the visual evidence for every step.
+      if (stepShots.some((shot) => !shot)) {
+        // Any step missing a live capture (Playwright unavailable / blocked
+        // host / budget exhausted): take one viewport capture and reuse it.
         const captured = await captureTargetScreenshot(runUrl);
         const capturedShot = screenshotDataUrl(captured?.screenshotBase64, "image/png");
-        stepShots = stepShots.map(() => capturedShot);
+        stepShots = stepShots.map((shot) => shot ?? capturedShot);
       }
     }
     // Every executed step persists visual evidence, including skipped steps, so
@@ -466,7 +467,7 @@ export async function PATCH(request: Request, { params }: Params) {
       const liveEvidence = stepShots[i];
       const existingEvidence =
         liveEvidence ??
-        (typeof s.screenshotBase64 === "string" && s.screenshotBase64.startsWith("data:image/")
+        (typeof s.screenshotBase64 === "string" && s.screenshotBase64.startsWith("data:image/png")
           ? s.screenshotBase64
           : null);
       const evidence =

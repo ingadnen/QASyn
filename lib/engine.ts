@@ -6,11 +6,13 @@ import { buildCrawlLogs, crawlPlan, crawlProgress, hostFromUrl } from "./crawl";
 import { prisma } from "./db";
 import { parseIntegrationConfig, type IntegrationConfig } from "./integration-providers";
 import {
+  captureTargetScreenshot,
   generateGroundedTitles,
   generatedStepEvidenceSvgBase64,
   groundedFlowsFromDom,
   groundedStepsForFlow,
   inspectTargetDom,
+  screenshotDataUrl,
   type GroundedFlow,
   type TargetDomSnapshot,
 } from "./web-executor";
@@ -337,6 +339,16 @@ export async function runTestCases(
   const biviaSources = { integrationConfig: biviaIntegrationConfig, analysisCode };
   const biviaAiEnabled = analysisCode?.biviaVerifyAi !== false;
 
+  // Phase 13: small batches (PR auto-regression, CI/CD webhook, Autopilot,
+  // single-case runs) capture one real live PNG of the deployed target and
+  // reuse it as evidence, so a reachable host never degrades to synthetic SVG.
+  const batchCaptureUrl = normalizeWebsite(targetUrl || actor.org.website || "") ?? "";
+  let batchCapturedPng: string | null = null;
+  if (testCases.length > 0 && testCases.length <= 10 && batchCaptureUrl) {
+    const captured = await captureTargetScreenshot(batchCaptureUrl);
+    batchCapturedPng = screenshotDataUrl(captured?.screenshotBase64, "image/png");
+  }
+
   for (const tc of testCases) {
     const roll = options.deterministic
       ? tc.status === "flaky"
@@ -466,10 +478,11 @@ export async function runTestCases(
       const stepStatus = String(
         step.status ?? (status === "failing" && index === steps.length - 1 ? "failed" : healed ? "passed" : "passed"),
       );
-      const existingEvidence =
-        typeof step.screenshotBase64 === "string" && step.screenshotBase64.startsWith("data:image/")
+      const stepPng =
+        typeof step.screenshotBase64 === "string" && step.screenshotBase64.startsWith("data:image/png")
           ? step.screenshotBase64
           : null;
+      const existingEvidence = stepPng ?? batchCapturedPng;
       const evidence =
         existingEvidence ??
         generatedStepEvidenceSvgBase64({
@@ -484,7 +497,7 @@ export async function runTestCases(
         });
       step.status = stepStatus;
       step.screenshotBase64 = evidence;
-      step.screenshotMime = existingEvidence ? step.screenshotMime ?? "image/png" : "image/svg+xml";
+      step.screenshotMime = existingEvidence ? "image/png" : "image/svg+xml";
       step.lastRunStatus = stepStatus;
       step.lastRunAt = now.toISOString();
       return {
@@ -499,7 +512,7 @@ export async function runTestCases(
             ? "Assertion failed: expected the target to be visible within 15s. Screenshot attached."
             : "OK · screenshot attached.",
         screenshotBase64: evidence,
-        screenshotMime: existingEvidence ? step.screenshotMime ?? "image/png" : "image/svg+xml",
+        screenshotMime: existingEvidence ? "image/png" : "image/svg+xml",
       };
     });
     stepsChanged = steps.length > 0;
