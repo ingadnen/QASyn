@@ -40,7 +40,7 @@ export const INTEGRATION_CATALOG: CatalogItem[] = [
   { id: "trello", name: "Trello", category: "Project management", mono: "TR", tile: "bg-sky-500 text-white", description: "Turn cards into acceptance tests." },
   { id: "clickup", name: "ClickUp", category: "Project management", mono: "CU", tile: "bg-violet-500 text-white", description: "Tasks and docs as test requirements." },
   { id: "asana", name: "Asana", category: "Project management", mono: "AS", tile: "bg-rose-500 text-white", description: "Project milestones linked to release quality." },
-  { id: "jenkins", name: "Jenkins", category: "CI/CD & infra", mono: "JK", tile: "bg-red-600 text-white", description: "Trigger Ship from any pipeline stage." },
+  { id: "jenkins", name: "Jenkins", category: "CI/CD & infra", mono: "JK", tile: "bg-red-600 text-white", description: "Trigger QASyn from any pipeline stage." },
   { id: "github-actions", name: "GitHub Actions", category: "CI/CD & infra", mono: "GA", tile: "bg-slate-700 text-white", description: "Quality gate step for workflows." },
   { id: "circleci", name: "CircleCI", category: "CI/CD & infra", mono: "CI", tile: "bg-neutral-800 text-white", description: "Orb to run impacted tests on every build." },
   { id: "docker", name: "Docker", category: "CI/CD & infra", mono: "DK", tile: "bg-blue-500 text-white", description: "Spin up ephemeral environments for test runs." },

@@ -11,7 +11,7 @@ export const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-/** Polices de la page Ship (chargées uniquement sur /ship). */
+/** Polices de la page QASyn (chargées uniquement sur /qasyn). */
 export const libreCaslon = Libre_Caslon_Text({
   subsets: ["latin"],
   weight: ["400", "700"],

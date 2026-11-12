@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ShipExecuteFull } from "@/components/dashboard/pages/AgentClients";
+import { QasynExecuteFull } from "@/components/dashboard/pages/AgentClients";
 import { Card, PageHeader } from "@/components/dashboard/ui";
 import { requireOrgContext } from "@/lib/tenant";
 
@@ -13,8 +13,8 @@ export default async function ContinuousTestingPage() {
       <PageHeader kicker="PLATFORM" title="Continuous testing" description="Always-on release monitor: canary validation, regression rollback alerts and CI quality gates." />
       <Card title="Canary release validation">
         <div className="space-y-3 px-5 py-4">
-          <p className="text-sm text-slate-600">Trigger a full Ship pipeline to validate the canary: crawl → requirements → NLP cases → Playwright execution → Go/No-Go verdict.</p>
-          <ShipExecuteFull readOnly={ctx.readOnly} />
+          <p className="text-sm text-slate-600">Trigger a full QASyn pipeline to validate the canary: crawl → requirements → NLP cases → Playwright execution → Go/No-Go verdict.</p>
+          <QasynExecuteFull readOnly={ctx.readOnly} />
         </div>
       </Card>
       <Card title="Quality gates">

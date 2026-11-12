@@ -9,7 +9,7 @@ const EDITIONS = [
   { id: "feb", title: "February: self-healing in production", date: "Feb 2026" },
   { id: "mar", title: "March: red teaming LLM agents", date: "Mar 2026" },
   { id: "apr", title: "April: the autonomous SDLC", date: "Apr 2026" },
-  { id: "may", title: "May: Ship 2.0 release pipeline", date: "May 2026" },
+  { id: "may", title: "May: QASyn 2.0 release pipeline", date: "May 2026" },
   { id: "jun", title: "June: visual regression at scale", date: "Jun 2026" },
 ];
 

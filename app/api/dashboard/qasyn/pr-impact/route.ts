@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { analyzePrImpact } from "@/lib/engines";
-import { analyzeBlastRadius } from "@/lib/ship-engine";
+import { analyzeBlastRadius } from "@/lib/qasyn-engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { prImpactSchema } from "@/lib/validation";
 
-/** POST /api/dashboard/ship/pr-impact — map changed files, select the regression scope, decide Go/No-Go. */
+/** POST /api/dashboard/qasyn/pr-impact — map changed files, select the regression scope, decide Go/No-Go. */
 export async function POST(request: Request) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
@@ -63,11 +63,11 @@ export async function POST(request: Request) {
     },
   });
   await spendCredits(prisma, ctx.org.id, 10);
-  await audit(prisma, ctx, "ship.pr_impact", `#${prNumber} ${title} · ${impact.riskLevel} · ${impact.decision}`);
+  await audit(prisma, ctx, "qasyn.pr_impact", `#${prNumber} ${title} · ${impact.riskLevel} · ${impact.decision}`);
   return NextResponse.json({ analysis, impact, blastRadius });
 }
 
-/** GET /api/dashboard/ship/pr-impact — recent PR analyses of the displayed organisation. */
+/** GET /api/dashboard/qasyn/pr-impact — recent PR analyses of the displayed organisation. */
 export async function GET() {
   const guard = await guardApi();
   if (!guard.ok) return guard.response;

@@ -30,7 +30,7 @@ export function LearningBrowser({ progress, readOnly }: { progress: Record<strin
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="e.g. self-healing, API, Ship…"
+          placeholder="e.g. self-healing, API, QASyn…"
           className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100"
         />
       </div>

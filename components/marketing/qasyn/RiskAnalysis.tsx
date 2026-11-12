@@ -58,18 +58,18 @@ const PRS: PrRisk[] = [
 ];
 
 const RISK_STYLE: Record<Risk, string> = {
-  High: "bg-ember-500 text-white",
-  Medium: "bg-amber-400 text-paper-ink",
-  Low: "bg-emerald-600 text-white",
+  High: "bg-signal-rose/15 text-rose-300 border-signal-rose/30",
+  Medium: "bg-signal-amber/15 text-amber-300 border-signal-amber/30",
+  Low: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
 };
 
-/** Analyse de risque de release : blast radius par zone fonctionnelle. */
+/** Obsidian Quantum release risk analysis: blast radius per functional area. */
 export function RiskAnalysis() {
   const [selected, setSelected] = useState(PRS[0]!.pr);
   const pr = PRS.find((p) => p.pr === selected) ?? PRS[0]!;
 
   return (
-    <div className="rounded-[15px] border border-paper-line bg-white p-6 sm:p-8">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl sm:p-8">
       <div role="tablist" aria-label="Pull requests" className="flex flex-wrap gap-2">
         {PRS.map((p) => (
           <button
@@ -80,7 +80,9 @@ export function RiskAnalysis() {
             onClick={() => setSelected(p.pr)}
             className={cn(
               "rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
-              p.pr === selected ? "border-paper-ink bg-paper-ink text-white" : "border-paper-line text-paper-muted hover:border-paper-ink",
+              p.pr === selected
+                ? "border-quantum-400/60 bg-quantum-500/15 text-quantum-200"
+                : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/25 hover:text-white",
             )}
           >
             PR #{p.pr}
@@ -90,29 +92,32 @@ export function RiskAnalysis() {
 
       <div role="tabpanel" className="mt-6 grid gap-8 md:grid-cols-[1fr_1.4fr]" key={pr.pr}>
         <div className="animate-fade-in">
-          <p className="text-sm text-paper-muted">{pr.files} files changed</p>
-          <h3 className="mt-1 font-caslon text-2xl text-paper-ink">{pr.title}</h3>
+          <p className="text-sm text-slate-500">{pr.files} files changed</p>
+          <h3 className="mt-1 text-2xl font-semibold text-white">{pr.title}</h3>
           <div className="mt-5 flex items-end gap-3">
-            <span className="font-caslon text-6xl leading-none text-paper-ink">{pr.score}</span>
-            <span className="pb-1 text-sm text-paper-muted">/100 risk</span>
+            <span className="text-6xl font-semibold leading-none tracking-tight text-white">{pr.score}</span>
+            <span className="pb-1 text-sm text-slate-500">/100 risk</span>
           </div>
-          <span className={cn("mt-3 inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider", RISK_STYLE[pr.risk])}>
+          <span className={cn("mt-3 inline-block rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider", RISK_STYLE[pr.risk])}>
             {pr.risk} risk
           </span>
-          <p className="mt-5 rounded-[10px] bg-paper p-3 text-sm text-paper-ink">{pr.verdict}</p>
+          <p className="mt-5 rounded-xl border border-white/10 bg-black/25 p-3 text-sm text-slate-300">{pr.verdict}</p>
         </div>
         <div className="animate-fade-in">
-          <p className="text-xs font-semibold uppercase tracking-widest text-paper-muted">Blast radius</p>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-slate-500">Blast radius</p>
           <ul className="mt-4 space-y-5">
             {pr.areas.map((a) => (
               <li key={a.name}>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-paper-ink">{a.name}</span>
-                  <span className="text-paper-muted">{a.tests}</span>
+                  <span className="font-semibold text-white">{a.name}</span>
+                  <span className="text-slate-500">{a.tests}</span>
                 </div>
-                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-paper-card">
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className={cn("h-full rounded-full transition-all duration-700", a.impact > 65 ? "bg-ember-500" : a.impact > 30 ? "bg-amber-400" : "bg-emerald-600")}
+                    className={cn(
+                      "h-full rounded-full transition-all duration-700",
+                      a.impact > 65 ? "bg-gradient-to-r from-signal-rose to-signal-amber" : a.impact > 30 ? "bg-signal-amber" : "bg-emerald-400",
+                    )}
                     style={{ width: `${a.impact}%` }}
                   />
                 </div>

@@ -4925,6 +4925,159 @@ async function main() {
   check("PART 10 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part10-deliverables");
 
+  // ── PART 11 — Clean QASyn migration + Obsidian Quantum Precision ──
+  moduleErrors = [];
+  mod(
+    "part11-deliverables",
+    "Phase 11 - Zero legacy Ship surfaces, canonical QASyn routes & Obsidian Quantum marketing",
+    "/",
+  );
+
+  // 11.1 — Zero legacy ship folders/files.
+  const p11LegacyPaths = [
+    path.join(process.cwd(), "app", "(marketing)", "ship"),
+    path.join(process.cwd(), "app", "dashboard", "ship"),
+    path.join(process.cwd(), "app", "api", "dashboard", "ship"),
+    path.join(process.cwd(), "components", "marketing", "ship"),
+    path.join(process.cwd(), "lib", "ship-engine.ts"),
+  ];
+  const p11StillPresent = p11LegacyPaths.filter((legacyPath) => fs.existsSync(legacyPath));
+  check("PART 11 zero legacy ship folders or files remain", p11StillPresent.length === 0, p11StillPresent.join(", ") || "clean");
+  check("PART 11 the canonical QASyn engine module exists", fs.existsSync(path.join(process.cwd(), "lib", "qasyn-engine.ts")));
+
+  // 11.2 — Canonical /qasyn and /dashboard/qasyn routes (plus redirects).
+  await goto(page, "/qasyn");
+  const p11MarketingText = ((await body(page)) || "").replace(/\s+/g, " ");
+  check(
+    "PART 11 /qasyn renders the QASyn product page",
+    p11MarketingText.includes("QASyn is your autonomous") && p11MarketingText.includes("Credit costs"),
+    p11MarketingText.slice(0, 140),
+  );
+  await goto(page, "/dashboard/qasyn");
+  const p11DashboardText = ((await body(page)) || "").replace(/\s+/g, " ");
+  check(
+    "PART 11 /dashboard/qasyn renders the QASyn autonomous workspace",
+    p11DashboardText.includes("QASyn") && /PR impact analysis|Autonomous pipeline/i.test(p11DashboardText),
+    p11DashboardText.slice(0, 140),
+  );
+  await page.goto(`${BASE}/ship`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await page.waitForTimeout(600);
+  check("PART 11 /ship permanently redirects to /qasyn", page.url().endsWith("/qasyn"), page.url());
+  await page.goto(`${BASE}/dashboard/ship`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await page.waitForTimeout(600);
+  check("PART 11 /dashboard/ship permanently redirects to /dashboard/qasyn", page.url().endsWith("/dashboard/qasyn"), page.url());
+
+  // 11.3 — Canonical QASyn APIs.
+  const p11Workflows = await apiJson(page, "/api/dashboard/qasyn/workflows", "GET");
+  check(
+    "PART 11 GET /api/dashboard/qasyn/workflows returns the workflow list",
+    p11Workflows.status === 200 && Array.isArray(p11Workflows.body.workflows),
+    `status ${p11Workflows.status}`,
+  );
+  const p11Execute = await apiJson(page, "/api/dashboard/qasyn/execute-workflow", "POST", { name: `PART11 pipeline ${RUN_ID}` });
+  check(
+    "PART 11 POST /api/dashboard/qasyn/execute-workflow returns a Go/No-Go payload",
+    (p11Execute.status === 200 || p11Execute.status === 201) && ["Go", "No-Go"].includes(String(p11Execute.body.decision ?? "")),
+    `${p11Execute.status} · ${String(p11Execute.body.decision ?? "?")}`,
+  );
+  const p11WorkflowId = String((p11Execute.body.workflow as Record<string, unknown> | undefined)?.id ?? "");
+  const p11RunId = String((p11Execute.body.run as Record<string, unknown> | undefined)?.id ?? "");
+  if (p11RunId) await db.testRun.delete({ where: { id: p11RunId } }).catch(() => undefined);
+  if (p11WorkflowId) await db.shipWorkflow.delete({ where: { id: p11WorkflowId } }).catch(() => undefined);
+
+  // 11.4 — Obsidian Quantum Precision marketing home + interactive hero showcase.
+  await goto(page, "/");
+  const p11Hero = page.locator('[data-testid="marketing-hero-showcase"]').first();
+  const p11NavLink = page.locator('header a[href="/qasyn"]').first();
+  check("PART 11 the homepage renders the interactive hero showcase", (await p11Hero.count()) > 0);
+  check("PART 11 the marketing nav links to /qasyn", (await p11NavLink.count()) > 0);
+  if ((await p11Hero.count()) > 0) {
+    const p11Tabs = p11Hero.getByRole("tab");
+    const p11TabCount = await p11Tabs.count();
+    check("PART 11 the hero showcase exposes the three live tabs", p11TabCount === 3, `${p11TabCount} tab(s)`);
+    await p11Tabs.nth(1).click().catch(() => undefined);
+    await page.waitForTimeout(250);
+    const p11PrPanel = ((await p11Hero.innerText().catch(() => "")) || "").includes("POST /api/webhooks/ci-pr");
+    await p11Tabs.nth(2).click().catch(() => undefined);
+    await page.waitForTimeout(250);
+    const p11TypesText = ((await p11Hero.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    const p11TypePill = p11Hero.getByRole("button", { name: "Accessibility", exact: true }).first();
+    if ((await p11TypePill.count()) > 0) await p11TypePill.click().catch(() => undefined);
+    await page.waitForTimeout(250);
+    const p11AccessibilityText = ((await p11Hero.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    check(
+      "PART 11 hero tabs switch between grounding, PR gate and the 11-type engine",
+      p11PrPanel && p11TypesText.includes("Penetration") && p11AccessibilityText.includes("WCAG"),
+      p11TypesText.slice(0, 120),
+    );
+  } else {
+    check("PART 11 the hero showcase exposes the three live tabs", false, "showcase missing");
+    check("PART 11 hero tabs switch between grounding, PR gate and the 11-type engine", false, "showcase missing");
+  }
+  const p11Readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+  check(
+    "PART 11 README documents the QASyn route, API namespace and marketing experience",
+    p11Readme.includes("/dashboard/qasyn") &&
+      p11Readme.includes("/api/dashboard/qasyn") &&
+      p11Readme.includes("/ship") &&
+      p11Readme.includes("Visual time-travel evidence lightbox"),
+    `${p11Readme.length} chars`,
+  );
+
+  // 11.5 — Webhook failOnRegression + dynamic-origin snippet.
+  const p11FailingCase = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: `PART11 REGRESSION ${RUN_ID}`,
+    module: "Checkout",
+    criticality: "high",
+    stepsCount: 2,
+    targetUrl: "https://www.cgi.com",
+    testType: "Regression",
+  });
+  const p11FailingId = String(p11FailingCase.body.testCases?.[0]?.id ?? "");
+  let p11HookPrId = "";
+  let p11HookCaseIds: string[] = [];
+  if (p11FailingId) await db.testCase.update({ where: { id: p11FailingId }, data: { status: "failing" } });
+  const p11PrNumber = 970000 + (Date.now() % 20000);
+  const p11Hook = await apiJson(page, "/api/webhooks/ci-pr", "POST", {
+    prNumber: p11PrNumber,
+    title: `PART11 failOnRegression ${RUN_ID}`,
+    branch: `feature/part11-${RUN_ID}`,
+    author: "ci-bot",
+    repository: "cgi/digital-portal",
+    changedFiles: ["src/checkout/loan.ts"],
+    previewUrl: "https://www.cgi.com",
+    createTests: true,
+    failOnRegression: true,
+  });
+  interface Part11HookBody {
+    ok?: boolean;
+    verdict?: string;
+    prId?: string;
+    regressions?: number;
+    createdTestCases?: Array<{ id?: string }>;
+  }
+  const p11HookBody = p11Hook.body as unknown as Part11HookBody;
+  p11HookPrId = String(p11HookBody.prId ?? "");
+  p11HookCaseIds = (p11HookBody.createdTestCases ?? []).map((testCase) => String(testCase.id ?? "")).filter(Boolean);
+  check(
+    "PART 11 POST /api/webhooks/ci-pr honours failOnRegression with HTTP 422 and ok:false",
+    p11Hook.status === 422 && p11HookBody.ok === false && p11HookBody.verdict === "BLOCKED" && Number(p11HookBody.regressions ?? 0) > 0,
+    `${p11Hook.status} · ${p11HookBody.verdict ?? "?"} · ${p11HookBody.regressions ?? 0} regression(s)`,
+  );
+  const p11BoardSource = fs.readFileSync(path.join(process.cwd(), "components", "dashboard", "pages", "PullRequestsBoard.tsx"), "utf8");
+  check(
+    "PART 11 the PR drawer webhook snippet uses the dynamic browser origin",
+    p11BoardSource.includes("window.location.origin") && p11BoardSource.includes("webhookOrigin}/api/webhooks/ci-pr"),
+    `${p11BoardSource.length} chars`,
+  );
+  if (p11HookPrId) await db.pullRequestCheck.delete({ where: { id: p11HookPrId } }).catch(() => undefined);
+  if (p11HookCaseIds.length > 0) await db.testCase.deleteMany({ where: { id: { in: p11HookCaseIds } } }).catch(() => undefined);
+  if (p11FailingId) await apiJson(page, `/api/dashboard/test-cases/${p11FailingId}`, "DELETE");
+
+  check("PART 11 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part11-deliverables");
+
   await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────

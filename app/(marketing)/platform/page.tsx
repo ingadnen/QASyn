@@ -15,7 +15,7 @@ export default function Page() {
         features: [
   F("Multi-app studios in one workspace", "Available in the QASyn platform today."),
   F("Context Graph knowledge engine", "Available in the QASyn platform today."),
-  F("Autonomous Ship pipeline", "Available in the QASyn platform today."),
+  F("Autonomous QASyn pipeline", "Available in the QASyn platform today."),
   F("MCP server for AI coding agents", "Available in the QASyn platform today."),
   F("Physical Playwright execution", "Available in the QASyn platform today."),
   F("Immutable evidence trail", "Available in the QASyn platform today."),

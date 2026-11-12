@@ -1,5 +1,5 @@
 /**
- * Ship autonomous engine (consolidated): PR analyzer, blast-radius mapping,
+ * QASyn autonomous engine (consolidated): PR analyzer, blast-radius mapping,
  * bug reproducer and the end-to-end release pipeline facade.
  * All functions are pure/deterministic and organisation-scoped by callers.
  */
@@ -42,9 +42,9 @@ export function analyzeBlastRadius(files: string[], testCases: Array<{ id: strin
 
 export { reproduceBug };
 
-/** Pipeline facade shared by /api/dashboard/ship/* routes. */
-export const SHIP_STAGES = ["Crawl", "Requirements", "Test generation", "Execution", "Release report"] as const;
+/** Pipeline facade shared by /api/dashboard/qasyn/* routes. */
+export const QASYN_STAGES = ["Crawl", "Requirements", "Test generation", "Execution", "Release report"] as const;
 
-export function shipVerdict(passRate: number): "Go" | "No-Go" {
+export function qasynVerdict(passRate: number): "Go" | "No-Go" {
   return passRate >= 70 ? "Go" : "No-Go";
 }

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const QUIZ = [
   { q: "What does the self-healing score weight Text at?", options: ["0.1", "0.2", "0.3", "0.5"], answer: 2 },
   { q: "Which header authenticates MCP agents?", options: ["x-api-key", "Bearer cqa_…", "Cookie qasyn_org", "None"], answer: 1 },
-  { q: "What verdict does Ship emit from evidence?", options: ["Maybe", "Go / No-Go", "Pending forever", "Manual"], answer: 1 },
+  { q: "What verdict does QASyn emit from evidence?", options: ["Maybe", "Go / No-Go", "Pending forever", "Manual"], answer: 1 },
 ];
 
 export function AcademyQuiz({ badgeName }: { badgeName: string }) {

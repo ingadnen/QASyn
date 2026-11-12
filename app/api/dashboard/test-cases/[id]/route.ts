@@ -288,8 +288,6 @@ export async function PATCH(request: Request, { params }: Params) {
       step.status = stepStatus;
       step.screenshotBase64 = stepEvidence;
       step.screenshotMime = stepIndex === index ? evidenceMime : "image/svg+xml";
-      step.lastScreenshot = stepEvidence;
-      step.screenshot = stepEvidence;
       step.lastRunStatus = stepStatus;
       step.lastRunAt = now.toISOString();
       return {
@@ -304,8 +302,6 @@ export async function PATCH(request: Request, { params }: Params) {
             : "OK · screenshot attached.",
         screenshotBase64: stepEvidence,
         screenshotMime: stepIndex === index ? evidenceMime : "image/svg+xml",
-        screenshot: stepEvidence,
-        lastScreenshot: stepEvidence,
       };
     });
     const { updated, run, version } = await prisma.$transaction(
@@ -400,8 +396,6 @@ export async function PATCH(request: Request, { params }: Params) {
       status?: string;
       screenshotBase64?: string;
       screenshotMime?: string;
-      lastScreenshot?: string;
-      screenshot?: string;
       lastRunStatus?: string;
       lastRunAt?: string;
       lastError?: string;
@@ -496,8 +490,6 @@ export async function PATCH(request: Request, { params }: Params) {
       s.status = status;
       s.screenshotBase64 = evidence;
       s.screenshotMime = liveEvidence ? "image/png" : existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml";
-      s.lastScreenshot = evidence;
-      s.screenshot = evidence;
       s.lastRunStatus = status;
       s.lastRunAt = now.toISOString();
       if (failed) s.lastError = "Assertion failed: expected the target to be visible within 15s.";
@@ -516,8 +508,6 @@ export async function PATCH(request: Request, { params }: Params) {
               : "OK",
         screenshotBase64: evidence,
         screenshotMime: liveEvidence ? "image/png" : existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml",
-        screenshot: evidence,
-        lastScreenshot: evidence,
       };
     });
     const status = shouldFail ? "failing" : "passing";

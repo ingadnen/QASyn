@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { reproduceBug } from "@/lib/engines";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
@@ -7,7 +7,7 @@ import { delay } from "@/lib/utils";
 import { bugReproSchema } from "@/lib/validation";
 
 /**
- * POST /api/dashboard/ship/bug-repro { title, description }
+ * POST /api/dashboard/qasyn/bug-repro { title, description }
  * Extracts reproduction steps from a support ticket, generates the bug report
  * and a matching test case, with an AI-detected probable root cause.
  */
@@ -50,6 +50,6 @@ export async function POST(request: Request) {
     },
   });
   await spendCredits(prisma, ctx.org.id, 15);
-  await audit(prisma, ctx, "ship.bug_repro", `${title} · ${severity} · ${rootCause}`);
+  await audit(prisma, ctx, "qasyn.bug_repro", `${title} · ${severity} · ${rootCause}`);
   return NextResponse.json({ bug, testCase, rootCause, severity }, { status: 201 });
 }

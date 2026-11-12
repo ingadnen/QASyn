@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { z } from "zod";
 
-const schema = z.object({ name: z.string().trim().min(2).max(120).default("Autonomous Ship run") });
+const schema = z.object({ name: z.string().trim().min(2).max(120).default("Autonomous QASyn run") });
 
-/** GET /api/dashboard/ship/workflows — autonomous workflow history. */
+/** GET /api/dashboard/qasyn/workflows — autonomous workflow history. */
 export async function GET() {
   const guard = await guardApi();
   if (!guard.ok) return guard.response;
@@ -16,7 +16,7 @@ export async function GET() {
   return NextResponse.json({ workflows });
 }
 
-/** POST /api/dashboard/ship/workflows — run the autonomous pipeline (crawl → generate → execute → report). */
+/** POST /api/dashboard/qasyn/workflows — run the autonomous pipeline (crawl → generate → execute → report). */
 export async function POST(request: Request) {
   const guard = await guardApi({ write: true });
   if (!guard.ok) return guard.response;
@@ -49,6 +49,6 @@ export async function POST(request: Request) {
     },
   });
   await spendCredits(prisma, ctx.org.id, 20);
-  await audit(prisma, ctx, "ship.workflow", `${workflow.name} · ${decision}`);
+  await audit(prisma, ctx, "qasyn.workflow", `${workflow.name} · ${decision}`);
   return NextResponse.json({ workflow, stages }, { status: 201 });
 }

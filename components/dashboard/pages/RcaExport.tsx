@@ -8,7 +8,7 @@ export function RcaExport({ runId, title }: { runId: string; title: string }) {
   const { run, pending, error } = useAction();
   const [done, setDone] = useState<string | null>(null);
   async function exportBug(tracker: "jira" | "linear") {
-    const res = await run<{ bug: { id: string } }>("bug", "/api/dashboard/ship/bug-repro", {
+    const res = await run<{ bug: { id: string } }>("bug", "/api/dashboard/qasyn/bug-repro", {
       json: { title: `RCA: ${title} (${tracker.toUpperCase()})`, description: `Execution run ${runId}\nSee /dashboard/runs/${runId} for full evidence.` },
     });
     if (res?.bug) setDone(tracker);

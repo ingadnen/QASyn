@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { z } from "zod";
 
-const schema = z.object({ name: z.string().trim().min(2).max(120).default("Full Ship execution") });
+const schema = z.object({ name: z.string().trim().min(2).max(120).default("Full QASyn execution") });
 
 /**
- * POST /api/dashboard/ship/execute-workflow — end-to-end autonomous pipeline:
+ * POST /api/dashboard/qasyn/execute-workflow — end-to-end autonomous pipeline:
  * crawl → requirements → NLP test cases → plan execution → release report (Go/No-Go).
  */
 export async function POST(request: Request) {
@@ -69,12 +69,36 @@ export async function POST(request: Request) {
     });
   }
 
-  // 4) Execute the full plan: link all cases to a plan and measure pass rate
+  // 4) Execute the full plan: link every case to a suite + plan and measure pass rate
   const cases = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id } });
-  let plan = await prisma.testPlan.findFirst({ where: { organisationId: ctx.org.id, name: "Ship full execution" } });
+  const suite =
+    (await prisma.testSuite.findFirst({ where: { organisationId: ctx.org.id, name: "QASyn full execution suite" } })) ??
+    (await prisma.testSuite.create({
+      data: {
+        organisationId: ctx.org.id,
+        name: "QASyn full execution suite",
+        module: "",
+        platform: "Web",
+        testCasesCount: cases.length,
+        testCases: { connect: cases.map((c) => ({ id: c.id })) },
+      },
+    }));
+  let plan = await prisma.testPlan.findFirst({ where: { organisationId: ctx.org.id, name: "QASyn full execution" } });
   if (!plan) {
     plan = await prisma.testPlan.create({
-      data: { organisationId: ctx.org.id, name: "Ship full execution", environment: "Staging", testCasesCount: cases.length, testCases: { connect: cases.map((c) => ({ id: c.id })) } },
+      data: {
+        organisationId: ctx.org.id,
+        name: "QASyn full execution",
+        environment: "Staging",
+        testCasesCount: cases.length,
+        testCases: { connect: cases.map((c) => ({ id: c.id })) },
+        suites: { connect: [{ id: suite.id }] },
+      },
+    });
+  } else {
+    plan = await prisma.testPlan.update({
+      where: { id: plan.id },
+      data: { suites: { connect: [{ id: suite.id }] } },
     });
   }
   const passing = cases.filter((c) => c.status === "passing").length;
@@ -103,7 +127,7 @@ export async function POST(request: Request) {
     data: {
       organisationId: ctx.org.id,
       release: 1,
-      version: "ship-1",
+      version: "qasyn-1",
       title: parsed.data.name,
       status: decision === "Go" ? "SUCCESS" : "FAILED",
       qualityScore: passRate,
@@ -120,6 +144,6 @@ export async function POST(request: Request) {
     },
   });
   await spendCredits(prisma, ctx.org.id, 50);
-  await audit(prisma, ctx, "ship.execute_workflow", `${parsed.data.name} · ${decision} · ${passRate}%`);
+  await audit(prisma, ctx, "qasyn.execute_workflow", `${parsed.data.name} · ${decision} · ${passRate}%`);
   return NextResponse.json({ workflow, run, stages, decision, passRate }, { status: 201 });
 }

@@ -485,8 +485,6 @@ export async function runTestCases(
       step.status = stepStatus;
       step.screenshotBase64 = evidence;
       step.screenshotMime = existingEvidence ? step.screenshotMime ?? "image/png" : "image/svg+xml";
-      step.lastScreenshot = evidence;
-      step.screenshot = evidence;
       step.lastRunStatus = stepStatus;
       step.lastRunAt = now.toISOString();
       return {
@@ -502,8 +500,6 @@ export async function runTestCases(
             : "OK · screenshot attached.",
         screenshotBase64: evidence,
         screenshotMime: existingEvidence ? step.screenshotMime ?? "image/png" : "image/svg+xml",
-        screenshot: evidence,
-        lastScreenshot: evidence,
       };
     });
     stepsChanged = steps.length > 0;

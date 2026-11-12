@@ -562,7 +562,10 @@
   "environmentId": "env_id",
   "targetUrl": "https://staging.example.com",
   "createTests": true }</pre></div>
-      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/webhooks/ci-pr</code></div><p>Autonomous CI/CD gatekeeper for GitHub Actions, GitLab CI and Azure DevOps. Authenticate with <code>x-qasyn-token: cqa_…</code>, <code>Authorization: Bearer cqa_…</code> or a session cookie. Upserts the PR, auto-creates Smoke + Regression cases, runs the suite with per-step screenshots and returns <code>verdict</code> + <code>markdownReport</code>.</p><pre>{ "prNumber": 402, "title": "Feat: BDC loan calculator",
+      <div class="api"><div class="api-head"><span class="method">GET</span><code>/api/dashboard/qasyn/workflows</code></div><p>QASyn Agent workflow history. <code>POST</code> runs the crawl → generate → execute → report pipeline with a Go / No-Go decision.</p></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/qasyn/pr-impact</code></div><p>Map changed files to modules, select the regression scope and return the Go / No-Go verdict and blast radius.</p><pre>{ "prNumber": 1234, "branch": "main", "title": "Fix checkout", "files": ["src/checkout/page.tsx"] }</pre></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/qasyn/bug-repro</code></div><p>Turn a support ticket into reproduction steps, a bug report and a generated test case with a probable root cause.</p></div>
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/webhooks/ci-pr</code></div><p>Autonomous CI/CD gatekeeper for GitHub Actions, GitLab CI and Azure DevOps. Authenticate with <code>x-qasyn-token: cqa_…</code>, <code>Authorization: Bearer cqa_…</code> or a session cookie. Upserts the PR, auto-creates Smoke + Regression cases, runs the suite with per-step screenshots and returns <code>verdict</code> + <code>markdownReport</code>. Set <code>failOnRegression: true</code> for HTTP 422 on regressions.</p><pre>{ "prNumber": 402, "title": "Feat: BDC loan calculator",
   "branch": "feat/loan-calculator", "branchTarget": "main",
   "author": "ci-bot", "repository": "org/web-portal",
   "changedFiles": ["src/checkout/loan.ts"],

@@ -257,7 +257,7 @@ export function simulateMobileRun(device: string, gestures: Gesture[]): { log: s
   return { log, passed: ok };
 }
 
-// ---------------------------------------------------------------- Ship
+// ---------------------------------------------------------------- QASyn
 
 const MODULE_KEYWORDS: Array<[string, string]> = [
   ["billing", "Billing"],

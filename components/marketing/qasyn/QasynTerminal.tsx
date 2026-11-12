@@ -22,8 +22,8 @@ const TAG_COLORS: Record<string, string> = {
   INFO: "text-term-dim",
 };
 
-/** Terminal "ship watch --all" rejoué ligne par ligne (boucle). */
-export function ShipTerminal({ lines, intervalMs = 650 }: { lines: TerminalLine[]; intervalMs?: number }) {
+/** Terminal "qasyn watch --all" rejoué ligne par ligne (boucle). */
+export function QasynTerminal({ lines, intervalMs = 650 }: { lines: TerminalLine[]; intervalMs?: number }) {
   const [shown, setShown] = useState(0);
 
   useEffect(() => {
@@ -38,11 +38,11 @@ export function ShipTerminal({ lines, intervalMs = 650 }: { lines: TerminalLine[
         <span className="size-3 rounded-full bg-[#ff6058]" />
         <span className="size-3 rounded-full bg-[#febc2e]" />
         <span className="size-3 rounded-full bg-[#28c840]" />
-        <span className="ml-3 font-mono text-xs text-term-dim">ship — acme/storefront</span>
+        <span className="ml-3 font-mono text-xs text-term-dim">qasyn — acme/storefront</span>
       </div>
       <div className="h-[340px] overflow-hidden p-5 font-mono text-[12.5px] leading-relaxed" aria-live="off">
         <p className="text-[#eff4fb]">
-          <span className="text-term-mint">$</span> ship watch --all
+          <span className="text-term-mint">$</span> qasyn watch --all
         </p>
         {lines.slice(0, shown).map((line, i) => (
           <p key={i} className={cn("animate-fade-in", line.stream === "stderr" ? "text-red-300/90" : "text-term-text")}>

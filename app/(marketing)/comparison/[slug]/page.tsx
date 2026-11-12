@@ -11,7 +11,7 @@ const ROWS: Array<[string, string, string]> = [
   ["MCP server for Cursor / Claude Code", "✓", "✕"],
   ["CodiTOS code export (Playwright, Selenium, Cypress)", "✓", "Partial"],
   ["Physical browser execution (Chrome/Firefox/WebKit)", "✓", "✓"],
-  ["Autonomous Ship release pipeline (Go/No-Go)", "✓", "✕"],
+  ["Autonomous QASyn release pipeline (Go/No-Go)", "✓", "✕"],
   ["12-week enterprise pilot with SLA", "✓", "✕"],
 ];
 

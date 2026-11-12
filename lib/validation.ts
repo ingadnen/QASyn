@@ -424,7 +424,7 @@ export const mcpTestSchema = z.object({
   tool: z.enum(["list_test_cases", "get_quality_summary", "list_bugs", "list_pull_requests"]),
 });
 
-// ---------- Web / Mobile / API / Ship engines ----------
+// ---------- Web / Mobile / API / QASyn engines ----------
 export const testPlanRunSchema = z.object({ planId: z.string().min(1, "planId required.").max(60) });
 
 export const mobileUploadSchema = z.object({

@@ -1,11 +1,11 @@
 /**
  * Contenu statique de la vitrine (marketing). Noms de clients et témoignages FICTIFS.
- * Les métriques Ship (72 / 94 / 68 / 43 %) et la grille tarifaire reprennent la structure observée.
+ * Les métriques QASyn (72 / 94 / 68 / 43 %) et la grille tarifaire reprennent la structure observée.
  */
 
 export const MARKETING_NAV = [
   { href: "/", label: "Home" },
-  { href: "/ship", label: "Ship" },
+  { href: "/qasyn", label: "QASyn" },
   { href: "/integrations", label: "Integrations" },
   { href: "/learning", label: "Learning" },
   { href: "/dashboard/overview", label: "Dashboard" },
@@ -22,7 +22,7 @@ export const CUSTOMER_WORDMARKS = ["Acme", "Globex", "Initech", "Hooli", "Vandel
 
 export const TESTIMONIALS = [
   {
-    quote: "Ship flagged the session regression on PR #1234 before anyone opened the diff. Our release reviews went from an hour to five minutes.",
+    quote: "QASyn flagged the session regression on PR #1234 before anyone opened the diff. Our release reviews went from an hour to five minutes.",
     name: "Jordan Lee",
     role: "Head of QA, Acme (demo)",
   },
@@ -58,7 +58,7 @@ export const PLANS: Plan[] = [
     price: 0,
     period: "15 days",
     credits: 3000,
-    blurb: "Try Ship on one repository, no card required.",
+    blurb: "Try QASyn on one repository, no card required.",
     features: ["3,000 credits", "1 repository", "PR impact analysis", "Community support"],
     cta: "Start free",
   },
@@ -94,7 +94,7 @@ export const PLANS: Plan[] = [
   },
 ];
 
-/** Coût en crédits par action (structure observée sur la page Ship). */
+/** Coût en crédits par action (structure observée sur la page QASyn). */
 export const CREDIT_COSTS = [
   { action: "Test run", cost: "1 credit / 4 steps" },
   { action: "PR impact analysis", cost: "10 credits" },

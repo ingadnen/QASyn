@@ -37,7 +37,7 @@ export const LEARNING_SECTIONS: LearningSection[] = [
     modules: [
       m("gs-intro", "Introduction to QASyn", "Getting Started", "guide", 8, "What QASyn does: AI-powered test automation, crawl, PR checks and evidence.", "/dashboard/overview", "Open overview"),
       m("gs-quickstart", "Quickstart Guide", "Getting Started", "tutorial", 15, "Create your workspace, connect an environment and run your first crawl.", "/dashboard/crawl", "Start a crawl"),
-      m("gs-video", "Video Walkthroughs", "Getting Started", "video", 20, "Watch the full product tour: test cases, execution, reporting and Ship.", "/learning", "Watch"),
+      m("gs-video", "Video Walkthroughs", "Getting Started", "video", 20, "Watch the full product tour: test cases, execution, reporting and QASyn.", "/learning", "Watch"),
       m("gs-demo", "Interactive Demo", "Getting Started", "demo", 10, "Hands-on interactive demo of crawl, generation and execution.", "/dashboard/test-cases", "Open test cases"),
       m("gs-cicd", "Tutorial: Prepare a CI/CD quality gate", "Getting Started", "tutorial", 12, "Wire PR checks into CI with API tokens and baseline gates.", "/dashboard/pull-requests", "Check a PR"),
     ],
@@ -101,13 +101,13 @@ export const LEARNING_SECTIONS: LearningSection[] = [
     ],
   },
   {
-    name: "Ship by QASyn",
+    name: "QASyn Agent",
     modules: [
-      m("ship-setup", "Set up a Ship Workspace", "Ship by QASyn", "tutorial", 12, "Connect a repository, pick a baseline and enable PR impact analysis.", "/dashboard/integrations", "Open integrations"),
-      m("ship-dashboard", "Read the Ship Dashboard and Evidence", "Ship by QASyn", "guide", 10, "Quality score, coverage, regressions and cost avoided per release.", "/dashboard/overview", "Open overview"),
-      m("ship-workflows", "Run Ship Workflows", "Ship by QASyn", "tutorial", 14, "Autonomous pipeline: crawl, generate, execute, report — no human steps.", "/dashboard/crawl", "Start a crawl"),
-      m("ship-integrations", "Connect Ship Integrations and MCP", "Ship by QASyn", "guide", 10, "GitHub, GitLab, Jira, Linear, Slack and the MCP server.", "/dashboard/mcp", "Open MCP"),
-      m("ship-security", "Operate Ship Safely", "Ship by QASyn", "guide", 8, "Audit logs, API tokens, roles and usage controls.", "/dashboard/settings/audits", "Open audits"),
+      m("ship-setup", "Set up a QASyn Workspace", "QASyn Agent", "tutorial", 12, "Connect a repository, pick a baseline and enable PR impact analysis.", "/dashboard/integrations", "Open integrations"),
+      m("ship-dashboard", "Read the QASyn Dashboard and Evidence", "QASyn Agent", "guide", 10, "Quality score, coverage, regressions and cost avoided per release.", "/dashboard/overview", "Open overview"),
+      m("ship-workflows", "Run QASyn Workflows", "QASyn Agent", "tutorial", 14, "Autonomous pipeline: crawl, generate, execute, report — no human steps.", "/dashboard/crawl", "Start a crawl"),
+      m("ship-integrations", "Connect QASyn Integrations and MCP", "QASyn Agent", "guide", 10, "GitHub, GitLab, Jira, Linear, Slack and the MCP server.", "/dashboard/mcp", "Open MCP"),
+      m("ship-security", "Operate QASyn Safely", "QASyn Agent", "guide", 8, "Audit logs, API tokens, roles and usage controls.", "/dashboard/settings/audits", "Open audits"),
     ],
   },
   {

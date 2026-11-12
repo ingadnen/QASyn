@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BugReproForm, PrImpactForm, ShipWorkflowRun } from "@/components/dashboard/pages/EnginesClient";
-import { ShipExecuteFull } from "@/components/dashboard/pages/AgentClients";
+import { BugReproForm, PrImpactForm, QasynWorkflowRun } from "@/components/dashboard/pages/EnginesClient";
+import { QasynExecuteFull } from "@/components/dashboard/pages/AgentClients";
 import { Card, EmptyState, PageHeader, StatusPill } from "@/components/dashboard/ui";
 import { prisma } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
 import { requireOrgContext } from "@/lib/tenant";
 
-export const metadata: Metadata = { title: "Ship" };
+export const metadata: Metadata = { title: "QASyn" };
 export const dynamic = "force-dynamic";
 
-export default async function ShipPage() {
+export default async function QasynPage() {
   const ctx = await requireOrgContext();
   const [analyses, workflows] = await Promise.all([
     prisma.prAnalysis.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "desc" }, take: 10 }),
@@ -18,12 +18,12 @@ export default async function ShipPage() {
   ]);
   return (
     <div className="space-y-6">
-      <PageHeader kicker="AUTONOMOUS SHIP WORKFLOWS" title="Ship" description="The autonomous QA engineer: PR impact analysis, bug reproduction and evidence-based Go / No-Go decisions." />
-      <Card title="Full Ship execution (crawl → requirements → test cases → plan → release report)">
-        <div className="px-5 py-4"><ShipExecuteFull readOnly={ctx.readOnly} /></div>
+      <PageHeader kicker="AUTONOMOUS QASYN WORKFLOWS" title="QASyn" description="The autonomous QA engineer: PR impact analysis, bug reproduction and evidence-based Go / No-Go decisions." />
+      <Card title="Full QASyn execution (crawl → requirements → test cases → plan → release report)">
+        <div className="px-5 py-4"><QasynExecuteFull readOnly={ctx.readOnly} /></div>
       </Card>
       <Card title="Autonomous pipeline (crawl → generate → execute → report)">
-        <div className="px-5 py-4"><ShipWorkflowRun readOnly={ctx.readOnly} /></div>
+        <div className="px-5 py-4"><QasynWorkflowRun readOnly={ctx.readOnly} /></div>
       </Card>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="PR impact analysis"><div className="px-5 py-4"><PrImpactForm readOnly={ctx.readOnly} /></div></Card>

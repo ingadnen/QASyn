@@ -1,7 +1,7 @@
 /**
  * Interactive E2E architecture test (TDD, step-by-step with clear logs).
  * Uses the REAL engines: Playwright (when installed), real HTTP chaining,
- * the MCP tool server and the autonomous Ship pipeline.
+ * the MCP tool server and the autonomous QASyn pipeline.
  *
  * Run: npx tsx scripts/test-architecture-e2e.ts
  */
@@ -103,7 +103,7 @@ async function step3() {
 }
 
 async function step4() {
-  console.log("\n=== STEP 4 · Autonomous Ship pipeline ===");
+  console.log("\n=== STEP 4 · Autonomous QASyn pipeline ===");
   const org = await prisma.organisation.findUnique({ where: { slug: "acme" } });
   if (!org) throw new Error("Acme org missing");
   // Crawl → requirements → NLP cases already exist for Acme; execute a REAL
@@ -111,8 +111,8 @@ async function step4() {
   const cases = await prisma.testCase.findMany({ where: { organisationId: org.id }, take: 3 });
   if (cases.length === 0) throw new Error("No test cases for Acme");
   const steps = [
-    { id: "ship-1", action: "Navigate", target: "https://example.com", value: "", selector: "" },
-    { id: "ship-2", action: "Verify Element", target: "This domain is for use", value: "", selector: "" },
+    { id: "qasyn-1", action: "Navigate", target: "https://example.com", value: "", selector: "" },
+    { id: "qasyn-2", action: "Verify Element", target: "This domain is for use", value: "", selector: "" },
   ];
   const outcomes = await executeWebSteps(steps);
   const realOk = outcomes.every((o) => o.fetched);
@@ -136,7 +136,7 @@ async function step4() {
     },
   });
   console.log(`  Workflow ${workflow.id}: decision=${decision} passRate=${passRate}%`);
-  check("Ship pipeline produced a Go/No-Go verdict", decision === "Go" || decision === "No-Go");
+  check("QASyn pipeline produced a Go/No-Go verdict", decision === "Go" || decision === "No-Go");
 }
 
 async function step5() {

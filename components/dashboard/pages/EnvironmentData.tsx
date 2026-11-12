@@ -654,7 +654,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
         <div className="space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <p className="max-w-3xl text-[13px] leading-5 text-[#6b7280]">
-              The app logins Ship holds for your tests and crawls. Each keeps its latest captured session, encrypted, and the login test that can sign in again when it expires.
+              The app logins QASyn holds for your tests and crawls. Each keeps its latest captured session, encrypted, and the login test that can sign in again when it expires.
             </p>
             <button type="button" className={cqaBtnPrimary} disabled={readOnly} onClick={() => setAuthModal(true)}>
               <CqaIcon name="add" className="text-[17px]" /> Add auth profile
@@ -674,7 +674,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
               <EmptyBlock
                 icon="lock_person"
                 title="No auth profiles yet"
-                description="Add a login for Ship to use, or finish onboarding and the login it captured appears here."
+                description="Add a login for QASyn to use, or finish onboarding and the login it captured appears here."
                 action={
                   <button type="button" className={cqaBtnPrimary} disabled={readOnly} onClick={() => setAuthModal(true)}>
                     <CqaIcon name="add" className="text-[17px]" /> Add auth profile
@@ -1498,7 +1498,7 @@ function AuthProfileModal({
       }
     >
       <form id="auth-form" onSubmit={submit} className="space-y-4">
-        <p className="text-[12.5px] text-[#6b7280]">How Ship signs in to your app. Passwords and codes are encrypted and never shown again.</p>
+        <p className="text-[12.5px] text-[#6b7280]">How QASyn signs in to your app. Passwords and codes are encrypted and never shown again.</p>
         <label className="block">
           <span className={cqaLabel}>Name *</span>
           <input className={cqaInput} value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} placeholder="e.g. Acme staging login" />
@@ -1534,7 +1534,7 @@ function AuthProfileModal({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[12.5px] font-medium text-[#111827]">Sign in again automatically when the session expires</p>
-              <p className="mt-0.5 text-[11.5px] text-[#9ca3af]">Saved as a preference. Whether Ship can repeat the sign-in without you is checked after the first sign-in.</p>
+              <p className="mt-0.5 text-[11.5px] text-[#9ca3af]">Saved as a preference. Whether QASyn can repeat the sign-in without you is checked after the first sign-in.</p>
             </div>
             <button
               type="button"
@@ -1550,7 +1550,7 @@ function AuthProfileModal({
         </div>
         <div className="rounded-lg border border-[#e5e7eb]">
           <button type="button" aria-expanded={advancedOpen} onClick={() => setAdvancedOpen((v) => !v)} className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[12.5px] font-medium text-[#374151]">
-            <span className="inline-flex items-center gap-1.5"><CqaIcon name="shield" className="text-[16px] text-[#6b7280]" /> Advanced · how Ship confirms the sign-in</span>
+            <span className="inline-flex items-center gap-1.5"><CqaIcon name="shield" className="text-[16px] text-[#6b7280]" /> Advanced · how QASyn confirms the sign-in</span>
             <CqaIcon name={advancedOpen ? "expand_less" : "expand_more"} className="text-[18px]" />
           </button>
           {advancedOpen && (

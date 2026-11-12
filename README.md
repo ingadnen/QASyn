@@ -113,6 +113,19 @@ The repository is a full Next.js application backed by Prisma + SQLite, with a P
 
 > The sidebar exposes the most-used modules directly; the Settings group contains the five configuration pages. The **Super-Admin Console** lives at `/dashboard/settings/organization#super-admin` and is visible only to super-admin accounts.
 
+### QASyn Agent (autonomous engine)
+
+The autonomous engine is fully branded QASyn (the legacy `/ship` route is retired):
+
+| Surface | Route | Purpose |
+| --- | --- | --- |
+| Marketing | `/qasyn` | Flagship product page: terminal, blast-radius analysis, credit pricing. |
+| Workspace | `/dashboard/qasyn` | PR impact analysis, bug reproduction, full pipeline execution, Go/No-Go history. |
+| APIs | `/api/dashboard/qasyn/*` | `pr-impact`, `bug-repro`, `workflows`, `execute-workflow`. |
+| Redirects | `/ship` → `/qasyn`, `/dashboard/ship` → `/dashboard/qasyn` | Permanent router-level redirects for legacy bookmarks. |
+
+The engine lives in [`lib/qasyn-engine.ts`](lib/qasyn-engine.ts) (`analyzeBlastRadius`, `reproduceBug`, `QASYN_STAGES`, `qasynVerdict`).
+
 ---
 
 ## The 11 test types
@@ -240,6 +253,8 @@ The endpoint upserts the `PullRequestCheck`, maps changed files to impacted modu
   "markdownReport": "## QASyn CI/CD PR Gate — ✅ APPROVED FOR MERGE …"
 }
 ```
+
+Set `"failOnRegression": true` to return HTTP `422` (`ok: false`, `verdict: "BLOCKED"`) when regressions are detected, so `curl --fail` fails the pipeline automatically. The copy-ready snippet in the PR drawer uses the browser's dynamic origin (e.g. `https://your-qasyn-host`), not a hardcoded localhost URL.
 
 **GitHub Actions example**
 

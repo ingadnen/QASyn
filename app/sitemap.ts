@@ -21,7 +21,7 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
     terms = [];
   }
   const staticPaths = [
-    "", "/ship", "/integrations", "/learning", "/signup", "/login",
+    "", "/qasyn", "/integrations", "/learning", "/signup", "/login",
     "/platform", "/platform/at-a-glance", "/platform/enterprise-apps-testing", "/platform/ai-agents-testing",
     "/platform/ai-based-self-healing", "/platform/root-cause-analysis", "/platform/code-export", "/platform/mcp",
     "/platform/ai-insights-analytics", "/platform/impact-analysis", "/platform/continuous-testing", "/platform/test-infrastructure",

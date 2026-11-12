@@ -78,7 +78,7 @@ export function OverviewTerminal({
               height="h-56"
             />
           ) : (
-            <CrawlTerminal targetUrl="ship watch --all" startedAt={null} status="completed" logs={runLines} height="h-56" />
+            <CrawlTerminal targetUrl="qasyn watch --all" startedAt={null} status="completed" logs={runLines} height="h-56" />
           )}
         </div>
       )}

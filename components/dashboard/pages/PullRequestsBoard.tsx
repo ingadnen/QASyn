@@ -156,7 +156,13 @@ function PrDetailDrawer({
   const modules = row.impact.modules ?? [];
   const commentPosted = row.commentPosted && Boolean(row.commentBody);
 
-  // Phase 10 — ready-to-copy CI/CD webhook snippet for this exact PR.
+  // Phase 10/11 — ready-to-copy CI/CD webhook snippet for this exact PR.
+  // The origin is resolved on the client so hosted deployments print their
+  // real URL instead of a hardcoded localhost.
+  const [webhookOrigin, setWebhookOrigin] = useState("http://localhost:3000");
+  useEffect(() => {
+    if (typeof window !== "undefined") setWebhookOrigin(window.location.origin);
+  }, []);
   const webhookPreviewUrl =
     autoUrl || environments.find((environment) => environment.id === autoEnv)?.baseUrl || row.externalUrl || "https://www.cgi.com";
   const webhookPayload = JSON.stringify({
@@ -170,8 +176,8 @@ function PrDetailDrawer({
     previewUrl: webhookPreviewUrl,
     createTests: true,
   });
-  const webhookCurl = `curl -X POST http://localhost:3000/api/webhooks/ci-pr -H "content-type: application/json" -H "x-qasyn-token: cqa_your_api_token" -d '${webhookPayload}'`;
-  const githubWorkflow = `- name: QASyn autonomous PR gate\n  run: |\n    curl -X POST http://localhost:3000/api/webhooks/ci-pr \\\n      -H "content-type: application/json" \\\n      -H "x-qasyn-token: \${{ secrets.QASYN_TOKEN }}" \\\n      -d '${webhookPayload.replace(/'/g, "'\\''")}'`;
+  const webhookCurl = `curl -X POST ${webhookOrigin}/api/webhooks/ci-pr -H "content-type: application/json" -H "x-qasyn-token: cqa_your_api_token" -d '${webhookPayload}'`;
+  const githubWorkflow = `- name: QASyn autonomous PR gate\n  run: |\n    curl -X POST ${webhookOrigin}/api/webhooks/ci-pr \\\n      -H "content-type: application/json" \\\n      -H "x-qasyn-token: \${{ secrets.QASYN_TOKEN }}" \\\n      -d '${webhookPayload.replace(/'/g, "'\\''")}'`;
 
   async function generateGate() {
     setGateOpen(true);

@@ -102,8 +102,8 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
         intent,
         text: t(
           lang,
-          `Release #${r.release} (${r.version}) scored ${r.qualityScore}/100 in ${ws}${demoNote} — ${r.delta >= 0 ? "↑" : "↓"} ${Math.abs(r.delta)} vs the previous release. Ship caught ${r.regressionsCaught} regression(s) before merge and ${r.testsPassed}/${r.testsTotal} tests passed.`,
-          `La release #${r.release} (${r.version}) obtient ${r.qualityScore}/100 dans ${ws}${demoNote} — ${r.delta >= 0 ? "↑" : "↓"} ${Math.abs(r.delta)} par rapport à la précédente. Ship a intercepté ${r.regressionsCaught} régression(s) avant merge et ${r.testsPassed}/${r.testsTotal} tests sont passés.`,
+          `Release #${r.release} (${r.version}) scored ${r.qualityScore}/100 in ${ws}${demoNote} — ${r.delta >= 0 ? "↑" : "↓"} ${Math.abs(r.delta)} vs the previous release. QASyn caught ${r.regressionsCaught} regression(s) before merge and ${r.testsPassed}/${r.testsTotal} tests passed.`,
+          `La release #${r.release} (${r.version}) obtient ${r.qualityScore}/100 dans ${ws}${demoNote} — ${r.delta >= 0 ? "↑" : "↓"} ${Math.abs(r.delta)} par rapport à la précédente. QASyn a intercepté ${r.regressionsCaught} régression(s) avant merge et ${r.testsPassed}/${r.testsTotal} tests sont passés.`,
         ),
         links: [dashboard],
       };
@@ -125,7 +125,7 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
         intent,
         text: t(
           lang,
-          `Release #${r.release} avoided ${formatUsdCompact(r.costAvoided)} in defect cost${total ? ` — ${total} across all ${ctx.totals!.runs} releases` : ""}. That's the estimated cost of the bugs Ship stopped before production.`,
+          `Release #${r.release} avoided ${formatUsdCompact(r.costAvoided)} in defect cost${total ? ` — ${total} across all ${ctx.totals!.runs} releases` : ""}. That's the estimated cost of the bugs QASyn stopped before production.`,
           `La release #${r.release} a évité ${formatUsdCompact(r.costAvoided)} de coût de défaut${total ? ` — ${total} cumulés sur ${ctx.totals!.runs} releases` : ""}. C'est le coût estimé des bugs stoppés avant la production.`,
         ),
         links: [dashboard],
@@ -154,7 +154,7 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
           "Plans: Free trial ($0, 15 days, 3,000 credits), Starter ($49/mo, 2,000 credits), Pro ($249/mo, 12,000 credits) and Enterprise (custom). A test run costs 1 credit per 4 steps; a PR analysis 10 credits.",
           "Offres : Free trial (0 $, 15 jours, 3 000 crédits), Starter (49 $/mois, 2 000 crédits), Pro (249 $/mois, 12 000 crédits) et Enterprise (sur mesure). Un run coûte 1 crédit pour 4 étapes ; une analyse de PR 10 crédits.",
         ),
-        links: [{ label: t(lang, "Estimate my plan", "Estimer mon offre"), href: "/ship#pricing" }],
+        links: [{ label: t(lang, "Estimate my plan", "Estimer mon offre"), href: "/qasyn#pricing" }],
       };
     case "integrations":
       return {
@@ -181,8 +181,8 @@ export function answer(message: string, ctx: FinqaContext): FinqaReply {
         intent,
         text: t(
           lang,
-          "Onboarding takes 7 short steps: describe your app, choose how Ship reaches it (team env or localhost), connect code, connect a tracker, pick a focus, invite your team and launch.",
-          "L'onboarding tient en 7 étapes : décrire l'app, choisir comment Ship l'atteint (environnement d'équipe ou localhost), connecter le code, le tracker, choisir une priorité, inviter l'équipe et lancer.",
+          "Onboarding takes 7 short steps: describe your app, choose how QASyn reaches it (team env or localhost), connect code, connect a tracker, pick a focus, invite your team and launch.",
+          "L'onboarding tient en 7 étapes : décrire l'app, choisir comment QASyn l'atteint (environnement d'équipe ou localhost), connecter le code, le tracker, choisir une priorité, inviter l'équipe et lancer.",
         ),
         links: [{ label: t(lang, "Start free", "Commencer"), href: "/signup" }],
       };

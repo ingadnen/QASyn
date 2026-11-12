@@ -39,7 +39,7 @@ export const QASYN_MCP_TOOLS: McpTool[] = [
   { name: "qasyn_trigger_api_chain", description: "Execute a chained API test (real HTTP, variable extraction and injection).", inputSchema: obj({ testId: { type: "string" } }, ["testId"]) },
   { name: "qasyn_list_pull_requests", description: "List pull request verdicts and risk levels.", inputSchema: obj({}) },
   { name: "qasyn_run_mobile_test", description: "Run a mobile test on the device grid.", inputSchema: obj({ testId: { type: "string" } }, ["testId"]) },
-  { name: "qasyn_ship_workflow", description: "Run the autonomous Ship pipeline and return the Go/No-Go verdict.", inputSchema: obj({ name: { type: "string" } }) },
+  { name: "qasyn_ship_workflow", description: "Run the autonomous QASyn pipeline and return the Go/No-Go verdict.", inputSchema: obj({ name: { type: "string" } }) },
   { name: "qasyn_reproduce_bug", description: "Reproduce a bug from a support ticket description.", inputSchema: obj({ title: { type: "string" }, description: { type: "string" } }, ["title", "description"]) },
   { name: "qasyn_analyze_pr_impact", description: "Alias of qasyn_analyze_pr kept for existing agent skills.", inputSchema: obj({ prNumber: { type: "number" }, branch: { type: "string" }, title: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["prNumber", "branch", "title", "files"]) },
   { name: "qasyn_context7_resolve", description: "Resolve Context7 live documentation for Playwright, Next.js, Tailwind, Prisma or TypeScript and return prompt-ready rules.", inputSchema: obj({ query: { type: "string" } }, ["query"]) },

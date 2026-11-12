@@ -43,7 +43,7 @@
   --color-brand-800: #2a1e9b;
   --color-brand-900: #231a7a;
 
-  /* Ship (papier chaud + accent braise) */
+  /* Legacy warm paper palette (kept for compatibility) */
   --color-paper: #f7f5f3;
   --color-paper-card: #eeeae6;
   --color-paper-line: #d6d0c8;
@@ -51,6 +51,30 @@
   --color-paper-muted: #696762;
   --color-ember-500: #f24100;
   --color-ember-600: #bd4105;
+
+  /* Phase 11 — Obsidian Quantum Precision (marketing) */
+  --color-obsidian-950: #05070e;
+  --color-obsidian-900: #06080f;
+  --color-obsidian-850: #080c18;
+  --color-obsidian-800: #0b1120;
+  --color-obsidian-700: #111a2e;
+  --color-obsidian-line: #1e293b;
+  --color-quantum-300: #67e8f9;
+  --color-quantum-200: #a5f3fc;
+  --color-quantum-100: #cffafe;
+  --color-quantum-400: #22d3ee;
+  --color-quantum-500: #06b6d4;
+  --color-quantum-600: #0891b2;
+  --color-glow-400: #34d399;
+  --color-glow-500: #10b981;
+  --color-cobalt-400: #6366f1;
+  --color-cobalt-300: #a5b4fc;
+  --color-cobalt-200: #c7d2fe;
+  --color-cobalt-500: #3b82f6;
+  --color-alabaster: #f8fafc;
+  --color-hairline: #e2e8f0;
+  --color-signal-amber: #f59e0b;
+  --color-signal-rose: #f43f5e;
 
   /* Terminal */
   --color-term-950: #0e1218;
@@ -145,3 +169,27 @@
     font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
   }
 }
+
+/* Phase 11 — Obsidian Quantum Precision marketing utilities */
+.quantum-grid {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+.obsidian-spotlight {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(6, 182, 212, 0.18), rgba(99, 102, 241, 0.08), transparent),
+    #06080f;
+}
+.quantum-text {
+  background: linear-gradient(92deg, #e2e8f0 0%, #67e8f9 38%, #818cf8 70%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@keyframes quantum-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.82); }
+}
+.quantum-pulse { animation: quantum-pulse 2.4s ease-in-out infinite; }

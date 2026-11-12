@@ -258,7 +258,7 @@ const formatList = (items: string[]) =>
 
 const formatUsd = (n: number) => `$${(n / 1000).toFixed(1)}K`;
 
-/** Génère les lignes "ship watch --all" d'une release. */
+/** Génère les lignes "qasyn watch --all" d'une release. */
 export function buildRunLogs(t: ReleaseTemplate, release: number, project: string, start: Date): LogSeed[] {
   let clock = start.getTime();
   const lines: LogSeed[] = [];
@@ -267,7 +267,7 @@ export function buildRunLogs(t: ReleaseTemplate, release: number, project: strin
     lines.push({ timestamp: new Date(clock), stream, tag, message });
   };
 
-  push("INFO", `ship watch --all · attached to ${project}`, "stdout", 0);
+  push("INFO", `qasyn watch --all · attached to ${project}`, "stdout", 0);
   push("DEPLOY", `New version deployed · ${t.version} detected`);
   push("TEST", `Running ${t.testsTotal} tests across ${formatList(t.flows)}`);
   push("PR", `Analyzed PR #${t.prNumber} "${t.title}" · ${t.codeChanges} code changes · ${t.impactedTests} impacted tests`, "stdout", 2000);

@@ -323,9 +323,11 @@ export async function POST(request: Request) {
 
   await audit(prisma, actor, "pr.webhook_gate", `#${input.prNumber} · ${verdict} · ${run.passed}/${run.total} · ${regressions} regression(s)`);
 
+  // `failOnRegression: true` lets `curl --fail` fail the CI build on regressions.
+  const blockedByRegression = input.failOnRegression === true && regressions > 0;
   return NextResponse.json(
     {
-      ok: true,
+      ok: !blockedByRegression,
       verdict,
       prId: updated.id,
       prNumber: input.prNumber,
@@ -341,6 +343,6 @@ export async function POST(request: Request) {
       failOnRegression: input.failOnRegression ?? false,
       ranAt: now.toISOString(),
     },
-    { headers: { "Cache-Control": "no-store" } },
+    { status: blockedByRegression ? 422 : 200, headers: { "Cache-Control": "no-store" } },
   );
 }
