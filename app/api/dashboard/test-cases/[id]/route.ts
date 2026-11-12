@@ -11,6 +11,7 @@ import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateTestCaseSchema } from "@/lib/validation";
 import { captureTargetScreenshot, executeWebSteps, generatedStepEvidenceSvgBase64, screenshotDataUrl } from "@/lib/web-executor";
+import { expectedResultForStep } from "@/lib/step-expected";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -288,6 +289,7 @@ export async function PATCH(request: Request, { params }: Params) {
       step.status = stepStatus;
       step.screenshotBase64 = stepEvidence;
       step.screenshotMime = stepIndex === index ? evidenceMime : "image/svg+xml";
+      step.expectedResult = expectedResultForStep(step);
       step.lastRunStatus = stepStatus;
       step.lastRunAt = now.toISOString();
       return {
@@ -296,6 +298,7 @@ export async function PATCH(request: Request, { params }: Params) {
         target: String(step.target ?? ""),
         status: stepStatus,
         healed: stepIndex === index,
+        expectedResult: step.expectedResult,
         message:
           stepIndex === index
             ? `Selector re-resolved by Bivia (${decision.probabilityPct.toFixed(1)}% calibrated): ${oldSelector} → ${decision.newSelector}`
@@ -396,6 +399,7 @@ export async function PATCH(request: Request, { params }: Params) {
       status?: string;
       screenshotBase64?: string;
       screenshotMime?: string;
+      expectedResult?: string;
       lastRunStatus?: string;
       lastRunAt?: string;
       lastError?: string;
@@ -491,6 +495,7 @@ export async function PATCH(request: Request, { params }: Params) {
       s.status = status;
       s.screenshotBase64 = evidence;
       s.screenshotMime = liveEvidence ? "image/png" : existingEvidence ? s.screenshotMime ?? "image/png" : "image/svg+xml";
+      s.expectedResult = expectedResultForStep(s);
       s.lastRunStatus = status;
       s.lastRunAt = now.toISOString();
       if (failed) s.lastError = "Assertion failed: expected the target to be visible within 15s.";
@@ -500,6 +505,7 @@ export async function PATCH(request: Request, { params }: Params) {
         target: s.target,
         status,
         healed,
+        expectedResult: s.expectedResult,
         message: failed
           ? "Assertion failed: expected the target to be visible within 15s."
           : failedStep && stepNo > failedStep

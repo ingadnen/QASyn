@@ -180,6 +180,7 @@ export const updateTestCaseSchema = z.discriminatedUnion("action", [
           target: z.string().trim().max(200),
           value: z.string().trim().max(500).default(""),
           selector: z.string().trim().max(200).default(""),
+          expectedResult: z.string().trim().max(500).optional(),
         }).passthrough(),
       )
       .max(50),

@@ -10,11 +10,14 @@ import {
   cqaBtnSecondary,
   cqaCard,
   cqaIconBtn,
+  cqaInput,
+  cqaLabel,
   useAction,
 } from "@/components/dashboard/ui";
 import { STUDIO_STEP_TEMPLATES } from "@/lib/studio-templates";
 import { TEST_TYPES } from "@/lib/constants";
 import { resolveGroundingUrl } from "@/lib/grounding-url";
+import { defaultExpectedResultForStep, expectedResultForStep } from "@/lib/step-expected";
 import { RowMenu } from "@/components/contextqa/workspace";
 import { ColumnFilter, matchesColumnFilters } from "@/components/contextqa/table-ui";
 import { MagicLocatorInspector } from "@/components/dashboard/pages/MagicLocatorInspector";
@@ -48,6 +51,8 @@ export interface StudioStep {
   /** Visual evidence persisted after execution (PNG or generated SVG). */
   screenshotBase64?: string | null;
   screenshotMime?: string;
+  /** Human-readable outcome this step must prove. */
+  expectedResult?: string;
   /** Phase 10 evidence aliases persisted on stepsJson. */
   lastScreenshot?: string | null;
   screenshot?: string | null;
@@ -133,6 +138,7 @@ interface RunLogLine {
   status: string;
   healed?: boolean;
   message: string;
+  expectedResult?: string;
   screenshotBase64?: string | null;
   screenshotMime?: string;
 }
@@ -365,7 +371,9 @@ export function StudioWorkspace({
   const { run, pending, error } = useAction();
   const [tab, setTab] = useState<Tab>("steps");
   const [panel, setPanel] = useState<Panel>("testcase");
-  const [steps, setSteps] = useState<StudioStep[]>(data.steps);
+  const [steps, setSteps] = useState<StudioStep[]>(() =>
+    data.steps.map((step) => ({ ...step, expectedResult: expectedResultForStep(step) })),
+  );
   const [priority, setPriority] = useState(data.criticality);
   const [priorityOpen, setPriorityOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -399,6 +407,7 @@ export function StudioWorkspace({
     status: string;
     capturedAt: string;
     src: string;
+    expectedResult: string;
   } | null>(null);
   const [evidenceCompare, setEvidenceCompare] = useState(false);
   const [evidenceOpacity, setEvidenceOpacity] = useState(50);
@@ -514,6 +523,7 @@ export function StudioWorkspace({
     target: string;
     status: string;
     capturedAt?: string | null;
+    expectedResult?: string | null;
   }) {
     if (!input.src) return;
     setEvidenceCompare(false);
@@ -525,6 +535,7 @@ export function StudioWorkspace({
       status: input.status,
       capturedAt: input.capturedAt ?? data.runs[0]?.createdAt ?? new Date().toISOString(),
       src: input.src,
+      expectedResult: input.expectedResult || defaultExpectedResultForStep({ action: input.action, target: input.target }),
     });
   }
 
@@ -1112,6 +1123,9 @@ export function StudioWorkspace({
                               </span>
                               {step.disabled && <span className="rounded bg-[#f3f4f6] px-1.5 py-[1px] text-[10px] font-medium text-[#6b7280]">Disabled</span>}
                             </p>
+                            <p data-testid="studio-step-expected" className="mt-1 line-clamp-2 text-[11.5px] leading-4 text-[#6b7280]">
+                              <span className="font-semibold text-emerald-600">✓ Expected:</span> {expectedResultForStep(step)}
+                            </p>
                           </div>
                           <div className="flex shrink-0 items-center gap-2 pt-0.5 text-[11.5px]">
                             <button
@@ -1644,6 +1658,7 @@ export function StudioWorkspace({
                                 target: firstEvidence?.target ?? "",
                                 status: String(firstEvidence?.status ?? (passed ? "passed" : "failed")),
                                 capturedAt: runItem.createdAt,
+                                expectedResult: firstEvidence?.expectedResult,
                               })
                             }
                             className="mx-3 mt-1 h-16 w-[calc(100%-1.5rem)] cursor-zoom-in rounded border border-[#e5e7eb] object-cover object-top"
@@ -1797,6 +1812,20 @@ export function StudioWorkspace({
                 />
               </label>
             </div>
+            <label className="block">
+              <span className={labelCls}>Expected result</span>
+              <textarea
+                data-testid="studio-step-expected-input"
+                className={cn(inputCls, "h-auto py-2")}
+                rows={2}
+                value={expectedResultForStep(detailStep)}
+                disabled={readOnly}
+                onChange={(event) => {
+                  const next = steps.map((step, index) => (index === detailIndex ? { ...step, expectedResult: event.target.value } : step));
+                  setSteps(next);
+                }}
+              />
+            </label>
             <MagicLocatorInspector
               key={detailStep.id}
               step={{ action: detailStep.action, target: detailStep.target, value: detailStep.value, selector: detailStep.selector }}
@@ -1839,6 +1868,7 @@ export function StudioWorkspace({
                         target: detailStep.target,
                         status: "healed",
                         capturedAt: detailStep.biviaHeal?.healedAt,
+                        expectedResult: expectedResultForStep(detailStep),
                       })
                     }
                     className="mt-2 max-h-32 w-full cursor-zoom-in rounded-md border border-[#e9d5ff] object-cover object-top"
@@ -1915,6 +1945,7 @@ export function StudioWorkspace({
                           target: detailStep.target,
                           status: String(detailStep.status ?? "passed"),
                           capturedAt: detailStep.lastRunAt ?? data.runs[0]?.createdAt,
+                          expectedResult: expectedResultForStep(detailStep),
                         })
                       }
                       className="h-full w-full cursor-zoom-in object-cover object-top"
@@ -2148,7 +2179,12 @@ export function StudioWorkspace({
                         className={cn("mt-0.5 text-[15px]", line.status === "passed" ? "text-[#22c55e]" : line.status === "failed" ? "text-[#ef4444]" : "text-[#94a3b8]")}
                       />
                       <span className="w-7 shrink-0 text-[#94a3b8]">{line.step}.</span>
-                      <span className="min-w-0 flex-1">{sentenceForStep({ id: String(line.step), action: line.action as StudioStep["action"], target: line.target, value: "", selector: "" }, data.variables, orgUrl)}</span>
+                      <span className="min-w-0 flex-1">
+                        {sentenceForStep({ id: String(line.step), action: line.action as StudioStep["action"], target: line.target, value: "", selector: "" }, data.variables, orgUrl)}
+                        <span className="mt-0.5 block text-[10.5px] leading-4 text-[#86efac]">
+                          ✓ Expected: {line.expectedResult || defaultExpectedResultForStep({ action: line.action, target: line.target })}
+                        </span>
+                      </span>
                       {line.screenshotBase64 && (
                         <img
                           src={evidenceDataUrl(line.screenshotBase64, line.screenshotMime) ?? ""}
@@ -2162,6 +2198,7 @@ export function StudioWorkspace({
                               target: line.target,
                               status: String(line.status),
                               capturedAt: data.runs[0]?.createdAt,
+                              expectedResult: line.expectedResult,
                             })
                           }
                           className="h-8 w-14 shrink-0 cursor-zoom-in rounded border border-[#334155] object-cover object-top"
@@ -2202,6 +2239,9 @@ export function StudioWorkspace({
                 <p className="text-[14px] font-semibold text-[#111827]">🕰 Visual Evidence Lightbox</p>
                 <p className="mt-0.5 text-[11.5px] text-[#6b7280]">
                   {evidenceLightbox.action} · {evidenceLightbox.target || "no target"} · {new Date(evidenceLightbox.capturedAt).toLocaleString("en-GB")}
+                </p>
+                <p className="mt-1 text-[11.5px] leading-4 text-emerald-700">
+                  <span className="font-semibold">✓ Expected:</span> {evidenceLightbox.expectedResult}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">

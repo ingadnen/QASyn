@@ -5336,6 +5336,131 @@ async function main() {
   check("PART 13 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part13-deliverables");
 
+  // ── PART 14 — Step-specific live evidence + expected results ──────────
+  moduleErrors = [];
+  mod(
+    "part14-deliverables",
+    "Phase 14 - Step-specific live evidence, expected results and use-case titles",
+    "/dashboard/test-studio",
+  );
+
+  // 14.1 — Autopilot & AI authoring carry expectedResult and clean descriptions.
+  let p14AutopilotRow = autopilotCase?.id
+    ? await db.testCase.findUnique({ where: { id: autopilotCase.id }, select: { stepsJson: true, description: true, title: true } })
+    : null;
+  if (!p14AutopilotRow) {
+    const p14Regen = await apiJson(page, "/api/dashboard/autopilot", "POST", { targetUrl: "https://www.cgi.com" });
+    const p14RegenCases = ((p14Regen.body as { testCases?: Array<{ id?: string }> }).testCases ?? []);
+    if (p14RegenCases[0]?.id) {
+      p14AutopilotRow = await db.testCase.findUnique({
+        where: { id: String(p14RegenCases[0].id) },
+        select: { stepsJson: true, description: true, title: true },
+      });
+    }
+  }
+  const p14AutopilotSteps = jsonArray(p14AutopilotRow?.stepsJson);
+  check(
+    "PART 14 Autopilot cases include a non-empty expectedResult on every step",
+    p14AutopilotSteps.length > 0 && p14AutopilotSteps.every((step) => String(step.expectedResult ?? "").trim().length > 10),
+    `${p14AutopilotSteps.filter((step) => String(step.expectedResult ?? "").trim().length > 10).length}/${p14AutopilotSteps.length} step(s) · ${String(p14AutopilotRow?.title ?? "missing").slice(0, 90)}`,
+  );
+  check(
+    "PART 14 Autopilot descriptions state the use case and expected result",
+    String(p14AutopilotRow?.description ?? "").includes("Expected Result:") &&
+      !String(p14AutopilotRow?.description ?? "").includes("Navigation target (no href)"),
+    String(p14AutopilotRow?.description ?? "").slice(0, 170),
+  );
+
+  const p14AiCreate = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "ai",
+    module: "Core",
+    criticality: "high",
+    count: 2,
+    prompt: "checkout journey validation with hero and navigation",
+    targetUrl: "https://www.cgi.com",
+    testType: "Regression",
+  });
+  const p14AiCases = ((p14AiCreate.body.testCases as Array<Record<string, unknown>> | undefined) ?? []).map((testCase) => String(testCase.id ?? ""));
+  const p14AiRows = await db.testCase.findMany({
+    where: { id: { in: p14AiCases } },
+    select: { stepsJson: true, title: true },
+  });
+  const p14AiAllSteps = p14AiRows.flatMap((row) => jsonArray(row.stepsJson));
+  check(
+    "PART 14 AI-generated cases include expectedResult on every step and expected-outcome titles",
+    p14AiCreate.status === 201 &&
+      p14AiRows.length >= 1 &&
+      p14AiAllSteps.length > 0 &&
+      p14AiAllSteps.every((step) => String(step.expectedResult ?? "").trim().length > 10) &&
+      p14AiRows.every((row) => String(row.title ?? "").includes("→")),
+    `${p14AiRows.length} case(s) · ${p14AiAllSteps.filter((step) => String(step.expectedResult ?? "").trim().length > 10).length}/${p14AiAllSteps.length} step(s) · ${p14AiRows.map((row) => row.title).join(" | ").slice(0, 140)}`,
+  );
+  for (const testCaseId of p14AiCases) await apiJson(page, `/api/dashboard/test-cases/${testCaseId}`, "DELETE");
+
+  // 14.2 / 14.3 — Distinct step-specific PNGs + Studio expected-result UI.
+  const p14Create = await apiJson(page, "/api/dashboard/test-cases", "POST", {
+    mode: "manual",
+    title: `PART14 EVIDENCE ${RUN_ID}`,
+    module: "Core",
+    criticality: "high",
+    stepsCount: 6,
+    targetUrl: "https://www.cgi.com",
+    testType: "Functional",
+  });
+  const p14CaseId = String(p14Create.body.testCases?.[0]?.id ?? "");
+  check("PART 14 a 6-step evidence case is available", p14Create.status === 201 && Boolean(p14CaseId), `status ${p14Create.status}`);
+  if (p14CaseId) {
+    await db.testCase.update({ where: { id: p14CaseId }, data: { status: "draft" } });
+    const p14Run = await apiJson(page, `/api/dashboard/test-cases/${p14CaseId}`, "PATCH", { action: "run_steps" });
+    const p14RunRow = await db.testCaseRun.findFirst({
+      where: { testCaseId: p14CaseId },
+      orderBy: { runNumber: "desc" },
+      select: { logJson: true },
+    });
+    const p14Log = jsonArray(p14RunRow?.logJson);
+    const p14Shots = p14Log.map((line) => String(line.screenshotBase64 ?? ""));
+    const p14Distinct = new Set(p14Shots.filter((value) => value.startsWith("data:image/png;base64,"))).size;
+    check(
+      "PART 14 a 6-step run captures distinct step-specific PNG screenshots",
+      p14Run.status === 200 &&
+        p14Log.length === 6 &&
+        p14Shots.every((value) => value.startsWith("data:image/png;base64,")) &&
+        p14Distinct >= 3,
+      `${p14Log.length} line(s) · ${p14Distinct} distinct PNG payload(s)`,
+    );
+
+    await goto(page, `/dashboard/test-studio/${p14CaseId}`);
+    const p14StepRows = await page.locator('[data-testid="studio-step-row"]').count();
+    const p14ExpectedRows = await page.locator('[data-testid="studio-step-expected"]').count();
+    check(
+      "PART 14 Test Studio renders Expected Result on every step row",
+      p14StepRows === 6 && p14ExpectedRows === 6,
+      `${p14ExpectedRows} expected line(s) · ${p14StepRows} row(s)`,
+    );
+    const p14FirstRow = page.locator('[data-testid="studio-step-row"]').first();
+    if ((await p14FirstRow.count()) > 0) {
+      await p14FirstRow.click().catch(() => undefined);
+      const p14Dialog = page.getByRole("dialog", { name: "Step Details" });
+      await p14Dialog.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+      check(
+        "PART 14 Step Details exposes an editable Expected result field",
+        (await p14Dialog.locator('[data-testid="studio-step-expected-input"]').count()) > 0,
+      );
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(250);
+    } else {
+      check("PART 14 Step Details exposes an editable Expected result field", false, "no step row");
+    }
+    await apiJson(page, `/api/dashboard/test-cases/${p14CaseId}`, "DELETE");
+  } else {
+    check("PART 14 a 6-step run captures distinct step-specific PNG screenshots", false, "case missing");
+    check("PART 14 Test Studio renders Expected Result on every step row", false, "case missing");
+    check("PART 14 Step Details exposes an editable Expected result field", false, "case missing");
+  }
+
+  check("PART 14 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part14-deliverables");
+
   await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────

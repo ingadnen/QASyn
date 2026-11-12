@@ -17,6 +17,7 @@ import {
   type TargetDomSnapshot,
 } from "./web-executor";
 import { audit, readSettings, spendCredits, type OrgContext } from "./tenant";
+import { defaultExpectedResultForStep, expectedResultForStep } from "./step-expected";
 import {
   buildStepHealMetadata,
   healSelectorWithBivia,
@@ -252,7 +253,7 @@ export async function reimportCrawl(db: Db, actor: Actor, crawl: CrawlSession) {
 export async function generateRequirementCases(db: Db, actor: Actor, requirement: { id: string; title: string; code: string; source: string }, count = 3) {
   const targetUrl = resolveTargetUrl(actor.org.website, null);
   const snapshot = await inspectTargetDom(targetUrl);
-  const fallback = generateTitles("Core", requirement.title, count);
+  const fallback = generateTitles("Core", requirement.title, count, targetUrl);
   const titles = await generateGroundedTitles(snapshot, "Core", requirement.title, count, fallback);
   const existing = new Set((await db.testCase.findMany({ where: { organisationId: actor.org.id }, select: { title: true } })).map((t) => t.title));
   const created: TestCase[] = [];
@@ -498,6 +499,7 @@ export async function runTestCases(
       step.status = stepStatus;
       step.screenshotBase64 = evidence;
       step.screenshotMime = existingEvidence ? "image/png" : "image/svg+xml";
+      step.expectedResult = expectedResultForStep(step);
       step.lastRunStatus = stepStatus;
       step.lastRunAt = now.toISOString();
       return {
@@ -506,6 +508,7 @@ export async function runTestCases(
         target,
         status: stepStatus,
         healed,
+        expectedResult: step.expectedResult,
         message: healed
           ? "Selector re-resolved by Bivia · visual evidence attached."
           : stepStatus === "failed"
@@ -661,15 +664,23 @@ const E2E_TITLES = [
   "Error Handling and Form Validation Flow",
 ];
 
-export function generateTitles(module: string, prompt: string, count: number): string[] {
+export function generateTitles(module: string, prompt: string, count: number, targetUrl = ""): string[] {
   const safeModule = module === "all" || !module ? "Core" : module;
-  const base = AI_TEMPLATES[safeModule] ?? E2E_TITLES;
+  const host =
+    normalizeWebsite(targetUrl)?.replace(/^https?:\/\//, "").replace(/\/.*$/, "") ?? "the application";
   const focusRaw = prompt.trim().replace(/\s+/g, " ");
   const generic = /^(all|any|none|n\/?a|test|tests|crawl|e2e)$/i.test(focusRaw);
   const focus = !generic && focusRaw.length >= 8 ? focusRaw.slice(0, 60) : "";
-  const titles = (focus ? [...E2E_TITLES, ...base].map((t) => `${t} — ${focus}`) : [...E2E_TITLES, ...base]);
-  const unique = [...new Set(titles)];
-  return unique.slice(0, Math.max(1, Math.min(count, unique.length)));
+  const rich = [
+    `${safeModule}: Navigate ${host} & Verify Primary Layout → Hero Heading & Navigation Bar Render`,
+    `${safeModule}: Follow Navigation Journey on ${host} → Destination Page Loads with Valid Content`,
+    `${safeModule}: Exercise Search & Interactive Controls on ${host} → Results & Validation States Display`,
+    `${safeModule}: Validate Forms & Error States on ${host} → Inline Feedback & Recovery Messaging Render`,
+    `${safeModule}: Verify Session & Navigation Continuity on ${host} → Authenticated State Persists Across Routes`,
+    ...(focus ? [`${safeModule}: ${focus} on ${host} → Expected Content & Controls Render`] : []),
+  ];
+  const templates = rich.map((title) => title.slice(0, 155));
+  return [...new Set(templates)].slice(0, Math.max(1, Math.min(count, templates.length)));
 }
 
 export interface NlpStepLike {
@@ -678,6 +689,8 @@ export interface NlpStepLike {
   target: string;
   value: string;
   selector: string;
+  /** Human-readable outcome this step must prove. */
+  expectedResult?: string;
   /** Context7 live-doc rules injected at generation time (Playwright/Next.js). */
   context7?: string;
 }
@@ -772,6 +785,71 @@ export function buildContext7GenerationContext(module: string, title = ""): stri
 
 /** One deterministic step seed: [action, target, value]. */
 type StepSeed = [string, string, string];
+
+/** Tailored expected outcome for a generated seed (test type + step index). */
+function expectedResultForSeed(testType: string, action: string, index: number, target: string, value: string): string {
+  const type = testType.toLowerCase();
+  if (type === "penetration") {
+    return [
+      "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
+      "The search and login input surfaces are visible and expose sanitised, validated form controls.",
+      "The benign XSS/SQLi probe is accepted as literal text and is not executed by the browser.",
+      "Bivia confirms the probe payload is escaped and CSP/WAF blocks unescaped script execution.",
+      "The response does not reflect raw script tags into the DOM.",
+      "No reflected XSS or SQL error leakage is observable anywhere in the page.",
+    ][index % 6];
+  }
+  if (type === "security") {
+    return [
+      "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
+      "HSTS, CSP and X-Frame-Options headers are present with production-safe values.",
+      "Session cookies are marked Secure and HttpOnly with a safe SameSite policy.",
+      "Bivia confirms the OWASP Top-10 posture across headers, cookies and transport.",
+      "HSTS max-age and CSP frame-ancestors enforce HTTPS and frame isolation.",
+      "No mixed content or insecure form action is present.",
+    ][index % 6];
+  }
+  if (type === "accessibility") {
+    return [
+      "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
+      "WCAG 2.2 landmarks (main, nav, h1) and alt attributes are present.",
+      "Keyboard focus reaches the primary control and its focus ring is clearly visible.",
+      "WCAG 2.2 AA contrast, focus visibility and screen-reader labels pass visual verification.",
+      "Every image exposes a meaningful alt attribute.",
+      "No critical accessibility violations are reported.",
+    ][index % 6];
+  }
+  if (type === "performance" || type === "load") {
+    return [
+      "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
+      type === "load"
+        ? "TTFB < 800 ms and DOMContentLoaded < 2500 ms under concurrent load."
+        : "TTFB < 800 ms and DOMContentLoaded < 2500 ms for the landing document.",
+      "The primary route transition completes without a blank screen or layout jump.",
+      "Zero layout shift (CLS) and responsive paint are confirmed under load.",
+      "No render-blocking resource exceeds the performance budget.",
+      "Sustained responsiveness under concurrent load is verified.",
+    ][index % 6];
+  }
+  if (type === "api") {
+    return [
+      "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
+      "GET returns HTTP 200 OK with a valid content-type header.",
+      "The response payload exposes the documented top-level structure.",
+      "The API contract schema and latency budget pass verification.",
+      "Error responses use the standard problem+json envelope.",
+      "Pagination and rate-limit headers are present and well-formed.",
+    ][index % 6];
+  }
+  return [
+    "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
+    "The primary page heading, navigation bar, and core layout landmarks are visible in the viewport.",
+    "The interactive navigation control responds to click, updates the active view or menu state, and maintains layout stability.",
+    "Bivia visual verification confirms the target section heading and key content cards are rendered legibly.",
+    "Secondary section controls and interactive inputs accept focus and render the expected state.",
+    "End-to-end user journey completes with zero unhandled console errors, zero 5xx network failures, and verified DOM state.",
+  ][index % 6] ?? defaultExpectedResultForStep({ action, target, value });
+}
 
 /**
  * Builds exactly `count` realistic NLP steps anchored on the organisation URL.
@@ -873,6 +951,7 @@ export function buildStepsJson(
       target,
       value,
       selector: "",
+      expectedResult: expectedResultForSeed(testType, action, i, target, value),
       ...(action === "AI Assertion" ? { context7 } : {}),
     };
   });

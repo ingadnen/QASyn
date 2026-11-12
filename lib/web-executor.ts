@@ -18,6 +18,7 @@ import {
   syntheticDomSummary,
   type StepBiviaHealMetadata,
 } from "./selector-healing";
+import { defaultExpectedResultForStep } from "./step-expected";
 
 const GLOBAL_TIMEOUT_MS = 30_000;
 
@@ -86,6 +87,7 @@ interface PwPage {
   content(): Promise<string>;
   evaluate<T>(fn: () => T): Promise<T>;
   evaluate<T, A>(fn: (arg: A) => T, arg: A): Promise<T>;
+  evaluate<T = unknown>(expression: string): Promise<T>;
   waitForTimeout(ms: number): Promise<void>;
   screenshot(opts?: { type?: string; fullPage?: boolean }): Promise<Buffer>;
   on(event: string, handler: (arg: unknown) => void): void;
@@ -128,6 +130,164 @@ function isNaturalLanguageTarget(target: string): boolean {
   if (/(getBy|locator\s*\()/i.test(value)) return false;
   if (/[:#\[\]{}()>="]|(^|\s)(css=|text=|role=|xpath=)/i.test(value)) return false;
   return value.split(/\s+/).length >= 3 || value.length > 32;
+}
+
+const STOP_WORDS = new Set([
+  "verify", "that", "the", "click", "on", "in", "main", "navigation", "is", "visible", "enter", "field",
+  "button", "link", "page", "completes", "with", "no", "console", "errors", "error", "and", "to", "of",
+  "for", "from", "a", "an", "are", "should", "render", "renders", "loads", "load", "opens", "open",
+  "successfully", "target", "text", "into", "by", "at", "top", "below", "above", "current", "url",
+  "contains", "this", "then", "its", "it", "be", "displayed", "display", "shows", "show", "expected",
+  "result", "value", "input", "primary", "global", "secondary", "section", "controls", "control",
+  "interactive", "landmarks", "landmark", "correct", "correctly", "valid", "state", "status",
+]);
+
+/** Quoted labels + meaningful keywords from a natural-language step target. */
+export function extractStepTargetCandidates(step: { target: string; value?: string }): { quoted: string[]; keywords: string[] } {
+  const raw = `${step.target || ""} ${step.value || ""}`.trim();
+  const quoted = [...raw.matchAll(/["“]([^"”]{2,80})["”]/g)].map((match) => match[1].trim()).filter(Boolean);
+  const keywords = raw
+    .split(/[^A-Za-z0-9@._-]+/)
+    .map((word) => word.trim().toLowerCase())
+    .filter((word) => word.length >= 3 && !STOP_WORDS.has(word) && !/^\d+$/.test(word))
+    .slice(0, 8);
+  if (/\be-?mail\b/i.test(raw)) keywords.push("email", "e-mail", "mail");
+  if (/\bsearch\b/i.test(raw)) keywords.push("search");
+  return { quoted, keywords: [...new Set(keywords)] };
+}
+
+export interface StepEvidencePayload {
+  stepNumber: number;
+  totalSteps: number;
+  action: string;
+  target: string;
+  expected: string;
+  selector: string;
+  quoted: string[];
+  keywords: string[];
+  index: number;
+  fillValue: string;
+  shouldClick: boolean;
+}
+
+/**
+ * In-page script: resolve the best visible element for the step, scroll it into
+ * view, optionally interact (menu/search toggles, links, inputs), then draw the
+ * QASyn evidence overlay (#__qasyn_step_highlight) that is captured in the PNG.
+ */
+export function buildStepHighlightScript(payload: StepEvidencePayload): string {
+  return `(() => {
+    const p = ${JSON.stringify(payload)};
+    const previous = document.getElementById("__qasyn_step_highlight");
+    if (previous) previous.remove();
+    const hudPrevious = document.getElementById("__qasyn_step_hud");
+    if (hudPrevious) hudPrevious.remove();
+    const norm = (value) => String(value || "").replace(/\\s+/g, " ").trim().toLowerCase();
+    const visible = (el) => {
+      if (!el || !el.getBoundingClientRect) return false;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return rect.width > 1 && rect.height > 1 && style.visibility !== "hidden" && style.display !== "none";
+    };
+    const pool = Array.from(document.querySelectorAll("a, button, h1, h2, h3, [role=button], input, select, textarea, main, nav, header, footer, section, form, article"));
+    let el = null;
+    if (p.selector) {
+      const css = p.selector.replace(/^css:/, "");
+      if (!/getBy|locator|:text/.test(css)) {
+        try { const found = document.querySelector(css); if (found && visible(found)) el = found; } catch (e) {}
+      }
+    }
+    if (!el) {
+      for (const quoted of p.quoted) {
+        const needle = norm(quoted);
+        if (!needle) continue;
+        el = pool.find((node) => visible(node) && norm(node.textContent).includes(needle)) || null;
+        if (el) break;
+      }
+    }
+    if (!el && p.keywords.length > 0) {
+      let bestScore = 0;
+      for (const node of pool) {
+        if (!visible(node)) continue;
+        const haystack = norm(node.textContent + " " + (node.getAttribute("aria-label") || "") + " " + (node.getAttribute("placeholder") || "") + " " + (node.getAttribute("name") || ""));
+        let score = 0;
+        for (const keyword of p.keywords) if (haystack.includes(keyword)) score += 1;
+        if (score > bestScore) { bestScore = score; el = node; }
+      }
+      if (bestScore === 0) el = null;
+    }
+    if (!el) {
+      const landmarks = ["header", "h1", "nav a", "main section:nth-of-type(2)", "form", "footer", "main section:nth-of-type(3)", "main"];
+      for (let attempt = 0; attempt < landmarks.length && !el; attempt += 1) {
+        const selector = landmarks[(p.index + attempt) % landmarks.length];
+        try { const found = document.querySelector(selector); if (found && visible(found)) el = found; } catch (e) {}
+      }
+    }
+    if (!el) el = document.querySelector("main") || document.body;
+    if (!el) return { matched: false, label: "", interacted: "", scrollY: 0 };
+    try { el.scrollIntoView({ block: "center", inline: "nearest" }); } catch (e) {}
+    let interacted = "";
+    if (p.shouldClick) {
+      const clickable = el.closest("a, button, [role=button], summary") || el;
+      const tag = (clickable.tagName || "").toUpperCase();
+      const href = tag === "A" ? String(clickable.getAttribute("href") || "") : "";
+      const isMenuToggle = clickable.hasAttribute("aria-expanded") || tag === "BUTTON" || tag === "SUMMARY" || String(clickable.getAttribute("role") || "").toLowerCase() === "button";
+      const isSamePageAnchor = !href || href.startsWith("#") || /^javascript:/i.test(href);
+      if (isMenuToggle || isSamePageAnchor) {
+        try { clickable.click(); interacted = "clicked"; } catch (e) {}
+      } else {
+        try { clickable.click(); interacted = "clicked"; } catch (e) {}
+      }
+    }
+    if (p.fillValue) {
+      const input = el.matches("input, textarea") ? el : el.querySelector("input, textarea");
+      if (input) {
+        try {
+          const proto = input.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+          const setter = Object.getOwnPropertyDescriptor(proto, "value") && Object.getOwnPropertyDescriptor(proto, "value").set;
+          if (setter) setter.call(input, p.fillValue);
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+          input.focus();
+          interacted = "filled";
+        } catch (e) {}
+      }
+    }
+    const rect = el.getBoundingClientRect();
+    const left = Math.max(4, Math.min(window.innerWidth - 40, rect.left - 4));
+    const top = Math.max(4, Math.min(window.innerHeight - 40, rect.top - 4));
+    const width = Math.max(24, Math.min(window.innerWidth - left - 4, rect.width + 8));
+    const height = Math.max(24, Math.min(window.innerHeight - top - 4, rect.height + 8));
+    const overlay = document.createElement("div");
+    overlay.id = "__qasyn_step_highlight";
+    overlay.style.cssText = "position:fixed;left:" + left + "px;top:" + top + "px;width:" + width + "px;height:" + height + "px;border:3px solid #06b6d4;border-radius:6px;box-shadow:0 0 0 6px rgba(6,182,212,0.22),0 8px 24px rgba(15,23,42,0.35);pointer-events:none;z-index:2147483645;";
+    const tag = document.createElement("div");
+    tag.textContent = "STEP #" + p.stepNumber + " · " + String(p.action || "step").toUpperCase();
+    tag.style.cssText = "position:fixed;left:" + left + "px;top:" + Math.max(4, top - 28) + "px;background:#06b6d4;color:#04121a;font:700 11px/1.2 ui-monospace,Consolas,monospace;padding:4px 8px;border-radius:4px;z-index:2147483646;pointer-events:none;box-shadow:0 4px 12px rgba(6,182,212,0.35);";
+    const hud = document.createElement("div");
+    hud.id = "__qasyn_step_hud";
+    const expectedText = String(p.expected || "Verified").slice(0, 86);
+    hud.textContent = "Step " + p.stepNumber + "/" + p.totalSteps + " · " + p.action + ": " + String(p.target || "").slice(0, 54) + " → " + expectedText;
+    hud.style.cssText = "position:fixed;right:12px;top:12px;max-width:min(560px,calc(100vw - 24px));background:rgba(6,8,15,0.92);color:#a5f3fc;border:1px solid rgba(34,211,238,0.45);font:600 10.5px/1.4 ui-monospace,Consolas,monospace;padding:6px 10px;border-radius:999px;z-index:2147483646;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+    overlay.appendChild(tag);
+    overlay.appendChild(hud);
+    document.body.appendChild(overlay);
+    return { matched: true, label: String(el.textContent || el.getAttribute("aria-label") || el.tagName || "").replace(/\\s+/g, " ").trim().slice(0, 80), interacted: interacted, scrollY: Math.round(window.scrollY) };
+  })()`;
+}
+
+/** Re-adds the HUD pill if a click navigated and removed the overlay. */
+export function buildStepHudScript(payload: StepEvidencePayload): string {
+  return `(() => {
+    if (document.getElementById("__qasyn_step_highlight")) return false;
+    const p = ${JSON.stringify(payload)};
+    const hud = document.createElement("div");
+    hud.id = "__qasyn_step_hud";
+    hud.textContent = "Step " + p.stepNumber + "/" + p.totalSteps + " · " + p.action + ": " + String(p.target || "").slice(0, 54) + " → " + String(p.expected || "Verified").slice(0, 86);
+    hud.style.cssText = "position:fixed;right:12px;top:12px;max-width:min(560px,calc(100vw - 24px));background:rgba(6,8,15,0.92);color:#a5f3fc;border:1px solid rgba(34,211,238,0.45);font:600 10.5px/1.4 ui-monospace,Consolas,monospace;padding:6px 10px;border-radius:999px;z-index:2147483646;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+    document.body.appendChild(hud);
+    return true;
+  })()`;
 }
 
 async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExecutionOptions = {}): Promise<RealStepOutcome[]> {
@@ -188,6 +348,88 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
     /** Captures the viewport after a step so every executed step has evidence. */
     async function captureStepScreenshot(): Promise<{ screenshotBase64: string | null; domSummary: string }> {
       return captureFailureContext();
+    }
+
+    /** Resolves the live target, scrolls it into view and draws the evidence overlay. */
+    async function prepareStepEvidence(
+      step: NlpStep,
+      stepIndex: number,
+      totalSteps: number,
+    ): Promise<{ matched: boolean; label: string; interacted: string; scrollY: number } | null> {
+      const { quoted, keywords } = extractStepTargetCandidates(step);
+      const payload: StepEvidencePayload = {
+        stepNumber: stepIndex + 1,
+        totalSteps,
+        action: step.action,
+        target: step.target,
+        expected: step.expectedResult || defaultExpectedResultForStep(step),
+        selector: step.selector || "",
+        quoted,
+        keywords,
+        index: stepIndex,
+        fillValue: ["Enter Text", "Fill", "Type"].includes(step.action) ? step.value || "" : "",
+        shouldClick: step.action === "Click",
+      };
+      try {
+        const result = await page.evaluate(buildStepHighlightScript(payload));
+        return result as { matched: boolean; label: string; interacted: string; scrollY: number } | null;
+      } catch {
+        return null;
+      }
+    }
+
+    /** Re-adds the HUD after an anchor click navigated to the destination page. */
+    async function ensureStepHud(step: NlpStep, stepIndex: number, totalSteps: number): Promise<void> {
+      const { quoted, keywords } = extractStepTargetCandidates(step);
+      const payload: StepEvidencePayload = {
+        stepNumber: stepIndex + 1,
+        totalSteps,
+        action: step.action,
+        target: step.target,
+        expected: step.expectedResult || defaultExpectedResultForStep(step),
+        selector: step.selector || "",
+        quoted,
+        keywords,
+        index: stepIndex,
+        fillValue: "",
+        shouldClick: false,
+      };
+      try {
+        await page.evaluate(buildStepHudScript(payload));
+      } catch {
+        /* HUD is best-effort */
+      }
+    }
+
+    async function clearStepEvidence(): Promise<void> {
+      try {
+        await page.evaluate(
+          `(() => { const box = document.getElementById("__qasyn_step_highlight"); if (box) box.remove(); const hud = document.getElementById("__qasyn_step_hud"); if (hud) hud.remove(); return true; })()`,
+        );
+      } catch {
+        /* overlay cleanup is best-effort */
+      }
+    }
+
+    /** Dismisses common cookie/consent banners so steps 2..N see the clean page. */
+    async function dismissCookieConsent(): Promise<boolean> {
+      try {
+        const result = await page.evaluate(`(() => {
+          const wanted = ["accept all", "accept all cookies", "accept", "i agree", "tout accepter", "accepter", "allow all"];
+          const nodes = Array.from(document.querySelectorAll("button, [role=button], a"));
+          const match = nodes.find((node) => {
+            const label = String((node.textContent || "") + " " + (node.getAttribute("aria-label") || "")).replace(/\\s+/g, " ").trim().toLowerCase();
+            return wanted.some((text) => label === text || label.startsWith(text + " ") || label.includes(text));
+          });
+          if (match) { try { match.click(); return true; } catch (e) {} }
+          const oneTrust = document.querySelector("#onetrust-accept-btn-handler");
+          if (oneTrust) { try { oneTrust.click(); return true; } catch (e) {} }
+          return false;
+        })()`);
+        return Boolean(result);
+      } catch {
+        return false;
+      }
     }
 
     /** Executes one non-AI step; `overrideSelector` is the healed locator. */
@@ -296,7 +538,10 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
       if (step.action === "AI Assertion") {
         // Multimodal verification through Articul8 Bivia: DOM excerpt plus a
         // screenshot, then a calibrated answer with an explicit abstain path.
+        await prepareStepEvidence(step, stepIndex, steps.length);
+        await ensureStepHud(step, stepIndex, steps.length);
         const captured = await captureFailureContext();
+        await clearStepEvidence();
         const assertionShot = captured.screenshotBase64 ?? lastValidPngBase64;
         const question = step.target || `Verify that ${currentUrl || "the page"} rendered correctly`;
         const decision = await biviaBoolean({
@@ -345,7 +590,21 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
 
       try {
         const message = await performStep(step, undefined, stepIndex);
+        const prepared = await prepareStepEvidence(step, stepIndex, steps.length);
+        if (prepared?.interacted === "clicked") await page.waitForTimeout(450);
+        await ensureStepHud(step, stepIndex, steps.length);
+        try {
+          currentUrl = String(await page.evaluate(`location.href`));
+        } catch {
+          /* keep the previous URL */
+        }
+        await page.waitForTimeout(120);
         const evidence = await captureStepScreenshot();
+        await clearStepEvidence();
+        if (stepIndex === 0) {
+          const dismissed = await dismissCookieConsent();
+          if (dismissed) await page.waitForTimeout(220);
+        }
         const successShot = evidence.screenshotBase64 ?? lastValidPngBase64;
         outcomes.push({
           step,
@@ -363,7 +622,10 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
       } catch (e) {
         // Failure → capture DOM + screenshot, then let Bivia choose and
         // calibrate a new locator before falling back to similarity healing.
+        await prepareStepEvidence(step, stepIndex, steps.length);
+        await ensureStepHud(step, stepIndex, steps.length);
         const captured = await captureFailureContext();
+        await clearStepEvidence();
         let healScore = 0;
         let newSelector: string | null = null;
         let healed = false;
@@ -914,44 +1176,75 @@ export function groundedFlowsFromDom(snapshot: TargetDomSnapshot | null): Ground
       return snapshot.url;
     }
   })();
-  const landing = snapshot.h1 || snapshot.title || host;
+  const heading = (snapshot.h1 || snapshot.title || host).replace(/\s+/g, " ").trim().slice(0, 70);
+  const meaningfulLinks = snapshot.navLinks
+    .map((link) => ({ text: link.text.trim().replace(/^["“]|["”]$/g, ""), href: (link.href || "").trim() }))
+    .filter((link) => {
+      if (!link.text || link.text.length < 2) return false;
+      if (/^(menu|close|open|toggle|search toggle|skip to content|accept|accept all|accept all cookies|i agree)$/i.test(link.text)) return false;
+      if (/^skip\b/i.test(link.text)) return false;
+      if (!link.href || link.href === "#" || link.href.startsWith("#") || /^javascript:/i.test(link.href)) return false;
+      return true;
+    });
+  const navigationLinks =
+    meaningfulLinks.length > 0
+      ? meaningfulLinks
+      : snapshot.navLinks
+          .map((link) => ({ text: link.text.trim(), href: (link.href || "").trim() }))
+          .filter((link) => link.text && !/^(menu|close|open)$/i.test(link.text));
+  const meaningfulButtons = snapshot.buttons
+    .map((button) => button.trim())
+    .filter((button) => button && !/^(menu|close|open|search|accept|accept all|accept all cookies|i agree|submit)$/i.test(button));
+
   const flows: GroundedFlow[] = [
     {
-      name: `Verify ${landing} landing page`,
+      name: `Verify ${heading} Landing Page & Hero CTA on ${host} → Primary Content & Navigation Render`,
       module: "Core",
-      steps: 3,
+      steps: 6,
       criticality: "high",
-      description: `Grounded in ${snapshot.url}: title "${snapshot.title}", h1 "${snapshot.h1}", ${snapshot.navLinks.length} nav links, ${snapshot.buttons.length} buttons, ${snapshot.forms.length} forms.`,
+      description: `Use Case: Landing page validation on ${snapshot.url} | Actions: Navigate to ${host}, verify the '${heading}' hero heading, and validate primary navigation landmarks | Expected Result: Primary content renders with zero console or network errors.`,
     },
   ];
   const seen = new Set(flows.map((flow) => flow.name.toLowerCase()));
 
-  for (const link of snapshot.navLinks.slice(0, 5)) {
-    const name = `Open ${link.text} from the main navigation`;
+  for (const link of navigationLinks.slice(0, 4)) {
+    const name = `Navigate ${link.text.slice(0, 60)} Journey on ${host} → Target Section & Interactive Controls Load`;
     if (seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
-    flows.push({ name, module: moduleForLabel(link.text), steps: 4, criticality: "medium", description: `Navigation target ${link.href || "(no href)"} discovered in ${snapshot.url}.` });
+    flows.push({
+      name,
+      module: moduleForLabel(link.text),
+      steps: 6,
+      criticality: "medium",
+      description: `Use Case: ${moduleForLabel(link.text)} navigation journey on ${snapshot.url} | Actions: Navigate to ${host}, verify '${heading}', exercise '${link.text}', and validate the target view | Expected Result: Target page and interactive elements render with zero console or network errors.`,
+    });
   }
 
-  for (const button of snapshot.buttons.slice(0, 5)) {
-    const name = `Click "${button}"`;
+  for (const button of meaningfulButtons.slice(0, 3)) {
+    const name = `Exercise ${button.slice(0, 60)} Control on ${host} → Action Completes & State Updates`;
     if (seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
-    flows.push({ name, module: moduleForLabel(button), steps: 4, criticality: "medium", description: `Button "${button}" discovered in ${snapshot.url}.` });
+    flows.push({
+      name,
+      module: moduleForLabel(button),
+      steps: 6,
+      criticality: "medium",
+      description: `Use Case: ${moduleForLabel(button)} interaction on ${snapshot.url} | Actions: Navigate to ${host}, activate '${button}', and verify the resulting state | Expected Result: The control responds, updates the view and keeps the layout stable.`,
+    });
   }
 
-  for (const [index, form] of snapshot.forms.slice(0, 4).entries()) {
+  for (const [index, form] of snapshot.forms.slice(0, 2).entries()) {
     const descriptors = form.fields.map((field) => field.label || field.placeholder || field.name || field.type).filter(Boolean);
     const label = descriptors.slice(0, 3).join(", ") || form.action || `form ${index + 1}`;
-    const name = `Submit the ${label} form`;
+    const name = `Complete ${label.slice(0, 60)} Form on ${host} → Validation & Confirmation Render`;
     if (seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
     flows.push({
       name,
       module: moduleForLabel(label),
-      steps: Math.max(4, form.fields.length + 2),
+      steps: 6,
       criticality: form.fields.some((field) => field.type === "password") ? "critical" : "high",
-      description: `Form ${index + 1} on ${snapshot.url}: ${form.method.toUpperCase()} ${form.action || "(same page)"} with ${form.fields.length} fields (${descriptors.join(", ")}).`,
+      description: `Use Case: ${moduleForLabel(label)} form journey on ${snapshot.url} | Actions: Navigate to ${host}, fill ${label}, submit, and verify validation | Expected Result: The form accepts valid input, renders inline feedback and confirms the submission state.`,
     });
   }
 
@@ -984,74 +1277,130 @@ export function groundedStepsForFlow(
   title: string,
   count: number,
 ): NlpStep[] {
-  const steps: NlpStep[] = [{ id: "s1", action: "Navigate", target: targetUrl, value: "", selector: "" }];
+  const expected = (action: string, target: string, value: string) => defaultExpectedResultForStep({ action, target, value });
+  const host = (() => {
+    try {
+      return new URL(targetUrl).host;
+    } catch {
+      return targetUrl;
+    }
+  })();
+  const heading = (snapshot?.h1 || snapshot?.title || title).replace(/\s+/g, " ").trim().slice(0, 80);
+  const normalized = title.toLowerCase();
+  const formFlow = /form|submit|search|login|sign in|sign-in|checkout|contact/i.test(title);
+  const meaningfulLinks = (snapshot?.navLinks ?? [])
+    .map((link) => ({ text: link.text.trim().replace(/^["“]|["”]$/g, ""), href: (link.href || "").trim() }))
+    .filter((link) => link.text && !/^(menu|close|open|accept|accept all|i agree)$/i.test(link.text) && !/^skip\b/i.test(link.text) && link.href && !link.href.startsWith("#") && !/^javascript:/i.test(link.href));
+  const navMatch = meaningfulLinks.find((link) => normalized.includes(link.text.toLowerCase()) || link.text.toLowerCase().includes(normalized)) ?? meaningfulLinks[0] ?? null;
+
+  const steps: NlpStep[] = [
+    {
+      id: "s1",
+      action: "Navigate",
+      target: targetUrl,
+      value: "",
+      selector: "",
+      expectedResult: `Landing page ${targetUrl} loads with HTTP 200 and renders the main document layout.`,
+    },
+  ];
 
   if (snapshot) {
     steps.push({
       id: "s2",
       action: "Verify Element",
-      target: `Verify the "${snapshot.h1 || snapshot.title || title}" heading is visible`,
+      target: `Verify the "${heading}" heading is visible`,
       value: "",
-      selector: "css:h1",
+      selector: snapshot.h1 ? "css:h1" : "css:main",
+      expectedResult: `Primary heading '${heading}' is visible above the fold.`,
     });
 
-    const normalized = title.toLowerCase();
-    const navMatch = snapshot.navLinks.find((link) => normalized.includes(link.text.toLowerCase()) || link.text.toLowerCase().includes(normalized));
-    if (navMatch) {
-      steps.push({ id: "s3", action: "Click", target: `Click "${navMatch.text}" in the main navigation`, value: "", selector: "css:nav a" });
-    } else {
-      const buttonMatch = snapshot.buttons.find((button) => normalized.includes(button.toLowerCase()) || button.toLowerCase().includes(normalized));
-      if (buttonMatch) steps.push({ id: "s3", action: "Click", target: `Click "${buttonMatch}"`, value: "", selector: "css:button" });
-    }
-
-    const form = snapshot.forms[0];
-    if (form) {
-      const field = form.fields.find((entry) => entry.type === "email") ?? form.fields.find((entry) => entry.type === "password") ?? form.fields[0];
+    if (formFlow) {
+      const form = snapshot.forms[0];
+      const field = form?.fields.find((entry) => entry.type === "email") ?? form?.fields.find((entry) => entry.type === "password") ?? form?.fields[0];
       if (field) {
+        const fieldLabel = field.label || field.placeholder || field.name || "the first field";
         steps.push({
-          id: "s4",
+          id: "s3",
           action: "Enter Text",
-          target: `Fill ${field.label || field.placeholder || field.name || "the first field"}`,
+          target: `Fill ${fieldLabel}`,
           value: sampleValueForField(field),
           selector: `css:${selectorForField(field)}`,
+          expectedResult: `The ${fieldLabel} field accepts the value and shows the expected validation state.`,
         });
       }
       steps.push({
-        id: "s5",
+        id: "s4",
         action: "Click",
         target: "Submit the form",
         value: "",
         selector: 'css:form button[type="submit"], button[type="submit"]',
+        expectedResult: "The form submits and renders the success or inline validation state.",
+      });
+    } else {
+      const label = navMatch?.text ?? "Services";
+      const href = navMatch?.href ?? "";
+      const selector = href && !/^javascript:/i.test(href) ? `css:a[href="${href.replace(/"/g, '\\"')}"]` : "css:nav a";
+      steps.push({
+        id: "s3",
+        action: "Click",
+        target: `Click "${label}" in the main navigation`,
+        value: "",
+        selector,
+        expectedResult: `Clicking '${label}' activates the navigation link or opens the target section.`,
+      });
+      steps.push({
+        id: "s4",
+        action: "Verify Element",
+        target: `Verify the "${heading}" content section and interactive controls are visible`,
+        value: "",
+        selector: "css:main",
+        expectedResult: "Target section content and interactive controls are visible in the viewport.",
+      });
+      steps.push({
+        id: "s5",
+        action: "Verify Element",
+        target: "Verify the global footer and regional navigation landmarks are visible",
+        value: "",
+        selector: "css:footer",
+        expectedResult: "Global navigation and footer landmarks remain accessible and properly aligned.",
       });
     }
 
     steps.push({
       id: "s6",
       action: "AI Assertion",
-      target: `Verify "${title}" completes without console or network errors`,
+      target: `Verify "${title}" completes with expected content rendered and zero console or network errors`,
       value: "",
       selector: "",
+      expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors.",
     });
   } else {
     steps.push(
-      { id: "s2", action: "Verify Element", target: "Verify that the home page is displayed", value: "", selector: "css:h1" },
-      { id: "s3", action: "Click", target: "Click on the primary navigation link", value: "", selector: "css:nav a" },
-      { id: "s4", action: "AI Assertion", target: `Verify that ${title} is visible`, value: "", selector: "" },
+      { id: "s2", action: "Verify Element", target: `Verify the "${heading}" heading is visible`, value: "", selector: "css:h1", expectedResult: `Primary heading '${heading}' is visible above the fold.` },
+      { id: "s3", action: "Click", target: 'Click "Services" in the main navigation', value: "", selector: "css:nav a", expectedResult: "Clicking 'Services' activates the navigation link or opens the target section." },
+      { id: "s4", action: "Verify Element", target: "Verify the main content and interactive controls are visible", value: "", selector: "css:main", expectedResult: "Target section content and interactive controls are visible in the viewport." },
+      { id: "s5", action: "Verify Element", target: "Verify the global footer and regional navigation landmarks are visible", value: "", selector: "css:footer", expectedResult: "Global navigation and footer landmarks remain accessible and properly aligned." },
+      { id: "s6", action: "AI Assertion", target: `Verify "${title}" completes with expected content rendered and zero console or network errors`, value: "", selector: "", expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors." },
     );
   }
 
-  const generic: Array<Omit<NlpStep, "id">> = [
-    { action: "Verify Element", target: "Verify that the current page URL is correct", value: "", selector: "" },
-    { action: "Click", target: "Click on the submit button", value: "", selector: "css:button" },
-    { action: "AI Assertion", target: "Verify that no error banner is displayed", value: "", selector: "" },
+  const fillers = [
+    { action: "Verify Element", target: `Verify the main content on ${host} and navigation landmarks remain visible`, value: "", selector: "css:main" },
+    { action: "AI Assertion", target: `Verify "${title}" completed with no console or network errors`, value: "", selector: "" },
   ];
   let index = 0;
   while (steps.length < Math.max(1, count)) {
-    const next = generic[index % generic.length];
-    steps.push({ id: `s${steps.length + 1}`, ...next });
+    const filler = fillers[index % fillers.length];
+    steps.push({ id: `s${steps.length + 1}`, ...filler, expectedResult: expected(filler.action, filler.target, filler.value) });
     index += 1;
   }
-  return steps.slice(0, Math.max(1, count));
+  return steps
+    .slice(0, Math.max(1, count))
+    .map((step, stepIndex) => ({
+      ...step,
+      id: `s${stepIndex + 1}`,
+      expectedResult: step.expectedResult || expected(step.action, step.target, step.value),
+    }));
 }
 
 /**
@@ -1099,8 +1448,8 @@ export async function generateGroundedTitles(
   count: number,
   fallback: string[],
 ): Promise<string[]> {
-  const domTitles = groundedFlowsFromDom(snapshot).map((flow) => flow.name);
-  const local = [...new Set([...domTitles, ...fallback])].filter(Boolean);
+  const domTitles = groundedFlowsFromDom(snapshot).map((flow) => flow.name.slice(0, 160));
+  const local = [...new Set([...domTitles, ...fallback])].filter(Boolean).map((title) => title.slice(0, 160));
 
   if (snapshot) {
     const summary = [
@@ -1114,7 +1463,10 @@ export async function generateGroundedTitles(
     const aiTitles = await askPollinations(
       `You are a senior QA engineer. Real page DOM:\n${summary}\n\nWrite ${count} short end-to-end test case titles for the ${module} module about "${prompt}". Ground every title in the elements above. Return ONLY a JSON array of strings.`,
     );
-    if (aiTitles) return [...new Set([...aiTitles, ...local])].slice(0, Math.max(1, count));
+    if (aiTitles) {
+      const enriched = aiTitles.map((title) => (title.includes("→") ? title.slice(0, 160) : `${title.slice(0, 120)} → Expected content & controls render`));
+      return [...new Set([...enriched, ...local])].slice(0, Math.max(1, count));
+    }
   }
 
   return local.slice(0, Math.max(1, count));

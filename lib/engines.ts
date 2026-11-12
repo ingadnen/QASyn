@@ -9,6 +9,8 @@ export interface NlpStep {
   target: string;
   value: string;
   selector: string;
+  /** Human-readable outcome this step must prove. */
+  expectedResult?: string;
 }
 
 export interface StepLog {

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const existing = new Set(
       (await tx.testCase.findMany({ where: { organisationId: ctx.org.id, module: input.module }, select: { title: true } })).map((t) => t.title),
     );
-    const titles = generateTitles(input.module, input.prompt, input.count).filter((t) => !existing.has(t));
+    const titles = generateTitles(input.module, input.prompt, input.count, targetUrl).filter((t) => !existing.has(t));
     const rows = [];
     for (const title of titles) {
       const stepsCount = 3 + (title.length % 5);
