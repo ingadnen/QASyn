@@ -16,7 +16,7 @@ import {
   type GroundedFlow,
   type TargetDomSnapshot,
 } from "./web-executor";
-import { audit, readSettings, spendCredits, type OrgContext } from "./tenant";
+import { assertQuotaAvailable, audit, readSettings, spendCredits, type OrgContext } from "./tenant";
 import { defaultExpectedResultForStep, expectedResultForStep } from "./step-expected";
 import {
   buildStepHealMetadata,
@@ -40,6 +40,7 @@ const PENDING_MS = 6000;
 export async function startCrawl(db: Db, actor: Actor, targetUrl: string, opts?: { platform?: string; publishMode?: string; testTypes?: string[]; prerequisites?: string[]; explorePrompt?: string; additionalContext?: string; requirementName?: string; createSuite?: boolean; createPlan?: boolean }): Promise<CrawlSession> {
   const running = await db.crawlSession.findFirst({ where: { organisationId: actor.org.id, status: "running" } });
   if (running) return running;
+  await assertQuotaAvailable(db, actor.org.id, CREDIT_COSTS.crawl, actor.user.id);
   const logs = buildCrawlLogs(targetUrl);
   if (opts?.explorePrompt?.trim()) {
     logs.splice(1, 0, { offsetMs: 150, tag: "MAP", message: `Explore prompt: ${opts.explorePrompt.trim()}` });

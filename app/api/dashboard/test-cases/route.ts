@@ -3,7 +3,7 @@ import { CREDIT_COSTS, DEFAULT_TEST_TYPE } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { buildStepsJson, generateTitles, resolveTargetUrl } from "@/lib/engine";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { createTestCaseSchema } from "@/lib/validation";
@@ -26,9 +26,20 @@ export async function POST(request: Request) {
   const input = parsed.data;
   const targetUrl = resolveTargetUrl(input.targetUrl, ctx.org.website);
   const testType = input.testType ?? DEFAULT_TEST_TYPE;
+  if (input.mode === "ai") {
+    try {
+      await assertQuotaAvailable(prisma, ctx.org.id, CREDIT_COSTS.aiGeneration, ctx.user.id);
+    } catch (error) {
+      const quota = quotaErrorResponse(error);
+      if (quota) return quota;
+      throw error;
+    }
+  }
   await delay(input.mode === "ai" ? MOCK_LATENCY_MS * 2 : MOCK_LATENCY_MS);
 
-  const created = await prisma.$transaction(async (tx) => {
+  let created: unknown[] = [];
+  try {
+    created = await prisma.$transaction(async (tx) => {
     if (input.mode === "manual") {
       const tc = await tx.testCase.create({
         data: {
@@ -70,7 +81,12 @@ export async function POST(request: Request) {
     await spendCredits(tx, ctx.org.id, CREDIT_COSTS.aiGeneration, ctx.user.id);
     await audit(tx, ctx, "test_case.generated", `${rows.length} × ${input.module}`);
     return rows;
-  });
+    });
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 
   return NextResponse.json({ created: created.length, testCases: created }, { status: 201 });
 }

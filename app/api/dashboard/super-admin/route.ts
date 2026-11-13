@@ -7,6 +7,7 @@ import { jsonError, readJson, validationError } from "@/lib/http";
 import { isSuperAdmin } from "@/lib/rbac";
 import { guardPermission } from "@/lib/rbac-server";
 import { ETERNAL_TRIAL_CREDITS, SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
+import { invalidateTenantModelCache } from "@/lib/model-router";
 import { getPaymentConfig, toSuperAdminPaymentConfig, updatePaymentConfig } from "@/lib/payment-config";
 import { PLANS, USER_ROLES } from "@/lib/types";
 import { normalizeWebsite } from "@/lib/utils";
@@ -482,6 +483,7 @@ export async function PATCH(request: Request) {
     const settings = parseJson<Record<string, unknown>>(org.settingsJson, {});
     const nextSettings = { ...settings, activeModel: data.model };
     await prisma.organisation.update({ where: { id: org.id }, data: { settingsJson: JSON.stringify(nextSettings) } });
+    invalidateTenantModelCache(org.id);
     await prisma.systemAuditLog.create({
       data: { organisationId: org.id, actorEmail: ctx.user.email, action: "super_admin.tenant_model_updated", target: `${org.name} → ${data.model}`.slice(0, 200) },
     });

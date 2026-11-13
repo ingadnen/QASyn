@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal, cqaInput, cqaLabel } from "@/components/dashboard/ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { FOCUS_OPTIONS, PROVIDER_META, TRIAL_CREDITS, TRIAL_DAYS } from "@/lib/constants";
+import { buildPaypalCheckoutUrl } from "@/lib/paypal";
 import { useOnboarding } from "@/lib/context/OnboardingContext";
 import { toast } from "@/lib/toast";
 import { cn, hostOf } from "@/lib/utils";
@@ -107,8 +108,13 @@ export function Step7Trial() {
   const selectedPlan = PLANS.find((plan) => plan.key === planKey) ?? PLANS[0];
   const needsPayment = planKey !== "trial";
   const planAmount = planKey === "starter" ? 99 : planKey === "pro" ? 299 : 0;
-  const paypalBase = config.paypalMeOrCheckoutUrl || "https://www.paypal.com/cgi-bin/webscr";
-  const paypalLink = `${paypalBase}${paypalBase.includes("?") ? "&" : "?"}cmd=_xclick&business=${encodeURIComponent(config.paypalRecipientEmail)}&item_name=${encodeURIComponent(`${selectedPlan.name} plan`)}&amount=${planAmount.toFixed(2)}&currency_code=${config.currency}`;
+  const paypalLink = buildPaypalCheckoutUrl({
+    baseUrl: config.paypalMeOrCheckoutUrl,
+    recipientEmail: config.paypalRecipientEmail,
+    itemName: `${selectedPlan.name} plan`,
+    amount: planAmount,
+    currency: config.currency,
+  });
   const gatewayEnabled = method === "stripe" ? config.stripeEnabled : method === "paypal" ? config.paypalEnabled : config.invoiceEnabled;
   const validPayment =
     !needsPayment ||

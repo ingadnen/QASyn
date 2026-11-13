@@ -3,7 +3,7 @@ import { CREDIT_COSTS, isCollectionKind } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { runTestCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { collectionActionSchema, collectionUpdateSchema } from "@/lib/validation";
 
@@ -130,18 +130,34 @@ export async function PATCH(request: Request, { params }: Params) {
   });
   if (testCases.length === 0) return jsonError("This collection has no test cases yet.", 400);
 
+  const creditCost = CREDIT_COSTS.suiteRun + CREDIT_COSTS.testRun * testCases.length;
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, creditCost, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
+
   await delay(MOCK_LATENCY_MS * 2);
-  const result = await prisma.$transaction(
-    async (tx) => {
-      const r = await runTestCases(tx, ctx, testCases);
-      const data = { testCasesCount: r.total, passRate: r.total ? Math.round((r.passed / r.total) * 1000) / 10 : 0, lastRunAt: new Date() };
-      if (kind === "suites") await tx.testSuite.update({ where: { id: item.id }, data });
-      else await tx.testPlan.update({ where: { id: item.id }, data });
-      await spendCredits(tx, ctx.org.id, CREDIT_COSTS.suiteRun, ctx.user.id);
-      return r;
-    },
-    { timeout: 60_000 },
-  );
+  let result: Awaited<ReturnType<typeof runTestCases>>;
+  try {
+    result = await prisma.$transaction(
+      async (tx) => {
+        const r = await runTestCases(tx, ctx, testCases);
+        const data = { testCasesCount: r.total, passRate: r.total ? Math.round((r.passed / r.total) * 1000) / 10 : 0, lastRunAt: new Date() };
+        if (kind === "suites") await tx.testSuite.update({ where: { id: item.id }, data });
+        else await tx.testPlan.update({ where: { id: item.id }, data });
+        await spendCredits(tx, ctx.org.id, CREDIT_COSTS.suiteRun, ctx.user.id);
+        return r;
+      },
+      { timeout: 60_000 },
+    );
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, kind === "suites" ? "test_suite.run" : "test_plan.run", `${item.name} · ${result.passed}/${result.total}`);
   return NextResponse.json(result);
 }

@@ -366,6 +366,11 @@ export const billingSchema = z.discriminatedUnion("action", [
     userId: z.string().min(1).max(60),
     quota: z.number().int().min(0).max(10_000_000),
   }),
+  z.object({
+    action: z.literal("allocate_quota"),
+    userId: z.string().min(1).max(60),
+    quota: z.number().int().min(0).max(10_000_000),
+  }),
 ]);
 
 export const apiTokenSchema = z.object({

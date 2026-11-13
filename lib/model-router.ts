@@ -32,6 +32,17 @@ interface ModelCacheEntry {
 const CACHE_TTL_MS = 15_000;
 const cache = new Map<string, ModelCacheEntry>();
 
+/** Clears the model cache after a workspace or Super Admin model change. */
+export function invalidateTenantModelCache(organisationId?: string): void {
+  if (!organisationId) {
+    cache.clear();
+    return;
+  }
+  for (const key of [...cache.keys()]) {
+    if (key.startsWith(`${organisationId}:`)) cache.delete(key);
+  }
+}
+
 function normaliseEndpoint(provider: string, modelId: string): string | null {
   const model = String(modelId ?? "").trim();
   if (!model) return null;

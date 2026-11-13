@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
+import { invalidateTenantModelCache } from "@/lib/model-router";
 import { guardPermission } from "@/lib/rbac-server";
 import { readSettings, writeSettings } from "@/lib/tenant";
 
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
     createdAt: new Date().toISOString(),
   };
   const next = await writeSettings(prisma, guard.ctx.org, { customModels: [...current, model] });
+  invalidateTenantModelCache(guard.ctx.org.id);
   return NextResponse.json({ model, models: next.customModels }, { status: 201 });
 }
 
@@ -55,6 +57,7 @@ export async function PATCH(request: Request) {
   const updated = { ...existing, ...parsed.data, apiKey: parsed.data.apiKey || existing.apiKey };
   const next = current.map((model) => (model.id === existing.id ? updated : model));
   await writeSettings(prisma, guard.ctx.org, { customModels: next });
+  invalidateTenantModelCache(guard.ctx.org.id);
   return NextResponse.json({ model: { ...updated, apiKey: undefined, hasApiKey: Boolean(updated.apiKey) } });
 }
 
@@ -66,5 +69,6 @@ export async function DELETE(request: Request) {
   const current = readSettings(guard.ctx.org).customModels ?? [];
   const next = current.filter((model) => model.id !== body.id);
   await writeSettings(prisma, guard.ctx.org, { customModels: next });
+  invalidateTenantModelCache(guard.ctx.org.id);
   return NextResponse.json({ ok: true, models: next });
 }

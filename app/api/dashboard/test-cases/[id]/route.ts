@@ -639,6 +639,8 @@ async function handlePatch(request: Request, { params }: Params) {
       await audit(prisma, ctx, "test_case.run_steps", `${tc.title} · ${log.length} steps · ${shouldFail ? "failing" : "passing"}`);
       return NextResponse.json({ result: executionResult, log, run: createdRun });
     } catch (error) {
+      const quota = quotaErrorResponse(error);
+      if (quota) return quota;
       // Evidence was generated in memory; a persistence fault must not turn the
       // Studio run into an opaque 500 / "0/0 passed" response.
       console.error("[test-cases run_steps persistence]", error);

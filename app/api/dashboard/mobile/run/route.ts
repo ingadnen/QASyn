@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { simulateMobileRun, type Gesture } from "@/lib/engines";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { mobileRunSchema } from "@/lib/validation";
 
@@ -18,6 +18,13 @@ export async function POST(request: Request) {
   const test = await prisma.mobileTest.findFirst({ where: { id: parsed.data.testId, organisationId: ctx.org.id } });
   if (!test) return jsonError("Mobile test not found.", 404);
 
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, 5, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await delay(MOCK_LATENCY_MS * 2);
   let gestures: Gesture[] = [];
   try {
@@ -30,7 +37,13 @@ export async function POST(request: Request) {
     where: { id: test.id },
     data: { status: passed ? "passed" : "failed", logsJson: JSON.stringify(log), lastRunAt: new Date() },
   });
-  await spendCredits(prisma, ctx.org.id, 5, ctx.user.id);
+  try {
+    await spendCredits(prisma, ctx.org.id, 5, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, "mobile.run", `${test.name} · ${test.device} · ${passed ? "passed" : "failed"}`);
   return NextResponse.json({ test: updated, log });
 }

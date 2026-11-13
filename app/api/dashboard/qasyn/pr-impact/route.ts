@@ -3,7 +3,7 @@ import { prisma, ensureWal } from "@/lib/db";
 import { analyzePrImpact } from "@/lib/engines";
 import { analyzeBlastRadius } from "@/lib/qasyn-engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { prImpactSchema } from "@/lib/validation";
 
@@ -18,6 +18,13 @@ export async function POST(request: Request) {
   if (!parsed.success) return validationError(parsed.error);
   const { prNumber, branch, title, files } = parsed.data;
 
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, 10, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await delay(MOCK_LATENCY_MS * 2);
   const testCases = await prisma.testCase.findMany({
     where: { organisationId: ctx.org.id },
@@ -62,7 +69,13 @@ export async function POST(request: Request) {
       regressions: impact.decision === "No-Go" ? 1 : 0,
     },
   });
-  await spendCredits(prisma, ctx.org.id, 10, ctx.user.id);
+  try {
+    await spendCredits(prisma, ctx.org.id, 10, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, "qasyn.pr_impact", `#${prNumber} ${title} · ${impact.riskLevel} · ${impact.decision}`);
   return NextResponse.json({ analysis, impact, blastRadius });
 }

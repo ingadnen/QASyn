@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { reproduceBug } from "@/lib/engines";
 import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { bugReproSchema } from "@/lib/validation";
 
@@ -21,6 +21,13 @@ export async function POST(request: Request) {
   if (!parsed.success) return validationError(parsed.error);
   const { title, description } = parsed.data;
 
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, 15, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await delay(MOCK_LATENCY_MS * 2);
   const { steps, rootCause, severity } = reproduceBug(description, title);
   const bug = await prisma.bugReport.create({
@@ -49,7 +56,13 @@ export async function POST(request: Request) {
       ),
     },
   });
-  await spendCredits(prisma, ctx.org.id, 15, ctx.user.id);
+  try {
+    await spendCredits(prisma, ctx.org.id, 15, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, "qasyn.bug_repro", `${title} · ${severity} · ${rootCause}`);
   return NextResponse.json({ bug, testCase, rootCause, severity }, { status: 201 });
 }

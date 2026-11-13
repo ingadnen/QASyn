@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { startCrawl } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { guardPermission } from "@/lib/rbac-server";
-import { quotaErrorResponse } from "@/lib/tenant";
+import { assertQuotaAvailable, quotaErrorResponse } from "@/lib/tenant";
 import { delay, normalizeWebsite } from "@/lib/utils";
 import { startCrawlSchema } from "@/lib/validation";
 
@@ -32,6 +33,14 @@ export async function POST(request: Request) {
   const raw = parsed.data.targetUrl?.trim() || ctx.org.website || "";
   const targetUrl = raw ? normalizeWebsite(raw) : null;
   if (!targetUrl) return jsonError("Enter the URL of the app to crawl, e.g. https://staging.your-domain.com", 400);
+
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, CREDIT_COSTS.crawl, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 
   const running = await prisma.crawlSession.findFirst({ where: { organisationId: ctx.org.id, status: "running" } });
   if (running) return jsonError("A crawl is already running. Complete it first.", 409, { crawlId: running.id });

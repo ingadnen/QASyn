@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel } from "@/components/dashboard/ui";
 import { apiFetch, errorMessage } from "@/lib/api";
+import { buildPaypalCheckoutUrl } from "@/lib/paypal";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -116,8 +117,13 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
   const paypalItem = mode === "credits"
     ? `${creditAmount.toLocaleString("en-US")} QASyn AI credits`
     : `${PLAN_OPTIONS.find((option) => option.key === planKey)?.label ?? "QASyn plan"}`;
-  const paypalBase = config.paypalMeOrCheckoutUrl || "https://www.paypal.com/cgi-bin/webscr";
-  const paypalLink = `${paypalBase}${paypalBase.includes("?") ? "&" : "?"}cmd=_xclick&business=${encodeURIComponent(config.paypalRecipientEmail)}&item_name=${encodeURIComponent(paypalItem)}&amount=${paypalAmount.toFixed(2)}&currency_code=${config.currency}`;
+  const paypalLink = buildPaypalCheckoutUrl({
+    baseUrl: config.paypalMeOrCheckoutUrl,
+    recipientEmail: config.paypalRecipientEmail,
+    itemName: paypalItem,
+    amount: paypalAmount,
+    currency: config.currency,
+  });
   const gatewayEnabled = method === "stripe" ? config.stripeEnabled : method === "paypal" ? config.paypalEnabled : config.invoiceEnabled;
 
   function validPayment() {

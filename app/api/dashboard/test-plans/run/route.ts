@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { simulateSteps, type NlpStep } from "@/lib/engines";
 import { jsonError, readJson, validationError } from "@/lib/http";
-import { audit, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { testPlanRunSchema } from "@/lib/validation";
 
@@ -66,6 +66,15 @@ export async function POST(request: Request) {
     /* keep default */
   }
   const viewport = `1440×900 · ${browsers.join(" / ")}`;
+  const creditCost = 5 * cases.length;
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, creditCost, ctx.user.id);
+    await spendCredits(prisma, ctx.org.id, creditCost, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 
   const startedAt = new Date();
   const execution = await prisma.testPlanExecution.create({
@@ -224,7 +233,6 @@ export async function POST(request: Request) {
     });
   }
 
-  await spendCredits(prisma, ctx.org.id, 5 * cases.length, ctx.user.id);
   await audit(prisma, ctx, "test_plan.run", `${plan.name} · ${cases.length} cases · ${browsers.join("/")} · ${passed} passed · ${failed} failed · ${notExecuted} not executed`);
   return NextResponse.json({
     passed,

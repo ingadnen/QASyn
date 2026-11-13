@@ -68,15 +68,6 @@ export async function guardApi({ write = false }: { write?: boolean } = {}): Pro
   if (write && ctx.readOnly) {
     return { ok: false, response: jsonError("The demo workspace is read-only. Switch back to your organisation.", 403) };
   }
-  if (write && ctx.user.creditQuota > 0 && ctx.user.creditsConsumed >= ctx.user.creditQuota) {
-    return {
-      ok: false,
-      response: jsonError(
-        `User token quota exceeded (${ctx.user.creditsConsumed}/${ctx.user.creditQuota}). Ask your workspace admin to increase your allocation.`,
-        402,
-      ),
-    };
-  }
   return { ok: true, ctx };
 }
 
@@ -129,6 +120,30 @@ export function quotaErrorResponse(error: unknown): NextResponse | null {
 }
 
 /**
+ * Read-only pre-flight quota check. Call this before creating crawl, test,
+ * workflow or report records so an exhausted user receives a clean 402 without
+ * committing side effects.
+ */
+export async function assertQuotaAvailable(
+  db: Db,
+  organisationId: string,
+  amount: number,
+  userId?: string,
+): Promise<void> {
+  if (!userId || !Number.isFinite(amount) || amount <= 0) return;
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { organisationId: true, creditQuota: true, creditsConsumed: true },
+  });
+  if (!user || user.organisationId !== organisationId || user.creditQuota <= 0) return;
+  if (user.creditsConsumed + amount > user.creditQuota) {
+    throw new QuotaExceededError(
+      `User token quota exceeded (${user.creditsConsumed}/${user.creditQuota}). Ask your workspace admin to increase your allocation.`,
+    );
+  }
+}
+
+/**
  * Deducts credits from the organisation and, when a user is supplied, from the
  * user's assigned token quota. The user quota check and both increments run in
  * one interactive transaction so concurrent runs cannot overdraw a quota.
@@ -137,17 +152,13 @@ export async function spendCredits(db: Db, organisationId: string, amount: numbe
   if (!Number.isFinite(amount) || amount <= 0) return;
 
   const apply = async (tx: Db) => {
+    await assertQuotaAvailable(tx, organisationId, amount, userId);
     if (userId) {
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { organisationId: true, creditQuota: true, creditsConsumed: true },
+        select: { organisationId: true },
       });
-      if (user && user.organisationId === organisationId && user.creditQuota > 0) {
-        if (user.creditsConsumed + amount > user.creditQuota) {
-          throw new QuotaExceededError(
-            `User token quota exceeded (${user.creditsConsumed}/${user.creditQuota}). Ask your workspace admin to increase your allocation.`,
-          );
-        }
+      if (user && user.organisationId === organisationId) {
         await tx.user.update({ where: { id: userId }, data: { creditsConsumed: { increment: amount } } });
       }
     }

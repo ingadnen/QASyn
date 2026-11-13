@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS } from "@/lib/http";
-import { audit, guardApi, spendCredits, writeSettings } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits, writeSettings } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 
 /** POST /api/dashboard/code-analysis — re-runs the (simulated) static analysis of connected repositories. */
@@ -14,10 +14,23 @@ export async function POST() {
     where: { organisationId: ctx.org.id, provider: { in: ["GITHUB", "GITLAB"] }, status: "CONNECTED" },
   });
   if (!repo) return jsonError("Connect GitHub or GitLab first.", 409);
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, CREDIT_COSTS.codeAnalysis, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await delay(MOCK_LATENCY_MS * 2);
   const at = new Date().toISOString();
   await writeSettings(prisma, ctx.org, { codeAnalysisAt: at });
-  await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.codeAnalysis, ctx.user.id);
+  try {
+    await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.codeAnalysis, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, "code_analysis.run", repo.detail ?? repo.provider);
   return NextResponse.json({ analysedAt: at });
 }

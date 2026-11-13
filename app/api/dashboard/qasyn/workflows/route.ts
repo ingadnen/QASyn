@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { z } from "zod";
 
@@ -28,6 +28,13 @@ export async function POST(request: Request) {
   const tests = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id }, select: { status: true } });
   if (tests.length === 0) return jsonError("Run a crawl or create test cases first.", 400);
 
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, 20, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await delay(MOCK_LATENCY_MS * 2);
   const passing = tests.filter((t) => t.status === "passing").length;
   const passRate = Math.round((passing / tests.length) * 100);
@@ -48,7 +55,13 @@ export async function POST(request: Request) {
       decisionReason: decision === "Go" ? `Pass rate ${passRate}% ≥ 70% gate.` : `Pass rate ${passRate}% < 70% gate — investigate failing cases.`,
     },
   });
-  await spendCredits(prisma, ctx.org.id, 20, ctx.user.id);
+  try {
+    await spendCredits(prisma, ctx.org.id, 20, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, "qasyn.workflow", `${workflow.name} · ${decision}`);
   return NextResponse.json({ workflow, stages }, { status: 201 });
 }

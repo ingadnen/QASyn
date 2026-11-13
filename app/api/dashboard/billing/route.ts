@@ -127,7 +127,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ plan: input.plan });
   }
 
-  if (input.action === "allocation") {
+  if (input.action === "allocation" || input.action === "allocate_quota") {
     const member = await prisma.user.findFirst({ where: { id: input.userId, organisationId: ctx.org.id } });
     if (!member) return jsonError("Team member not found.", 404);
     const updated = await prisma.user.update({ where: { id: member.id }, data: { creditQuota: input.quota } });
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
       return jsonError("This payment method is currently disabled by the platform administrator.", 400);
     }
 
-    if (method === "stripe" && !config.stripeSecretKey) {
+    if (method === "stripe") {
       const cardError = validateCard(input);
       if (cardError) return jsonError(cardError, 400);
     }

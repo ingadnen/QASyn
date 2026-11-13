@@ -6385,6 +6385,27 @@ async function main() {
       p20QuotaApi.status === 402 && /User token quota exceeded/.test(JSON.stringify(p20QuotaApi.body)),
       `status ${p20QuotaApi.status} · ${JSON.stringify(p20QuotaApi.body).slice(0, 160)}`,
     );
+
+    const p20Allocate = await apiJson(page, "/api/dashboard/billing", "POST", {
+      action: "allocate_quota",
+      userId: p20User.id,
+      quota: p20QuotaBase + 1_000,
+    });
+    const p20AllocateBody = p20Allocate.body as { member?: { creditQuota?: number } };
+    check(
+      "PART 20 admin can raise a quota while personally exhausted",
+      p20Allocate.status === 200 && p20AllocateBody.member?.creditQuota === p20QuotaBase + 1_000,
+      `status ${p20Allocate.status} · quota ${p20AllocateBody.member?.creditQuota ?? "missing"}`,
+    );
+
+    const p20BillingConfig = await apiJson(page, "/api/dashboard/billing/config", "GET");
+    check(
+      "PART 20 authenticated checkout config returns 200",
+      p20BillingConfig.status === 200 &&
+        (p20BillingConfig.body as { paypalRecipientEmail?: string }).paypalRecipientEmail === "ingrebhiadnen@gmail.com",
+      `status ${p20BillingConfig.status}`,
+    );
+
     await db.crawlSession.deleteMany({ where: { organisationId: p20Cgi.id, targetUrl: { contains: `p20-quota-${RUN_ID}` } } });
     await db.user.update({
       where: { id: p20User.id },

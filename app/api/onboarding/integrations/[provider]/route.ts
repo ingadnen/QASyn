@@ -37,14 +37,22 @@ function validHttpUrl(value: string): URL | null {
   }
 }
 
-async function probeJira(config: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
+function isSandboxToken(value: string): boolean {
+  const token = value.trim().toLowerCase();
+  if (!token) return true;
+  return /^(demo|test|sample|fake|dummy|placeholder|token)([-_].*)?$/.test(token) || /replace|your[-_]|x{4,}/.test(token);
+}
+
+async function probeJira(config: Record<string, string>): Promise<{ ok: boolean; detail: string; rejected?: boolean }> {
   const baseUrl = String(config.baseUrl ?? "").trim().replace(/\/+$/, "");
   const url = validHttpUrl(baseUrl);
   if (!url) return { ok: false, detail: "Enter a valid Jira base URL." };
   if (!String(config.email ?? "").trim() || !String(config.apiToken ?? "").trim()) {
     return { ok: false, detail: "Jira e-mail and API token are required." };
   }
-  if (isSandboxHost(url.hostname)) return { ok: true, detail: "Sandbox Jira configuration validated locally." };
+  if (isSandboxHost(url.hostname) || isSandboxToken(config.apiToken)) {
+    return { ok: true, detail: "Sandbox Jira configuration validated locally." };
+  }
   try {
     const response = await fetch(`${baseUrl}/rest/api/3/myself`, {
       headers: {
@@ -53,18 +61,19 @@ async function probeJira(config: Record<string, string>): Promise<{ ok: boolean;
       },
       signal: AbortSignal.timeout(6_000),
     });
-    return response.ok
-      ? { ok: true, detail: `Jira verified as ${config.email}.` }
-      : { ok: false, detail: `Jira probe returned HTTP ${response.status}; saved for offline validation.` };
+    if (response.ok) return { ok: true, detail: `Jira verified as ${config.email}.` };
+    const rejected = response.status === 401 || response.status === 403;
+    return { ok: false, detail: rejected ? `Jira rejected the credentials (HTTP ${response.status}).` : `Jira probe returned HTTP ${response.status}; saved for offline validation.`, rejected };
   } catch {
     return { ok: false, detail: "Jira probe unavailable; saved for offline validation." };
   }
 }
 
-async function probeLinear(config: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
+async function probeLinear(config: Record<string, string>): Promise<{ ok: boolean; detail: string; rejected?: boolean }> {
   const apiKey = String(config.apiKey ?? "").trim();
   if (!apiKey) return { ok: false, detail: "Linear API key is required." };
   if (!apiKey.startsWith("lin_api_")) return { ok: false, detail: "Linear API keys start with lin_api_." };
+  if (isSandboxToken(apiKey)) return { ok: true, detail: "Sandbox Linear credentials validated locally." };
   try {
     const response = await fetch("https://api.linear.app/graphql", {
       method: "POST",
@@ -72,9 +81,9 @@ async function probeLinear(config: Record<string, string>): Promise<{ ok: boolea
       body: JSON.stringify({ query: "{ viewer { id name } }" }),
       signal: AbortSignal.timeout(6_000),
     });
-    return response.ok
-      ? { ok: true, detail: "Linear viewer verified." }
-      : { ok: false, detail: `Linear probe returned HTTP ${response.status}; saved for offline validation.` };
+    if (response.ok) return { ok: true, detail: "Linear viewer verified." };
+    const rejected = response.status === 401 || response.status === 403;
+    return { ok: false, detail: rejected ? `Linear rejected the credentials (HTTP ${response.status}).` : `Linear probe returned HTTP ${response.status}; saved for offline validation.`, rejected };
   } catch {
     return { ok: false, detail: "Linear probe unavailable; saved for offline validation." };
   }
@@ -194,10 +203,14 @@ export async function POST(request: Request, { params }: Params) {
     if (!url) return jsonError("Enter a valid Jira base URL.", 400);
     if (!String(config.email ?? "").trim()) return jsonError("Jira account e-mail is required.", 400);
     if (!String(config.apiToken ?? "").trim()) return jsonError("Jira API token is required.", 400);
-    verification = { ...(await probeJira(config)), tested: true };
+    const probe = await probeJira(config);
+    if (probe.rejected) return jsonError("Jira rejected the credentials. Check the account e-mail and API token.", 400);
+    verification = { ...probe, tested: true };
   } else if (provider.data === "LINEAR") {
     if (!String(config.apiKey ?? "").trim()) return jsonError("Linear API key is required.", 400);
-    verification = { ...(await probeLinear(config)), tested: true };
+    const probe = await probeLinear(config);
+    if (probe.rejected) return jsonError("Linear rejected the credentials. Check the API key.", 400);
+    verification = { ...probe, tested: true };
   } else if (provider.data === "SLACK") {
     const slackError = validateSlack(config);
     if (slackError) return jsonError(slackError, 400);

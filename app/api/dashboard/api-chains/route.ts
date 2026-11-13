@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma, ensureWal } from "@/lib/db";
 import { executeApiChain } from "@/lib/api-executor";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { delay } from "@/lib/utils";
 import { apiExecuteSchema, apiTestSchema } from "@/lib/validation";
 
@@ -42,6 +42,13 @@ export async function PATCH(request: Request) {
   if (!chain) return jsonError("API chain not found.", 404);
   const steps = JSON.parse(chain.requestsJson || "[]");
   if (steps.length === 0) return jsonError("Add at least one request before executing.", 400);
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, 5, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await delay(MOCK_LATENCY_MS * 2);
   const results = await executeApiChain(steps);
   const passed = results.every((r) => r.ok);
@@ -49,7 +56,13 @@ export async function PATCH(request: Request) {
     where: { id: chain.id },
     data: { status: passed ? "passed" : "failed", resultsJson: JSON.stringify(results), lastRunAt: new Date() },
   });
-  await spendCredits(prisma, ctx.org.id, 5, ctx.user.id);
+  try {
+    await spendCredits(prisma, ctx.org.id, 5, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, "api_chain.execute", `${chain.name} · ${passed ? "passed" : "failed"}`);
   return NextResponse.json({ chain: updated, results });
 }
