@@ -31,6 +31,8 @@ export interface PublicPaymentConfig {
   invoiceRecipientEmail: string;
   invoiceBankDetails: string;
   currency: string;
+  paypalMeOrCheckoutUrl: string;
+  mode: string;
   paypalEnabled: boolean;
   stripeEnabled: boolean;
   invoiceEnabled: boolean;
@@ -63,6 +65,8 @@ export function toPublicPaymentConfig(config: PlatformPaymentConfig): PublicPaym
     invoiceRecipientEmail: config.invoiceRecipientEmail,
     invoiceBankDetails: config.invoiceBankDetails,
     currency: config.currency,
+    paypalMeOrCheckoutUrl: config.paypalMeOrCheckoutUrl,
+    mode: config.mode,
     paypalEnabled: config.paypalEnabled,
     stripeEnabled: config.stripeEnabled,
     invoiceEnabled: config.invoiceEnabled,

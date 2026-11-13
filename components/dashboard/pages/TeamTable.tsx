@@ -14,6 +14,9 @@ export interface TeamMemberRow {
   role: string;
   verified: boolean;
   status: string;
+  creditQuota: number;
+  creditsConsumed: number;
+  inviteToken?: string;
 }
 
 export function TeamTable({
@@ -40,6 +43,7 @@ export function TeamTable({
             ROLES: member.role,
             VERIFIED: member.verified ? "Verified" : "Invited",
             ADMIN: member.role === "Admin" ? "Admin" : "Member",
+            "TOKEN QUOTA": `${member.creditsConsumed}/${member.creditQuota}`,
           }),
         ),
         sort,
@@ -49,6 +53,7 @@ export function TeamTable({
           ROLES: (member) => member.role,
           VERIFIED: (member) => (member.verified ? "Verified" : "Invited"),
           ADMIN: (member) => (member.role === "Admin" ? "Admin" : "Member"),
+          "TOKEN QUOTA": (member) => member.creditQuota,
         },
       ),
     [rows, columnFilters, sort],
@@ -81,6 +86,7 @@ export function TeamTable({
     { key: "ROLES", label: "ROLES", options: columnOptions.ROLES },
     { key: "VERIFIED", label: "VERIFIED", options: columnOptions.VERIFIED },
     { key: "ADMIN", label: "ADMIN", options: columnOptions.ADMIN },
+    { key: "TOKEN QUOTA", label: "TOKEN QUOTA", options: undefined as string[] | undefined },
   ];
 
   return (
@@ -107,7 +113,7 @@ export function TeamTable({
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-14 text-center">
+                <td colSpan={7} className="px-4 py-14 text-center">
                   <p className="text-[14px] font-medium text-[#374151]">No users found</p>
                   <p className="mt-1 text-[12.5px] text-[#9ca3af]">
                     {rows.length === 0 ? "Invite a teammate to get started." : "No teammate matches the current column filters."}
@@ -133,12 +139,19 @@ export function TeamTable({
                   )}
                 </td>
                 <td className="px-4 py-3 text-[12.5px] font-medium text-[#4b5563]">{member.role === "Admin" ? "Admin" : "—"}</td>
+                <td className="px-4 py-3" data-testid="team-token-quota">
+                  <p className="text-[12px] font-medium tabular-nums text-[#111827]">
+                    {(member.creditsConsumed ?? 0).toLocaleString("en-US")} / {(member.creditQuota ?? 0).toLocaleString("en-US")}
+                  </p>
+                  <p className="text-[10.5px] text-[#9ca3af]">{member.creditQuota > 0 ? "quota assigned" : "unlimited"}</p>
+                </td>
                 <td className="px-4 py-3">
                   <MemberActions
                     memberId={member.id}
                     memberName={member.name}
                     role={member.role}
                     invited={member.status === "invited"}
+                    inviteToken={member.inviteToken}
                     readOnly={readOnly || member.email === currentUserEmail}
                   />
                 </td>

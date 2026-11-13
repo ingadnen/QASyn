@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { runTestCases } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
-import { audit } from "@/lib/tenant";
+import { audit, quotaErrorResponse } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { runBatchSchema } from "@/lib/validation";
@@ -34,7 +34,13 @@ export async function POST(request: Request) {
   if (remaining <= 0) return jsonError("No credits left. Upgrade your plan in Billing.", 402);
 
   await delay(MOCK_LATENCY_MS * 2);
-  const result = await prisma.$transaction((tx) => runTestCases(tx, ctx, testCases), { timeout: 60_000 });
-  await audit(prisma, ctx, "test_case.batch_run", `${module ?? "all modules"} · ${result.passed}/${result.total} passing`);
-  return NextResponse.json(result);
+  try {
+    const result = await prisma.$transaction((tx) => runTestCases(tx, ctx, testCases), { timeout: 60_000 });
+    await audit(prisma, ctx, "test_case.batch_run", `${module ?? "all modules"} · ${result.passed}/${result.total} passing`);
+    return NextResponse.json(result);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 }

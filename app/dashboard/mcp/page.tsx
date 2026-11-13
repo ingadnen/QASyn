@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { McpConnect, type McpTokenRow } from "@/components/dashboard/pages/McpConnect";
-import { normalizeEnabledSkills } from "@/lib/agent-skills";
+import { AGENT_SKILLS, normalizeEnabledSkills } from "@/lib/agent-skills";
 import { prisma } from "@/lib/db";
 import { ensureDefaultMcpToken } from "@/lib/mcp-default";
 import { can } from "@/lib/rbac";
@@ -54,12 +54,18 @@ export default async function McpPage() {
   }));
 
   const settings = readSettings(ctx.org);
+  const platformSkillIds = await prisma.platformSkill.findMany({ where: { enabled: true }, select: { id: true } });
+  const knownSkillIds = [
+    ...AGENT_SKILLS.map((skill) => skill.id),
+    ...platformSkillIds.map((skill) => `platform-${skill.id}`),
+    ...(settings.customSkills ?? []).filter((skill) => skill.enabled).map((skill) => `custom-${skill.id}`),
+  ];
   return (
     <McpConnect
       tokens={rows}
       role={ctx.user.role}
       initialPlainToken={plainToken}
-      enabledSkills={normalizeEnabledSkills(settings.agentSkills)}
+      enabledSkills={normalizeEnabledSkills(settings.agentSkills, knownSkillIds)}
     />
   );
 }

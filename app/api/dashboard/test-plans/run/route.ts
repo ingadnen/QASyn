@@ -224,7 +224,7 @@ export async function POST(request: Request) {
     });
   }
 
-  await spendCredits(prisma, ctx.org.id, 5 * cases.length);
+  await spendCredits(prisma, ctx.org.id, 5 * cases.length, ctx.user.id);
   await audit(prisma, ctx, "test_plan.run", `${plan.name} · ${cases.length} cases · ${browsers.join("/")} · ${passed} passed · ${failed} failed · ${notExecuted} not executed`);
   return NextResponse.json({
     passed,

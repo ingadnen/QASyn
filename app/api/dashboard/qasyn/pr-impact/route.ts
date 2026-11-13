@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       regressions: impact.decision === "No-Go" ? 1 : 0,
     },
   });
-  await spendCredits(prisma, ctx.org.id, 10);
+  await spendCredits(prisma, ctx.org.id, 10, ctx.user.id);
   await audit(prisma, ctx, "qasyn.pr_impact", `#${prNumber} ${title} · ${impact.riskLevel} · ${impact.decision}`);
   return NextResponse.json({ analysis, impact, blastRadius });
 }

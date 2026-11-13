@@ -7,7 +7,7 @@ import { sendVerificationEmail } from "@/lib/mailer";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { capitalize } from "@/lib/utils";
 import { signupSchema } from "@/lib/validation";
-import { issueVerificationCode } from "@/lib/verification";
+import { issueVerificationCode, otpPreviewAllowed } from "@/lib/verification";
 
 /** POST /api/auth/signup { email, password } → unverified user + session + verification code. */
 export async function POST(request: Request) {
@@ -32,6 +32,6 @@ export async function POST(request: Request) {
   const code = await issueVerificationCode(user.id);
   await sendVerificationEmail(email, code);
   const headers: Record<string, string> = {};
-  if (process.env.QASYN_OTP_PREVIEW !== "0") headers["x-qasyn-otp-preview"] = code;
+  if (otpPreviewAllowed(request)) headers["x-qasyn-otp-preview"] = code;
   return NextResponse.json({ next: "/signup/verify", emailSent: true }, { headers });
 }

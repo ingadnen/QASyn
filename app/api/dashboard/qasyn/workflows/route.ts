@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       decisionReason: decision === "Go" ? `Pass rate ${passRate}% ≥ 70% gate.` : `Pass rate ${passRate}% < 70% gate — investigate failing cases.`,
     },
   });
-  await spendCredits(prisma, ctx.org.id, 20);
+  await spendCredits(prisma, ctx.org.id, 20, ctx.user.id);
   await audit(prisma, ctx, "qasyn.workflow", `${workflow.name} · ${decision}`);
   return NextResponse.json({ workflow, stages }, { status: 201 });
 }

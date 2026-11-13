@@ -143,7 +143,7 @@ export async function POST(request: Request) {
       durationMs: 0,
     },
   });
-  await spendCredits(prisma, ctx.org.id, 50);
+  await spendCredits(prisma, ctx.org.id, 50, ctx.user.id);
   await audit(prisma, ctx, "qasyn.execute_workflow", `${parsed.data.name} · ${decision} · ${passRate}%`);
   return NextResponse.json({ workflow, run, stages, decision, passRate }, { status: 201 });
 }

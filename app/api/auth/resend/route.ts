@@ -3,10 +3,10 @@ import { getSession } from "@/lib/auth";
 import { jsonError } from "@/lib/http";
 import { sendVerificationEmail } from "@/lib/mailer";
 import { rateLimit } from "@/lib/rate-limit";
-import { issueVerificationCode } from "@/lib/verification";
+import { issueVerificationCode, otpPreviewAllowed } from "@/lib/verification";
 
 /** POST /api/auth/resend — new verification code for the signed-in, unverified user. */
-export async function POST() {
+export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return jsonError("Sign in to continue.", 401);
   if (session.user.emailVerifiedAt) return jsonError("E-mail already verified.", 400);
@@ -14,6 +14,6 @@ export async function POST() {
   const code = await issueVerificationCode(session.user.id);
   await sendVerificationEmail(session.user.email, code);
   const headers: Record<string, string> = {};
-  if (process.env.QASYN_OTP_PREVIEW !== "0") headers["x-qasyn-otp-preview"] = code;
+  if (otpPreviewAllowed(request)) headers["x-qasyn-otp-preview"] = code;
   return NextResponse.json({ ok: true, emailSent: true }, { headers });
 }

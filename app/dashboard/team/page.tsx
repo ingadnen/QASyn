@@ -27,7 +27,15 @@ const DEFAULT_PERMS = {
 export default async function TeamPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string }> }) {
   const ctx = await requirePermission("team");
   const { tab = "users", q = "" } = await searchParams;
-  const members = await prisma.user.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" } });
+  const [members, pendingInvites] = await Promise.all([
+    prisma.user.findMany({ where: { organisationId: ctx.org.id }, orderBy: { createdAt: "asc" } }),
+    prisma.teamInvite.findMany({
+      where: { organisationId: ctx.org.id, status: "pending" },
+      orderBy: { createdAt: "desc" },
+      select: { email: true, token: true },
+    }),
+  ]);
+  const inviteTokens = new Map(pendingInvites.map((invite) => [invite.email.toLowerCase(), invite.token]));
   const filtered = q ? members.filter((m) => `${m.name} ${m.email}`.toLowerCase().includes(q.toLowerCase())) : members;
   const perms = (readSettings(ctx.org) as unknown as { permissions?: typeof DEFAULT_PERMS }).permissions ?? DEFAULT_PERMS;
 
@@ -69,6 +77,9 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
               role: m.role,
               verified: Boolean(m.emailVerifiedAt),
               status: m.status,
+              creditQuota: m.creditQuota,
+              creditsConsumed: m.creditsConsumed,
+              inviteToken: inviteTokens.get(m.email.toLowerCase()),
             }))}
             currentUserEmail={ctx.user.email}
             readOnly={ctx.readOnly}

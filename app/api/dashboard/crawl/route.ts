@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { startCrawl } from "@/lib/engine";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { guardPermission } from "@/lib/rbac-server";
+import { quotaErrorResponse } from "@/lib/tenant";
 import { delay, normalizeWebsite } from "@/lib/utils";
 import { startCrawlSchema } from "@/lib/validation";
 
@@ -36,16 +37,22 @@ export async function POST(request: Request) {
   if (running) return jsonError("A crawl is already running. Complete it first.", 409, { crawlId: running.id });
 
   await delay(MOCK_LATENCY_MS);
-  const crawl = await startCrawl(prisma, ctx, targetUrl, {
-    platform: parsed.data.platform,
-    publishMode: parsed.data.publishMode,
-    testTypes: parsed.data.testTypes,
-    prerequisites: parsed.data.prerequisites,
-    explorePrompt: parsed.data.explorePrompt,
-    additionalContext: parsed.data.additionalContext,
-    requirementName: parsed.data.requirementName,
-    createSuite: parsed.data.createSuite,
-    createPlan: parsed.data.createPlan,
-  });
-  return NextResponse.json({ crawl: { id: crawl.id, status: crawl.status } }, { status: 201 });
+  try {
+    const crawl = await startCrawl(prisma, ctx, targetUrl, {
+      platform: parsed.data.platform,
+      publishMode: parsed.data.publishMode,
+      testTypes: parsed.data.testTypes,
+      prerequisites: parsed.data.prerequisites,
+      explorePrompt: parsed.data.explorePrompt,
+      additionalContext: parsed.data.additionalContext,
+      requirementName: parsed.data.requirementName,
+      createSuite: parsed.data.createSuite,
+      createPlan: parsed.data.createPlan,
+    });
+    return NextResponse.json({ crawl: { id: crawl.id, status: crawl.status } }, { status: 201 });
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 }

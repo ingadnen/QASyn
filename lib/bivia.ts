@@ -14,6 +14,7 @@ import { normalizeGroundBox, type NormalisedBox } from "./bivia-box";
 import { recordBiviaDecision } from "./bivia-telemetry";
 import { prisma } from "./db";
 import { parseIntegrationConfig, type IntegrationConfig } from "./integration-providers";
+import { callTenantAiModel } from "./model-router";
 import { impactedModules } from "./pr-catalog";
 import { readSettings, type AnalysisCodeSettings } from "./tenant";
 
@@ -21,7 +22,7 @@ export { normalizeGroundBox, type NormalisedBox } from "./bivia-box";
 
 export type BiviaMode = "fast" | "deep";
 export type BiviaStatus = "answered" | "abstained";
-export type BiviaProvider = "bivia-api" | "bivia-calibrated-fallback";
+export type BiviaProvider = "bivia-api" | "bivia-calibrated-fallback" | "tenant-model";
 
 const DEFAULT_ENDPOINT = "https://api.articul8.ai/bivia";
 const REMOTE_TIMEOUT_MS = 6_000;
@@ -755,6 +756,98 @@ export function stripDataUrlPrefix(value?: string | null): string | null {
   return comma >= 0 ? value.slice(comma + 1) : value;
 }
 
+function parseTenantJson(text: string): Record<string, unknown> | null {
+  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/, "").trim();
+  try {
+    const value = JSON.parse(cleaned) as unknown;
+    return asRecord(value);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Optional tenant-model path used when a workspace configured a custom
+ * OpenAI/Claude/Gemini/DeepSeek/Azure endpoint but no live Bivia API key exists.
+ * Any failure returns null so the calibrated QASyn Vision AI fallback runs.
+ */
+async function tenantBooleanDecision(
+  organisationId: string | undefined,
+  question: string,
+  context: string,
+  allowAbstain: boolean,
+): Promise<BiviaBooleanResult | null> {
+  if (!organisationId) return null;
+  const result = await callTenantAiModel({
+    organisationId,
+    role: "Grounding",
+    maxTokens: 240,
+    temperature: 0,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are QASyn Vision AI. Answer the verification question. Return only JSON: {\"value\": true|false, \"probability\": 0..1, \"abstain\": false, \"reason\": \"short reason\"}.",
+      },
+      { role: "user", content: `${question}\n\nContext:\n${context}` },
+    ],
+  });
+  if (!result.ok || !result.text) return null;
+  const parsed = parseTenantJson(result.text);
+  if (!parsed) return null;
+  const value = typeof parsed.value === "boolean" ? parsed.value : null;
+  const probability = Number(parsed.probability);
+  if (value === null || !Number.isFinite(probability)) return null;
+  const abstain = parsed.abstain === true || (!allowAbstain ? false : probability < 0.15);
+  return {
+    status: abstain ? "abstained" : "answered",
+    value: abstain ? false : value,
+    probability: clamp(probability, 0, 1),
+    abstainReason: abstain ? String(parsed.reason ?? "Tenant model abstained on this decision.") : undefined,
+    latencyMs: result.latencyMs,
+    provider: "tenant-model",
+  };
+}
+
+async function tenantChoiceDecision(
+  organisationId: string | undefined,
+  question: string,
+  options: string[],
+  context: string,
+): Promise<BiviaChoiceResult | null> {
+  if (!organisationId || options.length === 0) return null;
+  const result = await callTenantAiModel({
+    organisationId,
+    role: "Execution",
+    maxTokens: 240,
+    temperature: 0,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are QASyn Vision AI. Choose exactly one option. Return only JSON: {\"index\": 0, \"probability\": 0..1, \"abstain\": false, \"reason\": \"short reason\"}.",
+      },
+      { role: "user", content: `${question}\n\nOptions:\n${options.map((option, index) => `${index}. ${option}`).join("\n")}\n\nContext:\n${context}` },
+    ],
+  });
+  if (!result.ok || !result.text) return null;
+  const parsed = parseTenantJson(result.text);
+  if (!parsed) return null;
+  const index = Number(parsed.index);
+  const probability = Number(parsed.probability);
+  if (!Number.isInteger(index) || index < 0 || index >= options.length || !Number.isFinite(probability)) return null;
+  const abstain = parsed.abstain === true;
+  return {
+    status: abstain ? "abstained" : "answered",
+    value: abstain ? null : options[index],
+    optionIndex: abstain ? -1 : index,
+    probability: clamp(probability, 0, 1),
+    abstainReason: abstain ? String(parsed.reason ?? "Tenant model abstained on this choice.") : undefined,
+    latencyMs: result.latencyMs,
+    provider: "tenant-model",
+  };
+}
+
 /**
  * Answers a visual/functional yes/no question (AI Verification, AI Assertion).
  * Tries POST /boolean, then POST /decide with options ["passed","failed"].
@@ -832,6 +925,9 @@ export async function biviaBoolean(input: BiviaBooleanInput): Promise<BiviaBoole
     }
   }
 
+  const tenant = await tenantBooleanDecision(input.organisationId, input.question, context, allowAbstain);
+  if (tenant) return telemetry(tenant);
+
   const fallback = fallbackBoolean(input.question, context, input.screenshotBase64, allowAbstain, config.abstentionThreshold);
   return telemetry({
     ...fallback,
@@ -899,6 +995,9 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
       });
     }
   }
+
+  const tenant = await tenantChoiceDecision(input.organisationId, input.question, input.options, context);
+  if (tenant) return telemetry(tenant);
 
   const fallback = fallbackChoice(input.question, input.options, context, allowAbstain, config.abstentionThreshold);
   return telemetry({

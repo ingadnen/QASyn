@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         }),
       );
     }
-    await spendCredits(tx, ctx.org.id, CREDIT_COSTS.aiGeneration);
+    await spendCredits(tx, ctx.org.id, CREDIT_COSTS.aiGeneration, ctx.user.id);
     await audit(tx, ctx, "test_case.generated", `${rows.length} × ${input.module}`);
     return rows;
   });

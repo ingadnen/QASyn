@@ -64,7 +64,7 @@ The repository is a full Next.js application backed by Prisma + SQLite, with a P
 |  web-executor.ts    Playwright flow execution + screenshots         |
 |  selector-healing.ts QASyn Vision AI Smart Locator / self-heal      |
 |  grounding-url.ts   single URL resolution priority                  |
-|  vision-ai*.ts      QASyn Vision AI client, boxes, scoring, metrics |
+|  bivia*.ts          QASyn Vision AI client, boxes, scoring, metrics |
 |  pr-gate.ts         Markdown gate report                            |
 |  rbac*.ts           permissions and guards                          |
 |  tenant.ts          credits, settings, audit                        |
@@ -176,7 +176,7 @@ QASyn **Vision AI** is the multimodal decision engine behind several capabilitie
 - **Smart Locator / self-heal** — given the step target, DOM summary and (when available) a screenshot, returns a replacement selector with confidence.
 - **Visual grounding** — given a natural-language target and a URL, returns a bounding box (`[x1, y1, x2, y2]`, normalized to the 0–1000 overlay canvas) plus a screenshot.
 - **PR risk scoring** — turns changed files, impacted modules and test outcomes into a risk level and confidence.
-- **Token telemetry** — NDJSON ledger in `.qasyn-data/QASyn Vision AI-telemetry.json` meters boolean/choice/ground/score/set calls for the Billing observatory.
+- **Token telemetry** - NDJSON ledger in `.qasyn-data/bivia-telemetry.json` meters boolean/choice/ground/score/set calls for the Billing observatory.
 
 **Grounding URL priority** (used by Studio grounding and self-heal):
 
@@ -187,7 +187,7 @@ QASyn **Vision AI** is the multimodal decision engine behind several capabilitie
 
 Screenshot capture uses a desktop user agent, a 1280×720 viewport, a 15-second timeout with `domcontentloaded → commit` fallback, and a 400 ms settle before capture. Failures still return generated visual evidence so the UI never shows an empty state.
 
-Configure QASyn Vision AI with `QASyn Vision AI_API_KEY` and `QASyn Vision AI_API_URL` (server-side only). The placeholder in `.env.example` is deliberately not a real token and the repository secret scan must stay clean.
+Configure QASyn Vision AI with `BIVIA_API_KEY` and `BIVIA_API_URL` (server-side only). The placeholder in `.env.example` is deliberately not a real token and the repository secret scan must stay clean.
 
 ---
 
@@ -487,7 +487,7 @@ lib/
   web-executor.ts         Playwright execution + screenshot capture
   selector-healing.ts     QASyn Vision AI self-heal pipeline
   grounding-url.ts        grounding URL priority
-  QASyn Vision AI.ts / QASyn Vision AI-box.ts QASyn Vision AI client, normalization, telemetry
+  bivia.ts / bivia-box.ts QASyn Vision AI client, normalization, telemetry
   pr-gate.ts              CI/CD gate Markdown
   rbac.ts / rbac-server.ts permissions and guards
   tenant.ts               credits, settings and audit helpers
@@ -509,7 +509,7 @@ scripts/
 | `EPERM` deleting `dev.db` | Stop `next dev` / `next start` first; Windows locks SQLite files. Then run `npm run db:reset`. |
 | Prisma client out of date | `npx prisma generate` (also runs on `npm install`). |
 | Playwright cannot launch Chromium | `npx playwright install chromium` (add `--with-deps` on Linux). |
-| QASyn Vision AI calls abstain | Check `QASyn Vision AI_API_KEY` / `QASyn Vision AI_API_URL`; grounding/self-heal falls back to generated evidence when offline. |
+| QASyn Vision AI calls abstain | Check `BIVIA_API_KEY` / `BIVIA_API_URL`; grounding/self-heal falls back to generated evidence when offline. |
 | Verifier cannot reach the app | Start production server on port 3000, then `set QASYN_BASE=http://localhost:3000` if needed. |
 | Screenshots missing in Studio | Re-run the case; open Step Details and confirm a `screenshotBase64` exists in the latest `TestCaseRun.logJson`. |
 | Secret scan fails | Remove any real provider token from tracked files; keep placeholders only in `.env.example`. |

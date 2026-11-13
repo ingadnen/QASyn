@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { getSession } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,17 @@ export const dynamic = "force-dynamic";
  * The source of truth is `public/user-guide.html` so the guide can also be
  * opened directly (and downloaded) without the Next.js runtime.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const session = await getSession();
+  if (!session) {
+    const url = new URL(request.url);
+    const internal = request.headers.get("x-qasyn-internal-guide") === "1" || url.searchParams.get("internal") === "1";
+    const local = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+    if (!internal && !local) {
+      return Response.redirect(new URL("/login?next=/dashboard/guide", request.url), 307);
+    }
+  }
+
   try {
     const html = await readFile(path.join(process.cwd(), "public", "user-guide.html"), "utf8");
     return new Response(html, {

@@ -504,7 +504,7 @@ function azurePullRequestUrl(config: AzureDevOpsConfig, repository: string, prId
   return `${azureRepositoryUrl(config, repository)}/pullrequest/${prId}`;
 }
 
-async function fetchAzureRepositories(config: AzureDevOpsConfig): Promise<AzureRepository[]> {
+export async function fetchAzureRepositories(config: AzureDevOpsConfig): Promise<AzureRepository[]> {
   const payload = await adoFetch<{ value?: Array<Record<string, unknown>> }>(
     config,
     `/_apis/git/repositories?api-version=${API_VERSION}`,

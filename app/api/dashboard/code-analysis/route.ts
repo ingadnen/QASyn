@@ -17,7 +17,7 @@ export async function POST() {
   await delay(MOCK_LATENCY_MS * 2);
   const at = new Date().toISOString();
   await writeSettings(prisma, ctx.org, { codeAnalysisAt: at });
-  await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.codeAnalysis);
+  await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.codeAnalysis, ctx.user.id);
   await audit(prisma, ctx, "code_analysis.run", repo.detail ?? repo.provider);
   return NextResponse.json({ analysedAt: at });
 }

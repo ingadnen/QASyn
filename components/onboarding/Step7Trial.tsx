@@ -18,6 +18,8 @@ interface PaymentConfigView {
   invoiceRecipientEmail: string;
   invoiceBankDetails: string;
   currency: string;
+  paypalMeOrCheckoutUrl: string;
+  mode: string;
   paypalEnabled: boolean;
   stripeEnabled: boolean;
   invoiceEnabled: boolean;
@@ -32,6 +34,8 @@ const DEFAULT_PAYMENT_CONFIG: PaymentConfigView = {
   invoiceRecipientEmail: "ingrebhiadnen@gmail.com",
   invoiceBankDetails: "RBC Royal Bank · Interac e-Transfer: ingrebhiadnen@gmail.com",
   currency: "USD",
+  paypalMeOrCheckoutUrl: "https://www.paypal.com/cgi-bin/webscr",
+  mode: "live_or_verified",
   paypalEnabled: true,
   stripeEnabled: true,
   invoiceEnabled: true,
@@ -90,25 +94,34 @@ export function Step7Trial() {
 
   useEffect(() => {
     apiFetch<PaymentConfigView>("/api/dashboard/billing/config", { method: "GET" })
-      .then((payload) => setConfig(payload))
+      .then((payload) => {
+        setConfig(payload);
+        const available = (["stripe", "paypal", "invoice"] as const).filter((entry) =>
+          entry === "stripe" ? payload.stripeEnabled : entry === "paypal" ? payload.paypalEnabled : payload.invoiceEnabled,
+        );
+        setMethod((current) => (available.includes(current) ? current : available[0] ?? "stripe"));
+      })
       .catch(() => undefined);
   }, []);
 
   const selectedPlan = PLANS.find((plan) => plan.key === planKey) ?? PLANS[0];
   const needsPayment = planKey !== "trial";
   const planAmount = planKey === "starter" ? 99 : planKey === "pro" ? 299 : 0;
-  const paypalLink = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(config.paypalRecipientEmail)}&item_name=${encodeURIComponent(`${selectedPlan.name} plan`)}&amount=${planAmount.toFixed(2)}&currency_code=${config.currency}`;
+  const paypalBase = config.paypalMeOrCheckoutUrl || "https://www.paypal.com/cgi-bin/webscr";
+  const paypalLink = `${paypalBase}${paypalBase.includes("?") ? "&" : "?"}cmd=_xclick&business=${encodeURIComponent(config.paypalRecipientEmail)}&item_name=${encodeURIComponent(`${selectedPlan.name} plan`)}&amount=${planAmount.toFixed(2)}&currency_code=${config.currency}`;
+  const gatewayEnabled = method === "stripe" ? config.stripeEnabled : method === "paypal" ? config.paypalEnabled : config.invoiceEnabled;
   const validPayment =
     !needsPayment ||
-    (method === "stripe" &&
-      cardholder.trim().length >= 2 &&
-      cardNumber.replace(/\D/g, "").length >= 13 &&
-      cardNumber.replace(/\D/g, "").length <= 19 &&
-      luhnValid(cardNumber.replace(/\D/g, "")) &&
-      expiryValid(cardExpiry) &&
-      /^\d{3,4}$/.test(cardCvc)) ||
-    (method === "paypal" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(paypalEmail)) ||
-    (method === "invoice" && invoiceReference.trim().length >= 2);
+    (gatewayEnabled &&
+      ((method === "stripe" &&
+        cardholder.trim().length >= 2 &&
+        cardNumber.replace(/\D/g, "").length >= 13 &&
+        cardNumber.replace(/\D/g, "").length <= 19 &&
+        luhnValid(cardNumber.replace(/\D/g, "")) &&
+        expiryValid(cardExpiry) &&
+        /^\d{3,4}$/.test(cardCvc)) ||
+        (method === "paypal" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(paypalEmail)) ||
+        (method === "invoice" && invoiceReference.trim().length >= 2)));
 
   async function checkout() {
     setCheckoutPending(true);
@@ -299,11 +312,12 @@ export function Step7Trial() {
           <label className="block">
             <span className={cqaLabel}>Payment method</span>
             <select className={cqaInput} value={method} onChange={(event) => setMethod(event.target.value as typeof method)}>
-              <option value="stripe">Credit / debit card · Stripe</option>
-              <option value="paypal">PayPal</option>
-              <option value="invoice">Enterprise invoice / Interac / PO</option>
+              {config.stripeEnabled && <option value="stripe">Credit / debit card · Stripe</option>}
+              {config.paypalEnabled && <option value="paypal">PayPal</option>}
+              {config.invoiceEnabled && <option value="invoice">Enterprise invoice / Interac / PO</option>}
             </select>
           </label>
+          {needsPayment && !gatewayEnabled && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">This payment method is disabled by the platform administrator.</p>}
           {method === "stripe" && needsPayment && (
             <>
               <div data-testid="payment-recipient-stripe" className="rounded-lg border border-[#d1fadf] bg-[#ecfdf3] px-3 py-2 text-[12px] text-[#067647]">

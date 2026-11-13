@@ -13,7 +13,7 @@ import {
   prDetail,
   type CatalogPullRequest,
 } from "@/lib/pr-catalog";
-import { audit, guardApi, spendCredits } from "@/lib/tenant";
+import { audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { createPrSchema } from "@/lib/validation";
@@ -169,14 +169,20 @@ export async function POST(request: Request) {
     },
   });
 
-  await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis);
-  let analyzed = await analyzePullRequest(created, ctx);
-  const commentPosted = await postAzureCommentForPullRequest(ctx.org.id, analyzed);
-  if (commentPosted !== analyzed.commentPosted) {
-    analyzed = await prisma.pullRequestCheck.update({ where: { id: analyzed.id }, data: { commentPosted } });
+  try {
+    await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis, ctx.user.id);
+    let analyzed = await analyzePullRequest(created, ctx);
+    const commentPosted = await postAzureCommentForPullRequest(ctx.org.id, analyzed);
+    if (commentPosted !== analyzed.commentPosted) {
+      analyzed = await prisma.pullRequestCheck.update({ where: { id: analyzed.id }, data: { commentPosted } });
+    }
+    await audit(prisma, ctx, "pull_request.checked", `#${prNumber} ${title}`);
+    return NextResponse.json({ pullRequest: prDetail(analyzed), detail: prDetail(analyzed) }, { status: 201 });
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
   }
-  await audit(prisma, ctx, "pull_request.checked", `#${prNumber} ${title}`);
-  return NextResponse.json({ pullRequest: prDetail(analyzed), detail: prDetail(analyzed) }, { status: 201 });
 }
 
 const rerunSchema = z.object({ id: z.string().min(1).max(60) });
@@ -201,12 +207,18 @@ export async function PATCH(request: Request) {
   }
 
   await delay(MOCK_LATENCY_MS);
-  let updated = await analyzePullRequest(pr, ctx);
-  const commentPosted = await postAzureCommentForPullRequest(ctx.org.id, updated);
-  if (commentPosted !== updated.commentPosted) {
-    updated = await prisma.pullRequestCheck.update({ where: { id: updated.id }, data: { commentPosted } });
+  try {
+    let updated = await analyzePullRequest(pr, ctx);
+    const commentPosted = await postAzureCommentForPullRequest(ctx.org.id, updated);
+    if (commentPosted !== updated.commentPosted) {
+      updated = await prisma.pullRequestCheck.update({ where: { id: updated.id }, data: { commentPosted } });
+    }
+    await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis, ctx.user.id);
+    await audit(prisma, ctx, "pull_request.reanalysed", `#${pr.prNumber} ${pr.title}`);
+    return NextResponse.json({ pullRequest: prDetail(updated), detail: prDetail(updated) });
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
   }
-  await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis);
-  await audit(prisma, ctx, "pull_request.reanalysed", `#${pr.prNumber} ${pr.title}`);
-  return NextResponse.json({ pullRequest: prDetail(updated), detail: prDetail(updated) });
 }

@@ -68,6 +68,15 @@ export async function guardApi({ write = false }: { write?: boolean } = {}): Pro
   if (write && ctx.readOnly) {
     return { ok: false, response: jsonError("The demo workspace is read-only. Switch back to your organisation.", 403) };
   }
+  if (write && ctx.user.creditQuota > 0 && ctx.user.creditsConsumed >= ctx.user.creditQuota) {
+    return {
+      ok: false,
+      response: jsonError(
+        `User token quota exceeded (${ctx.user.creditsConsumed}/${ctx.user.creditQuota}). Ask your workspace admin to increase your allocation.`,
+        402,
+      ),
+    };
+  }
   return { ok: true, ctx };
 }
 
@@ -105,12 +114,58 @@ export async function audit(db: Db, ctx: Pick<OrgContext, "org" | "user">, actio
   }
 }
 
-/** Deducts simulated credits (never below zero). */
-export async function spendCredits(db: Db, organisationId: string, amount: number) {
-  const org = await db.organisation.findUnique({ where: { id: organisationId }, select: { trialCredits: true, creditsUsed: true } });
-  if (!org) return;
-  const creditsUsed = Math.min(org.trialCredits, org.creditsUsed + amount);
-  await db.organisation.update({ where: { id: organisationId }, data: { creditsUsed } });
+export class QuotaExceededError extends Error {
+  readonly status = 402;
+  constructor(message: string) {
+    super(message);
+    this.name = "QuotaExceededError";
+  }
+}
+
+/** Maps a quota error to a 402 response; returns null for every other error. */
+export function quotaErrorResponse(error: unknown): NextResponse | null {
+  if (error instanceof QuotaExceededError) return jsonError(error.message, 402);
+  return null;
+}
+
+/**
+ * Deducts credits from the organisation and, when a user is supplied, from the
+ * user's assigned token quota. The user quota check and both increments run in
+ * one interactive transaction so concurrent runs cannot overdraw a quota.
+ */
+export async function spendCredits(db: Db, organisationId: string, amount: number, userId?: string) {
+  if (!Number.isFinite(amount) || amount <= 0) return;
+
+  const apply = async (tx: Db) => {
+    if (userId) {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { organisationId: true, creditQuota: true, creditsConsumed: true },
+      });
+      if (user && user.organisationId === organisationId && user.creditQuota > 0) {
+        if (user.creditsConsumed + amount > user.creditQuota) {
+          throw new QuotaExceededError(
+            `User token quota exceeded (${user.creditsConsumed}/${user.creditQuota}). Ask your workspace admin to increase your allocation.`,
+          );
+        }
+        await tx.user.update({ where: { id: userId }, data: { creditsConsumed: { increment: amount } } });
+      }
+    }
+
+    const org = await tx.organisation.findUnique({
+      where: { id: organisationId },
+      select: { trialCredits: true, creditsUsed: true },
+    });
+    if (!org) return;
+    const creditsUsed = Math.min(org.trialCredits, org.creditsUsed + amount);
+    await tx.organisation.update({ where: { id: organisationId }, data: { creditsUsed } });
+  };
+
+  if (typeof (db as PrismaClient).$transaction === "function") {
+    await (db as PrismaClient).$transaction(apply);
+  } else {
+    await apply(db);
+  }
 }
 
 export interface OrganizationPreferences {
@@ -251,6 +306,8 @@ export interface OrgSettings {
   tunnelAlerts?: { sendAlerts: boolean; delivery: "Immediate" | "Daily digest"; digestHour: string; channel: string; recipients?: string[] };
   /** Enabled Agent Skills Library ids. */
   agentSkills?: string[];
+  /** Active model assigned by the Super Admin control plane. */
+  activeModel?: string;
   /** Workspace-defined AI model providers (execution, grounding, PR review). */
   customModels?: Array<{ id: string; name: string; provider: string; modelId: string; apiKey: string; role: string; createdAt: string }>;
   /** Workspace-defined skills and autonomous agents. */

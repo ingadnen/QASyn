@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       ),
     },
   });
-  await spendCredits(prisma, ctx.org.id, 15);
+  await spendCredits(prisma, ctx.org.id, 15, ctx.user.id);
   await audit(prisma, ctx, "qasyn.bug_repro", `${title} · ${severity} · ${rootCause}`);
   return NextResponse.json({ bug, testCase, rootCause, severity }, { status: 201 });
 }

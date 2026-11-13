@@ -4,7 +4,7 @@ import { runQualityAutopilot } from "@/lib/autopilot";
 import { prisma } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { guardPermission } from "@/lib/rbac-server";
-import { audit } from "@/lib/tenant";
+import { audit, quotaErrorResponse } from "@/lib/tenant";
 import { normalizeWebsite } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -32,13 +32,19 @@ export async function POST(request: Request) {
     return jsonError("Enter a public URL, e.g. https://www.cgi.com", 400);
   }
 
-  const result = await runQualityAutopilot(prisma, ctx, targetUrl);
-  await audit(
-    prisma,
-    ctx,
-    "autopilot.completed",
-    `${targetUrl} · ${result.testCases.length} test case(s) · ${result.security.grade} security grade · ${result.execution.passed}/${result.execution.total} passed`,
-  );
+  try {
+    const result = await runQualityAutopilot(prisma, ctx, targetUrl);
+    await audit(
+      prisma,
+      ctx,
+      "autopilot.completed",
+      `${targetUrl} · ${result.testCases.length} test case(s) · ${result.security.grade} security grade · ${result.execution.passed}/${result.execution.total} passed`,
+    );
 
-  return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 }

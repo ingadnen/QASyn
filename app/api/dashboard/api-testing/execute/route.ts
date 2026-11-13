@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     where: { id: test.id },
     data: { status: passed ? "passed" : "failed", resultsJson: JSON.stringify(results), lastRunAt: new Date() },
   });
-  await spendCredits(prisma, ctx.org.id, 5);
+  await spendCredits(prisma, ctx.org.id, 5, ctx.user.id);
   await audit(prisma, ctx, "api_test.execute", `${test.name} · ${results.length} requests · ${passed ? "passed" : "failed"}`);
   return NextResponse.json({ test: updated, results });
 }

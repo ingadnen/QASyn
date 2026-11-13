@@ -537,7 +537,7 @@
       <div class="layer">
         <div class="layer-row"><b>Presentation</b><span>Marketing, onboarding, dashboard modules, Test Studio, this guide.</span></div>
         <div class="layer-row"><b>Application</b><span>Route handlers in <code>app/api/dashboard/*</code> with Zod validation and RBAC guards.</span></div>
-        <div class="layer-row"><b>Domain</b><span><code>engine.ts</code>, <code>web-executor.ts</code>, <code>selector-healing.ts</code>, <code>QASyn Vision AI.ts</code>, <code>pr-gate.ts</code>.</span></div>
+        <div class="layer-row"><b>Domain</b><span><code>engine.ts</code>, <code>web-executor.ts</code>, <code>selector-healing.ts</code>, <code>bivia.ts</code>, <code>pr-gate.ts</code>.</span></div>
         <div class="layer-row"><b>Persistence</b><span>Prisma Client over SQLite: organisations, users, cases, runs, suites, plans, PRs, environments, credits, audits.</span></div>
         <div class="layer-row"><b>External</b><span>QASyn Vision AI, GitHub/GitLab, Jira/Linear, Slack, browser providers, Strix.</span></div>
       </div>
@@ -555,7 +555,7 @@
   "criticality": "high", "stepsCount": 5,
   "testType": "Regression", "targetUrl": "https://staging.example.com" }</pre></div>
       <div class="api"><div class="api-head"><span class="method patch">PATCH</span><code>/api/dashboard/test-cases/[id]</code></div><p>Actions: <code>steps</code>, <code>run_steps</code>, <code>simulate_self_heal</code>, metadata updates. Returns run <code>log</code> with per-step screenshots.</p></div>
-      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/QASyn Vision AI/ground</code></div><p>Ground a target description on a URL. Returns <code>screenshotBase64</code>, DOM status and a normalized bounding box.</p><pre>{ "targetDescription": "Sign in button",
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/bivia/ground</code></div><p>Ground a target description on a URL. Returns <code>screenshotBase64</code>, DOM status and a normalized bounding box.</p><pre>{ "targetDescription": "Sign in button",
   "targetUrl": "https://staging.example.com/login" }</pre></div>
       <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/pull-requests/gate</code></div><p>Generate the CI/CD Markdown gate report for a stored pull request.</p><pre>{ "id": "pr_check_id" }</pre></div>
       <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/pull-requests/auto-regression</code></div><p>Run impacted + PR-specific cases against the deployed URL with deterministic outcomes.</p><pre>{ "id": "pr_check_id",

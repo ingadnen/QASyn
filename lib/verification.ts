@@ -18,3 +18,16 @@ export async function issueVerificationCode(userId: string): Promise<string> {
 
 /** The dev inbox can be disabled with QASYN_DISABLE_DEV_INBOX=1. */
 export const devInbox = (code: string) => (process.env.QASYN_DISABLE_DEV_INBOX === "1" ? undefined : code);
+
+/**
+ * OTP preview is a local/sandbox convenience only. It is disabled when a real
+ * mailer is configured, unless the request is explicitly local, and can always
+ * be hard-disabled with QASYN_OTP_PREVIEW=0.
+ */
+export function otpPreviewAllowed(request: Request): boolean {
+  if (process.env.QASYN_OTP_PREVIEW === "0") return false;
+  const host = new URL(request.url).hostname.toLowerCase();
+  const local = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  const noRealMailer = !process.env.SMTP_HOST && !process.env.RESEND_API_KEY;
+  return noRealMailer || local;
+}

@@ -23,6 +23,8 @@ interface PaymentConfigView {
   invoiceRecipientEmail: string;
   invoiceBankDetails: string;
   currency: string;
+  paypalMeOrCheckoutUrl: string;
+  mode: string;
   paypalEnabled: boolean;
   stripeEnabled: boolean;
   invoiceEnabled: boolean;
@@ -37,6 +39,8 @@ const DEFAULT_PAYMENT_CONFIG: PaymentConfigView = {
   invoiceRecipientEmail: "ingrebhiadnen@gmail.com",
   invoiceBankDetails: "RBC Royal Bank · Interac e-Transfer: ingrebhiadnen@gmail.com",
   currency: "USD",
+  paypalMeOrCheckoutUrl: "https://www.paypal.com/cgi-bin/webscr",
+  mode: "live_or_verified",
   paypalEnabled: true,
   stripeEnabled: true,
   invoiceEnabled: true,
@@ -96,7 +100,13 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
 
   useEffect(() => {
     apiFetch<PaymentConfigView>("/api/dashboard/billing/config", { method: "GET" })
-      .then((payload) => setConfig(payload))
+      .then((payload) => {
+        setConfig(payload);
+        const available = (["stripe", "paypal", "invoice"] as const).filter((entry) =>
+          entry === "stripe" ? payload.stripeEnabled : entry === "paypal" ? payload.paypalEnabled : payload.invoiceEnabled,
+        );
+        setMethod((current) => (available.includes(current) ? current : available[0] ?? "stripe"));
+      })
       .catch(() => undefined);
   }, []);
 
@@ -106,9 +116,12 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
   const paypalItem = mode === "credits"
     ? `${creditAmount.toLocaleString("en-US")} QASyn AI credits`
     : `${PLAN_OPTIONS.find((option) => option.key === planKey)?.label ?? "QASyn plan"}`;
-  const paypalLink = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(config.paypalRecipientEmail)}&item_name=${encodeURIComponent(paypalItem)}&amount=${paypalAmount.toFixed(2)}&currency_code=${config.currency}`;
+  const paypalBase = config.paypalMeOrCheckoutUrl || "https://www.paypal.com/cgi-bin/webscr";
+  const paypalLink = `${paypalBase}${paypalBase.includes("?") ? "&" : "?"}cmd=_xclick&business=${encodeURIComponent(config.paypalRecipientEmail)}&item_name=${encodeURIComponent(paypalItem)}&amount=${paypalAmount.toFixed(2)}&currency_code=${config.currency}`;
+  const gatewayEnabled = method === "stripe" ? config.stripeEnabled : method === "paypal" ? config.paypalEnabled : config.invoiceEnabled;
 
   function validPayment() {
+    if (!gatewayEnabled) return false;
     if (method === "stripe") {
       const digits = cardNumber.replace(/\D/g, "");
       return cardholder.trim().length >= 2 && digits.length >= 13 && digits.length <= 19 && luhnValid(digits) && expiryValid(cardExpiry) && /^\d{3,4}$/.test(cardCvc);
@@ -154,11 +167,12 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
       <label className="block">
         <span className={cqaLabel}>Payment method</span>
         <select className={cqaInput} value={method} onChange={(event) => setMethod(event.target.value as typeof method)}>
-          <option value="stripe">Credit / debit card · Stripe</option>
-          <option value="paypal">PayPal</option>
-          <option value="invoice">Enterprise invoice / Interac / PO</option>
+          {config.stripeEnabled && <option value="stripe">Credit / debit card · Stripe</option>}
+          {config.paypalEnabled && <option value="paypal">PayPal</option>}
+          {config.invoiceEnabled && <option value="invoice">Enterprise invoice / Interac / PO</option>}
         </select>
       </label>
+      {!gatewayEnabled && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">This payment method is disabled by the platform administrator.</p>}
 
       {method === "stripe" && (
         <>

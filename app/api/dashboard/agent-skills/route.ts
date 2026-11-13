@@ -5,12 +5,45 @@ import {
   buildClaudeInstructions,
   buildCopilotInstructions,
   buildOpenCodeConfig,
+  dynamicAgentSkill,
   normalizeEnabledSkills,
+  type AgentSkill,
 } from "@/lib/agent-skills";
 import { prisma } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { guardPermission } from "@/lib/rbac-server";
-import { readSettings, writeSettings } from "@/lib/tenant";
+import { readSettings, writeSettings, type OrgSettings } from "@/lib/tenant";
+import type { Organisation } from "@prisma/client";
+
+async function loadDynamicSkills(org: Organisation, settings: OrgSettings): Promise<AgentSkill[]> {
+  const platform = await prisma.platformSkill.findMany({
+    where: { enabled: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const platformSkills = platform.map((skill) =>
+    dynamicAgentSkill({
+      id: skill.id,
+      name: skill.name,
+      trigger: skill.trigger,
+      systemPrompt: skill.systemPrompt,
+      model: skill.model,
+      source: "platform",
+    }),
+  );
+  const customSkills = (settings.customSkills ?? [])
+    .filter((skill) => skill.enabled)
+    .map((skill) =>
+      dynamicAgentSkill({
+        id: skill.id,
+        name: skill.name,
+        trigger: skill.trigger,
+        systemPrompt: skill.systemPrompt,
+        model: skill.model,
+        source: "custom",
+      }),
+    );
+  return [...platformSkills, ...customSkills];
+}
 
 const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("toggle"), id: z.string().min(1).max(80), enabled: z.boolean() }),
@@ -21,8 +54,11 @@ const bodySchema = z.discriminatedUnion("action", [
 export async function GET() {
   const guard = await guardPermission("mcp");
   if (!guard.ok) return guard.response;
-  const enabled = normalizeEnabledSkills(readSettings(guard.ctx.org).agentSkills);
-  return NextResponse.json({ skills: AGENT_SKILLS, enabled });
+  const settings = readSettings(guard.ctx.org);
+  const dynamicSkills = await loadDynamicSkills(guard.ctx.org, settings);
+  const skills = [...AGENT_SKILLS, ...dynamicSkills];
+  const enabled = normalizeEnabledSkills(settings.agentSkills, skills.map((skill) => skill.id));
+  return NextResponse.json({ skills, enabled });
 }
 
 /** POST /api/dashboard/agent-skills — toggle a skill or export agent instructions. */
@@ -33,14 +69,17 @@ export async function POST(request: Request) {
   if (parsed.data.action === "export") {
     const guard = await guardPermission("mcp");
     if (!guard.ok) return guard.response;
-    const ids = normalizeEnabledSkills(parsed.data.ids ?? readSettings(guard.ctx.org).agentSkills);
+    const settings = readSettings(guard.ctx.org);
+    const dynamicSkills = await loadDynamicSkills(guard.ctx.org, settings);
+    const catalogue = [...AGENT_SKILLS, ...dynamicSkills];
+    const ids = normalizeEnabledSkills(parsed.data.ids ?? settings.agentSkills, catalogue.map((skill) => skill.id));
     switch (parsed.data.target) {
       case "claude":
-        return NextResponse.json({ filename: "CLAUDE.md", path: ".claude/CLAUDE.md", content: buildClaudeInstructions(ids) });
+        return NextResponse.json({ filename: "CLAUDE.md", path: ".claude/CLAUDE.md", content: buildClaudeInstructions(ids, dynamicSkills) });
       case "copilot":
-        return NextResponse.json({ filename: "copilot-instructions.md", path: ".github/copilot-instructions.md", content: buildCopilotInstructions(ids) });
+        return NextResponse.json({ filename: "copilot-instructions.md", path: ".github/copilot-instructions.md", content: buildCopilotInstructions(ids, dynamicSkills) });
       case "opencode":
-        return NextResponse.json({ filename: "opencode.json", path: "opencode.json", content: buildOpenCodeConfig(ids) });
+        return NextResponse.json({ filename: "opencode.json", path: "opencode.json", content: buildOpenCodeConfig(ids, dynamicSkills) });
       default:
         return jsonError("Unsupported export target.", 400);
     }
@@ -49,11 +88,15 @@ export async function POST(request: Request) {
   const toggle = parsed.data;
   const guard = await guardPermission("mcpTokens", { write: true });
   if (!guard.ok) return guard.response;
-  const current = normalizeEnabledSkills(readSettings(guard.ctx.org).agentSkills);
+  const settings = readSettings(guard.ctx.org);
+  const dynamicSkills = await loadDynamicSkills(guard.ctx.org, settings);
+  const catalogue = [...AGENT_SKILLS, ...dynamicSkills];
+  const knownIds = catalogue.map((skill) => skill.id);
+  if (!knownIds.includes(toggle.id)) return jsonError("Unknown skill.", 404);
+  const current = normalizeEnabledSkills(settings.agentSkills, knownIds);
   const enabled = toggle.enabled
     ? Array.from(new Set([...current, toggle.id]))
     : current.filter((id) => id !== toggle.id);
-  if (!AGENT_SKILLS.some((skill) => skill.id === toggle.id)) return jsonError("Unknown skill.", 404);
   const next = await writeSettings(prisma, guard.ctx.org, { agentSkills: enabled });
-  return NextResponse.json({ enabled: normalizeEnabledSkills(next.agentSkills) });
+  return NextResponse.json({ enabled: normalizeEnabledSkills(next.agentSkills, knownIds) });
 }

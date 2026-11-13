@@ -49,7 +49,7 @@ export async function PATCH(request: Request) {
     where: { id: chain.id },
     data: { status: passed ? "passed" : "failed", resultsJson: JSON.stringify(results), lastRunAt: new Date() },
   });
-  await spendCredits(prisma, ctx.org.id, 5);
+  await spendCredits(prisma, ctx.org.id, 5, ctx.user.id);
   await audit(prisma, ctx, "api_chain.execute", `${chain.name} · ${passed ? "passed" : "failed"}`);
   return NextResponse.json({ chain: updated, results });
 }

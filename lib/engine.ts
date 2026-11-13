@@ -87,7 +87,7 @@ export async function startCrawl(db: Db, actor: Actor, targetUrl: string, opts?:
   if (requirement) {
     await db.crawlSession.update({ where: { id: crawl.id }, data: { requirementId: requirement.id } });
   }
-  await spendCredits(db, actor.org.id, CREDIT_COSTS.crawl);
+  await spendCredits(db, actor.org.id, CREDIT_COSTS.crawl, actor.user.id);
   await audit(db, actor, "crawl.started", hostFromUrl(targetUrl));
   return crawl;
 }
@@ -657,7 +657,7 @@ export async function runTestCases(
     const passing = cases.filter((c) => c.status === "passing").length;
     await db.testPlan.update({ where: { id: plan.id }, data: { testCasesCount: cases.length, passRate: cases.length ? Math.round((passing / cases.length) * 100) : 0, lastRunAt: now } });
   }
-  await spendCredits(db, actor.org.id, CREDIT_COSTS.testRun * testCases.length);
+  await spendCredits(db, actor.org.id, CREDIT_COSTS.testRun * testCases.length, actor.user.id);
   return { passed, failed, total: testCases.length, results: caseResults };
 }
 

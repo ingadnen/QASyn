@@ -6,7 +6,7 @@ import { resolveGroundingUrl } from "@/lib/grounding-url";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { parseIntegrationConfig } from "@/lib/integration-providers";
 import { buildStepHealMetadata, healSelectorWithBivia, isHealableAction, syntheticDomSummary } from "@/lib/selector-healing";
-import { audit, guardApi, readSettings, spendCredits } from "@/lib/tenant";
+import { audit, guardApi, quotaErrorResponse, readSettings, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateTestCaseSchema } from "@/lib/validation";
@@ -20,6 +20,8 @@ export async function PATCH(request: Request, context: Params) {
   try {
     return await handlePatch(request, context);
   } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
     console.error("[test-cases PATCH error]", error);
     const detail = error instanceof Error ? error.stack || error.message : String(error);
     return NextResponse.json(
@@ -367,7 +369,7 @@ async function handlePatch(request: Request, { params }: Params) {
             stepsJson: JSON.stringify(steps),
           },
         });
-        await spendCredits(tx, ctx.org.id, CREDIT_COSTS.testRun);
+        await spendCredits(tx, ctx.org.id, CREDIT_COSTS.testRun, ctx.user.id);
         return { updated, run, version };
       },
       { timeout: 30_000 },
@@ -633,7 +635,7 @@ async function handlePatch(request: Request, { params }: Params) {
           },
         });
       }
-      await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.testRun);
+      await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.testRun, ctx.user.id);
       await audit(prisma, ctx, "test_case.run_steps", `${tc.title} · ${log.length} steps · ${shouldFail ? "failing" : "passing"}`);
       return NextResponse.json({ result: executionResult, log, run: createdRun });
     } catch (error) {

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     where: { id: test.id },
     data: { status: passed ? "passed" : "failed", logsJson: JSON.stringify(log), lastRunAt: new Date() },
   });
-  await spendCredits(prisma, ctx.org.id, 5);
+  await spendCredits(prisma, ctx.org.id, 5, ctx.user.id);
   await audit(prisma, ctx, "mobile.run", `${test.name} · ${test.device} · ${passed ? "passed" : "failed"}`);
   return NextResponse.json({ test: updated, log });
 }

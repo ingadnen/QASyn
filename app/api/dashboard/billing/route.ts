@@ -142,6 +142,14 @@ export async function POST(request: Request) {
     const credits = input.action === "credits" ? input.credits : Math.max(PLAN_CREDITS[input.plan], 0) + input.credits;
     const plan = input.action === "checkout" ? input.plan : ctx.org.plan;
 
+    if (
+      (method === "paypal" && !config.paypalEnabled) ||
+      (method === "stripe" && !config.stripeEnabled) ||
+      (method === "invoice" && !config.invoiceEnabled)
+    ) {
+      return jsonError("This payment method is currently disabled by the platform administrator.", 400);
+    }
+
     if (method === "stripe" && !config.stripeSecretKey) {
       const cardError = validateCard(input);
       if (cardError) return jsonError(cardError, 400);
@@ -175,7 +183,7 @@ export async function POST(request: Request) {
       const org = await tx.organisation.update({
         where: { id: ctx.org.id },
         data: {
-          ...(input.action === "checkout" ? { plan, trialCredits: credits } : { trialCredits: { increment: input.credits } }),
+          ...(input.action === "checkout" ? { plan, trialCredits: { increment: credits } } : { trialCredits: { increment: input.credits } }),
           paymentMethod,
         },
         select: { id: true, plan: true, trialCredits: true, creditsUsed: true, paymentMethod: true },

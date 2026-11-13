@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { jsonError } from "@/lib/http";
+import { otpPreviewAllowed } from "@/lib/verification";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,9 @@ export const dynamic = "force-dynamic";
  * The public signup page never renders the raw code by default.
  */
 export async function GET(request: Request) {
-  if (request.headers.get("x-qasyn-otp-preview") !== "1") return jsonError("Verification preview is not enabled.", 404);
+  if (!otpPreviewAllowed(request) || request.headers.get("x-qasyn-otp-preview") !== "1") {
+    return jsonError("Verification preview is not enabled.", 404);
+  }
   const session = await getSession();
   if (!session) return jsonError("Sign in to continue.", 401);
   if (session.user.emailVerifiedAt) return jsonError("E-mail already verified.", 400);

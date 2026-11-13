@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const ROLES = ["Admin", "Founder", "Eng manager", "Engineer", "QA", "BA / FA"] as const;
@@ -105,12 +106,32 @@ export function InviteUserButton({ readOnly }: { readOnly: boolean }) {
   );
 }
 
-export function MemberActions({ memberId, memberName, role, invited, readOnly }: { memberId: string; memberName: string; role: string; invited: boolean; readOnly: boolean }) {
+export function MemberActions({ memberId, memberName, role, invited, inviteToken, readOnly }: { memberId: string; memberName: string; role: string; invited: boolean; inviteToken?: string; readOnly: boolean }) {
   const router = useRouter();
   const { run, pending } = useAction();
   const [open, setOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [nextRole, setNextRole] = useState(role);
+
+  async function copyInvite() {
+    if (!inviteToken) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/invite/${inviteToken}`);
+      toast("Invite link copied.", "success");
+      setOpen(false);
+    } catch {
+      toast("The invite link could not be copied. Use the Resend invite action.", "error");
+    }
+  }
+
+  async function resendInvite() {
+    const result = await run(`resend-${memberId}`, `/api/dashboard/team/${memberId}/resend`, { method: "POST" });
+    if (result) {
+      toast("Invitation re-sent and the invite link is refreshed.", "success");
+      setOpen(false);
+      router.refresh();
+    }
+  }
 
   async function changeRole() {
     await run(`role-${memberId}`, `/api/dashboard/team/${memberId}`, { method: "PATCH", json: { role: nextRole } });
@@ -136,7 +157,12 @@ export function MemberActions({ memberId, memberName, role, invited, readOnly }:
           <button type="button" disabled={readOnly} onClick={() => setRoleOpen(true)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]">
             <CqaIcon name="manage_accounts" className="text-[17px]" /> Change role
           </button>
-          <button type="button" disabled={readOnly || !invited} onClick={() => void run(`resend-${memberId}`, `/api/dashboard/team/${memberId}`, { method: "PATCH", json: { role } })} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50">
+          {invited && inviteToken && (
+            <button type="button" data-testid={`copy-invite-${memberId}`} onClick={() => void copyInvite()} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb]">
+              <CqaIcon name="link" className="text-[17px]" /> Copy invite link
+            </button>
+          )}
+          <button type="button" disabled={readOnly || !invited || pending === `resend-${memberId}`} onClick={() => void resendInvite()} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50">
             <CqaIcon name="forward_to_inbox" className="text-[17px]" /> Resend invite
           </button>
           <button type="button" disabled={readOnly || !invited || pending === `del-${memberId}`} onClick={remove} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] text-[#dc2626] hover:bg-[#fef2f2] disabled:opacity-50">

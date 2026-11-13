@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchAzureRepositories, isLiveAzurePat, parseAzureDevOpsUrl, resolveAzureDevOpsConfig } from "@/lib/azure-devops";
 import { PROVIDER_META } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
@@ -13,6 +14,85 @@ interface RepoResult {
   name: string;
   fullName: string;
   url: string;
+}
+
+function isSandboxHost(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname.endsWith(".test") ||
+    hostname.endsWith(".local") ||
+    hostname === "example.com" ||
+    hostname.endsWith(".example.com")
+  );
+}
+
+function validHttpUrl(value: string): URL | null {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+async function probeJira(config: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
+  const baseUrl = String(config.baseUrl ?? "").trim().replace(/\/+$/, "");
+  const url = validHttpUrl(baseUrl);
+  if (!url) return { ok: false, detail: "Enter a valid Jira base URL." };
+  if (!String(config.email ?? "").trim() || !String(config.apiToken ?? "").trim()) {
+    return { ok: false, detail: "Jira e-mail and API token are required." };
+  }
+  if (isSandboxHost(url.hostname)) return { ok: true, detail: "Sandbox Jira configuration validated locally." };
+  try {
+    const response = await fetch(`${baseUrl}/rest/api/3/myself`, {
+      headers: {
+        accept: "application/json",
+        authorization: `Basic ${Buffer.from(`${config.email}:${config.apiToken}`).toString("base64")}`,
+      },
+      signal: AbortSignal.timeout(6_000),
+    });
+    return response.ok
+      ? { ok: true, detail: `Jira verified as ${config.email}.` }
+      : { ok: false, detail: `Jira probe returned HTTP ${response.status}; saved for offline validation.` };
+  } catch {
+    return { ok: false, detail: "Jira probe unavailable; saved for offline validation." };
+  }
+}
+
+async function probeLinear(config: Record<string, string>): Promise<{ ok: boolean; detail: string }> {
+  const apiKey = String(config.apiKey ?? "").trim();
+  if (!apiKey) return { ok: false, detail: "Linear API key is required." };
+  if (!apiKey.startsWith("lin_api_")) return { ok: false, detail: "Linear API keys start with lin_api_." };
+  try {
+    const response = await fetch("https://api.linear.app/graphql", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: apiKey },
+      body: JSON.stringify({ query: "{ viewer { id name } }" }),
+      signal: AbortSignal.timeout(6_000),
+    });
+    return response.ok
+      ? { ok: true, detail: "Linear viewer verified." }
+      : { ok: false, detail: `Linear probe returned HTTP ${response.status}; saved for offline validation.` };
+  } catch {
+    return { ok: false, detail: "Linear probe unavailable; saved for offline validation." };
+  }
+}
+
+function validateSlack(config: Record<string, string>): string | null {
+  const webhook = String(config.webhookUrl ?? "").trim();
+  const botToken = String(config.botToken ?? "").trim();
+  if (webhook) {
+    const url = validHttpUrl(webhook);
+    if (!url || url.protocol !== "https:") return "Slack webhook must be a valid HTTPS URL.";
+    return null;
+  }
+  if (botToken) {
+    if (!botToken.startsWith("xoxb-")) return "Slack bot tokens start with xoxb-.";
+    return null;
+  }
+  return "Provide a Slack webhook URL or bot token.";
 }
 
 async function fetchRepositories(provider: string, config: Record<string, string>): Promise<RepoResult[]> {
@@ -38,6 +118,27 @@ async function fetchRepositories(provider: string, config: Record<string, string
           url: String(repo.html_url ?? ""),
         })).filter((repo) => repo.name);
         if (repos.length > 0) return repos;
+      }
+    }
+    if (provider === "AZURE_DEVOPS") {
+      const parsed = parseAzureDevOpsUrl(config.organization || config.baseUrl || "");
+      const pat = String(config.token || config.pat || "").trim();
+      if (parsed.organization && isLiveAzurePat(pat)) {
+        const adoConfig = resolveAzureDevOpsConfig({
+          ...config,
+          organization: config.organization || parsed.orgUrl,
+          project: config.project || parsed.project,
+          pat,
+        });
+        const repositories = await fetchAzureRepositories(adoConfig);
+        if (repositories.length > 0) {
+          return repositories.map((repository) => ({
+            id: repository.id,
+            name: repository.name,
+            fullName: `${adoConfig.organization}/${repository.name}`,
+            url: repository.webUrl,
+          }));
+        }
       }
     }
     if (provider === "GITLAB" && config.token) {
@@ -82,6 +183,27 @@ export async function POST(request: Request, { params }: Params) {
       .map(([key, value]) => [key, String(value)]),
   );
 
+  let verification = { ok: true, detail: "", tested: false };
+  if (provider.data === "AZURE_DEVOPS") {
+    const parsed = parseAzureDevOpsUrl(config.organization || config.baseUrl || "");
+    if (!parsed.organization) return jsonError("Enter a valid Azure DevOps organization URL.", 400);
+    if (!String(config.token || config.pat || "").trim()) return jsonError("Azure DevOps personal access token is required.", 400);
+    verification = { ok: true, detail: `Azure DevOps organization ${parsed.organization} validated.`, tested: isLiveAzurePat(config.token || config.pat) };
+  } else if (provider.data === "JIRA") {
+    const url = validHttpUrl(String(config.baseUrl ?? "").trim());
+    if (!url) return jsonError("Enter a valid Jira base URL.", 400);
+    if (!String(config.email ?? "").trim()) return jsonError("Jira account e-mail is required.", 400);
+    if (!String(config.apiToken ?? "").trim()) return jsonError("Jira API token is required.", 400);
+    verification = { ...(await probeJira(config)), tested: true };
+  } else if (provider.data === "LINEAR") {
+    if (!String(config.apiKey ?? "").trim()) return jsonError("Linear API key is required.", 400);
+    verification = { ...(await probeLinear(config)), tested: true };
+  } else if (provider.data === "SLACK") {
+    const slackError = validateSlack(config);
+    if (slackError) return jsonError(slackError, 400);
+    verification = { ok: true, detail: "Slack destination validated.", tested: true };
+  }
+
   await delay(MOCK_LATENCY_MS);
   const meta = PROVIDER_META[provider.data];
   const detail =
@@ -105,7 +227,8 @@ export async function POST(request: Request, { params }: Params) {
   return NextResponse.json({
     integration: { provider: integration.provider, status: integration.status, detail: integration.detail, config },
     repositories,
-    tested: true,
+    tested: verification.tested,
+    verification: verification.detail,
   });
 }
 

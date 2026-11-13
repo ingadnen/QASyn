@@ -12,7 +12,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseAzureDevOpsUrl } from "../lib/azure-devops";
 import { normalizeGroundBox } from "../lib/bivia-box";
-import { TEST_TYPES } from "../lib/constants";
+import { PLAN_CREDITS, TEST_TYPES } from "../lib/constants";
+import { QuotaExceededError, spendCredits } from "../lib/tenant";
 import { resolveGroundingUrl } from "../lib/grounding-url";
 
 const BASE = process.env.QASYN_BASE ?? "http://localhost:3000";
@@ -6303,6 +6304,193 @@ async function main() {
   await p19Super.context.close();
   check("PART 19 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part19-payments");
+
+  // ── PART 20 — Financial enforcement, quotas, skills, invites & identifiers ─
+  moduleErrors = [];
+  mod("part20-enforcement", "Phase 20 - Credit preservation, per-user quotas, platform skills, team invites & clean identifiers", "/dashboard/team");
+
+  const p20Cgi = await db.organisation.findUnique({
+    where: { slug: "cgi" },
+    select: { id: true, plan: true, trialCredits: true, creditsUsed: true, paymentMethod: true },
+  });
+  const p20User = p20Cgi
+    ? await db.user.findFirst({
+        where: { organisationId: p20Cgi.id, email: "cgi@cgi.com" },
+        select: { id: true, creditQuota: true, creditsConsumed: true },
+      })
+    : null;
+
+  if (!p20Cgi || !p20User) {
+    check("PART 20 CGI workspace and user are available", false, p20Cgi ? "user missing" : "organisation missing");
+    check("PART 20 plan checkout preserves purchased credits", false, "fixture missing");
+    check("PART 20 spendCredits increments and blocks at the user quota", false, "fixture missing");
+    check("PART 20 API returns 402 when the user quota is exhausted", false, "fixture missing");
+    check("PART 20 platform skill appears in agent skills and exports", false, "fixture missing");
+    check("PART 20 team page displays quotas and pending invite links", false, "fixture missing");
+    check("PART 20 README and user guide have no broken identifiers", false, "fixture missing");
+  } else {
+    // 20.1 — plan checkout must increment, never overwrite, purchased credits.
+    const p20HighBalance = Math.max(p20Cgi.trialCredits, 500_000);
+    await db.organisation.update({ where: { id: p20Cgi.id }, data: { trialCredits: p20HighBalance } });
+    const p20Checkout = await apiJson(page, "/api/dashboard/billing", "POST", {
+      action: "checkout",
+      plan: "starter",
+      method: "invoice",
+      invoiceReference: `P20-${RUN_ID}`,
+      credits: 0,
+    });
+    const p20AfterCheckout = await db.organisation.findUnique({
+      where: { id: p20Cgi.id },
+      select: { trialCredits: true, plan: true },
+    });
+    check(
+      "PART 20 plan checkout preserves purchased credits",
+      p20Checkout.status === 200 &&
+        p20AfterCheckout?.trialCredits === p20HighBalance + PLAN_CREDITS.starter &&
+        p20AfterCheckout?.plan === "starter",
+      `status ${p20Checkout.status} · ${p20HighBalance} + ${PLAN_CREDITS.starter} = ${p20AfterCheckout?.trialCredits ?? "missing"}`,
+    );
+
+    // 20.2 — spendCredits increments consumed tokens and rejects over-quota spending.
+    const p20QuotaBase = p20User.creditsConsumed;
+    await db.user.update({ where: { id: p20User.id }, data: { creditQuota: p20QuotaBase + 10 } });
+    await spendCredits(db, p20Cgi.id, 5, p20User.id);
+    const p20ConsumedAfter = await db.user.findUnique({
+      where: { id: p20User.id },
+      select: { creditsConsumed: true, creditQuota: true },
+    });
+    let p20QuotaError: unknown = null;
+    try {
+      await spendCredits(db, p20Cgi.id, 20, p20User.id);
+    } catch (error) {
+      p20QuotaError = error;
+    }
+    const p20QuotaMessage = p20QuotaError instanceof Error ? p20QuotaError.message : String(p20QuotaError ?? "");
+    check(
+      "PART 20 spendCredits increments and blocks at the user quota",
+      p20ConsumedAfter?.creditsConsumed === p20QuotaBase + 5 &&
+        p20QuotaError instanceof QuotaExceededError &&
+        (p20QuotaError as QuotaExceededError).status === 402 &&
+        /User token quota exceeded/.test(p20QuotaMessage),
+      `${p20QuotaBase} → ${p20ConsumedAfter?.creditsConsumed ?? "?"} · ${p20QuotaMessage.slice(0, 140)}`,
+    );
+
+    // 20.3 — once consumed reaches quota, a write API must return 402.
+    await spendCredits(db, p20Cgi.id, 5, p20User.id);
+    const p20QuotaApi = await apiJson(page, "/api/dashboard/crawl", "POST", {
+      targetUrl: `https://www.cgi.com/p20-quota-${RUN_ID}`,
+    });
+    check(
+      "PART 20 API returns 402 when the user quota is exhausted",
+      p20QuotaApi.status === 402 && /User token quota exceeded/.test(JSON.stringify(p20QuotaApi.body)),
+      `status ${p20QuotaApi.status} · ${JSON.stringify(p20QuotaApi.body).slice(0, 160)}`,
+    );
+    await db.crawlSession.deleteMany({ where: { organisationId: p20Cgi.id, targetUrl: { contains: `p20-quota-${RUN_ID}` } } });
+    await db.user.update({
+      where: { id: p20User.id },
+      data: { creditQuota: p20User.creditQuota, creditsConsumed: p20User.creditsConsumed },
+    });
+    await db.organisation.update({
+      where: { id: p20Cgi.id },
+      data: { plan: p20Cgi.plan, trialCredits: p20Cgi.trialCredits, creditsUsed: p20Cgi.creditsUsed, paymentMethod: p20Cgi.paymentMethod },
+    });
+
+    // 20.4 — Super Admin platform skills must be visible and exportable in MCP.
+    const p20Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
+    const p20SkillCreate = await apiJson(p20Super.page, "/api/dashboard/super-admin", "PATCH", {
+      action: "skill",
+      subAction: "create",
+      name: `PART20 Platform Skill ${RUN_ID}`,
+      trigger: "phase20 release gate",
+      systemPrompt: "Audit release evidence, verify the quality gate and publish a platform-wide verdict.",
+      model: "QASyn Vision AI",
+    });
+    const p20SkillId = String((p20SkillCreate.body as { skill?: { id?: string } }).skill?.id ?? "");
+    const p20Skills = await apiJson(page, "/api/dashboard/agent-skills", "GET");
+    const p20SkillBody = p20Skills.body as { skills?: Array<{ id: string; name: string }>; enabled?: string[] };
+    const p20PlatformSkillId = p20SkillId ? `platform-${p20SkillId}` : "";
+    const p20Export = p20PlatformSkillId
+      ? await apiJson(page, "/api/dashboard/agent-skills", "POST", { action: "export", target: "claude", ids: [p20PlatformSkillId] })
+      : { status: 0, body: {} };
+    check(
+      "PART 20 platform skill appears in agent skills and exports",
+      p20SkillCreate.status === 200 &&
+        Boolean(
+          p20SkillBody.skills?.some(
+            (skill) => skill.id === p20PlatformSkillId && skill.name === `PART20 Platform Skill ${RUN_ID}`,
+          ),
+        ) && p20Export.status === 200 && JSON.stringify(p20Export.body).includes(`PART20 Platform Skill ${RUN_ID}`),
+      `${p20SkillCreate.status} · ${p20SkillBody.skills?.length ?? 0} skill(s) · export ${p20Export.status}`,
+    );
+    if (p20SkillId) {
+      await apiJson(p20Super.page, "/api/dashboard/super-admin", "PATCH", { action: "skill", subAction: "delete", id: p20SkillId });
+    }
+    await p20Super.context.close();
+
+    // 20.5 — team page shows quotas and pending invite actions.
+    const p20InviteEmail = `p20-team-${RUN_ID}@your-domain.com`;
+    const p20Invite = await apiJson(page, "/api/dashboard/team", "POST", {
+      email: p20InviteEmail,
+      name: "PART20 Teammate",
+      role: "Engineer",
+    });
+    const p20InviteId = String((p20Invite.body as { member?: { id?: string } }).member?.id ?? "");
+    const p20TeamApi = await apiJson(page, "/api/dashboard/team", "GET");
+    const p20TeamBody = p20TeamApi.body as {
+      members?: Array<{ id: string; email: string; creditQuota?: number; creditsConsumed?: number }>;
+      invites?: Array<{ email: string; token: string }>;
+    };
+    await goto(page, "/dashboard/team?tab=users");
+    const p20TeamText = await body(page);
+    const p20QuotaCells = await page.locator('[data-testid="team-token-quota"]').count();
+    let p20CopyVisible = false;
+    if (p20InviteId) {
+      const p20Row = page.getByRole("row", { name: new RegExp(p20InviteEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) }).first();
+      const p20More = p20Row.getByRole("button", { name: "More actions" }).first();
+      if ((await p20More.count()) > 0) {
+        await p20More.click().catch(() => undefined);
+        await page.waitForTimeout(300);
+        p20CopyVisible = (await page.getByTestId(`copy-invite-${p20InviteId}`).count()) > 0;
+        await page.keyboard.press("Escape").catch(() => undefined);
+      }
+    }
+    check(
+      "PART 20 team page displays quotas and pending invite links",
+      p20Invite.status === 201 &&
+        p20QuotaCells > 0 &&
+        p20TeamText.includes("TOKEN QUOTA") &&
+        Boolean(p20TeamBody.members?.some((member) => member.email === "cgi@cgi.com" && typeof member.creditQuota === "number")) &&
+        Boolean(p20TeamBody.invites?.some((invite) => invite.email === p20InviteEmail && invite.token)) &&
+        p20CopyVisible,
+      `${p20Invite.status} · ${p20QuotaCells} quota cell(s) · copy ${p20CopyVisible ? "visible" : "missing"}`,
+    );
+    await db.teamInvite.deleteMany({ where: { organisationId: p20Cgi.id, email: p20InviteEmail } }).catch(() => undefined);
+    await db.user.deleteMany({ where: { organisationId: p20Cgi.id, email: p20InviteEmail, status: "invited" } }).catch(() => undefined);
+
+    // 20.6 — technical identifiers must not be split by the white-label sweep.
+    const p20BrokenIdentifier = /QASyn Vision AI_API|QASyn Vision AI\/ground|QASyn Vision AI\.ts|QASyn Vision AI-box|QASyn Vision AI-telemetry/;
+    const p20Readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+    const p20Guide = fs.readFileSync(path.join(process.cwd(), "public", "user-guide.html"), "utf8");
+    check(
+      "PART 20 README and user guide have no broken identifiers",
+      !p20BrokenIdentifier.test(p20Readme) &&
+        !p20BrokenIdentifier.test(p20Guide) &&
+        p20Readme.includes("bivia-telemetry.json") &&
+        p20Guide.includes("/api/dashboard/bivia/ground"),
+      `${p20Readme.length} README chars · ${p20Guide.length} guide chars · ${p20BrokenIdentifier.test(p20Readme) || p20BrokenIdentifier.test(p20Guide) ? "broken identifier" : "clean"}`,
+    );
+
+    // 20.7 — cleanup: restore purchased credits and keep future runs deterministic.
+    await db.creditEntry.deleteMany({ where: { organisationId: p20Cgi.id, note: { contains: `P20-${RUN_ID}` } } }).catch(() => undefined);
+    await db.organisation.update({
+      where: { id: p20Cgi.id },
+      data: { plan: p20Cgi.plan, trialCredits: p20Cgi.trialCredits, creditsUsed: p20Cgi.creditsUsed, paymentMethod: p20Cgi.paymentMethod },
+    });
+    await db.user.update({ where: { id: p20User.id }, data: { creditQuota: 0, creditsConsumed: 0 } });
+  }
+
+  check("PART 20 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part20-enforcement");
 
   await db.$disconnect();
 

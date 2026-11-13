@@ -137,7 +137,7 @@ export async function PATCH(request: Request, { params }: Params) {
       const data = { testCasesCount: r.total, passRate: r.total ? Math.round((r.passed / r.total) * 1000) / 10 : 0, lastRunAt: new Date() };
       if (kind === "suites") await tx.testSuite.update({ where: { id: item.id }, data });
       else await tx.testPlan.update({ where: { id: item.id }, data });
-      await spendCredits(tx, ctx.org.id, CREDIT_COSTS.suiteRun);
+      await spendCredits(tx, ctx.org.id, CREDIT_COSTS.suiteRun, ctx.user.id);
       return r;
     },
     { timeout: 60_000 },
