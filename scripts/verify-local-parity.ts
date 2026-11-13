@@ -1522,7 +1522,7 @@ async function main() {
   check("Billing Payment", billBody.includes("Payment"));
   check("Billing Credit history", billBody.includes("Credit history"));
   check("Billing Choose a plan", /Choose a plan|Choose plan/i.test(billBody));
-  check("Billing Add payment method", /Add in Stripe|Add payment method/.test(billBody));
+  check("Billing Add payment method", /Add in Stripe|Update in Stripe|Add payment method/.test(billBody));
   // Choose a plan
   const choosePlan = page.getByRole("button", { name: /Choose a plan|Choose plan/ }).first();
   if ((await choosePlan.count()) > 0) {
@@ -4633,7 +4633,7 @@ async function main() {
     "## Architecture",
     "## The 19 product modules",
     "## The 11 test types",
-    "## Bivia: grounded decisions and self-healing",
+    "## QASyn Vision AI: grounded decisions and self-healing",
     "## PR gatekeeper and auto-regression",
     "## Super Admin and multi-tenancy",
     "## Evidence: screenshots for every executed step",
@@ -4643,7 +4643,7 @@ async function main() {
     "## Running and verification",
   ];
   check(
-    "PART 9 README documents architecture, modules, test types, Bivia, PR gate, Super Admin and operations",
+    "PART 9 README documents architecture, modules, test types, QASyn Vision AI, PR gate, Super Admin and operations",
     readme.includes("# QASyn") && readmeSections.every((section) => readme.includes(section)),
     `${readme.length} chars · ${readmeSections.filter((section) => !readme.includes(section)).join(", ") || "all sections"}`,
   );
@@ -5893,6 +5893,284 @@ async function main() {
   }
   check("PART 17 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part17-hardening");
+
+  // ── PART 18 — Commercial SaaS, privacy, learning, invites & control plane ─
+  moduleErrors = [];
+  mod(
+    "part18-saas",
+    "Phase 18 - Commercial SaaS, white-label privacy, learning, invitations, governance & Super Admin",
+    "/pricing",
+  );
+
+  await goto(page, "/");
+  const p18HomeText = await body(page);
+  check(
+    "PART 18 public home has no client data or internal model branding",
+    !/CGI workspace|Bivia|Articul8|1B-token|Context7/i.test(p18HomeText) &&
+      p18HomeText.includes("QASyn Live Sandbox") &&
+      p18HomeText.includes("FinTech Cloud"),
+    p18HomeText.slice(0, 220).replace(/\s+/g, " "),
+  );
+  check("PART 18 public header has no Interactive Guide link", !/Interactive Guide/i.test(p18HomeText));
+
+  const p18AnonContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p18AnonPage = await p18AnonContext.newPage();
+  await p18AnonPage.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+  await p18AnonPage.waitForTimeout(400);
+  const p18LoginText = ((await p18AnonPage.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 18 /login does not expose demo passwords by default",
+    !/CgiDemo2026!|AcmeDemo2026!|demo@acme\.dev/i.test(p18LoginText) && /Secure workspace sign-in/i.test(p18LoginText),
+    p18LoginText.slice(0, 180),
+  );
+
+  await goto(page, "/pricing");
+  const p18PricingText = await body(page);
+  check(
+    "PART 18 /pricing renders all four tiers and comparison matrix",
+    ["Free Pilot", "Starter", "Team / Pro", "Enterprise"].every((tier) => p18PricingText.includes(tier)) &&
+      (await page.locator('[data-testid="pricing-comparison"]').count()) > 0 &&
+      (await page.locator('[data-testid="pricing-calculator"]').count()) > 0,
+  );
+  for (const route of ["/why-qasyn", "/platform/enterprise-apps-testing"]) {
+    await goto(page, route);
+    const marketingText = await body(page);
+    check(
+      `PART 18 ${route} has no stub cards and includes architecture + comparison`,
+      !/Available in the QASyn platform today/i.test(marketingText) &&
+        /Architecture & workflow/i.test(marketingText) &&
+        /legacy scripts and recorders/i.test(marketingText),
+      marketingText.slice(0, 180).replace(/\s+/g, " "),
+    );
+  }
+
+  await goto(page, "/dashboard/crawl");
+  const p18Collapse = page.getByRole("button", { name: /Collapse sidebar/ }).first();
+  if ((await p18Collapse.count()) > 0) await p18Collapse.click().catch(() => undefined);
+  await page.waitForTimeout(300);
+  const p18ProfileTrigger = page.locator('[data-testid="sidebar-profile-trigger"]').first();
+  if ((await p18ProfileTrigger.count()) > 0) {
+    await p18ProfileTrigger.click();
+    const p18ProfileMenu = page.locator('[data-testid="sidebar-profile-menu"]').first();
+    await p18ProfileMenu.waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+    const p18MenuBox = await p18ProfileMenu.boundingBox().catch(() => null);
+    check(
+      "PART 18 collapsed sidebar profile menu is full width and not clipped",
+      Boolean(p18MenuBox) && (p18MenuBox?.width ?? 0) >= 200 && (p18MenuBox?.x ?? -1) >= 0 && (p18MenuBox?.y ?? 9999) + (p18MenuBox?.height ?? 0) <= 900,
+      p18MenuBox ? `${p18MenuBox.width.toFixed(0)}×${p18MenuBox.height.toFixed(0)} @ ${p18MenuBox.x.toFixed(0)},${p18MenuBox.y.toFixed(0)}` : "missing",
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+  } else {
+    check("PART 18 collapsed sidebar profile menu is full width and not clipped", false, "profile trigger missing");
+  }
+
+  await goto(page, "/dashboard/learning");
+  const p18LearningProgress = await apiJson(page, "/api/dashboard/learning/progress", "GET");
+  const p18ProgressMap = (p18LearningProgress.body.progress ?? {}) as Record<string, { status?: string }>;
+  let p18LearningId = "";
+  const p18LearningButtons = page.locator("[data-learning-module-id]");
+  const p18LearningCount = await p18LearningButtons.count();
+  for (let i = 0; i < p18LearningCount; i++) {
+    const candidate = (await p18LearningButtons.nth(i).getAttribute("data-learning-module-id")) ?? "";
+    if (candidate && p18ProgressMap[candidate]?.status !== "completed") {
+      p18LearningId = candidate;
+      break;
+    }
+  }
+  if (p18LearningId) {
+    await page.locator(`[data-learning-module-id="${p18LearningId}"]`).first().click().catch(() => undefined);
+    const p18Tutorial = page.locator('[data-testid="learning-tutorial-modal"]').first();
+    await p18Tutorial.waitFor({ state: "visible", timeout: 8000 }).catch(() => undefined);
+    check("PART 18 Learning opens the interactive tutorial modal", (await p18Tutorial.count()) > 0);
+    const p18Mark = page.locator('[data-testid="learning-mark-complete"]').first();
+    if ((await p18Mark.count()) > 0) await p18Mark.click().catch(() => undefined);
+    await page.waitForTimeout(700);
+    const p18After = await apiJson(page, "/api/dashboard/learning/progress", "GET");
+    const p18AfterMap = (p18After.body.progress ?? {}) as Record<string, { status?: string }>;
+    check(
+      "PART 18 Mark Module Complete persists progress",
+      p18AfterMap[p18LearningId]?.status === "completed",
+      p18LearningId,
+    );
+    // Keep the check repeatable: restore the module to in-progress so the next
+    // verification run is not left with every module already completed.
+    await apiJson(page, "/api/dashboard/learning/progress", "POST", { moduleId: p18LearningId, status: "in_progress" });
+  } else {
+    check("PART 18 Learning opens the interactive tutorial modal", false, "no learning module found");
+    check("PART 18 Mark Module Complete persists progress", false, "no incomplete module");
+  }
+
+  await goto(page, "/dashboard/crawl");
+  const p18CrawlBefore = await page.locator('[data-testid="crawl-row"]').count();
+  const p18NewCrawl = page.getByRole("button", { name: /New Crawl/ }).first();
+  const p18CrawlUrl = `https://www.cgi.com/parity-p18-${Date.now() % 100000}`;
+  if ((await p18NewCrawl.count()) > 0) {
+    await p18NewCrawl.click().catch(() => undefined);
+    const p18CrawlDialog = page.getByRole("dialog", { name: "New Crawl" });
+    await p18CrawlDialog.waitFor({ state: "visible", timeout: 8000 }).catch(() => undefined);
+    await p18CrawlDialog.locator("input").first().fill(p18CrawlUrl).catch(() => undefined);
+    await p18CrawlDialog.locator("textarea").first().fill("Parity PART18 crawl").catch(() => undefined);
+    await p18CrawlDialog.getByRole("button", { name: /Start Crawl/ }).click().catch(() => undefined);
+    await page.waitForResponse((response) => response.url().includes("/api/dashboard/crawl") && response.request().method() === "POST", { timeout: 15_000 }).catch(() => undefined);
+    await page.waitForTimeout(700);
+    const p18CrawlText = await body(page);
+    check(
+      "PART 18 starting a crawl stays on /dashboard/crawl and prepends the live row",
+      page.url().includes("/dashboard/crawl") && /Crawl started|crawling|In Progress|Completed/i.test(p18CrawlText) && (await page.locator('[data-testid="crawl-row"]').count()) >= Math.min(1, p18CrawlBefore + 1),
+      `${page.url()} · ${await page.locator('[data-testid="crawl-row"]').count()} row(s)`,
+    );
+  } else {
+    check("PART 18 starting a crawl stays on /dashboard/crawl and prepends the live row", false, "New Crawl missing");
+  }
+
+  const p18InviteEmail = `p18-invite-${RUN_ID}@your-domain.com`;
+  const p18Invite = await apiJson(page, "/api/dashboard/team", "POST", { email: p18InviteEmail, name: "PART18 Teammate", role: "Engineer" });
+  const p18InviteUrl = String((p18Invite.body as { inviteUrl?: string }).inviteUrl ?? "");
+  check("PART 18 team invitation API returns a signed /invite link", p18Invite.status === 201 && p18InviteUrl.includes("/invite/"), `${p18Invite.status} · ${p18InviteUrl.slice(0, 100)}`);
+  if (p18InviteUrl) {
+    const p18InvitePage = await p18AnonPage.goto(p18InviteUrl, { waitUntil: "domcontentloaded" });
+    const p18InviteText = ((await p18AnonPage.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+    check(
+      "PART 18 /invite/[token] renders the workspace join form",
+      (p18InvitePage?.status() ?? 0) === 200 && /Join|Accept invitation/i.test(p18InviteText),
+      `HTTP ${p18InvitePage?.status() ?? 0} · ${p18InviteText.slice(0, 140)}`,
+    );
+  }
+
+  const p18Github = await apiJson(page, "/api/onboarding/integrations/github", "POST", {
+    config: { organization: "https://github.com/acme", token: "demo-token", repository: "acme/app", baseBranch: "main" },
+  });
+  const p18Jira = await apiJson(page, "/api/onboarding/integrations/jira", "POST", {
+    config: { baseUrl: "https://acme.atlassian.net", email: "qa@acme.com", apiToken: "demo-token", projectKey: "QA" },
+  });
+  check(
+    "PART 18 onboarding step 3/4 integrations verify and persist",
+    p18Github.status === 200 && p18Jira.status === 200,
+    `GitHub ${p18Github.status} · Jira ${p18Jira.status}`,
+  );
+
+  const p18Team = await apiJson(page, "/api/dashboard/team", "GET");
+  const p18Members = ((p18Team.body as { members?: Array<{ id: string; email: string }> }).members ?? []);
+  const p18QuotaMember = p18Members.find((member) => member.email === "cgi@cgi.com") ?? p18Members[0];
+  const p18Checkout = await apiJson(page, "/api/dashboard/billing", "POST", {
+    action: "checkout",
+    plan: "enterprise",
+    method: "invoice",
+    invoiceReference: `P18-${RUN_ID}`,
+    credits: 0,
+  });
+  const p18Allocation = p18QuotaMember
+    ? await apiJson(page, "/api/dashboard/billing", "POST", { action: "allocation", userId: p18QuotaMember.id, quota: 75_000 })
+    : { status: 0 };
+  check(
+    "PART 18 payment/plan checkout and token allocation return 200",
+    p18Checkout.status === 200 && p18Allocation.status === 200,
+    `checkout ${p18Checkout.status} · allocation ${p18Allocation.status}`,
+  );
+
+  const p18ModelCreate = await apiJson(page, "/api/dashboard/ai-models", "POST", {
+    name: "PART18 Claude",
+    provider: "Anthropic Claude",
+    modelId: "claude-sonnet-4",
+    apiKey: "sk-p18-demo",
+    role: "Grounding",
+  });
+  const p18ModelId = String((p18ModelCreate.body as { model?: { id?: string } }).model?.id ?? "");
+  const p18ModelList = await apiJson(page, "/api/dashboard/ai-models", "GET");
+  check(
+    "PART 18 custom AI model CRUD persists in workspace settings",
+    p18ModelCreate.status === 201 &&
+      p18ModelId.length > 0 &&
+      JSON.stringify(p18ModelList.body).includes("PART18 Claude"),
+    p18ModelId,
+  );
+  if (p18ModelId) await apiJson(page, "/api/dashboard/ai-models", "DELETE", { id: p18ModelId });
+
+  const p18SkillCreate = await apiJson(page, "/api/dashboard/custom-skills", "POST", {
+    name: "PART18 Recovery Agent",
+    trigger: "When checkout fails",
+    systemPrompt: "Inspect the checkout DOM, re-ground the payment button and rerun only the failed step.",
+    model: "QASyn Vision AI",
+  });
+  const p18SkillId = String((p18SkillCreate.body as { skill?: { id?: string } }).skill?.id ?? "");
+  const p18SkillList = await apiJson(page, "/api/dashboard/custom-skills", "GET");
+  check(
+    "PART 18 custom agent skill CRUD persists in SQLite settings",
+    p18SkillCreate.status === 201 &&
+      p18SkillId.length > 0 &&
+      JSON.stringify(p18SkillList.body).includes("PART18 Recovery Agent"),
+    p18SkillId,
+  );
+  if (p18SkillId) await apiJson(page, "/api/dashboard/custom-skills", "DELETE", { id: p18SkillId });
+
+  const p18Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
+  const p18SuperGet = await apiJson(p18Super.page, "/api/dashboard/super-admin", "GET");
+  const p18SuperBody = p18SuperGet.body as {
+    organisations?: Array<{ id: string; name: string; integrations?: Array<{ provider: string; status: string }> }>;
+    users?: Array<{ id: string; email: string; organisationId: string | null; creditQuota?: number }>;
+    platformSkills?: Array<{ id: string }>;
+  };
+  const p18Tenant = p18SuperBody.organisations?.find((org) => org.name.toLowerCase().includes("cgi")) ?? p18SuperBody.organisations?.[0];
+  const p18ModelAssign = p18Tenant
+    ? await apiJson(p18Super.page, "/api/dashboard/super-admin", "PATCH", { action: "model", organisationId: p18Tenant.id, model: "QASyn Vision AI" })
+    : { status: 0 };
+  const p18PlatformSkill = await apiJson(p18Super.page, "/api/dashboard/super-admin", "PATCH", {
+    action: "skill",
+    subAction: "create",
+    name: "PART18 Platform Skill",
+    trigger: "release gate",
+    systemPrompt: "Review release evidence and publish a platform-wide quality verdict.",
+    model: "QASyn Vision AI",
+  });
+  const p18PlatformSkillId = String((p18PlatformSkill.body as { skill?: { id?: string } }).skill?.id ?? "");
+  check(
+    "PART 18 Super Admin lists tenants, integrations and manages models/skills",
+    p18SuperGet.status === 200 &&
+      (p18SuperBody.organisations?.length ?? 0) > 0 &&
+      (p18SuperBody.organisations ?? []).every((org) => Array.isArray(org.integrations)) &&
+      p18ModelAssign.status === 200 &&
+      p18PlatformSkill.status === 200,
+    `${p18SuperBody.organisations?.length ?? 0} tenant(s) · model ${p18ModelAssign.status} · skill ${p18PlatformSkill.status}`,
+  );
+  if (p18PlatformSkillId) await apiJson(p18Super.page, "/api/dashboard/super-admin", "PATCH", { action: "skill", subAction: "delete", id: p18PlatformSkillId });
+
+  const p18SuperUser =
+    p18SuperBody.users?.find((user) => user.email === "cgi@cgi.com") ??
+    p18SuperBody.users?.find((user) => Boolean(user.organisationId));
+  const p18LedgerBefore = p18SuperUser?.organisationId
+    ? await db.creditEntry.count({ where: { organisationId: p18SuperUser.organisationId } })
+    : 0;
+  const p18UserGrant = p18SuperUser
+    ? await apiJson(p18Super.page, "/api/dashboard/super-admin", "PATCH", {
+        action: "user",
+        userId: p18SuperUser.id,
+        creditDelta: 1000,
+      })
+    : { status: 0 };
+  const p18LedgerAfter = p18SuperUser?.organisationId
+    ? await db.creditEntry.count({ where: { organisationId: p18SuperUser.organisationId } })
+    : 0;
+  check(
+    "PART 18 Super Admin allocates user credits and records a credit ledger entry",
+    p18UserGrant.status === 200 && p18LedgerAfter > p18LedgerBefore,
+    `status ${p18UserGrant.status} · ledger ${p18LedgerBefore} → ${p18LedgerAfter}`,
+  );
+  if (p18SuperUser) {
+    await apiJson(p18Super.page, "/api/dashboard/super-admin", "PATCH", {
+      action: "user",
+      userId: p18SuperUser.id,
+      creditDelta: -1000,
+    });
+  }
+  await p18Super.context.close();
+  await p18AnonContext.close();
+
+  await db.teamInvite.deleteMany({ where: { email: p18InviteEmail } }).catch(() => undefined);
+  await db.user.deleteMany({ where: { email: p18InviteEmail, status: "invited" } }).catch(() => undefined);
+
+  check("PART 18 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part18-saas");
 
   await db.$disconnect();
 

@@ -241,8 +241,8 @@ export function MarketingNav() {
         </nav>
 
         <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
-          <Link href="/guide" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
-            Interactive Guide
+          <Link href="/dashboard/learning" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
+            Learning Hub
           </Link>
           <Link href="/login" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
             Sign in
@@ -296,7 +296,7 @@ export function MarketingNav() {
             </div>
           ))}
           <Link href="/pricing" className="block py-2 text-sm font-medium text-white">Pricing</Link>
-          <Link href="/guide" className="block py-2 text-sm font-medium text-white">Interactive Guide</Link>
+          <Link href="/dashboard/overview" className="block py-2 text-sm font-medium text-white">Open dashboard</Link>
           <Link href="/login" className="mt-2 block py-2 text-sm font-medium text-white">Sign in</Link>
           <Link href="/signup" className="mt-2 block rounded-full bg-gradient-to-r from-quantum-500 to-cobalt-400 px-4 py-2.5 text-center text-sm font-semibold text-white">Start Free Trial →</Link>
         </nav>

@@ -3,17 +3,61 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Modal, cqaInput, cqaLabel } from "@/components/dashboard/ui";
+import { apiFetch, errorMessage } from "@/lib/api";
 import { FOCUS_OPTIONS, PROVIDER_META, TRIAL_CREDITS, TRIAL_DAYS } from "@/lib/constants";
 import { useOnboarding } from "@/lib/context/OnboardingContext";
+import { toast } from "@/lib/toast";
 import { cn, hostOf } from "@/lib/utils";
 import { useSaveStep } from "./hooks";
 
 const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+const PLANS = [
+  { key: "trial", name: "12-Week Free Pilot", price: "$0", detail: "3,000 AI credits · no card required" },
+  { key: "starter", name: "Starter", price: "$99/mo", detail: "20,000 credits · 5 seats" },
+  { key: "pro", name: "Team / Pro", price: "$299/mo", detail: "120,000 credits · unlimited seats · most popular" },
+  { key: "enterprise", name: "Enterprise", price: "Custom", detail: "Custom SLA · SSO · invoice / PO" },
+];
 
 export function Step7Trial() {
   const { state } = useOnboarding();
   const { save, pending, error } = useSaveStep();
   const [review, setReview] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [planKey, setPlanKey] = useState("trial");
+  const [method, setMethod] = useState<"stripe" | "paypal" | "invoice">("stripe");
+  const [cardholder, setCardholder] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [invoiceReference, setInvoiceReference] = useState("FREE-PILOT");
+  const [checkoutPending, setCheckoutPending] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const selectedPlan = PLANS.find((plan) => plan.key === planKey) ?? PLANS[0];
+  const needsPayment = planKey !== "trial";
+  const validPayment =
+    !needsPayment ||
+    (method === "stripe" && cardholder.trim().length >= 2 && cardNumber.replace(/\s/g, "").length >= 12) ||
+    (method === "paypal" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(paypalEmail)) ||
+    (method === "invoice" && invoiceReference.trim().length >= 2);
+
+  async function checkout() {
+    setCheckoutPending(true);
+    setCheckoutError(null);
+    try {
+      await apiFetch("/api/dashboard/billing", {
+        method: "POST",
+        json: { action: "checkout", plan: planKey, method, cardholder, cardNumber, paypalEmail, invoiceReference: invoiceReference || "FREE-PILOT", credits: 0 },
+      });
+      toast(`${selectedPlan.name} activated and credits added to the workspace.`, "success");
+      setCheckoutOpen(false);
+      await save({ step: 7 });
+    } catch (caught) {
+      setCheckoutError(errorMessage(caught));
+    } finally {
+      setCheckoutPending(false);
+    }
+  }
 
   const end = state.trialEndsAt ? new Date(state.trialEndsAt) : new Date(Date.now() + TRIAL_DAYS * 86_400_000);
   const start = new Date(end.getTime() - TRIAL_DAYS * 86_400_000);
@@ -130,6 +174,20 @@ export function Step7Trial() {
         </div>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {PLANS.map((plan) => (
+          <button key={plan.key} type="button" onClick={() => { setPlanKey(plan.key); setCheckoutOpen(true); }} className={cn("rounded-xl border p-4 text-left transition hover:border-brand-400", plan.key === "pro" ? "border-brand-500 bg-brand-50/50" : "border-slate-200 bg-white")}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-slate-900">{plan.name}</p>
+              {plan.key === "pro" && <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[9.5px] font-semibold text-white">Most popular</span>}
+            </div>
+            <p className="mt-2 text-2xl font-semibold text-slate-900">{plan.price}</p>
+            <p className="mt-1 text-[11.5px] leading-4 text-slate-500">{plan.detail}</p>
+            <span className="mt-3 inline-block text-[11.5px] font-semibold text-brand-600">Choose plan →</span>
+          </button>
+        ))}
+      </div>
+
       {error && (
         <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -144,13 +202,51 @@ export function Step7Trial() {
           size="lg"
           variant="secondary"
           className={cn("flex-1")}
-          onClick={() => save({ step: 7 }, "skip", "/dashboard/billing?payment=1")}
+          onClick={() => { setPlanKey("trial"); setCheckoutOpen(true); }}
           loading={pending === "skip"}
           disabled={pending !== null}
         >
           Add payment method
         </Button>
       </div>
+
+      <Modal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        title="Plan & payment checkout"
+        footer={
+          <>
+            <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700" onClick={() => setCheckoutOpen(false)}>Cancel</button>
+            <button type="button" data-testid="onboarding-checkout-submit" className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={checkoutPending || !validPayment} onClick={() => void checkout()}>
+              {checkoutPending ? "Processing…" : `Activate ${selectedPlan.name}`}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {PLANS.map((plan) => <button key={plan.key} type="button" onClick={() => setPlanKey(plan.key)} className={cn("rounded-lg border px-3 py-2 text-left text-[12px] font-semibold", planKey === plan.key ? "border-brand-500 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-700")}>{plan.name} · {plan.price}</button>)}
+          </div>
+          <label className="block">
+            <span className={cqaLabel}>Payment method</span>
+            <select className={cqaInput} value={method} onChange={(event) => setMethod(event.target.value as typeof method)}>
+              <option value="stripe">Credit / debit card · Stripe</option>
+              <option value="paypal">PayPal</option>
+              <option value="invoice">Enterprise invoice / PO</option>
+            </select>
+          </label>
+          {method === "stripe" && needsPayment && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block"><span className={cqaLabel}>Cardholder</span><input className={cqaInput} value={cardholder} onChange={(e) => setCardholder(e.target.value)} placeholder="Jane Cooper" /></label>
+              <label className="block"><span className={cqaLabel}>Card number</span><input className={cqaInput} inputMode="numeric" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="4242 4242 4242 4242" /></label>
+            </div>
+          )}
+          {method === "paypal" && needsPayment && <label className="block"><span className={cqaLabel}>PayPal account</span><input className={cqaInput} value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} placeholder="billing@company.com" /></label>}
+          {method === "invoice" && needsPayment && <label className="block"><span className={cqaLabel}>Invoice / PO reference</span><input className={cqaInput} value={invoiceReference} onChange={(e) => setInvoiceReference(e.target.value)} placeholder="PO-2026-0042" /></label>}
+          {!needsPayment && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] text-emerald-800">The 12-week free pilot starts immediately with 3,000 credits. No card is charged.</p>}
+          {checkoutError && <p className="text-[12px] text-red-600">{checkoutError}</p>}
+        </div>
+      </Modal>
     </div>
   );
 }

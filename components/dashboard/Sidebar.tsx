@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "@/components/dashboard/ui";
 import { OPEN_CHAT_EVENT } from "@/components/sections/FinQAWidget";
 import { apiFetch, errorMessage } from "@/lib/api";
@@ -128,12 +129,16 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMobileOpen(false), [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
-    const onDown = (e: MouseEvent) => !menuRef.current?.contains(e.target as Node) && setMenuOpen(false);
+    const onDown = (e: MouseEvent) =>
+      !menuRef.current?.contains(e.target as Node) &&
+      !menuPanelRef.current?.contains(e.target as Node) &&
+      setMenuOpen(false);
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
   }, [menuOpen]);
@@ -387,6 +392,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         <div ref={menuRef} className="relative">
           <button
             type="button"
+            data-testid="sidebar-profile-trigger"
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
@@ -404,10 +410,12 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
               </>
             )}
           </button>
-          {menuOpen && (
+          {menuOpen && typeof document !== "undefined" && createPortal(
             <div
+              ref={menuPanelRef}
               role="menu"
-              className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-xl border border-white/10 bg-[#161827] py-1 text-[13px] shadow-2xl"
+              data-testid="sidebar-profile-menu"
+              className="fixed bottom-14 left-3 z-[100] min-w-[220px] w-[264px] overflow-hidden rounded-xl border border-white/10 bg-[#0f172a] py-1 text-[13px] shadow-2xl"
             >
               <p className="px-3 pb-1 pt-2 text-[10px] font-semibold tracking-[0.14em] text-slate-500">WORKSPACES</p>
               {isSuperAdmin ? (
@@ -469,7 +477,8 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
                 Log out
               </button>
               {error && <p className="px-3 py-1 text-xs text-red-300">{error}</p>}
-            </div>
+            </div>,
+            document.body,
           )}
         </div>
       </div>

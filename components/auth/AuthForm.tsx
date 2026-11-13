@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/constants";
 
-const DEV_CODE_KEY = "qasyn.devCode";
-
-/** Login / signup form (shared). Stores the simulated verification code for the local inbox preview. */
+/** Login / signup form (shared). Demo quick-fill appears only with ?demo=1. */
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -18,17 +16,21 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
+
+  useEffect(() => {
+    setShowDemo(new URLSearchParams(window.location.search).get("demo") === "1");
+  }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
     setError(null);
     try {
-      const res = await apiFetch<{ next: string; devCode?: string }>(`/api/auth/${mode}`, {
+      const res = await apiFetch<{ next: string }>(`/api/auth/${mode}`, {
         method: "POST",
         json: { email, password },
       });
-      if (res.devCode) sessionStorage.setItem(DEV_CODE_KEY, res.devCode);
       router.push(res.next);
       router.refresh();
     } catch (e) {
@@ -86,6 +88,26 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </Button>
         </form>
 
+        {isLogin && (
+          <div className="mt-4 space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <a href="/login?sso=google" className="flex h-10 items-center justify-center rounded-lg border border-line bg-white text-sm font-medium text-slate-700 hover:bg-slate-50">
+                Continue with Google
+              </a>
+              <a href="/login?sso=microsoft" className="flex h-10 items-center justify-center rounded-lg border border-line bg-white text-sm font-medium text-slate-700 hover:bg-slate-50">
+                Continue with Microsoft
+              </a>
+            </div>
+            <p className="text-center text-xs text-slate-400">Enterprise SSO is provisioned by your workspace administrator.</p>
+            <div className="flex items-center justify-between text-sm">
+              <Link href="/contact-us?subject=password-reset" className="font-medium text-brand-600 hover:underline">
+                Forgot password?
+              </Link>
+              <span className="text-xs text-slate-400">Secure workspace sign-in</span>
+            </div>
+          </div>
+        )}
+
         <p className="mt-6 text-center text-sm text-muted">
           {isLogin ? (
             <>
@@ -105,9 +127,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         </p>
       </div>
 
-      {isLogin && (
+      {isLogin && showDemo && (
         <div className="rounded-2xl border border-brand-200 bg-brand-50/70 p-5 text-sm">
-          <p className="font-semibold text-brand-800">Demo workspace · Acme (mock data)</p>
+          <p className="font-semibold text-brand-800">Sandbox workspace · Acme (synthetic data)</p>
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-mono text-[13px] text-brand-900">
             <dt className="text-brand-600">Email</dt>
             <dd>{DEMO_EMAIL}</dd>
@@ -122,12 +144,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             }}
             className="mt-3 text-xs font-semibold text-brand-700 hover:underline"
           >
-            Fill demo credentials →
+            Fill sandbox credentials →
           </button>
         </div>
       )}
     </div>
   );
 }
-
-export { DEV_CODE_KEY };

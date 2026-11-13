@@ -15,6 +15,7 @@ import {
   useAction,
 } from "@/components/dashboard/ui";
 import { ColumnFilter, ColumnSort, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
+import { BillingSelfService, type BillingMember } from "@/components/dashboard/pages/BillingSelfService";
 import { CREDIT_ACTIONS } from "@/lib/credits";
 import type { BiviaObservatorySummary } from "@/lib/bivia-telemetry";
 import { BiviaObservatory } from "@/components/dashboard/pages/BiviaObservatory";
@@ -157,6 +158,7 @@ export function BillingUsage(props: BillingUsageProps) {
     entries,
     view,
     biviaSummary,
+    members = [],
   } = props;
   const { run, pending, error, setError } = useAction();
   const [plansOpen, setPlansOpen] = useState(false);
@@ -170,7 +172,7 @@ export function BillingUsage(props: BillingUsageProps) {
   const dayNumber = Math.min(trialLength, Math.max(1, Math.floor((Date.now() - trialStart.getTime()) / DAY) + 1));
   const isTrial = plan === "trial" || plan === "free";
   const planName = isTrial ? "Free trial" : plan.charAt(0).toUpperCase() + plan.slice(1);
-  const planPrice = plan === "starter" ? "$49" : plan === "pro" ? "$249" : isTrial ? "$0" : "Custom";
+  const planPrice = plan === "starter" ? "$99" : plan === "pro" ? "$299" : isTrial ? "$0" : "Custom";
   const planLabel = isTrial ? `Trial · ${daysLeft} days left` : `${planName} plan`;
 
   async function choosePlan(key: string) {
@@ -243,6 +245,8 @@ export function BillingUsage(props: BillingUsageProps) {
             setError(null);
             setPaymentOpen(true);
           }}
+          members={members}
+          plan={plan}
         />
       ) : (
         <UsageView available={available} entries={entries} orgName={orgName} biviaSummary={biviaSummary} />
@@ -277,6 +281,7 @@ interface BillingUsageProps {
   entries: CreditLedgerRow[];
   view: "billing" | "usage";
   biviaSummary: BiviaObservatorySummary;
+  members?: BillingMember[];
 }
 
 function BillingView({
@@ -301,6 +306,8 @@ function BillingView({
   planPending,
   readOnly,
   onPayment,
+  members = [],
+  plan,
 }: {
   orgName: string;
   planName: string;
@@ -323,6 +330,8 @@ function BillingView({
   planPending: string | null;
   readOnly: boolean;
   onPayment: () => void;
+  members?: BillingMember[];
+  plan: string;
 }) {
   const consumed = Math.abs(entries.filter((entry) => entry.credits < 0).reduce((sum, entry) => sum + entry.credits, 0));
   const periodKey = `t${trialStart.getFullYear()}-${String(trialStart.getMonth() + 1).padStart(2, "0")}-${String(trialStart.getDate()).padStart(2, "0")}`;
@@ -368,6 +377,7 @@ function BillingView({
 
   return (
     <div className="space-y-4">
+      <BillingSelfService readOnly={readOnly} members={members} plan={plan} />
       <div className="grid gap-4 xl:grid-cols-2">
         <section className={cn(cqaCard, "p-4")}>
           <div className="flex items-start justify-between gap-3">

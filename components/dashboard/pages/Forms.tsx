@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select, Toggle } from "@/components/dashboard/ui";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -23,7 +24,6 @@ const inputCls =
 
 export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: string; readOnly: boolean; onCancel?: () => void }) {
   const { run, pending, error } = useAction();
-  const router = useRouter();
   const [url, setUrl] = useState(defaultUrl);
   const [platform, setPlatform] = useState<"Web Application" | "Mobile" | "API">("Web Application");
   const [publishMode, setPublishMode] = useState<"Require approval" | "Auto publish">("Require approval");
@@ -119,9 +119,22 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
             },
           });
           void res.then((r) => {
-            // Live behaviour (mirrors QASyn): toast + redirect to the AQE live feed.
-            sessionStorage.setItem("qasyn_crawl_notice", r ? `Crawl started — crawling ${url || defaultUrl}` : "");
-            router.push("/dashboard/overview");
+            if (!r) return;
+            toast("Crawl started — mapping live flows...", "success");
+            window.dispatchEvent(new CustomEvent("qasyn:crawl-started", {
+              detail: {
+                id: r.crawl.id,
+                code: "CRL-NEW",
+                name: requirementName || explorePrompt || `${url || defaultUrl} crawl`,
+                plan: createPlan ? "Auto plan" : "-",
+                status: "running",
+                cases: 0,
+                createdBy: "You",
+                createdAt: new Date().toISOString(),
+                targetUrl: url || defaultUrl,
+              },
+            }));
+            onCancel?.();
           });
         }}
       >

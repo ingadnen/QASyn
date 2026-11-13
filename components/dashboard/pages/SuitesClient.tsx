@@ -389,7 +389,7 @@ export function SuitesClient({
                   {visible.created && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilter("Created Date", value)} /><ColumnSort column="Created Date" sort={sort} onSort={sortColumn} /></th>}
                   {visible.modified && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Modified<ColumnFilter column="Modified" value={columnFilters.Modified ?? ""} onChange={(value) => setColumnFilter("Modified", value)} /><ColumnSort column="Modified" sort={sort} onSort={sortColumn} /></th>}
                   {visible.folder && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => setColumnFilter("Folder", value)} options={columnOptions.Folder} /><ColumnSort column="Folder" sort={sort} onSort={sortColumn} /></th>}
-                  <th className="w-[72px] px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
+                  <th className="sticky right-0 z-10 w-[72px] bg-white px-4 py-3 text-[12px] font-medium text-[#6b7280] shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
                 </tr>
               </thead>
               <tbody>
@@ -445,7 +445,7 @@ export function SuitesClient({
                       {visible.created && <td className="whitespace-nowrap px-4 py-3 text-[#6b7280]">{formatDate(suite.createdAt)}</td>}
                       {visible.modified && <td className="whitespace-nowrap px-4 py-3 text-[#6b7280]">{formatDate(suite.lastRunAt ?? suite.createdAt)}</td>}
                       {visible.folder && <td className="px-4 py-3 text-[#6b7280]">{suite.module || "Unorganised"}</td>}
-                      <td className="px-4 py-3">
+                      <td className="sticky right-0 z-10 bg-white px-4 py-3 shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]">
                         <RowMenu
                           label={`Actions for ${suite.name}`}
                           items={[

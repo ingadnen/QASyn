@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CqaIcon, cqaBtnPrimary, cqaBtnSecondary, Card } from "@/components/dashboard/ui";
+import { CustomSkillsPanel } from "@/components/dashboard/pages/CustomSkillsPanel";
 import type { AgentSkill } from "@/lib/agent-skills";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { toast } from "@/lib/toast";
@@ -191,6 +192,10 @@ export function AgentSkillsPanel({
             </div>
           )}
         </div>
+      </Card>
+
+      <Card title="Custom Agents &amp; Skills">
+        <CustomSkillsPanel readOnly={readOnly} />
       </Card>
     </div>
   );

@@ -1,25 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { apiFetch, errorMessage } from "@/lib/api";
-import { DEV_CODE_KEY } from "./AuthForm";
 
-/** "Check your e-mail" step, with a local inbox preview (no outbound e-mail in this prototype). */
+/** "Check your e-mail" step. The raw code is never rendered by default. */
 export function VerifyForm({ email }: { email: string }) {
   const router = useRouter();
   const [code, setCode] = useState("");
-  const [devCode, setDevCode] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-
-  useEffect(() => {
-    setDevCode(sessionStorage.getItem(DEV_CODE_KEY));
-  }, []);
 
   async function verify(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,7 +21,6 @@ export function VerifyForm({ email }: { email: string }) {
     setError(null);
     try {
       const res = await apiFetch<{ next: string }>("/api/auth/verify", { method: "POST", json: { code } });
-      sessionStorage.removeItem(DEV_CODE_KEY);
       router.push(res.next);
       router.refresh();
     } catch (e) {
@@ -40,12 +33,26 @@ export function VerifyForm({ email }: { email: string }) {
     setResending(true);
     setError(null);
     try {
-      const res = await apiFetch<{ devCode?: string }>("/api/auth/resend", { method: "POST" });
-      if (res.devCode) {
-        sessionStorage.setItem(DEV_CODE_KEY, res.devCode);
-        setDevCode(res.devCode);
-      }
-      setInfo("A new code is on its way.");
+      await apiFetch("/api/auth/resend", { method: "POST" });
+      setInfo("A new code is on its way. Check your inbox and spam folder.");
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setResending(false);
+    }
+  }
+
+  async function instantVerify() {
+    setResending(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/auth/otp-preview", { headers: { "x-qasyn-otp-preview": "1" }, cache: "no-store" });
+      if (!response.ok) throw new Error("Instant verification is not available for this account. Use the e-mail code.");
+      const data = (await response.json()) as { code?: string };
+      if (!data.code) throw new Error("No verification code is available yet. Resend the code first.");
+      const result = await apiFetch<{ next: string }>("/api/auth/verify", { method: "POST", json: { code: data.code } });
+      router.push(result.next);
+      router.refresh();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -63,7 +70,7 @@ export function VerifyForm({ email }: { email: string }) {
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">Verify your e-mail</h1>
         <p className="mt-1.5 text-sm text-muted">
-          We sent a 6-digit code to <span className="font-medium text-ink">{email}</span>.
+          We sent a 6-digit verification code to <span className="font-medium text-ink">{email}</span>. Please check your inbox (and spam folder).
         </p>
         <form onSubmit={verify} className="mt-6 space-y-4" noValidate>
           <Input
@@ -92,21 +99,15 @@ export function VerifyForm({ email }: { email: string }) {
           disabled={resending}
           className="mt-4 w-full text-center text-sm font-medium text-brand-600 hover:underline disabled:opacity-50"
         >
-          {resending ? "Sending…" : "Resend code"}
+          {resending ? "Sending…" : "Resend verification code"}
         </button>
-      </div>
-
-      {devCode && (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Local inbox (no e-mail is sent)</p>
-          <p className="mt-2 text-slate-700">
-            Your QASyn verification code: <span className="font-mono text-base font-semibold text-ink">{devCode}</span>
-          </p>
-          <button type="button" onClick={() => setCode(devCode)} className="mt-2 text-xs font-semibold text-brand-700 hover:underline">
-            Use this code →
+        <details className="mt-5 rounded-lg border border-dashed border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-500">
+          <summary className="cursor-pointer select-none font-medium text-slate-600">Can&apos;t receive email in this environment?</summary>
+          <button type="button" onClick={() => void instantVerify()} disabled={resending} className="mt-2 font-semibold text-brand-600 hover:underline disabled:opacity-50">
+            Request instant verification
           </button>
-        </div>
-      )}
+        </details>
+      </div>
     </div>
   );
 }

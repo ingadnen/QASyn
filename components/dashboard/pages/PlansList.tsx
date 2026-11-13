@@ -303,7 +303,7 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
                 {visible.environment && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Environment<ColumnFilter column="Environment" value={columnFilters.Environment ?? ""} onChange={(value) => setColumnFilter("Environment", value)} options={columnOptions.Environment} /><ColumnSort column="Environment" sort={sort} onSort={sortColumn} /></th>}
                 {visible.schedule && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Schedule<ColumnFilter column="Schedule" value={columnFilters.Schedule ?? ""} onChange={(value) => setColumnFilter("Schedule", value)} options={columnOptions.Schedule} /><ColumnSort column="Schedule" sort={sort} onSort={sortColumn} /></th>}
                 {visible.lastRun && <th className="px-4 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => setColumnFilter("Last Run", value)} /><ColumnSort column="Last Run" sort={sort} onSort={sortColumn} /></th>}
-                <th className="w-10 px-4 py-3"><ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
+                <th className="sticky right-0 z-10 w-10 bg-white px-4 py-3 shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]"><ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
               </tr>
             </thead>
             <tbody>
@@ -342,7 +342,7 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
                     {visible.environment && <td className="px-4 py-3 text-[#4b5563]">{plan.environment || "Any"}</td>}
                     {visible.schedule && <td className="px-4 py-3 text-[#4b5563] capitalize">{plan.schedule.replace("_", " ")}</td>}
                     {visible.lastRun && <td className="whitespace-nowrap px-4 py-3 text-[#6b7280]">{plan.lastRunAt ? formatDate(plan.lastRunAt) : "Never"}</td>}
-                    <td className="px-4 py-3">
+                    <td className="sticky right-0 z-10 bg-white px-4 py-3 shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]">
                       <RowMenu
                         label={`Actions for ${plan.name}`}
                         items={[

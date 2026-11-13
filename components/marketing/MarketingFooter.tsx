@@ -65,7 +65,7 @@ const QUICK_LINKS = [
   { href: "/pricing", label: "Pricing" },
   { href: "/platform", label: "Platform" },
   { href: "/roi-calculator", label: "ROI Calculator" },
-  { href: "/guide", label: "Interactive Guide" },
+  { href: "/dashboard/learning", label: "Learning Hub" },
 ];
 
 export function MarketingFooter() {

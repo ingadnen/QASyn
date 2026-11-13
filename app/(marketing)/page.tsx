@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
-import { resolveOrgContext } from "@/lib/tenant";
 import { CUSTOMER_WORDMARKS, KEY_METRICS, TESTIMONIALS } from "@/lib/marketing";
 import { formatUsdCompact } from "@/lib/utils";
 import { HeroShowcase } from "@/components/marketing/HeroShowcase";
@@ -27,10 +25,10 @@ const BENTO = [
     icon: "🕰️",
   },
   {
-    key: "bivia",
-    kicker: "Bivia Observatory",
-    title: "1B-token grant, fully metered.",
-    body: "Boolean, choice, ground, score and set decisions stream into a live ledger with confidence and cost saved.",
+    key: "vision-ai",
+    kicker: "QASyn Vision AI",
+    title: "Calibrated visual verification & telemetry.",
+    body: "Visual assertions, locator grounding, risk scoring and test selection stream into a live quality telemetry ledger with confidence and manual QA savings.",
     accent: "from-emerald-500/15 to-transparent",
     span: "md:col-span-2",
     icon: "🧠",
@@ -62,28 +60,15 @@ const LOOP = [
   { tag: "GATE", color: "text-cobalt-300", title: "Report quality", body: "A Release Quality Report scores the build before anyone clicks merge." },
 ];
 
-async function getHeroReport() {
-  try {
-    // Session org if it already has runs, otherwise the shared Acme demo (isMockDemo).
-    const ctx = await resolveOrgContext();
-    const ownRuns = ctx ? await prisma.testRun.count({ where: { organisationId: ctx.org.id } }) : 0;
-    const org = ctx && ownRuns > 0 ? ctx.org : await prisma.organisation.findFirst({ where: { isMockDemo: true } });
-    if (!org) return null;
-    const [latest, previous] = await prisma.testRun.findMany({
-      where: { organisationId: org.id },
-      orderBy: { createdAt: "desc" },
-      take: 2,
-    });
-    if (!latest) return null;
-    return { org: org.name, latest, delta: previous ? latest.qualityScore - previous.qualityScore : 0 };
-  } catch {
-    return null; // base non migrée : la vitrine reste affichable
-  }
-}
+const SHOWCASE_REPORT = {
+  org: "FinTech Cloud",
+  latest: { qualityScore: 96, coverage: 94, costAvoided: 24800, version: "v3.2.0", testsPassed: 147, testsTotal: 148, release: 312, regressionsCaught: 2 },
+  delta: 6,
+};
 
-export default async function HomePage() {
-  const report = await getHeroReport();
-  const score = report?.latest.qualityScore ?? 92;
+export default function HomePage() {
+  const report = SHOWCASE_REPORT;
+  const score = report.latest.qualityScore;
   const ring = 2 * Math.PI * 42;
 
   return (
@@ -95,7 +80,7 @@ export default async function HomePage() {
           <div className="animate-fade-in">
             <span className="inline-flex items-center gap-2 rounded-full border border-quantum-500/30 bg-quantum-500/10 px-3 py-1 text-[11px] font-medium text-quantum-200">
               <span className="quantum-pulse size-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
-              🧠 Powered by Articul8 Bivia Multimodal AI · Strix OWASP · Graphify AST
+              🧠 Powered by QASyn Vision AI Multimodal AI · Strix OWASP · Graphify AST
             </span>
             <h1 className="mt-6 text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[3.6rem]">
               Autonomous Quality Engineering.
@@ -118,8 +103,8 @@ export default async function HomePage() {
               >
                 Explore QASyn Agent
               </Link>
-              <Link href="/guide" className="px-2 py-3 text-sm font-medium text-slate-400 transition hover:text-quantum-300">
-                Interactive User Guide ↗
+              <Link href="/pricing" className="px-2 py-3 text-sm font-medium text-slate-400 transition hover:text-quantum-300">
+                View pricing →
               </Link>
             </div>
             <p className="mt-6 text-xs text-slate-500">No credit card · 3,000 free credits · Works with localhost · 11 test types</p>
@@ -149,7 +134,7 @@ export default async function HomePage() {
               <span><span className="text-cobalt-300">GATE</span> ✅ approved · 3 regressions caught</span>
             </div>
             <p className="mt-2 text-[10.5px] text-slate-500">
-              Live from SQLite · {report ? `${report.org} workspace` : "demo data"}
+              QASyn Live Sandbox · {report.org}
             </p>
           </div>
         </div>
@@ -234,7 +219,7 @@ export default async function HomePage() {
                   <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-quantum-300">Enterprise Multi-Tenant</p>
                   <h3 className="mt-1.5 text-lg font-semibold tracking-tight">Super Admin provisioning, in one modal.</h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                    Provision an Enterprise tenant, grant Bivia credits to the ledger, seed Production + Staging, and configure website, seats, SSO and SLA — with AES-256-GCM secret encryption.
+                    Provision an Enterprise tenant, allocate workspace AI credits to the ledger, seed Production + Staging, and configure website, seats, SSO and SLA — with AES-256-GCM secret encryption.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 text-[11px] font-medium">
@@ -326,8 +311,8 @@ export default async function HomePage() {
             <Link href="/signup" className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#0B1120] hover:bg-quantum-100">
               Start free
             </Link>
-            <Link href="/guide" className="rounded-full px-6 py-3 text-sm font-semibold text-white ring-1 ring-white/25 hover:bg-white/10">
-              Open the interactive guide
+            <Link href="/dashboard/overview" className="rounded-full px-6 py-3 text-sm font-semibold text-white ring-1 ring-white/25 hover:bg-white/10">
+              Open the dashboard
             </Link>
           </div>
         </div>

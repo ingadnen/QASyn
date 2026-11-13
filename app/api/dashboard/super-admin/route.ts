@@ -29,7 +29,24 @@ const schema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("user"),
     userId: z.string().min(1).max(60),
-    role: z.enum(USER_ROLES),
+    role: z.enum(USER_ROLES).optional(),
+    creditQuota: z.number().int().min(0).max(999_999_999).optional(),
+    creditDelta: z.number().int().min(-999_999_999).max(999_999_999).optional(),
+  }),
+  z.object({
+    action: z.literal("model"),
+    organisationId: z.string().min(1).max(60),
+    model: z.string().trim().min(1).max(160),
+  }),
+  z.object({
+    action: z.literal("skill"),
+    subAction: z.enum(["create", "update", "delete"]),
+    id: z.string().max(80).optional(),
+    name: z.string().trim().min(2).max(120).optional(),
+    trigger: z.string().trim().max(240).optional(),
+    systemPrompt: z.string().trim().min(10).max(12_000).optional(),
+    model: z.string().trim().max(160).optional(),
+    enabled: z.boolean().optional(),
   }),
 ]);
 
@@ -96,20 +113,42 @@ export async function GET() {
   const guard = await requireSuperAdmin();
   if (!guard.ok) return guard.response;
 
-  const [organisations, users] = await Promise.all([
+  const [organisations, users, platformSkills] = await Promise.all([
     prisma.organisation.findMany({
-      select: { id: true, name: true, slug: true, plan: true, website: true, trialCredits: true, creditsUsed: true, trialEndsAt: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        plan: true,
+        website: true,
+        trialCredits: true,
+        creditsUsed: true,
+        trialEndsAt: true,
+        settingsJson: true,
+        integrations: { select: { provider: true, status: true, detail: true, connectedAt: true }, orderBy: { connectedAt: "asc" } },
+      },
       orderBy: { createdAt: "asc" },
     }),
     prisma.user.findMany({
-      select: { id: true, name: true, email: true, role: true, status: true, organisationId: true, organisation: { select: { name: true } } },
+      select: { id: true, name: true, email: true, role: true, status: true, organisationId: true, creditQuota: true, creditsConsumed: true, organisation: { select: { name: true } } },
       orderBy: [{ organisationId: "asc" }, { createdAt: "asc" }],
     }),
+    prisma.platformSkill.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
 
   return NextResponse.json({
-    organisations: organisations.map((org) => ({ ...org, trialEndsAt: org.trialEndsAt.toISOString() })),
+    organisations: organisations.map(({ settingsJson, integrations, ...org }) => {
+      const settings = parseJson<{ customModels?: Array<{ name: string; provider: string }>; activeModel?: string }>(settingsJson, {});
+      return {
+        ...org,
+        trialEndsAt: org.trialEndsAt.toISOString(),
+        activeModel: settings.activeModel ?? "QASyn Vision AI",
+        models: (settings.customModels ?? []).map((model) => `${model.name} (${model.provider})`),
+        integrations: integrations.map((integration) => ({ ...integration, connectedAt: integration.connectedAt.toISOString() })),
+      };
+    }),
     users: users.map(({ organisation, ...user }) => ({ ...user, organisationName: organisation?.name ?? "—" })),
+    platformSkills,
     roles: USER_ROLES,
     plans: PLANS,
     eternalCredits: ETERNAL_TRIAL_CREDITS,
@@ -373,6 +412,7 @@ export async function PATCH(request: Request) {
     if (trialEndsAt && Number.isNaN(trialEndsAt.getTime())) return jsonError("Invalid trial end date.", 400);
     const nextWebsite = data.website !== undefined ? normalizeWebsite(data.website) : null;
     if (data.website !== undefined && !nextWebsite) return jsonError("Enter a valid website URL.", 400);
+    const creditDelta = data.trialCredits !== undefined ? data.trialCredits - org.trialCredits : 0;
     const updated = await prisma.organisation.update({
       where: { id: org.id },
       data: {
@@ -384,25 +424,111 @@ export async function PATCH(request: Request) {
       },
       select: { id: true, name: true, plan: true, trialCredits: true, creditsUsed: true, trialEndsAt: true },
     });
+    if (creditDelta !== 0) {
+      await prisma.creditEntry.create({
+        data: {
+          organisationId: org.id,
+          action: creditDelta > 0 ? "Super Admin credit grant" : "Super Admin credit deduction",
+          credits: creditDelta,
+          kind: creditDelta > 0 ? "grant" : "charge",
+          note: `${org.name} · ${creditDelta > 0 ? "+" : ""}${creditDelta.toLocaleString("en-US")} credits · balance ${updated.trialCredits.toLocaleString("en-US")}`,
+        },
+      });
+    }
     await prisma.systemAuditLog.create({
-      data: { organisationId: org.id, actorEmail: ctx.user.email, action: "super_admin.organisation_updated", target: `${org.name} → ${updated.plan} · ${updated.trialCredits} credits` },
+      data: { organisationId: org.id, actorEmail: ctx.user.email, action: "super_admin.organisation_updated", target: `${org.name} → ${updated.plan} · ${updated.trialCredits} credits${creditDelta !== 0 ? ` (${creditDelta > 0 ? "+" : ""}${creditDelta})` : ""}` },
     });
     return NextResponse.json({ organisation: { ...updated, trialEndsAt: updated.trialEndsAt.toISOString() } });
   }
 
+  if (data.action === "model") {
+    const org = await prisma.organisation.findUnique({ where: { id: data.organisationId }, select: { id: true, name: true, settingsJson: true } });
+    if (!org) return jsonError("Organisation not found.", 404);
+    const settings = parseJson<Record<string, unknown>>(org.settingsJson, {});
+    const nextSettings = { ...settings, activeModel: data.model };
+    await prisma.organisation.update({ where: { id: org.id }, data: { settingsJson: JSON.stringify(nextSettings) } });
+    await prisma.systemAuditLog.create({
+      data: { organisationId: org.id, actorEmail: ctx.user.email, action: "super_admin.tenant_model_updated", target: `${org.name} → ${data.model}`.slice(0, 200) },
+    });
+    return NextResponse.json({ organisationId: org.id, activeModel: data.model });
+  }
+
+  if (data.action === "skill") {
+    if (data.subAction === "delete") {
+      if (!data.id) return jsonError("Missing skill id.", 400);
+      await prisma.platformSkill.deleteMany({ where: { id: data.id } });
+      return NextResponse.json({ ok: true, skills: await prisma.platformSkill.findMany({ orderBy: { createdAt: "asc" } }) });
+    }
+    if (!data.name || !data.systemPrompt) return jsonError("Skill name and system prompt are required.", 400);
+    const skill = data.subAction === "update" && data.id
+      ? await prisma.platformSkill.update({
+          where: { id: data.id },
+          data: {
+            name: data.name,
+            trigger: data.trigger ?? "",
+            systemPrompt: data.systemPrompt,
+            model: data.model ?? "QASyn Vision AI",
+            enabled: data.enabled ?? true,
+          },
+        })
+      : await prisma.platformSkill.create({
+          data: {
+            name: data.name,
+            trigger: data.trigger ?? "",
+            systemPrompt: data.systemPrompt,
+            model: data.model ?? "QASyn Vision AI",
+            enabled: data.enabled ?? true,
+          },
+        });
+    return NextResponse.json({ skill, skills: await prisma.platformSkill.findMany({ orderBy: { createdAt: "asc" } }) });
+  }
+
+  if (!data.role && data.creditQuota === undefined && data.creditDelta === undefined) {
+    return jsonError("Provide a role, a token quota or a token delta.", 400);
+  }
   const user = await prisma.user.findUnique({ where: { id: data.userId } });
   if (!user) return jsonError("User not found.", 404);
-  if (user.email === SUPER_ADMIN_EMAIL && data.role !== "Super Admin") {
+  if (user.email === SUPER_ADMIN_EMAIL && data.role && data.role !== "Super Admin") {
     return jsonError("The eternal Super Admin account must keep its role.", 400);
+  }
+  const tokenDelta =
+    data.creditQuota !== undefined
+      ? data.creditQuota - user.creditQuota
+      : data.creditDelta ?? 0;
+  const nextQuota =
+    data.creditQuota !== undefined
+      ? data.creditQuota
+      : Math.max(0, user.creditQuota + (data.creditDelta ?? 0));
+  if ((data.creditQuota !== undefined || data.creditDelta !== undefined) && !user.organisationId) {
+    return jsonError("This user is not attached to a workspace.", 400);
   }
   const updated = await prisma.user.update({
     where: { id: user.id },
-    data: { role: data.role },
-    select: { id: true, name: true, email: true, role: true, organisationId: true },
+    data: {
+      ...(data.role ? { role: data.role } : {}),
+      ...(data.creditQuota !== undefined || data.creditDelta !== undefined ? { creditQuota: nextQuota } : {}),
+    },
+    select: { id: true, name: true, email: true, role: true, organisationId: true, creditQuota: true, creditsConsumed: true },
   });
   if (user.organisationId) {
+    if (tokenDelta !== 0) {
+      await prisma.creditEntry.create({
+        data: {
+          organisationId: user.organisationId,
+          action: tokenDelta > 0 ? "Super Admin credit allocation" : "Super Admin credit deduction",
+          credits: tokenDelta,
+          kind: tokenDelta > 0 ? "grant" : "charge",
+          note: `${user.email} · quota ${nextQuota.toLocaleString("en-US")}`,
+        },
+      });
+    }
     await prisma.systemAuditLog.create({
-      data: { organisationId: user.organisationId, actorEmail: ctx.user.email, action: "super_admin.user_role_updated", target: `${user.email} → ${data.role}` },
+      data: {
+        organisationId: user.organisationId,
+        actorEmail: ctx.user.email,
+        action: "super_admin.user_updated",
+        target: `${user.email} · ${data.role ?? user.role}${data.creditQuota !== undefined || data.creditDelta !== undefined ? ` · quota ${nextQuota.toLocaleString("en-US")}` : ""}`,
+      },
     });
   }
   return NextResponse.json({ user: updated });

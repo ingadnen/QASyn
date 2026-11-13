@@ -309,7 +309,7 @@ export function RequirementsTable({
                 {visible.cases !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /><ColumnSort column="Test Cases" sort={sort} onSort={sortColumn} /></th>}
                 {visible.author !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created by<ColumnFilter column="Created by" value={columnFilters["Created by"] ?? ""} onChange={(value) => setColumnFilter("Created by", value)} options={columnOptions["Created by"]} /><ColumnSort column="Created by" sort={sort} onSort={sortColumn} /></th>}
                 {visible.created !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilter("Created Date", value)} /><ColumnSort column="Created Date" sort={sort} onSort={sortColumn} /></th>}
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
+                <th className="sticky right-0 z-10 whitespace-nowrap bg-white px-4 py-3 text-[12px] font-medium text-[#6b7280] shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
               </tr>
             </thead>
             <tbody className="text-[13px] text-[#374151]">
@@ -362,7 +362,7 @@ export function RequirementsTable({
                   )}
                   {visible.author !== false && <td className="whitespace-nowrap border-b border-[#f3f4f6] px-4 py-3 text-[#4b5563]">{row.createdBy}</td>}
                   {visible.created !== false && <td className="whitespace-nowrap border-b border-[#f3f4f6] px-4 py-3 text-[#6b7280]">{formatDate(row.createdAt)}</td>}
-                  <td className="border-b border-[#f3f4f6] px-4 py-3">
+                  <td className="sticky right-0 z-10 border-b border-[#f3f4f6] bg-white px-4 py-3 shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]">
                     <RowMenu
                       label={`Actions for ${row.code}`}
                       items={[

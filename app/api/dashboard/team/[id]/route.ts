@@ -33,6 +33,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!member) return jsonError("Member not found.", 404);
   if (member.status !== "invited") return jsonError("Only pending invitations can be revoked.", 409);
   await prisma.user.delete({ where: { id: member.id } });
+  await prisma.teamInvite.deleteMany({ where: { organisationId: ctx.org.id, email: member.email, status: "pending" } });
   await audit(prisma, ctx, "member.revoked", member.email);
   return NextResponse.json({ ok: true });
 }

@@ -15,6 +15,9 @@ interface ConsoleOrg {
   trialCredits: number;
   creditsUsed: number;
   trialEndsAt: string;
+  activeModel?: string;
+  models?: string[];
+  integrations?: Array<{ provider: string; status: string; detail: string | null; connectedAt: string }>;
 }
 
 interface ConsoleUser {
@@ -25,11 +28,14 @@ interface ConsoleUser {
   status: string;
   organisationId: string | null;
   organisationName: string;
+  creditQuota?: number;
+  creditsConsumed?: number;
 }
 
 interface ConsolePayload {
   organisations: ConsoleOrg[];
   users: ConsoleUser[];
+  platformSkills?: Array<{ id: string; name: string; trigger: string; systemPrompt: string; model: string; enabled: boolean }>;
   roles: string[];
   plans: string[];
 }
@@ -73,6 +79,11 @@ export function SuperAdminConsole() {
   const [configureBusy, setConfigureBusy] = useState(false);
   const [orgFilters, setOrgFilters] = useState<Record<string, string>>({});
   const [userFilters, setUserFilters] = useState<Record<string, string>>({});
+  const [quotaDrafts, setQuotaDrafts] = useState<Record<string, string>>({});
+  const [modelOrg, setModelOrg] = useState("");
+  const [modelName, setModelName] = useState("QASyn Vision AI");
+  const [skillDraft, setSkillDraft] = useState({ name: "", trigger: "", systemPrompt: "", model: "QASyn Vision AI" });
+  const [governanceBusy, setGovernanceBusy] = useState(false);
 
   const organisations = useMemo(
     () =>
@@ -83,6 +94,7 @@ export function SuperAdminConsole() {
           "Credits granted": String(org.trialCredits),
           "Credits used": String(org.creditsUsed),
           Expires: new Date(org.trialEndsAt).toLocaleDateString("en-GB"),
+          Integrations: (org.integrations ?? []).map((integration) => `${integration.provider} ${integration.status}`).join(" "),
         }),
       ),
     [data, orgFilters],
@@ -96,6 +108,7 @@ export function SuperAdminConsole() {
           Organisation: user.organisationName,
           Role: user.role,
           Status: user.status,
+          "Token quota": `${user.creditQuota ?? 0} ${user.creditsConsumed ?? 0}`,
         }),
       ),
     [data, userFilters],
@@ -107,10 +120,14 @@ export function SuperAdminConsole() {
       .then((payload) => {
         if (!active) return;
         setData(payload);
+        setModelOrg(payload.organisations[0]?.id ?? "");
         setDrafts(
           Object.fromEntries(
             payload.organisations.map((org) => [org.id, { plan: org.plan, trialCredits: String(org.trialCredits), creditsUsed: String(org.creditsUsed) }]),
           ),
+        );
+        setQuotaDrafts(
+          Object.fromEntries(payload.users.map((user) => [user.id, String(user.creditQuota ?? 0)])),
         );
       })
       .catch((e) => active && setError(errorMessage(e)));
@@ -134,7 +151,16 @@ export function SuperAdminConsole() {
           creditsUsed: Number(draft.creditsUsed) || 0,
         },
       });
-      setData((current) => (current ? { ...current, organisations: current.organisations.map((row) => (row.id === org.id ? res.organisation : row)) } : current));
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              organisations: current.organisations.map((row) =>
+                row.id === org.id ? { ...row, ...res.organisation, integrations: row.integrations, activeModel: row.activeModel, models: row.models } : row,
+              ),
+            }
+          : current,
+      );
       toast(`${org.name}: plan and credits updated.`, "success");
     } catch (e) {
       toast(errorMessage(e), "error");
@@ -161,8 +187,78 @@ export function SuperAdminConsole() {
     }
   }
 
-  async function provisionEnterprise() {
-    setProvisionBusy(true);
+  async function saveQuota(user: ConsoleUser, quota: number) {
+    setBusy(`user-${user.id}`);
+    try {
+      const res = await apiFetch<{ user: ConsoleUser }>("/api/dashboard/super-admin", {
+        method: "PATCH",
+        json: { action: "user", userId: user.id, creditQuota: Math.max(0, quota) },
+      });
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              users: current.users.map((row) =>
+                row.id === user.id ? { ...row, creditQuota: res.user.creditQuota, creditsConsumed: res.user.creditsConsumed } : row,
+              ),
+            }
+          : current,
+      );
+      setQuotaDrafts((current) => ({ ...current, [user.id]: String(res.user.creditQuota ?? 0) }));
+      toast(`${user.email}: token quota set to ${(res.user.creditQuota ?? 0).toLocaleString("en-US")}.`, "success");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function assignModel() {
+    if (!modelOrg || !modelName.trim()) return;
+    setGovernanceBusy(true);
+    try {
+      await apiFetch("/api/dashboard/super-admin", { method: "PATCH", json: { action: "model", organisationId: modelOrg, model: modelName.trim() } });
+      setData((current) => current ? { ...current, organisations: current.organisations.map((org) => org.id === modelOrg ? { ...org, activeModel: modelName.trim() } : org) } : current);
+      toast("Tenant AI model updated.", "success");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setGovernanceBusy(false);
+    }
+  }
+
+  async function createPlatformSkill() {
+    if (!skillDraft.name.trim() || skillDraft.systemPrompt.trim().length < 10) return;
+    setGovernanceBusy(true);
+    try {
+      const result = await apiFetch<{ skills: NonNullable<ConsolePayload["platformSkills"]> }>("/api/dashboard/super-admin", {
+        method: "PATCH",
+        json: { action: "skill", subAction: "create", ...skillDraft },
+      });
+      setData((current) => current ? { ...current, platformSkills: result.skills } : current);
+      setSkillDraft({ name: "", trigger: "", systemPrompt: "", model: "QASyn Vision AI" });
+      toast("Platform skill published.", "success");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setGovernanceBusy(false);
+    }
+  }
+
+  async function deletePlatformSkill(id: string) {
+    setGovernanceBusy(true);
+    try {
+      const result = await apiFetch<{ skills: NonNullable<ConsolePayload["platformSkills"]> }>("/api/dashboard/super-admin", { method: "PATCH", json: { action: "skill", subAction: "delete", id } });
+      setData((current) => current ? { ...current, platformSkills: result.skills } : current);
+      toast("Platform skill removed.", "info");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setGovernanceBusy(false);
+    }
+  }
+
+  async function provisionEnterprise() {    setProvisionBusy(true);
     try {
       const res = await apiFetch<{
         organisation: ConsoleOrg;
@@ -305,6 +401,7 @@ export function SuperAdminConsole() {
               <tr className="border-b border-[#e5e7eb] text-[10.5px] uppercase tracking-wide text-[#6b7280]">
                 <th className="px-2 py-2">Organisation<ColumnFilter column="Organisation" value={orgFilters.Organisation ?? ""} onChange={(value) => setOrgFilters((current) => ({ ...current, Organisation: value }))} /></th>
                 <th className="px-2 py-2">Plan<ColumnFilter column="Plan" value={orgFilters.Plan ?? ""} onChange={(value) => setOrgFilters((current) => ({ ...current, Plan: value }))} options={data.plans} /></th>
+                <th className="px-2 py-2">Integrations<ColumnFilter column="Integrations" value={orgFilters.Integrations ?? ""} onChange={(value) => setOrgFilters((current) => ({ ...current, Integrations: value }))} /></th>
                 <th className="px-2 py-2">Credits granted<ColumnFilter column="Credits granted" value={orgFilters["Credits granted"] ?? ""} onChange={(value) => setOrgFilters((current) => ({ ...current, "Credits granted": value }))} /></th>
                 <th className="px-2 py-2">Credits used<ColumnFilter column="Credits used" value={orgFilters["Credits used"] ?? ""} onChange={(value) => setOrgFilters((current) => ({ ...current, "Credits used": value }))} /></th>
                 <th className="px-2 py-2">Expires<ColumnFilter column="Expires" value={orgFilters.Expires ?? ""} onChange={(value) => setOrgFilters((current) => ({ ...current, Expires: value }))} /></th>
@@ -333,6 +430,20 @@ export function SuperAdminConsole() {
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex max-w-[180px] flex-wrap gap-1">
+                        {(org.integrations ?? []).length === 0 && <span className="text-[11px] text-[#9ca3af]">None</span>}
+                        {(org.integrations ?? []).map((integration) => (
+                          <span
+                            key={`${org.id}-${integration.provider}`}
+                            title={integration.detail ?? integration.provider}
+                            className={integration.status === "CONNECTED" ? "rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700" : "rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500"}
+                          >
+                            {integration.provider}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-2 py-2">
                       <input
@@ -386,6 +497,7 @@ export function SuperAdminConsole() {
                 <th className="px-2 py-2">Member<ColumnFilter column="Member" value={userFilters.Member ?? ""} onChange={(value) => setUserFilters((current) => ({ ...current, Member: value }))} /></th>
                 <th className="px-2 py-2">Organisation<ColumnFilter column="Organisation" value={userFilters.Organisation ?? ""} onChange={(value) => setUserFilters((current) => ({ ...current, Organisation: value }))} /></th>
                 <th className="px-2 py-2">Role<ColumnFilter column="Role" value={userFilters.Role ?? ""} onChange={(value) => setUserFilters((current) => ({ ...current, Role: value }))} options={data.roles} /></th>
+                <th className="px-2 py-2">Token quota<ColumnFilter column="Token quota" value={userFilters["Token quota"] ?? ""} onChange={(value) => setUserFilters((current) => ({ ...current, "Token quota": value }))} /></th>
                 <th className="px-2 py-2">Status<ColumnFilter column="Status" value={userFilters.Status ?? ""} onChange={(value) => setUserFilters((current) => ({ ...current, Status: value }))} options={distinctColumnValues(data.users.map((user) => user.status))} /></th>
               </tr>
             </thead>
@@ -411,6 +523,36 @@ export function SuperAdminConsole() {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-1">
+                      <input
+                        aria-label={`Token quota for ${user.email}`}
+                        type="number"
+                        min={0}
+                        className={`${cqaInput} w-24`}
+                        value={quotaDrafts[user.id] ?? String(user.creditQuota ?? 0)}
+                        disabled={busy === `user-${user.id}`}
+                        onChange={(e) => setQuotaDrafts((current) => ({ ...current, [user.id]: e.target.value }))}
+                      />
+                      <button
+                        type="button"
+                        className="rounded border border-[#d1d5db] px-1.5 py-1 text-[10.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
+                        disabled={busy === `user-${user.id}`}
+                        onClick={() => void saveQuota(user, Number(quotaDrafts[user.id] ?? user.creditQuota ?? 0))}
+                      >
+                        Set
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border border-[#d1d5db] px-1.5 py-1 text-[10.5px] font-semibold text-[#067647] hover:bg-[#ecfdf3]"
+                        disabled={busy === `user-${user.id}`}
+                        onClick={() => void saveQuota(user, (user.creditQuota ?? 0) + 25_000)}
+                      >
+                        +25K
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[10.5px] text-[#9ca3af]">{(user.creditsConsumed ?? 0).toLocaleString("en-US")} consumed</p>
                   </td>
                   <td className="px-2 py-2">
                     <span className="inline-flex items-center gap-1 text-[11.5px] text-emerald-700">
@@ -494,6 +636,46 @@ export function SuperAdminConsole() {
           </div>
         </div>
       </Modal>
+
+      <div className={`${cqaCard} p-5`} data-testid="super-admin-governance">
+        <h2 className="text-[16px] font-semibold text-[#262626]">Tenant AI models &amp; platform skills governance</h2>
+        <p className="mt-1 text-[12.5px] text-[#6b7280]">Assign the active AI model for any tenant and publish platform-wide agent skills.</p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+          <label className="block">
+            <span className={cqaLabel}>Tenant</span>
+            <select className={cqaInput} value={modelOrg} onChange={(e) => setModelOrg(e.target.value)}>
+              {data.organisations.map((org) => <option key={org.id} value={org.id}>{org.name} · {org.activeModel ?? "QASyn Vision AI"}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className={cqaLabel}>Active AI model</span>
+            <input className={cqaInput} value={modelName} onChange={(e) => setModelName(e.target.value)} placeholder="QASyn Vision AI · Claude · DeepSeek · custom" />
+          </label>
+          <button type="button" data-testid="super-admin-assign-model" className={cqaBtnPrimary} disabled={governanceBusy || !modelOrg} onClick={() => void assignModel()}>Assign model</button>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7280]">Platform skills</p>
+            <ul className="mt-2 divide-y divide-[#f0f1f3] rounded-lg border border-[#e5e7eb]">
+              {(data.platformSkills ?? []).map((skill) => (
+                <li key={skill.id} className="flex items-center gap-2 px-3 py-2 text-[12px]">
+                  <span className={skill.enabled ? "size-2 rounded-full bg-emerald-500" : "size-2 rounded-full bg-slate-300"} />
+                  <span className="font-semibold text-[#111827]">{skill.name}</span>
+                  <span className="truncate text-[#6b7280]">{skill.model}</span>
+                  <button type="button" className="ml-auto text-[11px] font-semibold text-[#b42318] hover:underline" disabled={governanceBusy} onClick={() => void deletePlatformSkill(skill.id)}>Remove</button>
+                </li>
+              ))}
+              {(data.platformSkills ?? []).length === 0 && <li className="px-3 py-2 text-[12px] text-[#9ca3af]">No platform skill published yet.</li>}
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <input className={cqaInput} value={skillDraft.name} onChange={(e) => setSkillDraft((current) => ({ ...current, name: e.target.value }))} placeholder="Skill name" />
+            <input className={cqaInput} value={skillDraft.trigger} onChange={(e) => setSkillDraft((current) => ({ ...current, trigger: e.target.value }))} placeholder="Trigger" />
+            <textarea className={cqaInput} rows={3} value={skillDraft.systemPrompt} onChange={(e) => setSkillDraft((current) => ({ ...current, systemPrompt: e.target.value }))} placeholder="System prompt / Markdown rules" />
+            <button type="button" data-testid="super-admin-create-skill" className={cqaBtnPrimary} disabled={governanceBusy || !skillDraft.name.trim() || skillDraft.systemPrompt.trim().length < 10} onClick={() => void createPlatformSkill()}>Publish platform skill</button>
+          </div>
+        </div>
+      </div>
 
       <Modal
         open={Boolean(configureOrg)}

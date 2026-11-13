@@ -16,6 +16,11 @@ export default async function BillingPage() {
     where: { organisationId: ctx.org.id },
     orderBy: { occurredAt: "desc" },
   });
+  const members = await prisma.user.findMany({
+    where: { organisationId: ctx.org.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, email: true, role: true, creditQuota: true, creditsConsumed: true },
+  });
 
   return (
     <BillingUsage
@@ -37,6 +42,7 @@ export default async function BillingPage() {
         note: entry.note,
       }))}
       biviaSummary={await getBiviaObservatory(ctx.org.id)}
+      members={members}
     />
   );
 }

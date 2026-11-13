@@ -56,17 +56,19 @@ export function useIntegrations() {
   }, [indexing, patch]);
 
   const connect = useCallback(
-    async (provider: Provider, detail?: string) => {
+    async (provider: Provider, detail?: string, config?: Record<string, string>) => {
       setBusy(provider);
       setError(null);
       try {
-        const res = await apiFetch<{ integration: IntegrationDTO }>(`/api/onboarding/integrations/${provider.toLowerCase()}`, {
+        const res = await apiFetch<{ integration: IntegrationDTO; repositories?: Array<{ id: string; name: string; fullName: string; url: string }> }>(`/api/onboarding/integrations/${provider.toLowerCase()}`, {
           method: "POST",
-          json: detail ? { detail } : {},
+          json: { ...(detail ? { detail } : {}), ...(config ? { config } : {}) },
         });
         patch({ integrations: [...state.integrations.filter((i) => i.provider !== provider), res.integration] });
+        return res;
       } catch (e) {
         setError(errorMessage(e));
+        return null;
       } finally {
         setBusy(null);
       }

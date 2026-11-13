@@ -3,10 +3,11 @@ import { createSession, initialsOf } from "@/lib/auth";
 import { hashPassword } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
+import { sendVerificationEmail } from "@/lib/mailer";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { capitalize } from "@/lib/utils";
 import { signupSchema } from "@/lib/validation";
-import { devInbox, issueVerificationCode } from "@/lib/verification";
+import { issueVerificationCode } from "@/lib/verification";
 
 /** POST /api/auth/signup { email, password } → unverified user + session + verification code. */
 export async function POST(request: Request) {
@@ -29,5 +30,8 @@ export async function POST(request: Request) {
 
   await createSession(user.id, user.organisationId);
   const code = await issueVerificationCode(user.id);
-  return NextResponse.json({ next: "/signup/verify", devCode: devInbox(code) });
+  await sendVerificationEmail(email, code);
+  const headers: Record<string, string> = {};
+  if (process.env.QASYN_OTP_PREVIEW !== "0") headers["x-qasyn-otp-preview"] = code;
+  return NextResponse.json({ next: "/signup/verify", emailSent: true }, { headers });
 }

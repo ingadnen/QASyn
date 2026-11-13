@@ -133,9 +133,18 @@ export const PROVIDER_META: Record<Provider, ProviderMeta> = {
     detailLabel: "Default mode",
     detailPlaceholder: "fast",
   },
+  AZURE_DEVOPS: {
+    name: "Azure DevOps",
+    short: "AZ",
+    description: "Repositories, Boards work items and Test Plans.",
+    tile: "bg-[#0078d4] text-white",
+    indexes: true,
+    detailLabel: "Project",
+    detailPlaceholder: "AI Test Automation",
+  },
 };
 
-export const CODE_PROVIDERS: Provider[] = ["GITHUB", "GITLAB"];
+export const CODE_PROVIDERS: Provider[] = ["GITHUB", "GITLAB", "AZURE_DEVOPS"];
 export const TRACKER_PROVIDERS: Provider[] = ["JIRA", "LINEAR"];
 
 export const RESERVED_SLUGS = new Set([

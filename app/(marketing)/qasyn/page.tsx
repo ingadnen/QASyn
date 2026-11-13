@@ -75,8 +75,8 @@ export default function QasynPage() {
               >
                 See pricing
               </a>
-              <Link href="/guide" className="px-2 py-3 text-sm font-medium text-slate-400 transition hover:text-quantum-300">
-                Interactive Guide ↗
+              <Link href="/contact-us" className="px-2 py-3 text-sm font-medium text-slate-400 transition hover:text-quantum-300">
+                Talk to sales
               </Link>
             </div>
             <p className="mt-6 font-mono text-xs text-slate-500">$ npm i -g @qasyn/cli &amp;&amp; qasyn watch --all</p>

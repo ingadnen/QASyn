@@ -251,6 +251,10 @@ export interface OrgSettings {
   tunnelAlerts?: { sendAlerts: boolean; delivery: "Immediate" | "Daily digest"; digestHour: string; channel: string; recipients?: string[] };
   /** Enabled Agent Skills Library ids. */
   agentSkills?: string[];
+  /** Workspace-defined AI model providers (execution, grounding, PR review). */
+  customModels?: Array<{ id: string; name: string; provider: string; modelId: string; apiKey: string; role: string; createdAt: string }>;
+  /** Workspace-defined skills and autonomous agents. */
+  customSkills?: Array<{ id: string; name: string; trigger: string; systemPrompt: string; model: string; enabled: boolean; createdAt: string }>;
   /** Encrypted default MCP token secret (AES-256-GCM), never rendered raw in settings UI. */
   mcpDefaultToken?: { tokenId: string; secret: string };
 }

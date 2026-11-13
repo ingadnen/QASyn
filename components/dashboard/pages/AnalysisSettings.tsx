@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AnalysisCodeSettings } from "@/lib/tenant";
 import { CqaIcon, cqaBtnPrimary, cqaBtnSecondary, useAction } from "@/components/dashboard/ui";
+import { CustomModelsPanel } from "@/components/dashboard/pages/CustomModelsPanel";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -207,6 +208,8 @@ export function AnalysisSettings({ readOnly, initial, environments }: Props) {
           ))}
         </div>
       </div>
+
+      <CustomModelsPanel readOnly={readOnly} />
 
       <div className="mt-8 rounded-[12px] border border-[#dbdee5] bg-white p-[25px] shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
         <h3 className="text-[18px] font-semibold text-[#262626]">Promotion, Governance &amp; Operations</h3>

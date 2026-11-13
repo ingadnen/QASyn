@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PLAN_CREDITS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
+import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { audit } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
@@ -14,7 +14,15 @@ function brandOf(digits: string) {
   return "Card";
 }
 
-/** POST /api/dashboard/billing — change plan, or save a (simulated) payment method. */
+function paymentLabel(input: { method?: "stripe" | "paypal" | "invoice"; cardholder?: string; cardNumber?: string; paypalEmail?: string; invoiceReference?: string }): string {
+  if (input.method === "paypal") return `PayPal · ${input.paypalEmail || "billing@qasyn.com"}`;
+  if (input.method === "invoice") return `Invoice / PO · ${input.invoiceReference || "NET-30"}`;
+  const digits = String(input.cardNumber ?? "").replace(/\s/g, "");
+  if (digits.length >= 12) return `${brandOf(digits)} ···· ${digits.slice(-4)}`;
+  return "Payment method saved";
+}
+
+/** POST /api/dashboard/billing — plan, payment, credit top-up, checkout and user quota allocation. */
 export async function POST(request: Request) {
   const guard = await guardPermission("billingManage", { write: true });
   if (!guard.ok) return guard.response;
@@ -31,9 +39,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ plan: input.plan });
   }
 
+  if (input.action === "allocation") {
+    const member = await prisma.user.findFirst({ where: { id: input.userId, organisationId: ctx.org.id } });
+    if (!member) return jsonError("Team member not found.", 404);
+    const updated = await prisma.user.update({ where: { id: member.id }, data: { creditQuota: input.quota } });
+    await audit(prisma, ctx, "billing.quota_allocated", `${member.email} · ${input.quota} tokens`);
+    return NextResponse.json({ member: { id: updated.id, email: updated.email, creditQuota: updated.creditQuota, creditsConsumed: updated.creditsConsumed } });
+  }
+
+  if (input.action === "credits" || input.action === "checkout") {
+    const credits = input.action === "credits" ? input.credits : Math.max(PLAN_CREDITS[input.plan], 0) + input.credits;
+    const method = paymentLabel(input);
+    const plan = input.action === "checkout" ? input.plan : ctx.org.plan;
+    const updated = await prisma.$transaction(async (tx) => {
+      const org = await tx.organisation.update({
+        where: { id: ctx.org.id },
+        data: {
+          ...(input.action === "checkout" ? { plan, trialCredits: credits } : { trialCredits: { increment: input.credits } }),
+          paymentMethod: method,
+        },
+        select: { id: true, plan: true, trialCredits: true, creditsUsed: true, paymentMethod: true },
+      });
+      await tx.creditEntry.create({
+        data: {
+          organisationId: ctx.org.id,
+          action: input.action === "checkout" ? `Plan checkout · ${plan}` : "Credit top-up",
+          credits,
+          kind: "grant",
+          note: `${method}${input.action === "checkout" ? ` · ${plan}` : ""}`,
+        },
+      });
+      return org;
+    });
+    await audit(prisma, ctx, input.action === "checkout" ? "billing.checkout" : "billing.credits_purchased", `${credits} credits · ${method}`);
+    return NextResponse.json({ organisation: updated, creditsAdded: credits, paymentMethod: method });
+  }
+
+  // Legacy card-only payment action.
   const digits = input.cardNumber.replace(/\s/g, "");
-  // Only the brand and the last 4 digits are stored. The full number is discarded here.
-  const paymentMethod = `${brandOf(digits)} •••• ${digits.slice(-4)}`;
+  const paymentMethod = `${brandOf(digits)} ···· ${digits.slice(-4)}`;
   await prisma.organisation.update({ where: { id: ctx.org.id }, data: { paymentMethod } });
   await audit(prisma, ctx, "billing.payment_method", paymentMethod);
   return NextResponse.json({ paymentMethod });

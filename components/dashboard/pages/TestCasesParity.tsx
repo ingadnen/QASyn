@@ -635,7 +635,7 @@ export function TestCasesParity({
               <span className="ml-auto text-[11.5px] text-[#9ca3af]">{target.count} cases</span>
             </button>
           ))}
-          {folders.length === 0 && <p className="text-[12.5px] text-[#6b7280]">No folders yet. Create one in Modular view.</p>}
+          {folders.length === 0 && <p className="text-[12px] text-[#6b7280]">No folders yet. Create one in Modular view.</p>}
         </div>
       </Modal>
 
@@ -725,26 +725,26 @@ function CasesTable({
   return (
     <div className={tableCardClass()}>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1280px] border-collapse text-left">
+        <table className="w-full min-w-[1080px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#f0f1f3]">
-              <th className="w-9 px-3 py-3">
+              <th className="w-9 px-2.5 py-2.5">
                 <SelectAllCheckbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={onToggleAll} label="Select all test cases" />
               </th>
-              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => onColumnFilter("Test Cases", value)} /><ColumnSort column="Test Cases" sort={sort} onSort={sortColumn} /></th>
-              <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
-              {visible.Type && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => onColumnFilter("Type", value)} options={columnOptions.Type} testId="test-cases-type-column-filter" /><ColumnSort column="Type" sort={sort} onSort={sortColumn} /></th>}
-              {visible.Priority && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Priority<ColumnFilter column="Priority" value={columnFilters.Priority ?? ""} onChange={(value) => onColumnFilter("Priority", value)} options={columnOptions.Priority} /><ColumnSort column="Priority" sort={sort} onSort={sortColumn} /></th>}
-              {visible.Result && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Result<ColumnFilter column="Result" value={columnFilters.Result ?? ""} onChange={(value) => onColumnFilter("Result", value)} options={columnOptions.Result} /><ColumnSort column="Result" sort={sort} onSort={sortColumn} /></th>}
-              {visible.Status && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={columnFilters.Status ?? ""} onChange={(value) => onColumnFilter("Status", value)} options={columnOptions.Status} /><ColumnSort column="Status" sort={sort} onSort={sortColumn} /></th>}
-              {visible.Module && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Module<ColumnFilter column="Module" value={columnFilters.Module ?? ""} onChange={(value) => onColumnFilter("Module", value)} options={columnOptions.Module} /><ColumnSort column="Module" sort={sort} onSort={sortColumn} /></th>}
-              {visible.Labels && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Labels<ColumnFilter column="Labels" value={columnFilters.Labels ?? ""} onChange={(value) => onColumnFilter("Labels", value)} options={columnOptions.Labels} /><ColumnSort column="Labels" sort={sort} onSort={sortColumn} /></th>}
-              {visible["Created By"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created By<ColumnFilter column="Created By" value={columnFilters["Created By"] ?? ""} onChange={(value) => onColumnFilter("Created By", value)} options={columnOptions["Created By"]} /><ColumnSort column="Created By" sort={sort} onSort={sortColumn} /></th>}
-              {visible.Folder && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => onColumnFilter("Folder", value)} options={columnOptions.Folder} /><ColumnSort column="Folder" sort={sort} onSort={sortColumn} /></th>}
-              {visible["Created At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Created At<ColumnFilter column="Created At" value={columnFilters["Created At"] ?? ""} onChange={(value) => onColumnFilter("Created At", value)} /><ColumnSort column="Created At" sort={sort} onSort={sortColumn} /></th>}
-              {visible["Updated At"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Updated At<ColumnFilter column="Updated At" value={columnFilters["Updated At"] ?? ""} onChange={(value) => onColumnFilter("Updated At", value)} /><ColumnSort column="Updated At" sort={sort} onSort={sortColumn} /></th>}
-              {visible["Last Run"] && <th className="whitespace-nowrap px-3 py-3 text-[12px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => onColumnFilter("Last Run", value)} /><ColumnSort column="Last Run" sort={sort} onSort={sortColumn} /></th>}
-              <th className="w-10 px-3 py-3" />
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => onColumnFilter("Test Cases", value)} /><ColumnSort column="Test Cases" sort={sort} onSort={sortColumn} /></th>
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
+              {visible.Type && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Type<ColumnFilter column="Type" value={columnFilters.Type ?? ""} onChange={(value) => onColumnFilter("Type", value)} options={columnOptions.Type} testId="test-cases-type-column-filter" /><ColumnSort column="Type" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Priority && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Priority<ColumnFilter column="Priority" value={columnFilters.Priority ?? ""} onChange={(value) => onColumnFilter("Priority", value)} options={columnOptions.Priority} /><ColumnSort column="Priority" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Result && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Result<ColumnFilter column="Result" value={columnFilters.Result ?? ""} onChange={(value) => onColumnFilter("Result", value)} options={columnOptions.Result} /><ColumnSort column="Result" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Status && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Status<ColumnFilter column="Status" value={columnFilters.Status ?? ""} onChange={(value) => onColumnFilter("Status", value)} options={columnOptions.Status} /><ColumnSort column="Status" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Module && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Module<ColumnFilter column="Module" value={columnFilters.Module ?? ""} onChange={(value) => onColumnFilter("Module", value)} options={columnOptions.Module} /><ColumnSort column="Module" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Labels && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Labels<ColumnFilter column="Labels" value={columnFilters.Labels ?? ""} onChange={(value) => onColumnFilter("Labels", value)} options={columnOptions.Labels} /><ColumnSort column="Labels" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Created By"] && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Created By<ColumnFilter column="Created By" value={columnFilters["Created By"] ?? ""} onChange={(value) => onColumnFilter("Created By", value)} options={columnOptions["Created By"]} /><ColumnSort column="Created By" sort={sort} onSort={sortColumn} /></th>}
+              {visible.Folder && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Folder<ColumnFilter column="Folder" value={columnFilters.Folder ?? ""} onChange={(value) => onColumnFilter("Folder", value)} options={columnOptions.Folder} /><ColumnSort column="Folder" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Created At"] && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Created At<ColumnFilter column="Created At" value={columnFilters["Created At"] ?? ""} onChange={(value) => onColumnFilter("Created At", value)} /><ColumnSort column="Created At" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Updated At"] && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Updated At<ColumnFilter column="Updated At" value={columnFilters["Updated At"] ?? ""} onChange={(value) => onColumnFilter("Updated At", value)} /><ColumnSort column="Updated At" sort={sort} onSort={sortColumn} /></th>}
+              {visible["Last Run"] && <th className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] font-medium text-[#6b7280]">Last Run<ColumnFilter column="Last Run" value={columnFilters["Last Run"] ?? ""} onChange={(value) => onColumnFilter("Last Run", value)} /><ColumnSort column="Last Run" sort={sort} onSort={sortColumn} /></th>}
+              <th className="sticky right-0 z-10 w-10 bg-white px-2.5 py-2.5 shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]" />
             </tr>
           </thead>
           <tbody>
@@ -759,8 +759,8 @@ function CasesTable({
             {sortedRows.map((r) => {
               const priority = priorityOf(r.criticality);
               return (
-                <tr key={r.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
-                  <td className="px-3 py-3">
+                <tr key={r.id} className="group border-b border-[#f3f4f6] hover:bg-[#fafafa]">
+                  <td className="px-2.5 py-2.5">
                     <input
                       type="checkbox"
                       aria-label={`Select ${r.title}`}
@@ -769,27 +769,27 @@ function CasesTable({
                       className="size-3.5 accent-[#5b4ee8]"
                     />
                   </td>
-                  <td className="max-w-[360px] px-3 py-3">
+                  <td className="max-w-[360px] px-2.5 py-2.5">
                     <p className="text-[10px] font-medium text-[#9ca3af]">{r.code}</p>
                     <Link href={`/dashboard/test-studio/${r.id}`} className="line-clamp-2 font-medium text-[#1f2937] hover:text-[#5b4ee8]">
                       {r.title}
                     </Link>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-[12.5px] text-[#6b7280]">{r.source === "manual" ? "Manual" : "Automated"}</td>
-                  {visible.Type && <td className="whitespace-nowrap px-3 py-3 text-[12.5px] text-[#4b5563]">{r.testType}</td>}
+                  <td className="whitespace-nowrap px-2.5 py-2.5 text-[12px] text-[#6b7280]">{r.source === "manual" ? "Manual" : "Automated"}</td>
+                  {visible.Type && <td className="whitespace-nowrap px-2.5 py-2.5 text-[12px] text-[#4b5563]">{r.testType}</td>}
                   {visible.Priority && (
-                    <td className="whitespace-nowrap px-3 py-3">
-                      <span className="inline-flex items-center gap-1.5 text-[12.5px] text-[#4b5563]">
+                    <td className="whitespace-nowrap px-2.5 py-2.5">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] text-[#4b5563]">
                         <span className={cn("size-2 rounded-full", priority === "High" ? "bg-[#ef4444]" : priority === "Medium" ? "bg-[#f59e0b]" : "bg-[#9ca3af]")} />
                         {priority}
                       </span>
                     </td>
                   )}
-                  {visible.Result && <td className="px-3 py-3"><StatusPill value={resultOf(r.status)} /></td>}
-                  {visible.Status && <td className="px-3 py-3"><StatusPill value={stateOf(r.status)} /></td>}
-                  {visible.Module && <td className="whitespace-nowrap px-3 py-3 capitalize text-[#4b5563]">{r.module}</td>}
+                  {visible.Result && <td className="px-2.5 py-2.5"><StatusPill value={resultOf(r.status)} /></td>}
+                  {visible.Status && <td className="px-2.5 py-2.5"><StatusPill value={stateOf(r.status)} /></td>}
+                  {visible.Module && <td className="whitespace-nowrap px-2.5 py-2.5 capitalize text-[#4b5563]">{r.module}</td>}
                   {visible.Labels && (
-                    <td className="px-3 py-3">
+                    <td className="px-2.5 py-2.5">
                       <div className="flex flex-wrap gap-1">
                         {r.labels.slice(0, 2).map((l) => (
                           <span key={l} className="rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[11px] text-[#4b5563]">{l}</span>
@@ -797,12 +797,12 @@ function CasesTable({
                       </div>
                     </td>
                   )}
-                  {visible["Created By"] && <td className="whitespace-nowrap px-3 py-3 text-[12.5px] text-[#4b5563]">{r.createdBy}</td>}
-                  {visible.Folder && <td className="whitespace-nowrap px-3 py-3 text-[12.5px] text-[#4b5563]">{r.folder || "Unfiled"}</td>}
-                  {visible["Created At"] && <td className="whitespace-nowrap px-3 py-3 text-[12px] text-[#6b7280]">{fmt(r.createdAt)}</td>}
-                  {visible["Updated At"] && <td className="whitespace-nowrap px-3 py-3 text-[12px] text-[#6b7280]">{fmt(r.updatedAt)}</td>}
-                  {visible["Last Run"] && <td className="whitespace-nowrap px-3 py-3 text-[12px] text-[#6b7280]">{fmt(r.lastRunAt)}</td>}
-                  <td className="px-3 py-3">
+                  {visible["Created By"] && <td className="whitespace-nowrap px-2.5 py-2.5 text-[12px] text-[#4b5563]">{r.createdBy}</td>}
+                  {visible.Folder && <td className="whitespace-nowrap px-2.5 py-2.5 text-[12px] text-[#4b5563]">{r.folder || "Unfiled"}</td>}
+                  {visible["Created At"] && <td className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] text-[#6b7280]">{fmt(r.createdAt)}</td>}
+                  {visible["Updated At"] && <td className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] text-[#6b7280]">{fmt(r.updatedAt)}</td>}
+                  {visible["Last Run"] && <td className="whitespace-nowrap px-2.5 py-2.5 text-[11.5px] text-[#6b7280]">{fmt(r.lastRunAt)}</td>}
+                  <td className="sticky right-0 z-10 bg-white px-2.5 py-2.5 shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)] group-hover:bg-[#fafafa]">
                     <RowMenu
                       label={`Actions for ${r.title}`}
                       items={[
@@ -895,8 +895,8 @@ function StepGroupsTable({
                   <p className="font-medium text-[#1f2937]">{g.name}</p>
                   <p className="mt-0.5 text-[11px] text-[#9ca3af]">{g.stepsCount} steps</p>
                 </td>
-                <td className="max-w-[360px] px-4 py-3 text-[12.5px] text-[#6b7280]">{g.description || "-"}</td>
-                <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{g.stepsCount}</td>
+                <td className="max-w-[360px] px-4 py-3 text-[12px] text-[#6b7280]">{g.description || "-"}</td>
+                <td className="px-4 py-3 text-[12px] text-[#4b5563]">{g.stepsCount}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]">{fmt(g.createdAt)}</td>
                 <td className="px-4 py-3">
                   <RowMenu

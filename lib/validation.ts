@@ -334,6 +334,30 @@ export const billingSchema = z.discriminatedUnion("action", [
     /** Only the last 4 digits are kept; the full number never reaches the database. */
     cardNumber: z.string().regex(/^[\d ]{12,23}$/, "Enter a test card number."),
   }),
+  z.object({
+    action: z.literal("credits"),
+    credits: z.number().int().min(1_000).max(10_000_000),
+    method: z.enum(["stripe", "paypal", "invoice"]).default("stripe"),
+    cardholder: z.string().trim().max(80).optional(),
+    cardNumber: z.string().trim().regex(/^[\d ]{12,23}$/).optional(),
+    paypalEmail: z.string().email().optional(),
+    invoiceReference: z.string().trim().max(120).optional(),
+  }),
+  z.object({
+    action: z.literal("checkout"),
+    plan: z.enum(PLANS),
+    method: z.enum(["stripe", "paypal", "invoice"]).default("stripe"),
+    cardholder: z.string().trim().max(80).optional(),
+    cardNumber: z.string().trim().regex(/^[\d ]{12,23}$/).optional(),
+    paypalEmail: z.string().email().optional(),
+    invoiceReference: z.string().trim().max(120).optional(),
+    credits: z.number().int().min(0).max(10_000_000).default(0),
+  }),
+  z.object({
+    action: z.literal("allocation"),
+    userId: z.string().min(1).max(60),
+    quota: z.number().int().min(0).max(10_000_000),
+  }),
 ]);
 
 export const apiTokenSchema = z.object({

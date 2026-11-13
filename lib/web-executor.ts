@@ -446,7 +446,12 @@ const PLAYWRIGHT_DOCKER_ARGS = [
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   "--disable-gpu",
+  "--disable-blink-features=AutomationControlled",
+  "--ignore-certificate-errors",
 ];
+
+const CHROME_131_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 QASyn/1.0";
 
 async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExecutionOptions = {}): Promise<RealStepOutcome[]> {
   const browser = await pw.chromium.launch({ headless: true, args: PLAYWRIGHT_DOCKER_ARGS });
@@ -458,7 +463,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
   /** Last successful viewport PNG (raw base64) — never let a live page degrade to fake SVG. */
   let lastValidPngBase64: string | null = null;
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    const page = await browser.newPage({ userAgent: CHROME_131_USER_AGENT, viewport: { width: 1280, height: 720 } });
     const consoleLogs: string[] = [];
     const networkErrors: string[] = [];
     page.on("console", (msg) => {
@@ -1285,7 +1290,7 @@ async function inspectWithPlaywright(url: string, pw: PwModule): Promise<TargetD
   let browser: PwBrowser | null = null;
   try {
     browser = await pw.chromium.launch({ headless: true, args: PLAYWRIGHT_DOCKER_ARGS });
-    const page = await browser.newPage();
+    const page = await browser.newPage({ userAgent: CHROME_131_USER_AGENT, viewport: { width: 1280, height: 720 } });
     await page.goto(url, { timeout: 8_000, waitUntil: "domcontentloaded" });
     const data = await page.evaluate(() => {
       const text = (element: Element | null) => (element?.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 90);
@@ -1382,8 +1387,7 @@ export async function captureTargetScreenshot(targetUrl: string): Promise<Target
   try {
     browser = await pw.chromium.launch({ headless: true, args: PLAYWRIGHT_DOCKER_ARGS });
     const page = await browser.newPage({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 QASyn/1.0",
+      userAgent: CHROME_131_USER_AGENT,
       viewport: { width: 1280, height: 720 },
     });
     // Real sites often keep analytics requests open: never wait for networkidle.

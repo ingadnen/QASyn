@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { jsonError } from "@/lib/http";
+import { sendVerificationEmail } from "@/lib/mailer";
 import { rateLimit } from "@/lib/rate-limit";
-import { devInbox, issueVerificationCode } from "@/lib/verification";
+import { issueVerificationCode } from "@/lib/verification";
 
 /** POST /api/auth/resend — new verification code for the signed-in, unverified user. */
 export async function POST() {
@@ -11,5 +12,8 @@ export async function POST() {
   if (session.user.emailVerifiedAt) return jsonError("E-mail already verified.", 400);
   if (!rateLimit(`resend:${session.user.id}`, 5, 15 * 60_000)) return jsonError("Too many codes requested. Wait a few minutes.", 429);
   const code = await issueVerificationCode(session.user.id);
-  return NextResponse.json({ ok: true, devCode: devInbox(code) });
+  await sendVerificationEmail(session.user.email, code);
+  const headers: Record<string, string> = {};
+  if (process.env.QASYN_OTP_PREVIEW !== "0") headers["x-qasyn-otp-preview"] = code;
+  return NextResponse.json({ ok: true, emailSent: true }, { headers });
 }

@@ -79,6 +79,25 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
   const [sort, setSort] = useState<TableSortState>(null);
 
   useEffect(() => setLocalRows(rows), [rows]);
+  useEffect(() => {
+    const onCrawlStarted = (event: Event) => {
+      const row = (event as CustomEvent<CrawlRow>).detail;
+      if (!row?.id) return;
+      setLocalRows((current) => [row, ...current.filter((item) => item.id !== row.id)]);
+      window.setTimeout(async () => {
+        try {
+          const result = await apiFetch<{ created?: number }>(`/api/dashboard/crawl/${row.id}`, { method: "PATCH", json: { action: "complete" } });
+          setLocalRows((current) => current.map((item) => item.id === row.id ? { ...item, status: "completed", cases: result.created ?? item.cases } : item));
+          toast(`Crawl completed — ${result.created ?? 0} linked test case(s) generated.`, "success");
+          router.refresh();
+        } catch {
+          setLocalRows((current) => current.map((item) => item.id === row.id ? { ...item, status: "failed" } : item));
+        }
+      }, 1800);
+    };
+    window.addEventListener("qasyn:crawl-started", onCrawlStarted);
+    return () => window.removeEventListener("qasyn:crawl-started", onCrawlStarted);
+  }, [router]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -297,7 +316,7 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
                 {visible.cases !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Test Cases<ColumnFilter column="Test Cases" value={columnFilters["Test Cases"] ?? ""} onChange={(value) => setColumnFilter("Test Cases", value)} /><ColumnSort column="Test Cases" sort={sort} onSort={sortColumn} /></th>}
                 {visible.author !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created by<ColumnFilter column="Created by" value={columnFilters["Created by"] ?? ""} onChange={(value) => setColumnFilter("Created by", value)} options={columnOptions["Created by"]} /><ColumnSort column="Created by" sort={sort} onSort={sortColumn} /></th>}
                 {visible.created !== false && <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Created Date<ColumnFilter column="Created Date" value={columnFilters["Created Date"] ?? ""} onChange={(value) => setColumnFilter("Created Date", value)} /><ColumnSort column="Created Date" sort={sort} onSort={sortColumn} /></th>}
-                <th className="whitespace-nowrap px-4 py-3 text-[12px] font-medium text-[#6b7280]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
+                <th className="sticky right-0 z-10 whitespace-nowrap bg-white px-4 py-3 text-[12px] font-medium text-[#6b7280] shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]">Action<ColumnSort column="Action" sort={sort} onSort={sortColumn} /></th>
               </tr>
             </thead>
             <tbody className="text-[13px] text-[#374151]">
@@ -310,7 +329,7 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
                 </tr>
               )}
               {pageRows.map((row) => (
-                <tr key={row.id} className="bg-white transition hover:bg-[#fafafa]">
+                <tr key={row.id} data-testid="crawl-row" className="bg-white transition hover:bg-[#fafafa]">
                   <td className="w-8 border-b border-[#f3f4f6] px-4 py-3">
                     <input
                       type="checkbox"
@@ -349,7 +368,7 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
                   )}
                   {visible.author !== false && <td className="whitespace-nowrap border-b border-[#f3f4f6] px-4 py-3 text-[#4b5563]">{row.createdBy}</td>}
                   {visible.created !== false && <td className="whitespace-nowrap border-b border-[#f3f4f6] px-4 py-3 text-[#6b7280]">{formatDate(row.createdAt)}</td>}
-                  <td className="border-b border-[#f3f4f6] px-4 py-3">
+                  <td className="sticky right-0 z-10 border-b border-[#f3f4f6] bg-white px-4 py-3 shadow-[-6px_0_12px_-8px_rgba(15,23,42,0.12)]">
                     <RowMenu
                       label={`Actions for ${row.name}`}
                       items={[
