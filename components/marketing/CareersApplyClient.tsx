@@ -64,6 +64,10 @@ export function CareersApplyClient() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!role) return;
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setError("Full name, email and cover note are required.");
+      return;
+    }
     setPending(true);
     setError(null);
     try {

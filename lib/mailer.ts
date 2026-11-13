@@ -11,6 +11,7 @@ type MailInput = {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 };
 
 type SmtpResponse = { code: number; text: string };
@@ -93,6 +94,7 @@ async function sendSmtp(input: MailInput): Promise<void> {
       `From: ${from}`,
       `To: ${input.to}`,
       `Subject: ${input.subject}`,
+      ...(input.replyTo ? [`Reply-To: ${input.replyTo.replace(/[\r\n]+/g, " ")}`] : []),
       "MIME-Version: 1.0",
       'Content-Type: text/html; charset="UTF-8"',
       "",
@@ -117,7 +119,14 @@ async function sendResend(input: MailInput): Promise<void> {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [input.to], subject: input.subject, html: input.html, text: input.text }),
+    body: JSON.stringify({
+      from,
+      to: [input.to],
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+      ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+    }),
     signal: AbortSignal.timeout(12_000),
   });
   if (!response.ok) {
@@ -174,12 +183,14 @@ export async function sendLeadNotificationEmail(input: {
   jobTitle?: string;
   portfolioUrl?: string;
   message?: string;
+  source?: string;
 }): Promise<{ provider: "smtp" | "resend" | "outbox"; status: "sent" | "queued" | "failed" }> {
   const label = input.kind === "demo" ? "Demo request" : input.kind === "career" ? "Job application" : "Contact request";
   const rows: Array<[string, string]> = [
     ["Type", label],
     ["Name", input.name],
     ["Email", input.email],
+    ...(input.source ? ([["Source", input.source]] as Array<[string, string]>) : []),
     ...(input.company ? ([["Company", input.company]] as Array<[string, string]>) : []),
     ...(input.role ? ([["Team size / role", input.role]] as Array<[string, string]>) : []),
     ...(input.jobTitle ? ([["Role applied for", input.jobTitle]] as Array<[string, string]>) : []),
@@ -197,6 +208,7 @@ export async function sendLeadNotificationEmail(input: {
     subject: `QASyn ${label}: ${input.name}`,
     html,
     text,
+    replyTo: `${input.name} <${input.email}>`,
   });
   try {
     const logDir = path.join(process.cwd(), ".qasyn-data");

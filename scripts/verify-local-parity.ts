@@ -6646,15 +6646,30 @@ async function main() {
   );
   await p21Page.keyboard.press("Escape").catch(() => undefined);
 
+  await p21Page.goto(`${BASE}/contact-us?subject=password-reset`, { waitUntil: "domcontentloaded" });
+  await p21Page.waitForTimeout(500);
+  const p21ResetKind = await p21Page.locator('[data-testid="contact-kind-contact"]').first().getAttribute("aria-pressed").catch(() => null);
+  const p21ResetMessage = await p21Page.locator("textarea").first().inputValue().catch(() => "");
+  check(
+    "PART 21 password-reset contact link preselects support and prefills the request",
+    p21ResetKind === "true" && /Password reset request/i.test(p21ResetMessage),
+    `contact mode ${p21ResetKind ?? "missing"} · message ${p21ResetMessage.slice(0, 90)}`,
+  );
+
   const p21Dockerfile = fs.readFileSync(path.join(process.cwd(), "Dockerfile"), "utf8");
   const p21Deploy = fs.readFileSync(path.join(process.cwd(), ".github", "workflows", "deploy.yml"), "utf8");
   check(
     "PART 21 Docker and deploy workflow persist SQLite and telemetry volumes",
-    p21Dockerfile.includes("playwright install --with-deps chromium") &&
+    p21Dockerfile.includes("FROM node:20-bookworm-slim") &&
+      p21Dockerfile.includes("PLAYWRIGHT_BROWSERS_PATH=/ms-playwright") &&
+      p21Dockerfile.includes("playwright install --with-deps chromium") &&
       p21Dockerfile.includes("/app/.qasyn-data") &&
+      p21Dockerfile.includes("file:/app/prisma/data/qasyn.db") &&
       p21Dockerfile.includes("npx prisma db push") &&
       p21Dockerfile.includes("npx tsx prisma/seed.ts") &&
       p21Dockerfile.includes("npm run start") &&
+      p21Deploy.includes("command_timeout: 25m") &&
+      p21Deploy.includes("--env-file /opt/qasyn/.env") &&
       p21Deploy.includes("-v /opt/qasyn/data:/app/prisma/data") &&
       p21Deploy.includes("-v /opt/qasyn/.qasyn-data:/app/.qasyn-data"),
     `docker ${p21Dockerfile.length} chars · deploy ${p21Deploy.length} chars`,

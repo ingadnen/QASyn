@@ -1,24 +1,20 @@
-FROM mcr.microsoft.com/playwright:v1.58.2-noble
-
+FROM node:20-bookworm-slim
 WORKDIR /app
 
-# Installer les dépendances
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci
-# Install Chromium and its Linux shared libraries for live crawls and evidence capture.
-RUN npx playwright install --with-deps chromium
+RUN npm ci && npx playwright install --with-deps chromium && rm -rf /var/lib/apt/lists/*
 
-# Copier tout le code et générer Prisma + Build Next.js
 COPY . .
-RUN npx prisma generate
-RUN npm run build
-RUN mkdir -p /app/.qasyn-data /app/prisma/data
+RUN npx prisma generate && npm run build && mkdir -p /app/.qasyn-data /app/prisma/data
 
 EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV DATABASE_URL="file:/app/prisma/data/qasyn.db"
 
-# Ensure the persistent data directory exists, sync SQLite, seed only an empty database, then start.
-CMD ["sh", "-c", "mkdir -p /app/.qasyn-data && npx prisma db push && (npx tsx scripts/db-has-data.ts || npx tsx prisma/seed.ts) && npm run start"]
+CMD ["sh", "-c", "mkdir -p /app/.qasyn-data /app/prisma/data && npx prisma db push && (npx tsx scripts/db-has-data.ts || npx tsx prisma/seed.ts) && npm run start"]

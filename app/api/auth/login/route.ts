@@ -13,8 +13,13 @@ export async function POST(request: Request) {
   if (!parsed.success) return validationError(parsed.error);
   const { email, password } = parsed.data;
 
-  const host = new URL(request.url).hostname.toLowerCase();
-  const localVerification = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  const forwardedHost = (request.headers.get("x-forwarded-host") || request.headers.get("host") || new URL(request.url).hostname)
+    .split(":")[0]
+    .trim()
+    .toLowerCase();
+  const hasForwardedFor = Boolean(request.headers.get("x-forwarded-for"));
+  const localVerification =
+    (forwardedHost === "localhost" || forwardedHost === "127.0.0.1" || forwardedHost === "::1") && !hasForwardedFor;
   if (!localVerification && (!rateLimit(`login:${email}`, 8, 15 * 60_000) || !rateLimit(`login-ip:${clientKey(request)}`, 30, 15 * 60_000))) {
     return jsonError("Too many attempts. Try again in a few minutes.", 429);
   }

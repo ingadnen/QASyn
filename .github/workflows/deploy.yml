@@ -1,7 +1,10 @@
-name: Auto-Deploy to Hostinger VPS
+name: Deploy QASyn to Production
+
 on:
   push:
-    branches: ["main"]
+    branches: [ main ]
+  workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,12 +15,71 @@ jobs:
           host: 179.66.142.196
           username: root
           password: ${{ secrets.VPS_ROOT_PASSWORD }}
+          command_timeout: 25m
           script: |
-            /usr/local/bin/deploy-qasyn
+            set -e
+            echo "=== Current /usr/local/bin/deploy-qasyn ==="
+            cat /usr/local/bin/deploy-qasyn || true
+            echo "==========================================="
+
+            # Locate the git repository directory used on the VPS
+            REPO_DIR=""
+            if [ -f /usr/local/bin/deploy-qasyn ]; then
+              REPO_DIR=$(grep -E 'cd +/' /usr/local/bin/deploy-qasyn | head -n 1 | sed -E 's/.*cd +([^ ;&]+).*/\1/' || true)
+            fi
+            for candidate in "$REPO_DIR" /opt/qasyn /root/QASyn /root/qasyn /var/www/qasyn; do
+              if [ -n "$candidate" ] && [ -d "$candidate/.git" ]; then
+                REPO_DIR="$candidate"
+                break
+              fi
+            done
+            if [ -z "$REPO_DIR" ] || [ ! -d "$REPO_DIR/.git" ]; then
+              echo "Cloning repository into /opt/qasyn..."
+              mkdir -p /opt/qasyn
+              REPO_DIR="/opt/qasyn"
+            fi
+            echo "Using REPO_DIR=$REPO_DIR"
+
             mkdir -p /opt/qasyn/data /opt/qasyn/.qasyn-data
+            if [ -f "$REPO_DIR/.env" ] && [ ! -f /opt/qasyn/.env ]; then
+              cp "$REPO_DIR/.env" /opt/qasyn/.env
+            fi
+            touch /opt/qasyn/.env
+
+            # Free dangling Docker build cache if disk is tight
+            docker image prune -f >/dev/null 2>&1 || true
+            docker builder prune -f >/dev/null 2>&1 || true
+
+            cd "$REPO_DIR"
+            git fetch --all
+            git reset --hard origin/main
+
+            docker build -t qasyn:latest .
             docker rm -f qasyn >/dev/null 2>&1 || true
             docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \
-              -e DATABASE_URL="file:./data/qasyn.db" \
+              --env-file /opt/qasyn/.env \
+              -e DATABASE_URL="file:/app/prisma/data/qasyn.db" \
               -v /opt/qasyn/data:/app/prisma/data \
               -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \
               qasyn:latest
+
+            # Keep /usr/local/bin/deploy-qasyn in sync for manual CLI runs on the VPS
+            cat << EOF > /usr/local/bin/deploy-qasyn
+            #!/usr/bin/env bash
+            set -e
+            cd "$REPO_DIR"
+            mkdir -p /opt/qasyn/data /opt/qasyn/.qasyn-data
+            touch /opt/qasyn/.env
+            git fetch --all
+            git reset --hard origin/main
+            docker build -t qasyn:latest .
+            docker rm -f qasyn >/dev/null 2>&1 || true
+            docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \
+              --env-file /opt/qasyn/.env \
+              -e DATABASE_URL="file:/app/prisma/data/qasyn.db" \
+              -v /opt/qasyn/data:/app/prisma/data \
+              -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \
+              qasyn:latest
+            EOF
+            chmod +x /usr/local/bin/deploy-qasyn
+            docker ps --filter "name=qasyn"

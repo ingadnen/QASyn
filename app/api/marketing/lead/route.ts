@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   const kind = input.kind ?? "contact";
   const name = input.name?.trim() || input.email.split("@")[0];
 
-  if (input.kind && input.kind !== "career" && !input.name?.trim()) {
+  if (input.kind && !input.name?.trim()) {
     return jsonError("Full name is required.", 400);
   }
   if (input.kind === "career" && !input.jobTitle?.trim()) {
@@ -53,18 +53,17 @@ export async function POST(request: Request) {
     },
   });
 
-  if (input.kind) {
-    await sendLeadNotificationEmail({
-      kind: input.kind,
-      name,
-      email: input.email,
-      company: input.company,
-      role: input.role,
-      jobTitle: input.jobTitle,
-      portfolioUrl: input.portfolioUrl,
-      message: input.message,
-    });
-  }
+  await sendLeadNotificationEmail({
+    kind: input.kind ?? "contact",
+    name,
+    email: input.email,
+    company: input.company,
+    role: input.role,
+    jobTitle: input.jobTitle,
+    portfolioUrl: input.portfolioUrl,
+    message: input.message,
+    source,
+  });
 
   return NextResponse.json({ ok: true, recipient: CONTACT_RECIPIENT_EMAIL });
 }

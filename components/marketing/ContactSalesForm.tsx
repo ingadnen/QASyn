@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch, errorMessage } from "@/lib/api";
 
 type LeadKind = "demo" | "contact";
@@ -16,8 +16,21 @@ export function ContactSalesForm() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const reset = params.get("subject") === "password-reset";
+    if (reset || params.get("kind") === "contact") setKind("contact");
+    if (reset) {
+      setMessage((current) => current || "Password reset request for my QASyn workspace account.");
+    }
+  }, []);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!name.trim() || !email.trim()) {
+      setError("Full name and work email are required.");
+      return;
+    }
     setPending(true);
     setError(null);
     try {
@@ -52,6 +65,7 @@ export function ContactSalesForm() {
         <button
           type="button"
           data-testid="contact-kind-demo"
+          aria-pressed={kind === "demo"}
           onClick={() => { setKind("demo"); setSent(false); }}
           className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${kind === "demo" ? "border-quantum-500 bg-[#f5f3ff] text-[#4f46e5]" : "border-slate-200 bg-white text-slate-600 hover:border-quantum-300"}`}
         >
@@ -61,6 +75,7 @@ export function ContactSalesForm() {
         <button
           type="button"
           data-testid="contact-kind-contact"
+          aria-pressed={kind === "contact"}
           onClick={() => { setKind("contact"); setSent(false); }}
           className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${kind === "contact" ? "border-quantum-500 bg-[#f5f3ff] text-[#4f46e5]" : "border-slate-200 bg-white text-slate-600 hover:border-quantum-300"}`}
         >
