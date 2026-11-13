@@ -32,8 +32,8 @@ const WORKFLOWS = [
 const FAQ = [
   { q: "What is a credit?", a: "A unit of work: one test run consumes 1 credit per 4 steps, a PR impact analysis 10 credits, a bug analysis 15 credits." },
   { q: "Can QASyn test localhost?", a: "Yes. Install the tunnel from onboarding step 2 — it opens an outbound-only connection with a tnl_ token, no inbound ports." },
-  { q: "Do unused credits roll over?", a: "In this prototype credits are simulated; the Enterprise plan supports pooled credits across teams." },
-  { q: "Is my code sent anywhere?", a: "Not in this prototype: all analysis is mocked locally and stored in SQLite." },
+  { q: "Do unused credits roll over?", a: "Unused credits follow your plan terms, and the Enterprise plan supports pooled credits across teams." },
+  { q: "Is my code sent anywhere?", a: "No. Analysis runs inside your workspace and results stay in your organisation's data boundary; private deployment is available for Enterprise." },
 ];
 
 /** Logs déterministes (heure UTC formatée côté serveur → pas d'écart d'hydratation). */

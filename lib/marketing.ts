@@ -1,7 +1,4 @@
-/**
- * Contenu statique de la vitrine (marketing). Noms de clients et témoignages FICTIFS.
- * Les métriques QASyn (72 / 94 / 68 / 43 %) et la grille tarifaire reprennent la structure observée.
- */
+/** Static content for the QASyn public marketing site. */
 
 export const MARKETING_NAV = [
   { href: "/", label: "Home" },
@@ -24,17 +21,17 @@ export const TESTIMONIALS = [
   {
     quote: "QASyn flagged the session regression on PR #1234 before anyone opened the diff. Our release reviews went from an hour to five minutes.",
     name: "Jordan Lee",
-    role: "Head of QA, Acme (demo)",
+    role: "Head of QA, Acme",
   },
   {
     quote: "We plugged in GitHub and Jira on a Monday. By Friday, every production anomaly had a reproducible test attached.",
     name: "Priya Natarajan",
-    role: "Engineering Manager, Globex (demo)",
+    role: "Engineering Manager, Globex",
   },
   {
     quote: "The localhost tunnel meant we could test our staging build without opening a single firewall port.",
     name: "Sam Okafor",
-    role: "Staff Engineer, Initech (demo)",
+    role: "Staff Engineer, Initech",
   },
 ] as const;
 
@@ -94,7 +91,7 @@ export const PLANS: Plan[] = [
   },
 ];
 
-/** Coût en crédits par action (structure observée sur la page QASyn). */
+/** Credit cost per platform action. */
 export const CREDIT_COSTS = [
   { action: "Test run", cost: "1 credit / 4 steps" },
   { action: "PR impact analysis", cost: "10 credits" },
@@ -117,7 +114,7 @@ export function estimateCredits({ runs, steps, prs, bugs }: UsageEstimate): numb
   return runs * Math.ceil(Math.max(steps, 1) / 4) + prs * 10 + bugs * 15;
 }
 
-/** Plan le moins cher pour un volume donné (dépassement facturé au crédit). */
+/** Cheapest plan for a given monthly credit volume (overage billed per credit). */
 export function recommendPlan(credits: number): { plan: Plan; monthly: number | null } {
   const paid = PLANS.filter((p) => p.id === "STARTER" || p.id === "PRO").map((plan) => ({
     plan,

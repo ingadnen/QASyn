@@ -79,10 +79,23 @@ async function sendSmtp(input: MailInput): Promise<void> {
       }
     }
     if (user && pass) {
-      const auth = await smtpCommand(socket, "AUTH LOGIN");
-      if (auth.code !== 334) throw new Error(`SMTP AUTH rejected: ${auth.text}`);
-      await smtpCommand(socket, Buffer.from(user).toString("base64"));
-      await smtpCommand(socket, Buffer.from(pass).toString("base64"));
+      const plainPayload = Buffer.from(`\0${user}\0${pass}`, "utf8").toString("base64");
+      let authRes = await smtpCommand(socket, `AUTH PLAIN ${plainPayload}`);
+      if (authRes.code === 334) authRes = await smtpCommand(socket, plainPayload);
+      if (authRes.code >= 400) {
+        const login = await smtpCommand(socket, "AUTH LOGIN");
+        if (login.code === 334) {
+          const userRes = await smtpCommand(socket, Buffer.from(user, "utf8").toString("base64"));
+          if (userRes.code === 334) {
+            authRes = await smtpCommand(socket, Buffer.from(pass, "utf8").toString("base64"));
+          } else {
+            authRes = userRes;
+          }
+        } else {
+          authRes = login;
+        }
+      }
+      if (authRes.code >= 400) throw new Error(`SMTP AUTH rejected: ${authRes.text}`);
     }
     const sanitizeHeader = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
     const envelopeTo = input.to.replace(/[\r\n]+/g, "").trim();

@@ -6659,6 +6659,7 @@ async function main() {
 
   const p21Dockerfile = fs.readFileSync(path.join(process.cwd(), "Dockerfile"), "utf8");
   const p21Deploy = fs.readFileSync(path.join(process.cwd(), ".github", "workflows", "deploy.yml"), "utf8");
+  const p21Mailer = fs.readFileSync(path.join(process.cwd(), "lib", "mailer.ts"), "utf8");
   check(
     "PART 21 Docker and deploy workflow persist SQLite and telemetry volumes",
     p21Dockerfile.includes("FROM node:20-bookworm-slim") &&
@@ -6674,8 +6675,28 @@ async function main() {
       p21Deploy.includes("command_timeout: 25m") &&
       p21Deploy.includes("--env-file /opt/qasyn/.env") &&
       p21Deploy.includes("-v /opt/qasyn/data:/app/prisma/data") &&
-      p21Deploy.includes("-v /opt/qasyn/.qasyn-data:/app/.qasyn-data"),
-    `docker ${p21Dockerfile.length} chars · deploy ${p21Deploy.length} chars`,
+      p21Deploy.includes("-v /opt/qasyn/.qasyn-data:/app/.qasyn-data") &&
+      p21Deploy.includes("docker rm -f qasyn-qasyn-1") &&
+      p21Mailer.includes("AUTH PLAIN") &&
+      p21Mailer.includes("AUTH LOGIN"),
+    `docker ${p21Dockerfile.length} chars · deploy ${p21Deploy.length} chars · mailer ${p21Mailer.length} chars`,
+  );
+
+  const p21LegalPages = [
+    path.join(process.cwd(), "app", "(marketing)", "terms-of-service", "page.tsx"),
+    path.join(process.cwd(), "app", "(marketing)", "privacy-policy", "page.tsx"),
+    path.join(process.cwd(), "app", "(marketing)", "data-privacy-policy", "page.tsx"),
+    path.join(process.cwd(), "app", "(marketing)", "data-processing-agreement", "page.tsx"),
+    path.join(process.cwd(), "app", "(marketing)", "cookie-policy", "page.tsx"),
+  ];
+  const p21LegalText = p21LegalPages.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+  const p21Marketing = fs.readFileSync(path.join(process.cwd(), "lib", "marketing.ts"), "utf8");
+  check(
+    "PART 21 legal pages remove prototype disclaimers and publish the official contact",
+    !/\b(?:prototype|fictional|demo)\b/i.test(p21LegalText) &&
+      p21LegalPages.every((file) => fs.readFileSync(file, "utf8").includes(p21Contact)) &&
+      !/\b(?:prototype|fictional|demo)\b/i.test(p21Marketing),
+    `legal ${p21LegalText.length} chars · marketing ${p21Marketing.length} chars`,
   );
 
   await db.leadCapture.deleteMany({ where: { email: { in: [p21DemoEmail, p21CareerEmail] } } }).catch(() => undefined);

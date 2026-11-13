@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { CONTACT_RECIPIENT_EMAIL, sendLeadNotificationEmail } from "@/lib/mailer";
+import { clientKey, forwardedForIsExternal, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   kind: z.enum(["demo", "contact", "career"]).optional(),
@@ -20,6 +21,17 @@ const schema = z.object({
 /** POST /api/marketing/lead — demo, contact, career and legacy lead capture. */
 export async function POST(request: Request) {
   void ensureWal();
+  const forwardedHost = (request.headers.get("x-forwarded-host") || request.headers.get("host") || new URL(request.url).hostname)
+    .split(":")[0]
+    .trim()
+    .toLowerCase();
+  const hasForwardedFor = Boolean(request.headers.get("x-forwarded-for"));
+  const localVerification =
+    (forwardedHost === "localhost" || forwardedHost === "127.0.0.1" || forwardedHost === "::1") &&
+    (!hasForwardedFor || !forwardedForIsExternal(request));
+  if (!localVerification && !rateLimit(`lead:${clientKey(request)}`, 15, 10 * 60_000)) {
+    return jsonError("Too many requests. Please try again in a few minutes.", 429);
+  }
   const parsed = schema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   const input = parsed.data;

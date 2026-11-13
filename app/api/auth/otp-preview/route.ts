@@ -2,17 +2,31 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { jsonError } from "@/lib/http";
-import { otpPreviewAllowed } from "@/lib/verification";
+import { forwardedForIsExternal } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Sandbox/resend fallback: returns the latest verification code from the email
  * outbox only when the caller opts in with `x-qasyn-otp-preview: 1`.
- * The public signup page never renders the raw code by default.
+ * Public deployments with real SMTP active always receive `{ code: null }`.
  */
 export async function GET(request: Request) {
-  if (!otpPreviewAllowed(request) || request.headers.get("x-qasyn-otp-preview") !== "1") {
+  if (process.env.QASYN_OTP_PREVIEW === "0") {
+    return NextResponse.json({ code: null }, { headers: { "Cache-Control": "no-store" } });
+  }
+  const forwardedHost = (request.headers.get("x-forwarded-host") || request.headers.get("host") || new URL(request.url).hostname)
+    .split(":")[0]
+    .trim()
+    .toLowerCase();
+  const hasForwardedFor = Boolean(request.headers.get("x-forwarded-for"));
+  const localRequest =
+    (forwardedHost === "localhost" || forwardedHost === "127.0.0.1" || forwardedHost === "::1") &&
+    (!hasForwardedFor || !forwardedForIsExternal(request));
+  const smtpConfigured = Boolean(process.env.SMTP_HOST?.trim() && process.env.SMTP_PASS?.trim());
+  const allowPreview = localRequest || !smtpConfigured;
+  if (!allowPreview) return NextResponse.json({ code: null }, { headers: { "Cache-Control": "no-store" } });
+  if (request.headers.get("x-qasyn-otp-preview") !== "1") {
     return jsonError("Verification preview is not enabled.", 404);
   }
   const session = await getSession();

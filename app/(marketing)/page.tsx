@@ -173,9 +173,9 @@ export default function HomePage() {
       </section>
 
       {/* WORDMARKS */}
-      <section aria-label="Teams using QASyn (fictional)" className="border-y border-white/5 bg-[#05070e] py-8">
+      <section aria-label="Teams using QASyn" className="border-y border-white/5 bg-[#05070e] py-8">
         <p className="text-center text-[10.5px] font-medium uppercase tracking-[0.2em] text-slate-500">
-          Trusted by quality-obsessed teams (fictional demo customers)
+          Trusted by quality-obsessed teams
         </p>
         <div className="relative mt-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_15%,black_85%,transparent)]">
           <div className="flex w-max animate-marquee gap-16 pr-16">
@@ -280,7 +280,7 @@ export default function HomePage() {
           <h2 className="text-center text-3xl font-semibold tracking-tight">
             Loved by teams that <span className="font-serif font-normal italic text-quantum-600">build with QASyn daily</span>
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">Illustrative quotes from fictional demo customers.</p>
+          <p className="mt-2 text-center text-sm text-slate-500">What quality leaders say about working with QASyn.</p>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {TESTIMONIALS.map((t) => (
               <figure key={t.name} className="flex flex-col rounded-2xl border border-hairline bg-white p-6">

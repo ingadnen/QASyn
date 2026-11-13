@@ -3,7 +3,7 @@ import { createSession, nextPathFor } from "@/lib/auth";
 import { verifyPassword } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { clientKey, forwardedForIsExternal, rateLimit } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validation";
 import { devInbox, issueVerificationCode } from "@/lib/verification";
 
@@ -19,7 +19,8 @@ export async function POST(request: Request) {
     .toLowerCase();
   const hasForwardedFor = Boolean(request.headers.get("x-forwarded-for"));
   const localVerification =
-    (forwardedHost === "localhost" || forwardedHost === "127.0.0.1" || forwardedHost === "::1") && !hasForwardedFor;
+    (forwardedHost === "localhost" || forwardedHost === "127.0.0.1" || forwardedHost === "::1") &&
+    (!hasForwardedFor || !forwardedForIsExternal(request));
   if (!localVerification && (!rateLimit(`login:${email}`, 8, 15 * 60_000) || !rateLimit(`login-ip:${clientKey(request)}`, 30, 15 * 60_000))) {
     return jsonError("Too many attempts. Try again in a few minutes.", 429);
   }

@@ -61,6 +61,7 @@ jobs:
 
             docker build -t qasyn:latest .
             docker rm -f qasyn >/dev/null 2>&1 || true
+            docker rm -f qasyn-qasyn-1 >/dev/null 2>&1 || true
             docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \
               --env-file /opt/qasyn/.env \
               -e DATABASE_URL="file:/app/prisma/data/qasyn.db" \
@@ -80,6 +81,7 @@ jobs:
               'git reset --hard origin/main' \
               'docker build -t qasyn:latest .' \
               'docker rm -f qasyn >/dev/null 2>&1 || true' \
+              'docker rm -f qasyn-qasyn-1 >/dev/null 2>&1 || true' \
               'docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \' \
               '  --env-file /opt/qasyn/.env \' \
               '  -e DATABASE_URL="file:/app/prisma/data/qasyn.db" \' \
