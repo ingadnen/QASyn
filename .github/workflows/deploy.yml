@@ -34,9 +34,14 @@ jobs:
               fi
             done
             if [ -z "$REPO_DIR" ] || [ ! -d "$REPO_DIR/.git" ]; then
-              echo "Cloning repository into /opt/qasyn..."
-              mkdir -p /opt/qasyn
-              REPO_DIR="/opt/qasyn"
+              echo "Searching /root /opt /var /home /srv for a QASyn git repository..."
+              REPO_DIR=$(find /root /opt /var /home /srv -maxdepth 3 -type d -name ".git" 2>/dev/null | sed 's|/\.git$||' | grep -i qasyn | head -n 1 || true)
+            fi
+            if [ -z "$REPO_DIR" ] || [ ! -d "$REPO_DIR/.git" ]; then
+              echo "Cloning repository into /opt/qasyn_repo..."
+              rm -rf /opt/qasyn_repo
+              git clone https://github.com/ingadnen/QASyn.git /opt/qasyn_repo
+              REPO_DIR="/opt/qasyn_repo"
             fi
             echo "Using REPO_DIR=$REPO_DIR"
 
@@ -63,23 +68,27 @@ jobs:
               -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \
               qasyn:latest
 
-            # Keep /usr/local/bin/deploy-qasyn in sync for manual CLI runs on the VPS
-            cat << EOF > /usr/local/bin/deploy-qasyn
-            #!/usr/bin/env bash
-            set -e
-            cd "$REPO_DIR"
-            mkdir -p /opt/qasyn/data /opt/qasyn/.qasyn-data
-            touch /opt/qasyn/.env
-            git fetch --all
-            git reset --hard origin/main
-            docker build -t qasyn:latest .
-            docker rm -f qasyn >/dev/null 2>&1 || true
-            docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \
-              --env-file /opt/qasyn/.env \
-              -e DATABASE_URL="file:/app/prisma/data/qasyn.db" \
-              -v /opt/qasyn/data:/app/prisma/data \
-              -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \
-              qasyn:latest
-            EOF
+            # Keep /usr/local/bin/deploy-qasyn in sync for manual CLI runs on the VPS.
+            # printf avoids YAML/heredoc indentation leaking into the shebang.
+            printf '%s\n' \
+              '#!/usr/bin/env bash' \
+              'set -e' \
+              "cd \"$REPO_DIR\"" \
+              'mkdir -p /opt/qasyn/data /opt/qasyn/.qasyn-data' \
+              'touch /opt/qasyn/.env' \
+              'git fetch --all' \
+              'git reset --hard origin/main' \
+              'docker build -t qasyn:latest .' \
+              'docker rm -f qasyn >/dev/null 2>&1 || true' \
+              'docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \' \
+              '  --env-file /opt/qasyn/.env \' \
+              '  -e DATABASE_URL="file:/app/prisma/data/qasyn.db" \' \
+              '  -v /opt/qasyn/data:/app/prisma/data \' \
+              '  -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \' \
+              '  qasyn:latest' \
+              > /usr/local/bin/deploy-qasyn
             chmod +x /usr/local/bin/deploy-qasyn
-            docker ps --filter "name=qasyn"
+
+            sleep 3
+            docker ps --filter "name=qasyn" --format "{{.Names}} {{.Status}}"
+            docker logs --tail 20 qasyn || true

@@ -6646,14 +6646,15 @@ async function main() {
   );
   await p21Page.keyboard.press("Escape").catch(() => undefined);
 
-  await p21Page.goto(`${BASE}/contact-us?subject=password-reset`, { waitUntil: "domcontentloaded" });
+  await p21Page.goto(`${BASE}/contact-us?subject=password-reset&email=claire%40cgi.com`, { waitUntil: "domcontentloaded" });
   await p21Page.waitForTimeout(500);
   const p21ResetKind = await p21Page.locator('[data-testid="contact-kind-contact"]').first().getAttribute("aria-pressed").catch(() => null);
   const p21ResetMessage = await p21Page.locator("textarea").first().inputValue().catch(() => "");
+  const p21ResetEmail = await p21Page.locator('[data-testid="contact-email"]').first().inputValue().catch(() => "");
   check(
-    "PART 21 password-reset contact link preselects support and prefills the request",
-    p21ResetKind === "true" && /Password reset request/i.test(p21ResetMessage),
-    `contact mode ${p21ResetKind ?? "missing"} · message ${p21ResetMessage.slice(0, 90)}`,
+    "PART 21 password-reset contact link preselects support, message and typed email",
+    p21ResetKind === "true" && /Password reset request/i.test(p21ResetMessage) && p21ResetEmail === "claire@cgi.com",
+    `contact mode ${p21ResetKind ?? "missing"} · email ${p21ResetEmail || "missing"} · message ${p21ResetMessage.slice(0, 70)}`,
   );
 
   const p21Dockerfile = fs.readFileSync(path.join(process.cwd(), "Dockerfile"), "utf8");
@@ -6662,6 +6663,8 @@ async function main() {
     "PART 21 Docker and deploy workflow persist SQLite and telemetry volumes",
     p21Dockerfile.includes("FROM node:20-bookworm-slim") &&
       p21Dockerfile.includes("PLAYWRIGHT_BROWSERS_PATH=/ms-playwright") &&
+      p21Dockerfile.includes("openssl") &&
+      p21Dockerfile.includes("ca-certificates") &&
       p21Dockerfile.includes("playwright install --with-deps chromium") &&
       p21Dockerfile.includes("/app/.qasyn-data") &&
       p21Dockerfile.includes("file:/app/prisma/data/qasyn.db") &&

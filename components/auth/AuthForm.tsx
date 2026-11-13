@@ -90,7 +90,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
         {isLogin && (
           <div className="mt-4 flex items-center justify-between text-sm">
-            <Link href="/contact-us?subject=password-reset" className="font-medium text-brand-600 hover:underline">
+            <Link
+              href={email.trim() ? `/contact-us?subject=password-reset&email=${encodeURIComponent(email.trim())}` : "/contact-us?subject=password-reset"}
+              className="font-medium text-brand-600 hover:underline"
+            >
               Forgot password?
             </Link>
             <span className="text-xs text-slate-400">Secure workspace sign-in</span>

@@ -6,7 +6,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci && npx playwright install --with-deps chromium && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates git && npm ci && npx playwright install --with-deps chromium && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 RUN npx prisma generate && npm run build && mkdir -p /app/.qasyn-data /app/prisma/data

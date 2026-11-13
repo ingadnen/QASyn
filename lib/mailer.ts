@@ -84,25 +84,28 @@ async function sendSmtp(input: MailInput): Promise<void> {
       await smtpCommand(socket, Buffer.from(user).toString("base64"));
       await smtpCommand(socket, Buffer.from(pass).toString("base64"));
     }
+    const sanitizeHeader = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
+    const envelopeTo = input.to.replace(/[\r\n]+/g, "").trim();
     const mailFrom = await smtpCommand(socket, `MAIL FROM:<${from.replace(/^.*<|>.*$/g, "")}>`);
     if (mailFrom.code >= 400) throw new Error(`SMTP MAIL FROM rejected: ${mailFrom.text}`);
-    const rcpt = await smtpCommand(socket, `RCPT TO:<${input.to}>`);
+    const rcpt = await smtpCommand(socket, `RCPT TO:<${envelopeTo}>`);
     if (rcpt.code >= 400) throw new Error(`SMTP RCPT TO rejected: ${rcpt.text}`);
     const data = await smtpCommand(socket, "DATA");
     if (data.code !== 354) throw new Error(`SMTP DATA rejected: ${data.text}`);
-    const message = [
-      `From: ${from}`,
-      `To: ${input.to}`,
-      `Subject: ${input.subject}`,
-      ...(input.replyTo ? [`Reply-To: ${input.replyTo.replace(/[\r\n]+/g, " ")}`] : []),
+    const messageId = `<${Date.now()}.${Math.random().toString(36).slice(2, 10)}@qasyn.com>`;
+    const headers = [
+      `From: ${sanitizeHeader(from)}`,
+      `To: ${sanitizeHeader(input.to)}`,
+      `Subject: ${sanitizeHeader(input.subject)}`,
+      ...(input.replyTo ? [`Reply-To: ${sanitizeHeader(input.replyTo)}`] : []),
+      `Date: ${new Date().toUTCString()}`,
+      `Message-ID: ${messageId}`,
       "MIME-Version: 1.0",
       'Content-Type: text/html; charset="UTF-8"',
-      "",
-      input.html,
-      "",
-    ].join("\r\n");
-    const dotStuffed = message.split(/\r?\n/).map((line) => (line.startsWith(".") ? `.${line}` : line)).join("\r\n");
-    socket.write(`${dotStuffed}\r\n.\r\n`);
+    ];
+    const body = input.html.replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..");
+    const message = `${headers.join("\r\n")}\r\n\r\n${body}`;
+    socket.write(`${message}\r\n.\r\n`);
     const accepted = await readSmtpResponse(socket);
     if (accepted.code >= 400) throw new Error(`SMTP message rejected: ${accepted.text}`);
     await smtpCommand(socket, "QUIT").catch(() => undefined);
@@ -115,17 +118,18 @@ async function sendSmtp(input: MailInput): Promise<void> {
 async function sendResend(input: MailInput): Promise<void> {
   const key = String(process.env.RESEND_API_KEY ?? "").trim();
   if (!key) throw new Error("RESEND_API_KEY is not configured.");
-  const from = String(process.env.RESEND_FROM ?? "QASyn <no-reply@qasyn.com>").trim();
+  const clean = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
+  const from = clean(String(process.env.RESEND_FROM ?? "QASyn <no-reply@qasyn.com>").trim());
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from,
-      to: [input.to],
-      subject: input.subject,
+      to: [clean(input.to)],
+      subject: clean(input.subject),
       html: input.html,
       text: input.text,
-      ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+      ...(input.replyTo ? { reply_to: clean(input.replyTo) } : {}),
     }),
     signal: AbortSignal.timeout(12_000),
   });
@@ -203,12 +207,14 @@ export async function sendLeadNotificationEmail(input: {
     .map(([key, value]) => `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top">${escapeHtml(key)}</td><td style="padding:6px 0;color:#111827;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`)
     .join("")}</table><p style="color:#6b7280;font-size:12px;margin-top:24px">Sent to ${escapeHtml(CONTACT_RECIPIENT_EMAIL)} by the QASyn marketing site.</p></div>`;
   const text = [`QASyn ${label}`, ...rows.map(([key, value]) => `${key}: ${value}`), `Recipient: ${CONTACT_RECIPIENT_EMAIL}`].join("\n");
+  const safeName = input.name.replace(/["\\\r\n]+/g, " ").trim() || "QASyn Lead";
+  const subjectSuffix = input.kind === "contact" && input.source ? ` · ${input.source}` : "";
   const result = await sendMail({
     to: CONTACT_RECIPIENT_EMAIL,
-    subject: `QASyn ${label}: ${input.name}`,
+    subject: `QASyn ${label}: ${input.name}${subjectSuffix}`,
     html,
     text,
-    replyTo: `${input.name} <${input.email}>`,
+    replyTo: `"${safeName}" <${input.email}>`,
   });
   try {
     const logDir = path.join(process.cwd(), ".qasyn-data");

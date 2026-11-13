@@ -23,6 +23,8 @@ export function ContactSalesForm() {
     if (reset) {
       setMessage((current) => current || "Password reset request for my QASyn workspace account.");
     }
+    const emailParam = params.get("email");
+    if (emailParam) setEmail(emailParam);
   }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -103,7 +105,7 @@ export function ContactSalesForm() {
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-slate-600">Work email *</span>
-              <input type="email" className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-quantum-400 focus:ring-2 focus:ring-quantum-100" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@company.com" required />
+              <input type="email" data-testid="contact-email" className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-quantum-400 focus:ring-2 focus:ring-quantum-100" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@company.com" required />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-slate-600">Company</span>
