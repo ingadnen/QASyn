@@ -333,6 +333,8 @@ export const billingSchema = z.discriminatedUnion("action", [
     cardholder: z.string().trim().min(2).max(80),
     /** Only the last 4 digits are kept; the full number never reaches the database. */
     cardNumber: z.string().regex(/^[\d ]{12,23}$/, "Enter a test card number."),
+    cardExpiry: z.string().trim().regex(/^(0[1-9]|1[0-2])\s*\/\s*\d{2}$/, "Use MM/YY.").optional(),
+    cardCvc: z.string().trim().regex(/^\d{3,4}$/, "Enter a 3 or 4 digit CVC.").optional(),
   }),
   z.object({
     action: z.literal("credits"),
@@ -340,7 +342,10 @@ export const billingSchema = z.discriminatedUnion("action", [
     method: z.enum(["stripe", "paypal", "invoice"]).default("stripe"),
     cardholder: z.string().trim().max(80).optional(),
     cardNumber: z.string().trim().regex(/^[\d ]{12,23}$/).optional(),
+    cardExpiry: z.string().trim().regex(/^(0[1-9]|1[0-2])\s*\/\s*\d{2}$/).optional(),
+    cardCvc: z.string().trim().regex(/^\d{3,4}$/).optional(),
     paypalEmail: z.string().email().optional(),
+    paypalTransactionId: z.string().trim().max(120).optional(),
     invoiceReference: z.string().trim().max(120).optional(),
   }),
   z.object({
@@ -349,7 +354,10 @@ export const billingSchema = z.discriminatedUnion("action", [
     method: z.enum(["stripe", "paypal", "invoice"]).default("stripe"),
     cardholder: z.string().trim().max(80).optional(),
     cardNumber: z.string().trim().regex(/^[\d ]{12,23}$/).optional(),
+    cardExpiry: z.string().trim().regex(/^(0[1-9]|1[0-2])\s*\/\s*\d{2}$/).optional(),
+    cardCvc: z.string().trim().regex(/^\d{3,4}$/).optional(),
     paypalEmail: z.string().email().optional(),
+    paypalTransactionId: z.string().trim().max(120).optional(),
     invoiceReference: z.string().trim().max(120).optional(),
     credits: z.number().int().min(0).max(10_000_000).default(0),
   }),

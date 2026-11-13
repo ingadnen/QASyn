@@ -1322,3 +1322,27 @@ model PlatformSkill {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+/// Platform-wide payment gateway recipient configuration. Single row (`id = "platform"`)
+/// owned by the Super Admin so PayPal, Stripe and Interac/Invoice checkouts always
+/// route to the currently configured merchant or remittance destination.
+model PlatformPaymentConfig {
+  id                     String   @id @default("platform")
+  paypalEnabled          Boolean  @default(true)
+  paypalRecipientEmail   String   @default("ingrebhiadnen@gmail.com")
+  paypalClientId         String   @default("")
+  paypalMeOrCheckoutUrl  String   @default("https://www.paypal.com/cgi-bin/webscr")
+  stripeEnabled          Boolean  @default(true)
+  stripeRecipientAccount String   @default("ingrebhiadnen@gmail.com")
+  stripePublishableKey   String   @default("")
+  stripeSecretKey        String   @default("")
+  stripeWebhookSecret    String   @default("")
+  invoiceEnabled         Boolean  @default(true)
+  invoiceBeneficiaryName String   @default("QASyn Inc.")
+  invoiceRecipientEmail  String   @default("ingrebhiadnen@gmail.com")
+  invoiceBankDetails     String   @default("RBC Royal Bank · Interac e-Transfer: ingrebhiadnen@gmail.com")
+  currency               String   @default("USD")
+  mode                   String   @default("live_or_verified")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}

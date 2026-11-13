@@ -46,36 +46,36 @@ The repository is a full Next.js application backed by Prisma + SQLite, with a P
 ## Architecture
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ Browser                                                             â”‚
-â”‚  Marketing site Â· Onboarding Â· Dashboard Â· Guide (/dashboard/guide) â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                â”‚ Next.js App Router (React 19)
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ app/                                                                â”‚
-â”‚  (marketing)  public pages                                          â”‚
-â”‚  dashboard/   server components â†’ client workspaces                 â”‚
-â”‚  api/         route handlers (auth, dashboard, cron, MCP, webhooks) â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                â”‚
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ lib/                                                                â”‚
-â”‚  engine.ts          run orchestration, evidence, TestCaseRun rows   â”‚
-â”‚  web-executor.ts    Playwright flow execution + screenshots         â”‚
-â”‚  selector-healing.ts QASyn Vision AI Smart Locator / self-heal      â”‚
-â”‚  grounding-url.ts   single URL resolution priority                  â”‚
-â”‚  vision-ai*.ts      QASyn Vision AI client, boxes, scoring, metrics â”‚
-â”‚  pr-gate.ts         Markdown gate report                            â”‚
-â”‚  rbac*.ts           permissions and guards                          â”‚
-â”‚  tenant.ts          credits, settings, audit                        â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                â”‚ Prisma Client
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ SQLite (prisma/dev.db)                                              â”‚
-â”‚  Organisation Â· User Â· TestCase Â· TestCaseRun Â· TestSuite Â· Plan    â”‚
-â”‚  PullRequestCheck Â· CrawlSession Â· EnvironmentConfig Â· CreditEntry  â”‚
-â”‚  KnowledgeItem Â· Upload Â· Integration Â· AuditLog Â· â€¦                â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
++---------------------------------------------------------------------+
+| Browser                                                             |
+|  Marketing site . Onboarding . Dashboard . Guide (/dashboard/guide) |
++----------------------------------+----------------------------------+
+                                   | Next.js App Router (React 19)
++----------------------------------v----------------------------------+
+| app/                                                                |
+|  (marketing)  public pages                                          |
+|  dashboard/   server components -> client workspaces                |
+|  api/         route handlers (auth, dashboard, cron, MCP, webhooks) |
++----------------------------------+----------------------------------+
+                                   |
++----------------------------------v----------------------------------+
+| lib/                                                                |
+|  engine.ts          run orchestration, evidence, TestCaseRun rows   |
+|  web-executor.ts    Playwright flow execution + screenshots         |
+|  selector-healing.ts QASyn Vision AI Smart Locator / self-heal      |
+|  grounding-url.ts   single URL resolution priority                  |
+|  vision-ai*.ts      QASyn Vision AI client, boxes, scoring, metrics |
+|  pr-gate.ts         Markdown gate report                            |
+|  rbac*.ts           permissions and guards                          |
+|  tenant.ts          credits, settings, audit                        |
++----------------------------------+----------------------------------+
+                                   | Prisma Client
++----------------------------------v----------------------------------+
+| SQLite (prisma/dev.db)                                              |
+|  Organisation . User . TestCase . TestCaseRun . TestSuite . Plan    |
+|  PullRequestCheck . CrawlSession . EnvironmentConfig . CreditEntry  |
+|  KnowledgeItem . Upload . Integration . AuditLog . ...              |
++---------------------------------------------------------------------+
 ```
 
 **Runtime flow for a test run**
@@ -123,7 +123,7 @@ The autonomous engine is fully branded QASyn (the legacy `/ship` route is retire
 | Marketing | `/qasyn` | Flagship product page: terminal, blast-radius analysis, credit pricing. |
 | Workspace | `/dashboard/qasyn` | PR impact analysis, bug reproduction, full pipeline execution, Go/No-Go history. |
 | APIs | `/api/dashboard/qasyn/*` | `pr-impact`, `bug-repro`, `workflows`, `execute-workflow`. |
-| Redirects | `/ship` â†’ `/qasyn`, `/dashboard/ship` â†’ `/dashboard/qasyn` | Permanent router-level redirects for legacy bookmarks. |
+| Redirects | `/ship` → `/qasyn`, `/dashboard/ship` → `/dashboard/qasyn` | Permanent router-level redirects for legacy bookmarks. |
 
 The engine lives in [`lib/qasyn-engine.ts`](lib/qasyn-engine.ts) (`analyzeBlastRadius`, `reproduceBug`, `QASYN_STAGES`, `qasynVerdict`).
 
@@ -157,14 +157,14 @@ The type can be selected when creating a case (manual or AI), edited in Test Stu
 
 | Test type | What the generated steps execute |
 | --- | --- |
-| **Penetration** | Navigate â†’ verify the input/form surface â†’ enter a benign XSS/SQLi reflection probe â†’ AI-assert the payload is escaped and CSP/WAF blocks unescaped script execution. |
-| **Security** | Navigate â†’ audit `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options` â†’ verify `Secure`/`HttpOnly` cookies â†’ AI-assert OWASP Top-10 posture. |
-| **Accessibility** | Navigate â†’ verify WCAG 2.2 landmarks (`main`, `nav`, `h1`) and `alt` attributes â†’ keyboard-tab/focus the primary control â†’ AI-assert AA contrast and screen-reader labels. |
-| **Performance / Load** | Navigate â†’ assert TTFB < 800 ms and DOMContentLoaded < 2500 ms â†’ exercise the primary route transition â†’ AI-assert zero layout shift (CLS) and responsive paint. |
-| **API** | Navigate â†’ `GET` the target and assert `200 OK` + `content-type` â†’ verify payload structure â†’ AI-assert contract schema and latency budget. |
+| **Penetration** | Navigate → verify the input/form surface → enter a benign XSS/SQLi reflection probe → AI-assert the payload is escaped and CSP/WAF blocks unescaped script execution. |
+| **Security** | Navigate → audit `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options` → verify `Secure`/`HttpOnly` cookies → AI-assert OWASP Top-10 posture. |
+| **Accessibility** | Navigate → verify WCAG 2.2 landmarks (`main`, `nav`, `h1`) and `alt` attributes → keyboard-tab/focus the primary control → AI-assert AA contrast and screen-reader labels. |
+| **Performance / Load** | Navigate → assert TTFB < 800 ms and DOMContentLoaded < 2500 ms → exercise the primary route transition → AI-assert zero layout shift (CLS) and responsive paint. |
+| **API** | Navigate → `GET` the target and assert `200 OK` + `content-type` → verify payload structure → AI-assert contract schema and latency budget. |
 | **Functional / E2E / Regression / Smoke / Sanity** | The historical four-step flow plus deterministic secondary-section and end-to-end state-integrity steps, so `stepsCount: 6` produces six real steps. |
 
-Live execution: when a case is not intentionally seeded to fail, `run_steps` executes the flow through real Playwright inside a 12-second budget and persists a **PNG live capture** (`data:image/png;base64,â€¦`) per step. Unreachable hosts and deterministic/offline runs fall back to a viewport capture or generated SVG evidence, so every step always carries a valid `data:image/â€¦` payload.
+Live execution: when a case is not intentionally seeded to fail, `run_steps` executes the flow through real Playwright inside a 12-second budget and persists a **PNG live capture** (`data:image/png;base64,…`) per step. Unreachable hosts and deterministic/offline runs fall back to a viewport capture or generated SVG evidence, so every step always carries a valid `data:image/…` payload.
 
 ---
 
@@ -172,11 +172,11 @@ Live execution: when a case is not intentionally seeded to fail, `run_steps` exe
 
 QASyn **Vision AI** is the multimodal decision engine behind several capabilities:
 
-- **AI Verification** â€” scores an AI Assertion as pass/fail with a calibrated probability and an abstain reason.
-- **Smart Locator / self-heal** â€” given the step target, DOM summary and (when available) a screenshot, returns a replacement selector with confidence.
-- **Visual grounding** â€” given a natural-language target and a URL, returns a bounding box (`[x1, y1, x2, y2]`, normalized to the 0â€“1000 overlay canvas) plus a screenshot.
-- **PR risk scoring** â€” turns changed files, impacted modules and test outcomes into a risk level and confidence.
-- **Token telemetry** â€” NDJSON ledger in `.qasyn-data/QASyn Vision AI-telemetry.json` meters boolean/choice/ground/score/set calls for the Billing observatory.
+- **AI Verification** — scores an AI Assertion as pass/fail with a calibrated probability and an abstain reason.
+- **Smart Locator / self-heal** — given the step target, DOM summary and (when available) a screenshot, returns a replacement selector with confidence.
+- **Visual grounding** — given a natural-language target and a URL, returns a bounding box (`[x1, y1, x2, y2]`, normalized to the 0–1000 overlay canvas) plus a screenshot.
+- **PR risk scoring** — turns changed files, impacted modules and test outcomes into a risk level and confidence.
+- **Token telemetry** — NDJSON ledger in `.qasyn-data/QASyn Vision AI-telemetry.json` meters boolean/choice/ground/score/set calls for the Billing observatory.
 
 **Grounding URL priority** (used by Studio grounding and self-heal):
 
@@ -185,7 +185,7 @@ QASyn **Vision AI** is the multimodal decision engine behind several capabilitie
 3. The first `Navigate` step target.
 4. The organisation website (`orgUrl`).
 
-Screenshot capture uses a desktop user agent, a 1280Ã—720 viewport, a 15-second timeout with `domcontentloaded â†’ commit` fallback, and a 400 ms settle before capture. Failures still return generated visual evidence so the UI never shows an empty state.
+Screenshot capture uses a desktop user agent, a 1280×720 viewport, a 15-second timeout with `domcontentloaded → commit` fallback, and a 400 ms settle before capture. Failures still return generated visual evidence so the UI never shows an empty state.
 
 Configure QASyn Vision AI with `QASyn Vision AI_API_KEY` and `QASyn Vision AI_API_URL` (server-side only). The placeholder in `.env.example` is deliberately not a real token and the repository secret scan must stay clean.
 
@@ -197,9 +197,9 @@ Configure QASyn Vision AI with `QASyn Vision AI_API_KEY` and `QASyn Vision AI_AP
 
 **Gate report** (`POST /api/dashboard/pull-requests/gate`) produces a Markdown CI/CD comment containing:
 
-- verdict (`âœ… APPROVED FOR MERGE` or `ðŸ›‘ BLOCKED â€” HIGH BLAST RADIUS`),
+- verdict (`✅ APPROVED FOR MERGE` or `🛑 BLOCKED — HIGH BLAST RADIUS`),
 - calibrated QASyn Vision AI risk score and confidence,
-- impacted tests with `âœ… Passed` / `âŒ Failed`,
+- impacted tests with `✅ Passed` / `❌ Failed`,
 - Strix security grade, score and findings.
 
 **Auto-regression** (`POST /api/dashboard/pull-requests/auto-regression`) accepts:
@@ -213,13 +213,13 @@ Configure QASyn Vision AI with `QASyn Vision AI_API_KEY` and `QASyn Vision AI_AP
 }
 ```
 
-It resolves the deployed URL (explicit override â†’ selected environment â†’ default environment â†’ organisation website â†’ PR URL), optionally creates two PR-specific cases (`PR #<n> Â· Smoke â€¦` and `PR #<n> Â· Regression flow`) when none exist, runs the impacted + PR cases through `runTestCases` (deterministic mode), persists per-step screenshots, and updates `PullRequestCheck` (`status`, `testsRun`, `regressions`, `impactJson.autoRegression`, `logsJson`).
+It resolves the deployed URL (explicit override → selected environment → default environment → organisation website → PR URL), optionally creates two PR-specific cases (`PR #<n> · Smoke …` and `PR #<n> · Regression flow`) when none exist, runs the impacted + PR cases through `runTestCases` (deterministic mode), persists per-step screenshots, and updates `PullRequestCheck` (`status`, `testsRun`, `regressions`, `impactJson.autoRegression`, `logsJson`).
 
-In the UI, open a PR row â†’ **PR auto-regression** â†’ choose environment â†’ **Run PR auto-regression**. The result panel shows pass/fail counts, the target URL, created cases and where screenshots are stored.
+In the UI, open a PR row → **PR auto-regression** → choose environment → **Run PR auto-regression**. The result panel shows pass/fail counts, the target URL, created cases and where screenshots are stored.
 
 ### Autonomous CI/CD PR webhook (Phase 10)
 
-`POST /api/webhooks/ci-pr` lets GitHub Actions, GitLab CI, Azure DevOps or any pipeline run the full gate in one call. Authenticate with `x-qasyn-token: cqa_â€¦`, `Authorization: Bearer cqa_â€¦`, or an existing dashboard session cookie.
+`POST /api/webhooks/ci-pr` lets GitHub Actions, GitLab CI, Azure DevOps or any pipeline run the full gate in one call. Authenticate with `x-qasyn-token: cqa_…`, `Authorization: Bearer cqa_…`, or an existing dashboard session cookie.
 
 ```json
 {
@@ -237,21 +237,21 @@ In the UI, open a PR row â†’ **PR auto-regression** â†’ choose environ
 }
 ```
 
-The endpoint upserts the `PullRequestCheck`, maps changed files to impacted modules, auto-creates `PR #<n> Â· Smoke check â€¦` (4 steps) and `PR #<n> Â· Regression flow` (6 steps), executes impacted + PR cases against `previewUrl` with per-step screenshots, scores risk with QASyn Vision AI `/score` + `/set`, runs the Strix header scan, and returns:
+The endpoint upserts the `PullRequestCheck`, maps changed files to impacted modules, auto-creates `PR #<n> · Smoke check …` (4 steps) and `PR #<n> · Regression flow` (6 steps), executes impacted + PR cases against `previewUrl` with per-step screenshots, scores risk with QASyn Vision AI `/score` + `/set`, runs the Strix header scan, and returns:
 
 ```json
 {
   "ok": true,
   "verdict": "APPROVED",
-  "prId": "â€¦",
+  "prId": "…",
   "prNumber": 402,
   "targetUrl": "https://www.bdc.ca",
   "passed": 6,
   "failed": 0,
   "total": 6,
   "regressions": 0,
-  "createdTestCases": [{ "id": "â€¦", "title": "PR #402 Â· Regression flow", "testType": "Regression" }],
-  "markdownReport": "## QASyn CI/CD PR Gate â€” âœ… APPROVED FOR MERGE â€¦"
+  "createdTestCases": [{ "id": "…", "title": "PR #402 · Regression flow", "testType": "Regression" }],
+  "markdownReport": "## QASyn CI/CD PR Gate — ✅ APPROVED FOR MERGE …"
 }
 ```
 
@@ -284,7 +284,7 @@ jobs:
             }'
 ```
 
-The same snippet, pre-filled for the selected PR and environment, is copy-ready inside the PR drawer under **ðŸ”— CI/CD Webhook & GitHub Actions Snippet**.
+The same snippet, pre-filled for the selected PR and environment, is copy-ready inside the PR drawer under **🔗 CI/CD Webhook & GitHub Actions Snippet**.
 
 ---
 
@@ -343,20 +343,20 @@ Invitation and verification e-mails use `lib/mailer.ts`: SMTP when `SMTP_HOST` i
 
 QASyn treats visual evidence as a first-class artifact:
 
-- `TestCase.stepsJson[i].screenshotBase64` + `screenshotMime` â€” latest evidence per step.
-- `TestCaseRun.logJson[i].screenshotBase64` â€” evidence for that specific run.
+- `TestCase.stepsJson[i].screenshotBase64` + `screenshotMime` — latest evidence per step.
+- `TestCaseRun.logJson[i].screenshotBase64` — evidence for that specific run.
 - Studio **Step Details** renders `studio-step-screenshot` from the step or the latest run.
 - Run history and the run modal render thumbnails (`run-history-screenshot`, `studio-run-log-screenshot`).
 - Self-heal renders `studio-heal-screenshot` and persists the capture on the healed step and the API response.
-- Deterministic/offline runs generate an SVG data URL per step, so no executed step is ever left with â€œcaptured during the next runâ€.
+- Deterministic/offline runs generate an SVG data URL per step, so no executed step is ever left with “captured during the next run”.
 
 ### Visual time-travel evidence lightbox (Phase 10)
 
 Clicking any evidence thumbnail (`studio-step-screenshot`, `studio-heal-screenshot`, `run-history-screenshot`, `studio-run-log-screenshot`) opens `data-testid="studio-evidence-lightbox"`:
 
-- **Single view** â€” full-resolution capture with Step `#`, action, target URL, status (`PASSED` / `FAILED` / `HEALED` / `SKIPPED`), MIME badge (`PNG Live Capture` vs `SVG Deterministic Evidence`) and timestamp.
-- **Time travel** â€” `ðŸ”€ Compare with Previous Run` (`studio-evidence-compare-toggle`) renders the previous run and the latest run side by side for the same step, with an opacity slider overlay and a **Stable** / **Visual change detected** badge.
-- **Download** â€” `â¬‡ Download Evidence` saves `step-<n>-evidence.png` (or `.svg`).
+- **Single view** — full-resolution capture with Step `#`, action, target URL, status (`PASSED` / `FAILED` / `HEALED` / `SKIPPED`), MIME badge (`PNG Live Capture` vs `SVG Deterministic Evidence`) and timestamp.
+- **Time travel** — `🔀 Compare with Previous Run` (`studio-evidence-compare-toggle`) renders the previous run and the latest run side by side for the same step, with an opacity slider overlay and a **Stable** / **Visual change detected** badge.
+- **Download** — `⬇ Download Evidence` saves `step-<n>-evidence.png` (or `.svg`).
 
 Screenshots are stored as base64 data URLs in SQLite alongside the step/run payload. Keep an eye on database size when running very large suites; the execution engine caps and compresses captures before persistence.
 
@@ -425,7 +425,7 @@ npm run db:reset     # deletes dev.db + WAL/SHM, pushes schema, re-seeds
 | --- | --- | --- | --- |
 | CGI (validation workspace) | Pro | `cgi@cgi.com` | `CgiDemo2026!` |
 | Acme (demo workspace) | Trial | `demo@acme.dev` | `AcmeDemo2026!` |
-| Super Admin | â€” | `admin@qasyn.com` | `QASynMaster2026!` |
+| Super Admin | — | `admin@qasyn.com` | `QASynMaster2026!` |
 
 Additional CGI role accounts (Admin, QA, Engineer, BA / FA) share the CGI password. Use the account switcher in the sidebar to move between workspaces and the Super-Admin Console to provision a new enterprise tenant.
 
@@ -455,7 +455,7 @@ The verifier logs in with the seeded CGI account, visits every dashboard module,
 A successful run ends with:
 
 ```
-ALL 19 MODULES PASSED â€” report: contextqa-dump/full-19-modules-parity.json
+ALL 19 MODULES PASSED — report: contextqa-dump/full-19-modules-parity.json
 ```
 
 Additional scripts:
@@ -479,7 +479,7 @@ app/
   api/auth/               session, switch, logout
   guide/                  serves the interactive user guide
 components/
-  dashboard/pages/        client workspaces (Test Cases, Studio, PRs, Super Adminâ€¦)
+  dashboard/pages/        client workspaces (Test Cases, Studio, PRs, Super Admin…)
   contextqa/              shared table UI, RowMenu, filters, pagination
   dashboard/Sidebar.tsx   navigation, workspace switcher, Help & docs
 lib/
@@ -516,5 +516,5 @@ scripts/
 
 ---
 
-**Interactive documentation:** open **Help & docs â†’ User guide** in the sidebar or visit [`/guide`](http://localhost:3000/guide). The guide is a single self-contained HTML file (`public/user-guide.html`) with role tabs, a searchable feature explorer, six end-to-end walkthroughs, and an architecture/API drawer.
+**Interactive documentation:** open **Help & docs → User guide** in the sidebar or visit [`/guide`](http://localhost:3000/guide). The guide is a single self-contained HTML file (`public/user-guide.html`) with role tabs, a searchable feature explorer, six end-to-end walkthroughs, and an architecture/API drawer.
 

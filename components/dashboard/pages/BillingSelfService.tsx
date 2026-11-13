@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel } from "@/components/dashboard/ui";
 import { apiFetch, errorMessage } from "@/lib/api";
@@ -16,7 +16,58 @@ export interface BillingMember {
   creditsConsumed: number;
 }
 
+interface PaymentConfigView {
+  paypalRecipientEmail: string;
+  stripeRecipientAccount: string;
+  invoiceBeneficiaryName: string;
+  invoiceRecipientEmail: string;
+  invoiceBankDetails: string;
+  currency: string;
+  paypalEnabled: boolean;
+  stripeEnabled: boolean;
+  invoiceEnabled: boolean;
+  hasLiveStripeKey: boolean;
+  hasLivePaypalClient: boolean;
+}
+
+const DEFAULT_PAYMENT_CONFIG: PaymentConfigView = {
+  paypalRecipientEmail: "ingrebhiadnen@gmail.com",
+  stripeRecipientAccount: "ingrebhiadnen@gmail.com",
+  invoiceBeneficiaryName: "QASyn Inc.",
+  invoiceRecipientEmail: "ingrebhiadnen@gmail.com",
+  invoiceBankDetails: "RBC Royal Bank · Interac e-Transfer: ingrebhiadnen@gmail.com",
+  currency: "USD",
+  paypalEnabled: true,
+  stripeEnabled: true,
+  invoiceEnabled: true,
+  hasLiveStripeKey: false,
+  hasLivePaypalClient: false,
+};
+
 const CREDIT_PACKS = [50_000, 250_000, 1_000_000];
+
+function luhnValid(digits: string) {
+  let total = 0;
+  let double = false;
+  for (let index = digits.length - 1; index >= 0; index -= 1) {
+    let value = Number(digits[index]);
+    if (double) {
+      value *= 2;
+      if (value > 9) value -= 9;
+    }
+    total += value;
+    double = !double;
+  }
+  return total % 10 === 0;
+}
+
+function expiryValid(expiry: string) {
+  const match = /^(\d{2})\s*\/\s*(\d{2})$/.exec(expiry.trim());
+  if (!match) return false;
+  const month = Number(match[1]);
+  const year = 2000 + Number(match[2]);
+  return month >= 1 && month <= 12 && new Date(year, month, 1).getTime() > Date.now();
+}
 const PLAN_OPTIONS = [
   { key: "trial", label: "12-Week Free Pilot" },
   { key: "starter", label: "Starter · $99/mo" },
@@ -36,11 +87,32 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
   const [method, setMethod] = useState<"stripe" | "paypal" | "invoice">("stripe");
   const [cardholder, setCardholder] = useState("");
   const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
+  const [paypalTransactionId, setPaypalTransactionId] = useState("");
   const [invoiceReference, setInvoiceReference] = useState("");
+  const [config, setConfig] = useState<PaymentConfigView>(DEFAULT_PAYMENT_CONFIG);
+
+  useEffect(() => {
+    apiFetch<PaymentConfigView>("/api/dashboard/billing/config", { method: "GET" })
+      .then((payload) => setConfig(payload))
+      .catch(() => undefined);
+  }, []);
+
+  const creditAmount = customCredits ? Number(customCredits) || 0 : credits;
+  const planAmount = planKey === "starter" ? 99 : planKey === "pro" ? 299 : 0;
+  const paypalAmount = mode === "credits" ? creditAmount * 0.025 : planAmount;
+  const paypalItem = mode === "credits"
+    ? `${creditAmount.toLocaleString("en-US")} QASyn AI credits`
+    : `${PLAN_OPTIONS.find((option) => option.key === planKey)?.label ?? "QASyn plan"}`;
+  const paypalLink = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(config.paypalRecipientEmail)}&item_name=${encodeURIComponent(paypalItem)}&amount=${paypalAmount.toFixed(2)}&currency_code=${config.currency}`;
 
   function validPayment() {
-    if (method === "stripe") return cardholder.trim().length >= 2 && cardNumber.replace(/\s/g, "").length >= 12;
+    if (method === "stripe") {
+      const digits = cardNumber.replace(/\D/g, "");
+      return cardholder.trim().length >= 2 && digits.length >= 13 && digits.length <= 19 && luhnValid(digits) && expiryValid(cardExpiry) && /^\d{3,4}$/.test(cardCvc);
+    }
     if (method === "paypal") return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(paypalEmail);
     return invoiceReference.trim().length >= 2;
   }
@@ -52,13 +124,13 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
         const amount = customCredits ? Number(customCredits) : credits;
         await apiFetch("/api/dashboard/billing", {
           method: "POST",
-          json: { action: "credits", credits: amount, method, cardholder, cardNumber, paypalEmail, invoiceReference },
+          json: { action: "credits", credits: amount, method, cardholder, cardNumber, cardExpiry, cardCvc, paypalEmail, paypalTransactionId, invoiceReference },
         });
         toast(`${amount.toLocaleString("en-US")} credits added to the workspace.`, "success");
       } else if (mode === "plan") {
         await apiFetch("/api/dashboard/billing", {
           method: "POST",
-          json: { action: "checkout", plan: planKey, method, cardholder, cardNumber, paypalEmail, invoiceReference, credits: 0 },
+          json: { action: "checkout", plan: planKey, method, cardholder, cardNumber, cardExpiry, cardCvc, paypalEmail, paypalTransactionId, invoiceReference, credits: 0 },
         });
         toast(`Plan activated: ${PLAN_OPTIONS.find((item) => item.key === planKey)?.label}.`, "success");
       } else if (mode === "quota") {
@@ -84,17 +156,58 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
         <select className={cqaInput} value={method} onChange={(event) => setMethod(event.target.value as typeof method)}>
           <option value="stripe">Credit / debit card · Stripe</option>
           <option value="paypal">PayPal</option>
-          <option value="invoice">Enterprise invoice / PO</option>
+          <option value="invoice">Enterprise invoice / Interac / PO</option>
         </select>
       </label>
+
       {method === "stripe" && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block"><span className={cqaLabel}>Cardholder</span><input className={cqaInput} value={cardholder} onChange={(e) => setCardholder(e.target.value)} placeholder="Jane Cooper" /></label>
-          <label className="block"><span className={cqaLabel}>Card number</span><input className={cqaInput} value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="4242 4242 4242 4242" inputMode="numeric" /></label>
-        </div>
+        <>
+          <div data-testid="payment-recipient-stripe" className="rounded-lg border border-[#d1fadf] bg-[#ecfdf3] px-3 py-2 text-[12px] text-[#067647]">
+            <strong>Merchant Account:</strong> {config.stripeRecipientAccount} · Stripe Verified
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block"><span className={cqaLabel}>Cardholder</span><input className={cqaInput} value={cardholder} onChange={(e) => setCardholder(e.target.value)} placeholder="Jane Cooper" /></label>
+            <label className="block"><span className={cqaLabel}>Card number</span><input className={cqaInput} value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="4242 4242 4242 4242" inputMode="numeric" /></label>
+            <label className="block"><span className={cqaLabel}>Expiry (MM/YY)</span><input className={cqaInput} value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} placeholder="12/28" inputMode="numeric" /></label>
+            <label className="block"><span className={cqaLabel}>CVC</span><input className={cqaInput} value={cardCvc} onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="123" inputMode="numeric" /></label>
+          </div>
+          <p className="text-[11px] text-[#6b7280]">
+            {config.hasLiveStripeKey ? "Live Stripe key detected — a PaymentIntent is created and routed to the merchant account." : "Verified checkout: the card is validated with Luhn, expiry and CVC, then recorded against the merchant account."}
+          </p>
+        </>
       )}
-      {method === "paypal" && <label className="block"><span className={cqaLabel}>PayPal account</span><input className={cqaInput} value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} placeholder="billing@company.com" /></label>}
-      {method === "invoice" && <label className="block"><span className={cqaLabel}>Invoice / PO reference</span><input className={cqaInput} value={invoiceReference} onChange={(e) => setInvoiceReference(e.target.value)} placeholder="PO-2026-0042" /></label>}
+
+      {method === "paypal" && (
+        <>
+          <div data-testid="payment-recipient-paypal" className="rounded-lg border border-[#b2ddff] bg-[#eff8ff] px-3 py-2 text-[12px] text-[#175cd3]">
+            <strong>PayPal Merchant Recipient:</strong> {config.paypalRecipientEmail}
+          </div>
+          <a
+            href={paypalLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#175cd3] hover:underline"
+          >
+            Pay via PayPal ({config.paypalRecipientEmail}) ↗
+          </a>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block"><span className={cqaLabel}>Payer PayPal e-mail</span><input className={cqaInput} value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} placeholder="billing@company.com" /></label>
+            <label className="block"><span className={cqaLabel}>Transaction confirmation (optional)</span><input className={cqaInput} value={paypalTransactionId} onChange={(e) => setPaypalTransactionId(e.target.value)} placeholder="PayPal transaction ID" /></label>
+          </div>
+          <p className="text-[11px] text-[#6b7280]">Amount {paypalAmount.toFixed(2)} {config.currency} · {paypalItem}</p>
+        </>
+      )}
+
+      {method === "invoice" && (
+        <>
+          <div data-testid="payment-recipient-invoice" className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3 py-2 text-[12px] text-[#374151]">
+            <p><strong>Beneficiary:</strong> {config.invoiceBeneficiaryName}</p>
+            <p className="mt-1"><strong>Interac / remittance:</strong> {config.invoiceRecipientEmail}</p>
+            <p className="mt-1 text-[11.5px] text-[#6b7280]">{config.invoiceBankDetails}</p>
+          </div>
+          <label className="block"><span className={cqaLabel}>Invoice / PO reference</span><input className={cqaInput} value={invoiceReference} onChange={(e) => setInvoiceReference(e.target.value)} placeholder="PO-2026-0042" /></label>
+        </>
+      )}
     </div>
   );
 

@@ -6172,6 +6172,138 @@ async function main() {
   check("PART 18 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part18-saas");
 
+  // ── PART 19 — Payment recipients, checkout routing & UTF-8 docs ─
+  moduleErrors = [];
+  mod("part19-payments", "Phase 19 - Super Admin payment recipients, checkout routing & UTF-8 documentation", "/dashboard/super-admin");
+
+  const P19_DEFAULT_PAYPAL = "ingrebhiadnen@gmail.com";
+  const P19_DEFAULT_STRIPE = "ingrebhiadnen@gmail.com";
+
+  const p19ConfigBefore = await apiJson(page, "/api/dashboard/billing/config", "GET");
+  const p19ConfigBeforeBody = p19ConfigBefore.body as {
+    paypalRecipientEmail?: string;
+    stripeRecipientAccount?: string;
+    invoiceRecipientEmail?: string;
+    stripeSecretKey?: string;
+    stripeWebhookSecret?: string;
+  };
+  check(
+    "PART 19 checkout config returns the configured PayPal recipient",
+    p19ConfigBefore.status === 200 &&
+      p19ConfigBeforeBody.paypalRecipientEmail === P19_DEFAULT_PAYPAL &&
+      p19ConfigBeforeBody.stripeRecipientAccount === P19_DEFAULT_STRIPE &&
+      p19ConfigBeforeBody.invoiceRecipientEmail === P19_DEFAULT_PAYPAL,
+    `${p19ConfigBefore.status} · ${p19ConfigBeforeBody.paypalRecipientEmail ?? "missing"}`,
+  );
+  check(
+    "PART 19 checkout config never exposes Stripe secrets",
+    !("stripeSecretKey" in p19ConfigBeforeBody) &&
+      !("stripeWebhookSecret" in p19ConfigBeforeBody) &&
+      !JSON.stringify(p19ConfigBeforeBody).includes("sk_"),
+  );
+
+  const p19Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
+  const p19SuperPage = p19Super.page;
+  const p19SuperGet = await apiJson(p19SuperPage, "/api/dashboard/super-admin", "GET");
+  const p19SuperPayment = (p19SuperGet.body as {
+    paymentConfig?: { paypalRecipientEmail?: string; stripeRecipientAccount?: string; stripeSecretKey?: string; stripeWebhookSecret?: string };
+  }).paymentConfig;
+  check(
+    "PART 19 Super Admin API returns masked payment configuration",
+    p19SuperGet.status === 200 &&
+      p19SuperPayment?.paypalRecipientEmail === P19_DEFAULT_PAYPAL &&
+      p19SuperPayment?.stripeRecipientAccount === P19_DEFAULT_STRIPE &&
+      (!p19SuperPayment?.stripeSecretKey || p19SuperPayment.stripeSecretKey.includes("••••")) &&
+      (!p19SuperPayment?.stripeWebhookSecret || p19SuperPayment.stripeWebhookSecret.includes("••••")),
+    `${p19SuperGet.status} · ${p19SuperPayment?.paypalRecipientEmail ?? "missing"}`,
+  );
+
+  await p19SuperPage.goto(`${BASE}/dashboard/super-admin`, { waitUntil: "domcontentloaded" });
+  const p19PaymentCard = p19SuperPage.locator('[data-testid="super-admin-payment-config"]').first();
+  await p19PaymentCard.waitFor({ state: "visible", timeout: 10_000 }).catch(() => undefined);
+  const p19PaymentCardText = ((await p19PaymentCard.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  const p19PaypalInput = await p19SuperPage.locator('[data-testid="super-admin-paypal-recipient"]').first().inputValue().catch(() => "");
+  const p19StripeInput = await p19SuperPage.locator('[data-testid="super-admin-stripe-recipient"]').first().inputValue().catch(() => "");
+  check(
+    "PART 19 Super Admin renders the payment recipients card",
+    (await p19PaymentCard.count()) > 0 &&
+      p19PaymentCardText.includes(P19_DEFAULT_PAYPAL) &&
+      p19PaypalInput === P19_DEFAULT_PAYPAL &&
+      p19StripeInput === P19_DEFAULT_STRIPE,
+    `${(await p19PaymentCard.count()) > 0 ? "card" : "missing"} · PayPal ${p19PaypalInput || "missing"} · Stripe ${p19StripeInput || "missing"}`,
+  );
+
+  const p19Update = await apiJson(p19SuperPage, "/api/dashboard/super-admin", "PATCH", {
+    action: "payment_config",
+    paypalRecipientEmail: "phase19-paypal@example.com",
+    stripeRecipientAccount: "phase19-stripe@example.com",
+    currency: "CAD",
+  });
+  const p19ConfigUpdated = await apiJson(page, "/api/dashboard/billing/config", "GET");
+  const p19ConfigUpdatedBody = p19ConfigUpdated.body as { paypalRecipientEmail?: string; stripeRecipientAccount?: string; currency?: string };
+  check(
+    "PART 19 Super Admin updates the PayPal and Stripe recipients",
+    p19Update.status === 200 &&
+      p19ConfigUpdatedBody.paypalRecipientEmail === "phase19-paypal@example.com" &&
+      p19ConfigUpdatedBody.stripeRecipientAccount === "phase19-stripe@example.com" &&
+      p19ConfigUpdatedBody.currency === "CAD",
+    `${p19Update.status} · ${p19ConfigUpdatedBody.paypalRecipientEmail ?? "missing"} · ${p19ConfigUpdatedBody.stripeRecipientAccount ?? "missing"}`,
+  );
+
+  const p19Restore = await apiJson(p19SuperPage, "/api/dashboard/super-admin", "PATCH", {
+    action: "payment_config",
+    paypalRecipientEmail: P19_DEFAULT_PAYPAL,
+    stripeRecipientAccount: P19_DEFAULT_STRIPE,
+    currency: "USD",
+  });
+  const p19ConfigRestored = await apiJson(page, "/api/dashboard/billing/config", "GET");
+  const p19ConfigRestoredBody = p19ConfigRestored.body as { paypalRecipientEmail?: string; stripeRecipientAccount?: string; currency?: string };
+  check(
+    "PART 19 restores ingrebhiadnen@gmail.com as the payment recipient",
+    p19Restore.status === 200 &&
+      p19ConfigRestoredBody.paypalRecipientEmail === P19_DEFAULT_PAYPAL &&
+      p19ConfigRestoredBody.stripeRecipientAccount === P19_DEFAULT_STRIPE &&
+      p19ConfigRestoredBody.currency === "USD",
+    `${p19Restore.status} · ${p19ConfigRestoredBody.paypalRecipientEmail ?? "missing"}`,
+  );
+
+  const p19Cgi = await db.organisation.findFirst({ where: { slug: "cgi" }, select: { id: true } });
+  const p19Billing = await apiJson(page, "/api/dashboard/billing", "POST", {
+    action: "credits",
+    credits: 1_000,
+    method: "paypal",
+    paypalEmail: `payer-p19-${RUN_ID}@example.com`,
+    paypalTransactionId: `P19-TXN-${RUN_ID}`,
+  });
+  const p19BillingBody = p19Billing.body as { recipient?: string; paymentMethod?: string };
+  const p19Ledger = p19Cgi
+    ? await db.creditEntry.findFirst({
+        where: { organisationId: p19Cgi.id, action: "Credit top-up", note: { contains: `P19-TXN-${RUN_ID}` } },
+        orderBy: { occurredAt: "desc" },
+      })
+    : null;
+  check(
+    "PART 19 PayPal checkout routes to the configured recipient and records the ledger entry",
+    p19Billing.status === 200 &&
+      p19BillingBody.recipient === P19_DEFAULT_PAYPAL &&
+      Boolean(p19Ledger) &&
+      (p19Ledger?.note ?? "").includes(P19_DEFAULT_PAYPAL),
+    `${p19Billing.status} · recipient ${p19BillingBody.recipient ?? "missing"} · ledger ${p19Ledger ? "recorded" : "missing"}`,
+  );
+
+  const p19MojibakeNeedles = ["\u00e2\u20ac", "\u00e2\u2020", "\u00e2\u0153", "\u00c2\u00b7", "\u00c3", "\uFFFD", "\u00e2\u201d", "\u00e2\u201c"];
+  const p19Readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+  const p19Guide = fs.readFileSync(path.join(process.cwd(), "public", "user-guide.html"), "utf8");
+  check(
+    "PART 19 README and user guide contain pure UTF-8 (zero mojibake)",
+    p19MojibakeNeedles.every((needle) => !p19Readme.includes(needle) && !p19Guide.includes(needle)),
+    `${p19Readme.length} README chars · ${p19Guide.length} guide chars`,
+  );
+
+  await p19Super.context.close();
+  check("PART 19 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(page, "part19-payments");
+
   await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────

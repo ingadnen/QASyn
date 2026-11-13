@@ -79,7 +79,7 @@
   .role-panel p { margin: 0; color: var(--muted); font-size: 13.5px; }
   .role-can { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 7px; }
   .role-can li { display: flex; gap: 9px; font-size: 13px; color: #344054; }
-  .role-can li::before { content: "âœ“"; color: var(--green); font-weight: 800; }
+  .role-can li::before { content: "✓"; color: var(--green); font-weight: 800; }
   .role-note { background: var(--brand-soft); border: 1px solid #dfe4ff; border-radius: 11px; padding: 14px; font-size: 12.5px; color: #3538cd; }
   .role-note b { display: block; margin-bottom: 4px; }
 
@@ -196,12 +196,12 @@
     <span class="eyebrow">Autonomous quality engineering</span>
     <h1>Everything you need to <span>plan, run and prove</span> quality.</h1>
     <p class="lead">
-      QASyn turns a crawl, a requirement or a pull request into executable browser tests â€” then keeps a screenshot-backed
+      QASyn turns a crawl, a requirement or a pull request into executable browser tests — then keeps a screenshot-backed
       record of every step. This guide adapts to your role, lets you search all 19 modules, and walks through the six
       workflows teams use most.
     </p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="#walkthroughs">Start a walkthrough â†’</a>
+      <a class="btn btn-primary" href="#walkthroughs">Start a walkthrough →</a>
       <button type="button" class="btn btn-ghost" data-drawer="api">Browse the API</button>
     </div>
     <div class="hero-stats">
@@ -220,7 +220,7 @@
       <div>
         <div class="kicker">Start here</div>
         <h2>Choose your role</h2>
-        <p>Permissions in QASyn are role-based. Pick a role to see the surfaces and actions available to it â€” the feature explorer below follows your choice.</p>
+        <p>Permissions in QASyn are role-based. Pick a role to see the surfaces and actions available to it — the feature explorer below follows your choice.</p>
       </div>
     </div>
     <div class="role-shell">
@@ -263,9 +263,9 @@
     <div class="search-row">
       <label class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
-        <input id="feature-search" data-testid="guide-feature-search" type="search" placeholder="Search features: crawl, screenshot, PR gate, credits, APIâ€¦" aria-label="Search features" />
+        <input id="feature-search" data-testid="guide-feature-search" type="search" placeholder="Search features: crawl, screenshot, PR gate, credits, API…" aria-label="Search features" />
       </label>
-      <span class="result-count">Try â€œscreenshotâ€, â€œQASyn Vision AIâ€, â€œenterpriseâ€ or â€œregressionâ€.</span>
+      <span class="result-count">Try “screenshot”, “QASyn Vision AI”, “enterprise” or “regression”.</span>
     </div>
     <div class="feature-grid" id="feature-grid" data-testid="guide-feature-explorer">
       <article class="feature" data-guide-feature data-roles="Admin QA Engineer Eng manager" data-keywords="overview dashboard kpi QASyn Vision AI observatory autopilot">
@@ -375,7 +375,7 @@
       </article>
       <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="QASyn Vision AI grounding target url bounding box calibrated confidence self heal">
         <div class="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h4>QASyn Vision AI grounding</h4></div>
-        <p>Resolve an element from a description, DOM and screenshot. Get a calibrated selector, confidence and a 0â€“1000 bounding box.</p>
+        <p>Resolve an element from a description, DOM and screenshot. Get a calibrated selector, confidence and a 0–1000 bounding box.</p>
         <div class="tagrow"><span class="tag">QASyn Vision AI</span><span class="tag role">QA</span></div>
       </article>
       <article class="feature" data-guide-feature data-roles="QA Engineer" data-keywords="self healing selector broken auto fix rerun version history">
@@ -407,7 +407,7 @@
     </div>
     <div class="walk-grid">
       <details class="walk" open data-testid="guide-walkthrough">
-        <summary><span class="num">1</span> Author, type and run your first test case <span class="chev">âŒ„</span></summary>
+        <summary><span class="num">1</span> Author, type and run your first test case <span class="chev">⌄</span></summary>
         <div class="walk-body">
           <p>Goal: go from a blank workspace to a passing run with screenshot evidence on every step.</p>
           <ol class="steps">
@@ -416,21 +416,21 @@
             <li>Open the case in <b>Test Studio</b>. Confirm the Navigate step points at your real URL and add Click, Enter Text or AI Assertion steps.</li>
             <li>Click <b>Run</b>. QASyn resolves the target URL, executes each step, and writes a scoped <code>TestCaseRun</code>.</li>
             <li>Open <b>Step Details</b> or <b>Run history</b> and confirm the screenshot thumbnail is present for every executed step.</li>
-            <li>Click any thumbnail to open the <b>Visual Evidence Lightbox</b>: status, MIME badge, timestamp, ðŸ”€ <b>Compare with Previous Run</b> time travel and â¬‡ <b>Download Evidence</b>.</li>
+            <li>Click any thumbnail to open the <b>Visual Evidence Lightbox</b>: status, MIME badge, timestamp, 🔀 <b>Compare with Previous Run</b> time travel and ⬇ <b>Download Evidence</b>.</li>
           </ol>
-          <div class="callout win">Evidence is persisted twice: on <code>stepsJson[i].screenshotBase64</code> and in the runâ€™s <code>logJson</code>. The Type column always shows the exact type you chose.</div>
+          <div class="callout win">Evidence is persisted twice: on <code>stepsJson[i].screenshotBase64</code> and in the run’s <code>logJson</code>. The Type column always shows the exact type you chose.</div>
         </div>
       </details>
 
       <details class="walk" data-testid="guide-walkthrough">
-        <summary><span class="num">2</span> Ground a selector and recover it with self-heal <span class="chev">âŒ„</span></summary>
+        <summary><span class="num">2</span> Ground a selector and recover it with self-heal <span class="chev">⌄</span></summary>
         <div class="walk-body">
           <p>Goal: fix a broken or empty selector without guessing CSS.</p>
           <ol class="steps">
             <li>In Test Studio, select the failing step and open <b>Step Details</b>.</li>
             <li>Click <b>Run QASyn Visual Grounding</b>. QASyn uses the step URL, then <code>variables.url</code> / <code>targetUrl</code> / <code>baseUrl</code>, then the first Navigate target, then the org website.</li>
             <li>Review the returned bounding box, confidence and screenshot.</li>
-            <li>Click <b>Simulate Self-Healing</b>. QASyn Vision AI proposes a new selector; QASyn persists it on the step, writes a version entry and creates an â€œAuto-fix rerunâ€.</li>
+            <li>Click <b>Simulate Self-Healing</b>. QASyn Vision AI proposes a new selector; QASyn persists it on the step, writes a version entry and creates an “Auto-fix rerun”.</li>
             <li>Confirm the healed screenshot card and the updated run history show the new evidence.</li>
             <li>Click the healed or step thumbnail to open the <b>Visual Evidence Lightbox</b> and compare the previous vs latest run side by side with the opacity slider.</li>
           </ol>
@@ -439,7 +439,7 @@
       </details>
 
       <details class="walk" data-testid="guide-walkthrough">
-        <summary><span class="num">3</span> Turn a crawl into a regression suite <span class="chev">âŒ„</span></summary>
+        <summary><span class="num">3</span> Turn a crawl into a regression suite <span class="chev">⌄</span></summary>
         <div class="walk-body">
           <p>Goal: build a reusable baseline from a deployed application.</p>
           <ol class="steps">
@@ -454,26 +454,26 @@
       </details>
 
       <details class="walk" data-testid="guide-walkthrough">
-        <summary><span class="num">4</span> Gate a pull request and run auto-regression <span class="chev">âŒ„</span></summary>
+        <summary><span class="num">4</span> Gate a pull request and run auto-regression <span class="chev">⌄</span></summary>
         <div class="walk-body">
           <p>Goal: decide whether a PR is safe to merge using impacted tests and a deployed environment.</p>
           <ol class="steps">
             <li>Open <b>Pull requests</b> and analyse a PR (or open an existing row). Changed files are mapped to modules and impacted cases.</li>
             <li>In the drawer, click <b>Generate CI/CD PR Gate Comment</b>. Review the verdict, QASyn risk score, impacted test table and Strix security summary, then copy the Markdown.</li>
             <li>In the <b>PR auto-regression</b> section, choose the environment (Production, Staging or any configured environment) or override the deployed URL.</li>
-            <li>Keep <b>Auto-create PR-specific test cases</b> checked. QASyn creates a Smoke and a Regression case named <code>PR #n Â· â€¦</code> if none exist.</li>
+            <li>Keep <b>Auto-create PR-specific test cases</b> checked. QASyn creates a Smoke and a Regression case named <code>PR #n · …</code> if none exist.</li>
             <li>Click <b>Run PR auto-regression</b>. The result panel shows pass/fail/regressions, the target URL and the created cases; the PR row updates its verdict and counts.</li>
           </ol>
-          <div class="callout warn">A caught regression sets the PR to <code>regression_caught</code>. Open the affected case â†’ run history to inspect the failing stepâ€™s screenshot before merging.</div>
+          <div class="callout warn">A caught regression sets the PR to <code>regression_caught</code>. Open the affected case → run history to inspect the failing step’s screenshot before merging.</div>
         </div>
       </details>
 
       <details class="walk" data-testid="guide-walkthrough">
-        <summary><span class="num">5</span> Provision and configure an enterprise tenant <span class="chev">âŒ„</span></summary>
+        <summary><span class="num">5</span> Provision and configure an enterprise tenant <span class="chev">⌄</span></summary>
         <div class="walk-body">
           <p>Goal: onboard a new customer without touching SQL or the database console.</p>
           <ol class="steps">
-            <li>Sign in as the super admin and open <b>Settings â†’ Organization â†’ Super-Admin Console</b> (or use the workspace menu).</li>
+            <li>Sign in as the super admin and open <b>Settings → Organization → Super-Admin Console</b> (or use the workspace menu).</li>
             <li>Click <b>Provision enterprise</b>. Fill in organisation, website, admin name/e-mail/password, seats, environment name/URL and credits.</li>
             <li>Submit. In one transaction QASyn creates the Enterprise organisation, Production + Staging environments, a credit ledger grant, a verified Admin user and an audit entry.</li>
             <li>Use the per-organisation <b>Configure</b> action to change plan, grant credits, update seats/environment and toggle SSO/SLA.</li>
@@ -484,7 +484,7 @@
       </details>
 
       <details class="walk" data-testid="guide-walkthrough">
-        <summary><span class="num">6</span> Filter, export and operate with confidence <span class="chev">âŒ„</span></summary>
+        <summary><span class="num">6</span> Filter, export and operate with confidence <span class="chev">⌄</span></summary>
         <div class="walk-body">
           <p>Goal: find the exact rows you need and share evidence with the team.</p>
           <ol class="steps">
@@ -494,7 +494,7 @@
             <li>Select rows to reveal the bulk bar: run selected, export CSV or delete (permission-dependent).</li>
             <li>For operational context, open <b>Billing &amp; usage</b> for credits and the QASyn Vision AI observatory, <b>Integrations</b> for providers, or <b>MCP</b> to query the workspace from an assistant.</li>
           </ol>
-          <div class="callout info">Existing search, column visibility, pagination and RowMenu actions stay available â€” per-column filters are additive.</div>
+          <div class="callout info">Existing search, column visibility, pagination and RowMenu actions stay available — per-column filters are additive.</div>
         </div>
       </details>
     </div>
@@ -508,15 +508,15 @@
       </div>
     </div>
     <div class="tiles">
-      <div class="tile"><b>Real URL grounding</b><p>The test caseâ€™s real target wins over the org default every time.</p></div>
+      <div class="tile"><b>Real URL grounding</b><p>The test case’s real target wins over the org default every time.</p></div>
       <div class="tile"><b>Step-level evidence</b><p>Passed, failed and healed steps all persist screenshots.</p></div>
       <div class="tile"><b>Deterministic PR runs</b><p>Auto-regression uses stable outcomes so PR verdicts do not flip randomly.</p></div>
     </div>
   </section>
 
   <footer class="footer">
-    <span>QASyn Â· User guide Â· self-contained HTML served at <code>/guide</code></span>
-    <span><a href="/dashboard/overview">Open the dashboard</a> Â· <a href="/README.md">README</a></span>
+    <span>QASyn · User guide · self-contained HTML served at <code>/guide</code></span>
+    <span><a href="/dashboard/overview">Open the dashboard</a> · <a href="/README.md">README</a></span>
   </footer>
 </main>
 
@@ -525,7 +525,7 @@
 <aside class="drawer" id="guide-drawer" data-testid="guide-architecture-drawer" aria-label="Architecture and API reference" aria-hidden="true">
   <div class="drawer-head">
     <h3>Architecture &amp; API</h3>
-    <button type="button" class="drawer-close" aria-label="Close architecture and API drawer" data-drawer-close>âœ•</button>
+    <button type="button" class="drawer-close" aria-label="Close architecture and API drawer" data-drawer-close>✕</button>
   </div>
   <div class="drawer-tabs" role="tablist" aria-label="Reference sections">
     <button class="drawer-tab" role="tab" aria-selected="true" data-drawer-tab="architecture">Architecture</button>
@@ -542,11 +542,11 @@
         <div class="layer-row"><b>External</b><span>QASyn Vision AI, GitHub/GitLab, Jira/Linear, Slack, browser providers, Strix.</span></div>
       </div>
       <h4>Run pipeline</h4>
-      <p><code>request â†’ RBAC â†’ URL resolver â†’ Playwright per step â†’ QASyn Vision AI assertion/heal â†’ screenshot evidence â†’ TestCaseRun.logJson â†’ Studio UI</code></p>
+      <p><code>request → RBAC → URL resolver → Playwright per step → QASyn Vision AI assertion/heal → screenshot evidence → TestCaseRun.logJson → Studio UI</code></p>
       <h4>Evidence model</h4>
       <p>Each step stores <code>screenshotBase64</code> + <code>screenshotMime</code>. Runs store the same fields per log line. The UI falls back from the step to the latest run, so no executed step shows an empty placeholder.</p>
       <h4>Grounding priority</h4>
-      <p><code>detailStep URL â†’ variables.url/targetUrl/baseUrl â†’ first Navigate step â†’ orgUrl</code></p>
+      <p><code>detailStep URL → variables.url/targetUrl/baseUrl → first Navigate step → orgUrl</code></p>
     </div>
     <div data-drawer-panel="api" hidden>
       <p>All endpoints are same-origin and session-authenticated. Send JSON with <code>content-type: application/json</code>.</p>
@@ -562,10 +562,10 @@
   "environmentId": "env_id",
   "targetUrl": "https://staging.example.com",
   "createTests": true }</pre></div>
-      <div class="api"><div class="api-head"><span class="method">GET</span><code>/api/dashboard/qasyn/workflows</code></div><p>QASyn Agent workflow history. <code>POST</code> runs the crawl â†’ generate â†’ execute â†’ report pipeline with a Go / No-Go decision.</p></div>
+      <div class="api"><div class="api-head"><span class="method">GET</span><code>/api/dashboard/qasyn/workflows</code></div><p>QASyn Agent workflow history. <code>POST</code> runs the crawl → generate → execute → report pipeline with a Go / No-Go decision.</p></div>
       <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/qasyn/pr-impact</code></div><p>Map changed files to modules, select the regression scope and return the Go / No-Go verdict and blast radius.</p><pre>{ "prNumber": 1234, "branch": "main", "title": "Fix checkout", "files": ["src/checkout/page.tsx"] }</pre></div>
       <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/dashboard/qasyn/bug-repro</code></div><p>Turn a support ticket into reproduction steps, a bug report and a generated test case with a probable root cause.</p></div>
-      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/webhooks/ci-pr</code></div><p>Autonomous CI/CD gatekeeper for GitHub Actions, GitLab CI and Azure DevOps. Authenticate with <code>x-qasyn-token: cqa_â€¦</code>, <code>Authorization: Bearer cqa_â€¦</code> or a session cookie. Upserts the PR, auto-creates Smoke + Regression cases, runs the suite with per-step screenshots and returns <code>verdict</code> + <code>markdownReport</code>. Set <code>failOnRegression: true</code> for HTTP 422 on regressions.</p><pre>{ "prNumber": 402, "title": "Feat: BDC loan calculator",
+      <div class="api"><div class="api-head"><span class="method post">POST</span><code>/api/webhooks/ci-pr</code></div><p>Autonomous CI/CD gatekeeper for GitHub Actions, GitLab CI and Azure DevOps. Authenticate with <code>x-qasyn-token: cqa_…</code>, <code>Authorization: Bearer cqa_…</code> or a session cookie. Upserts the PR, auto-creates Smoke + Regression cases, runs the suite with per-step screenshots and returns <code>verdict</code> + <code>markdownReport</code>. Set <code>failOnRegression: true</code> for HTTP 422 on regressions.</p><pre>{ "prNumber": 402, "title": "Feat: BDC loan calculator",
   "branch": "feat/loan-calculator", "branchTarget": "main",
   "author": "ci-bot", "repository": "org/web-portal",
   "changedFiles": ["src/checkout/loan.ts"],
@@ -586,7 +586,7 @@
 (function () {
   "use strict";
 
-  // â”€â”€ Role tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Role tabs ────────────────────────────────────────────────────────────
   var roleCopy = {
     all: {
       title: "All roles",
@@ -712,7 +712,7 @@
 
   applyFeatures();
 
-  // â”€â”€ Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Drawer ───────────────────────────────────────────────────────────────
   var drawer = document.getElementById("guide-drawer");
   var backdrop = document.getElementById("drawer-backdrop");
   var lastFocus = null;

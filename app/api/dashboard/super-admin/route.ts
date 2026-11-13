@@ -7,6 +7,7 @@ import { jsonError, readJson, validationError } from "@/lib/http";
 import { isSuperAdmin } from "@/lib/rbac";
 import { guardPermission } from "@/lib/rbac-server";
 import { ETERNAL_TRIAL_CREDITS, SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
+import { getPaymentConfig, toSuperAdminPaymentConfig, updatePaymentConfig } from "@/lib/payment-config";
 import { PLANS, USER_ROLES } from "@/lib/types";
 import { normalizeWebsite } from "@/lib/utils";
 
@@ -47,6 +48,24 @@ const schema = z.discriminatedUnion("action", [
     systemPrompt: z.string().trim().min(10).max(12_000).optional(),
     model: z.string().trim().max(160).optional(),
     enabled: z.boolean().optional(),
+  }),
+  z.object({
+    action: z.literal("payment_config"),
+    paypalEnabled: z.boolean().optional(),
+    paypalRecipientEmail: z.string().trim().email().max(160).optional(),
+    paypalClientId: z.string().trim().max(300).optional(),
+    paypalMeOrCheckoutUrl: z.string().trim().url().max(500).optional(),
+    stripeEnabled: z.boolean().optional(),
+    stripeRecipientAccount: z.string().trim().min(1).max(160).optional(),
+    stripePublishableKey: z.string().trim().max(300).optional(),
+    stripeSecretKey: z.string().trim().max(500).optional(),
+    stripeWebhookSecret: z.string().trim().max(500).optional(),
+    invoiceEnabled: z.boolean().optional(),
+    invoiceBeneficiaryName: z.string().trim().min(1).max(160).optional(),
+    invoiceRecipientEmail: z.string().trim().email().max(160).optional(),
+    invoiceBankDetails: z.string().trim().min(1).max(1000).optional(),
+    currency: z.enum(["USD", "CAD", "EUR"]).optional(),
+    mode: z.enum(["sandbox", "live", "live_or_verified"]).optional(),
   }),
 ]);
 
@@ -113,7 +132,7 @@ export async function GET() {
   const guard = await requireSuperAdmin();
   if (!guard.ok) return guard.response;
 
-  const [organisations, users, platformSkills] = await Promise.all([
+  const [organisations, users, platformSkills, paymentConfig] = await Promise.all([
     prisma.organisation.findMany({
       select: {
         id: true,
@@ -134,6 +153,7 @@ export async function GET() {
       orderBy: [{ organisationId: "asc" }, { createdAt: "asc" }],
     }),
     prisma.platformSkill.findMany({ orderBy: { createdAt: "asc" } }),
+    getPaymentConfig(),
   ]);
 
   return NextResponse.json({
@@ -149,6 +169,7 @@ export async function GET() {
     }),
     users: users.map(({ organisation, ...user }) => ({ ...user, organisationName: organisation?.name ?? "—" })),
     platformSkills,
+    paymentConfig: toSuperAdminPaymentConfig(paymentConfig),
     roles: USER_ROLES,
     plans: PLANS,
     eternalCredits: ETERNAL_TRIAL_CREDITS,
@@ -439,6 +460,20 @@ export async function PATCH(request: Request) {
       data: { organisationId: org.id, actorEmail: ctx.user.email, action: "super_admin.organisation_updated", target: `${org.name} → ${updated.plan} · ${updated.trialCredits} credits${creditDelta !== 0 ? ` (${creditDelta > 0 ? "+" : ""}${creditDelta})` : ""}` },
     });
     return NextResponse.json({ organisation: { ...updated, trialEndsAt: updated.trialEndsAt.toISOString() } });
+  }
+
+  if (data.action === "payment_config") {
+    const patch = Object.fromEntries(Object.entries(data).filter(([key]) => key !== "action"));
+    const updated = await updatePaymentConfig(patch as Parameters<typeof updatePaymentConfig>[0]);
+    await prisma.systemAuditLog.create({
+      data: {
+        organisationId: ctx.org.id,
+        actorEmail: ctx.user.email,
+        action: "super_admin.payment_config_updated",
+        target: `PayPal ${updated.paypalRecipientEmail} · Stripe ${updated.stripeRecipientAccount} · Interac ${updated.invoiceRecipientEmail}`.slice(0, 200),
+      },
+    });
+    return NextResponse.json({ paymentConfig: toSuperAdminPaymentConfig(updated) });
   }
 
   if (data.action === "model") {

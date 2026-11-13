@@ -32,10 +32,29 @@ interface ConsoleUser {
   creditsConsumed?: number;
 }
 
+interface PaymentConfigView {
+  paypalEnabled: boolean;
+  paypalRecipientEmail: string;
+  paypalClientId: string;
+  paypalMeOrCheckoutUrl: string;
+  stripeEnabled: boolean;
+  stripeRecipientAccount: string;
+  stripePublishableKey: string;
+  stripeSecretKey: string;
+  stripeWebhookSecret: string;
+  invoiceEnabled: boolean;
+  invoiceBeneficiaryName: string;
+  invoiceRecipientEmail: string;
+  invoiceBankDetails: string;
+  currency: string;
+  mode: string;
+}
+
 interface ConsolePayload {
   organisations: ConsoleOrg[];
   users: ConsoleUser[];
   platformSkills?: Array<{ id: string; name: string; trigger: string; systemPrompt: string; model: string; enabled: boolean }>;
+  paymentConfig?: PaymentConfigView;
   roles: string[];
   plans: string[];
 }
@@ -84,6 +103,8 @@ export function SuperAdminConsole() {
   const [modelName, setModelName] = useState("QASyn Vision AI");
   const [skillDraft, setSkillDraft] = useState({ name: "", trigger: "", systemPrompt: "", model: "QASyn Vision AI" });
   const [governanceBusy, setGovernanceBusy] = useState(false);
+  const [paymentDraft, setPaymentDraft] = useState<PaymentConfigView | null>(null);
+  const [paymentBusy, setPaymentBusy] = useState(false);
 
   const organisations = useMemo(
     () =>
@@ -120,6 +141,7 @@ export function SuperAdminConsole() {
       .then((payload) => {
         if (!active) return;
         setData(payload);
+        setPaymentDraft(payload.paymentConfig ?? null);
         setModelOrg(payload.organisations[0]?.id ?? "");
         setDrafts(
           Object.fromEntries(
@@ -210,6 +232,27 @@ export function SuperAdminConsole() {
       toast(errorMessage(e), "error");
     } finally {
       setBusy(null);
+    }
+  }
+
+  function patchPaymentDraft(patch: Partial<PaymentConfigView>) {
+    setPaymentDraft((current) => (current ? { ...current, ...patch } : current));
+  }
+
+  async function savePaymentConfig() {
+    if (!paymentDraft) return;
+    setPaymentBusy(true);
+    try {
+      const result = await apiFetch<{ paymentConfig: PaymentConfigView }>("/api/dashboard/super-admin", {
+        method: "PATCH",
+        json: { action: "payment_config", ...paymentDraft },
+      });
+      setPaymentDraft(result.paymentConfig);
+      toast(`Payment recipients updated — all checkouts now route to ${result.paymentConfig.paypalRecipientEmail}`, "success");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setPaymentBusy(false);
     }
   }
 
@@ -636,6 +679,113 @@ export function SuperAdminConsole() {
           </div>
         </div>
       </Modal>
+
+      <div className={`${cqaCard} p-5`} data-testid="super-admin-payment-config">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-[16px] font-semibold text-[#262626]">💳 Payment Gateways &amp; Payout Recipients (PayPal · Stripe · Interac / Bank)</h2>
+            <p className="mt-1 text-[12.5px] text-[#6b7280]">
+              Every customer checkout in Billing and Onboarding routes to these recipients. Secret keys are masked when loaded.
+            </p>
+          </div>
+          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+            {paymentDraft?.currency ?? "USD"} · {paymentDraft?.mode ?? "live_or_verified"}
+          </span>
+        </div>
+
+        {paymentDraft ? (
+          <div className="mt-4 space-y-5">
+            <div className="flex flex-wrap gap-4 text-[12px] text-[#374151]">
+              <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paymentDraft.paypalEnabled} onChange={(e) => patchPaymentDraft({ paypalEnabled: e.target.checked })} /> PayPal enabled</label>
+              <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paymentDraft.stripeEnabled} onChange={(e) => patchPaymentDraft({ stripeEnabled: e.target.checked })} /> Stripe enabled</label>
+              <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paymentDraft.invoiceEnabled} onChange={(e) => patchPaymentDraft({ invoiceEnabled: e.target.checked })} /> Invoice / Interac enabled</label>
+            </div>
+
+            <section className="rounded-lg border border-[#e5e7eb] p-3">
+              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">PayPal</h3>
+              <div className="mt-2 grid gap-3 lg:grid-cols-3">
+                <label className="block">
+                  <span className={cqaLabel}>PayPal Recipient Email (Destinataire PayPal)</span>
+                  <input data-testid="super-admin-paypal-recipient" className={cqaInput} value={paymentDraft.paypalRecipientEmail} onChange={(e) => patchPaymentDraft({ paypalRecipientEmail: e.target.value })} placeholder="ingrebhiadnen@gmail.com" />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>PayPal Client ID (Optional Live SDK)</span>
+                  <input className={cqaInput} value={paymentDraft.paypalClientId} onChange={(e) => patchPaymentDraft({ paypalClientId: e.target.value })} placeholder="AX..." />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>PayPal Checkout URL</span>
+                  <input className={cqaInput} value={paymentDraft.paypalMeOrCheckoutUrl} onChange={(e) => patchPaymentDraft({ paypalMeOrCheckoutUrl: e.target.value })} placeholder="https://www.paypal.com/cgi-bin/webscr" />
+                </label>
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-[#e5e7eb] p-3">
+              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Stripe / Card</h3>
+              <div className="mt-2 grid gap-3 lg:grid-cols-2">
+                <label className="block">
+                  <span className={cqaLabel}>Stripe Merchant / Payout Account Email</span>
+                  <input data-testid="super-admin-stripe-recipient" className={cqaInput} value={paymentDraft.stripeRecipientAccount} onChange={(e) => patchPaymentDraft({ stripeRecipientAccount: e.target.value })} placeholder="ingrebhiadnen@gmail.com" />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>Stripe Publishable Key (pk_...)</span>
+                  <input className={cqaInput} value={paymentDraft.stripePublishableKey} onChange={(e) => patchPaymentDraft({ stripePublishableKey: e.target.value })} placeholder="pk_live_..." />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>Stripe Secret Key (sk_..., masked)</span>
+                  <input type="password" className={cqaInput} value={paymentDraft.stripeSecretKey} onChange={(e) => patchPaymentDraft({ stripeSecretKey: e.target.value })} placeholder="sk_live_..." />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>Stripe Webhook Secret (whsec_..., masked)</span>
+                  <input type="password" className={cqaInput} value={paymentDraft.stripeWebhookSecret} onChange={(e) => patchPaymentDraft({ stripeWebhookSecret: e.target.value })} placeholder="whsec_..." />
+                </label>
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-[#e5e7eb] p-3">
+              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Invoice / Interac / Bank</h3>
+              <div className="mt-2 grid gap-3 lg:grid-cols-3">
+                <label className="block">
+                  <span className={cqaLabel}>Beneficiary Name</span>
+                  <input className={cqaInput} value={paymentDraft.invoiceBeneficiaryName} onChange={(e) => patchPaymentDraft({ invoiceBeneficiaryName: e.target.value })} placeholder="QASyn Inc." />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>Invoice / Interac Recipient Email</span>
+                  <input className={cqaInput} value={paymentDraft.invoiceRecipientEmail} onChange={(e) => patchPaymentDraft({ invoiceRecipientEmail: e.target.value })} placeholder="ingrebhiadnen@gmail.com" />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>Currency</span>
+                  <select className={cqaInput} value={paymentDraft.currency} onChange={(e) => patchPaymentDraft({ currency: e.target.value })}>
+                    <option value="USD">USD</option>
+                    <option value="CAD">CAD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                </label>
+                <label className="block lg:col-span-2">
+                  <span className={cqaLabel}>Bank Instructions</span>
+                  <input className={cqaInput} value={paymentDraft.invoiceBankDetails} onChange={(e) => patchPaymentDraft({ invoiceBankDetails: e.target.value })} placeholder="RBC Royal Bank · Interac e-Transfer: ..." />
+                </label>
+                <label className="block">
+                  <span className={cqaLabel}>Mode</span>
+                  <select className={cqaInput} value={paymentDraft.mode} onChange={(e) => patchPaymentDraft({ mode: e.target.value })}>
+                    <option value="live_or_verified">live_or_verified</option>
+                    <option value="live">live</option>
+                    <option value="sandbox">sandbox</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" data-testid="super-admin-save-payment-config" className={cqaBtnPrimary} disabled={paymentBusy} onClick={() => void savePaymentConfig()}>
+                {paymentBusy ? "Saving…" : "Save Payment Recipients"}
+              </button>
+              <p className="text-[11px] text-[#6b7280]">PayPal {paymentDraft.paypalRecipientEmail} · Stripe {paymentDraft.stripeRecipientAccount} · Interac {paymentDraft.invoiceRecipientEmail}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-4 text-[12.5px] text-[#6b7280]">Loading payment configuration…</p>
+        )}
+      </div>
 
       <div className={`${cqaCard} p-5`} data-testid="super-admin-governance">
         <h2 className="text-[16px] font-semibold text-[#262626]">Tenant AI models &amp; platform skills governance</h2>
