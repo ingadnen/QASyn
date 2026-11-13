@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "QASyn — Autonomous AI quality engineering", template: "%s · QASyn" },
-  description: "Autonomous AI quality engineering — local prototype.",
+  description: "Autonomous AI quality engineering for enterprise SaaS teams.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

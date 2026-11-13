@@ -135,8 +135,8 @@ export function MarketingFooter() {
       </div>
       <div className="border-t border-white/5">
         <div className="mx-auto flex max-w-[1440px] flex-wrap justify-between gap-2 px-6 sm:px-8 lg:px-12 py-5 text-xs text-slate-500">
-          <span>© {new Date().getFullYear()} QASyn — local prototype, not affiliated with any vendor.</span>
-          <span>Next.js 15 · Prisma · SQLite · QASyn Vision AI</span>
+          <span>© {new Date().getFullYear()} QASyn Inc. All rights reserved.</span>
+          <span>Autonomous AI Quality Engineering · Enterprise SaaS</span>
         </div>
       </div>
     </footer>

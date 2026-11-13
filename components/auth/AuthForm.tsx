@@ -89,22 +89,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         </form>
 
         {isLogin && (
-          <div className="mt-4 space-y-3">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <a href="/login?sso=google" className="flex h-10 items-center justify-center rounded-lg border border-line bg-white text-sm font-medium text-slate-700 hover:bg-slate-50">
-                Continue with Google
-              </a>
-              <a href="/login?sso=microsoft" className="flex h-10 items-center justify-center rounded-lg border border-line bg-white text-sm font-medium text-slate-700 hover:bg-slate-50">
-                Continue with Microsoft
-              </a>
-            </div>
-            <p className="text-center text-xs text-slate-400">Enterprise SSO is provisioned by your workspace administrator.</p>
-            <div className="flex items-center justify-between text-sm">
-              <Link href="/contact-us?subject=password-reset" className="font-medium text-brand-600 hover:underline">
-                Forgot password?
-              </Link>
-              <span className="text-xs text-slate-400">Secure workspace sign-in</span>
-            </div>
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <Link href="/contact-us?subject=password-reset" className="font-medium text-brand-600 hover:underline">
+              Forgot password?
+            </Link>
+            <span className="text-xs text-slate-400">Secure workspace sign-in</span>
           </div>
         )}
 

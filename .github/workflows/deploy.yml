@@ -6,10 +6,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy on VPS via SSH
+      - name: Build and deploy QASyn
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 179.66.142.196
           username: root
           password: ${{ secrets.VPS_ROOT_PASSWORD }}
-          script: /usr/local/bin/deploy-qasyn
+          script: |
+            /usr/local/bin/deploy-qasyn
+            mkdir -p /opt/qasyn/data /opt/qasyn/.qasyn-data
+            docker rm -f qasyn >/dev/null 2>&1 || true
+            docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \
+              -e DATABASE_URL="file:./data/qasyn.db" \
+              -v /opt/qasyn/data:/app/prisma/data \
+              -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \
+              qasyn:latest

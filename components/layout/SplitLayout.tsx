@@ -28,8 +28,8 @@ export function SplitLayout({
         </div>
         <div className={cn("mx-auto w-full flex-1 py-10 lg:py-14", wide ? "max-w-2xl" : "max-w-lg")}>{children}</div>
         <footer className="flex justify-between border-t border-line pt-4 text-xs text-muted">
-          <span>© {new Date().getFullYear()} QASyn — local prototype</span>
-          <span>Mock back-end · SQLite</span>
+          <span>© {new Date().getFullYear()} QASyn Inc. All rights reserved.</span>
+          <span>Autonomous AI Quality Engineering · Enterprise SaaS</span>
         </footer>
       </main>
 

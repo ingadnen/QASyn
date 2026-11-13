@@ -6539,6 +6539,132 @@ async function main() {
   check("PART 20 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(page, "part20-enforcement");
 
+  // ── PART 21 — Production disclaimers, lead routing, careers & deploy persistence ─
+  moduleErrors = [];
+  mod("part21-production", "Phase 23 - Production disclaimers, authenticated SSO UX, lead/career routing and persistent deployment", "/careers");
+
+  const p21Contact = "adnen.rebhi@qasyn.com";
+  const p21Anon = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p21Page = await p21Anon.newPage();
+
+  await p21Page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+  const p21FooterText = ((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 21 marketing footer is production-branded without prototype disclaimers",
+    !/local prototype|fictional data/i.test(p21FooterText) &&
+      p21FooterText.includes("QASyn Inc. All rights reserved.") &&
+      p21FooterText.includes("Autonomous AI Quality Engineering"),
+    p21FooterText.slice(-220),
+  );
+
+  await p21Page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+  const p21LoginText = ((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  await p21Page.goto(`${BASE}/signup`, { waitUntil: "domcontentloaded" });
+  const p21SignupText = ((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 21 login and signup remove prototype text and dead SSO buttons",
+    !/local prototype|fictional data/i.test(`${p21LoginText} ${p21SignupText}`) &&
+      !/Continue with Google|Continue with Microsoft/i.test(`${p21LoginText} ${p21SignupText}`) &&
+      p21LoginText.includes("Secure workspace sign-in"),
+    `login ${p21LoginText.length} chars · signup ${p21SignupText.length} chars`,
+  );
+
+  await p21Page.goto(`${BASE}/contact-us`, { waitUntil: "domcontentloaded" });
+  const p21ContactText = ((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 21 contact page exposes the production recipient and demo/contact toggles",
+    p21ContactText.includes(p21Contact) &&
+      p21ContactText.includes("Book a personalized demo") &&
+      p21ContactText.includes("Contact sales / support") &&
+      (await p21Page.locator('[data-testid="contact-lead-form"]').count()) > 0,
+    p21ContactText.slice(0, 220),
+  );
+
+  const p21DemoEmail = `p21-demo-${RUN_ID}@your-domain.com`;
+  const p21CareerEmail = `p21-career-${RUN_ID}@your-domain.com`;
+  const p21Demo = await apiJson(p21Page, "/api/marketing/lead", "POST", {
+    kind: "demo",
+    name: "PART21 Demo Lead",
+    email: p21DemoEmail,
+    company: "PART21 Company",
+    role: "VP Engineering · 40 QA",
+    message: "Book a demo for our checkout and claims portal.",
+    source: "contact-us-demo",
+  });
+  const p21Career = await apiJson(p21Page, "/api/marketing/lead", "POST", {
+    kind: "career",
+    name: "PART21 Candidate",
+    email: p21CareerEmail,
+    jobTitle: "Staff Systems Engineer — Browser Runtime",
+    portfolioUrl: "https://github.com/part21-candidate",
+    message: "Built browser runtimes and Playwright grids for eight years.",
+    source: "careers",
+  });
+  check(
+    "PART 21 demo and career leads route to the production notification recipient",
+    p21Demo.status === 200 &&
+      p21Career.status === 200 &&
+      (p21Demo.body as { recipient?: string }).recipient === p21Contact &&
+      (p21Career.body as { recipient?: string }).recipient === p21Contact,
+    `demo ${p21Demo.status} · career ${p21Career.status}`,
+  );
+
+  const p21Outbox = await db.emailOutbox.findMany({
+    where: { to: p21Contact },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+  const p21OutboxText = JSON.stringify(p21Outbox);
+  const p21MailLog = fs.existsSync(path.join(process.cwd(), ".qasyn-data", "mail.log"))
+    ? fs.readFileSync(path.join(process.cwd(), ".qasyn-data", "mail.log"), "utf8")
+    : "";
+  check(
+    "PART 21 lead notifications are persisted to the outbox and mail log",
+    p21OutboxText.includes(p21DemoEmail) && p21OutboxText.includes(p21CareerEmail) && p21MailLog.includes(p21DemoEmail) && p21MailLog.includes(p21CareerEmail),
+    `${p21Outbox.length} outbox row(s) · log ${p21MailLog.length} chars`,
+  );
+
+  await p21Page.goto(`${BASE}/careers`, { waitUntil: "domcontentloaded" });
+  const p21CareersText = ((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  const p21Apply = p21Page.locator('[data-testid="career-apply"]').first();
+  let p21AppliedRole = "";
+  if ((await p21Apply.count()) > 0) {
+    p21AppliedRole = (await p21Apply.getAttribute("data-role-title")) ?? "";
+    await p21Apply.click().catch(() => undefined);
+  }
+  const p21CareerModal = p21Page.locator('[data-testid="career-application-modal"]').first();
+  await p21CareerModal.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+  const p21CareerModalText = ((await p21CareerModal.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 21 careers page opens the job application modal for the selected role",
+    p21CareersText.includes("Staff Systems Engineer — Browser Runtime") &&
+      p21CareersText.includes("Apply") &&
+      p21AppliedRole === "Staff Systems Engineer — Browser Runtime" &&
+      p21CareerModalText.includes("Staff Systems Engineer — Browser Runtime") &&
+      p21CareerModalText.includes("Submit application"),
+    `${p21AppliedRole || "missing"} · modal ${p21CareerModalText.length} chars`,
+  );
+  await p21Page.keyboard.press("Escape").catch(() => undefined);
+
+  const p21Dockerfile = fs.readFileSync(path.join(process.cwd(), "Dockerfile"), "utf8");
+  const p21Deploy = fs.readFileSync(path.join(process.cwd(), ".github", "workflows", "deploy.yml"), "utf8");
+  check(
+    "PART 21 Docker and deploy workflow persist SQLite and telemetry volumes",
+    p21Dockerfile.includes("playwright install --with-deps chromium") &&
+      p21Dockerfile.includes("/app/.qasyn-data") &&
+      p21Dockerfile.includes("npx prisma db push") &&
+      p21Dockerfile.includes("npx tsx prisma/seed.ts") &&
+      p21Dockerfile.includes("npm run start") &&
+      p21Deploy.includes("-v /opt/qasyn/data:/app/prisma/data") &&
+      p21Deploy.includes("-v /opt/qasyn/.qasyn-data:/app/.qasyn-data"),
+    `docker ${p21Dockerfile.length} chars · deploy ${p21Deploy.length} chars`,
+  );
+
+  await db.leadCapture.deleteMany({ where: { email: { in: [p21DemoEmail, p21CareerEmail] } } }).catch(() => undefined);
+  check("PART 21 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
+  await shot(p21Page, "part21-production");
+  await p21Anon.close();
+
   await db.$disconnect();
 
   // ── Global integrity ────────────────────────────────────────────

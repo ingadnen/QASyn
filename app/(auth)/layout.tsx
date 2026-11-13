@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Link href="/" aria-label="QASyn home">
           <Logo />
         </Link>
-        <span className="text-xs text-muted">Local prototype · fictional data</span>
+        <span className="text-xs text-muted">© 2026 QASyn Inc. · Enterprise Security &amp; Compliance</span>
       </header>
       <main className="relative flex flex-1 items-start justify-center px-4 pb-16 pt-6 sm:pt-12">
         <div className="w-full max-w-md">{children}</div>

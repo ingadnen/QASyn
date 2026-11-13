@@ -1,6 +1,10 @@
 import net from "node:net";
+import path from "node:path";
 import tls from "node:tls";
+import { appendFile, mkdir } from "node:fs/promises";
 import { prisma } from "./db";
+
+export const CONTACT_RECIPIENT_EMAIL = process.env.CONTACT_RECIPIENT_EMAIL || "adnen.rebhi@qasyn.com";
 
 type MailInput = {
   to: string;
@@ -49,7 +53,7 @@ async function sendSmtp(input: MailInput): Promise<void> {
   const from = String(process.env.SMTP_FROM ?? "QASyn <no-reply@qasyn.com>").trim();
   if (!host) throw new Error("SMTP_HOST is not configured.");
 
-  const secure = port === 465;
+  const secure = port === 465 || String(process.env.SMTP_SECURE ?? "").toLowerCase() === "true";
   let socket: net.Socket = secure
     ? tls.connect({ host, port, servername: host })
     : net.connect({ host, port });
@@ -159,6 +163,53 @@ export async function sendVerificationEmail(email: string, code: string): Promis
     html: `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px"><h2>Verify your QASyn account</h2><p>Enter this 6-digit code to activate your workspace:</p><p style="font:700 30px/1.2 ui-monospace,Consolas,monospace;letter-spacing:8px;color:#4f46e5">${code}</p><p>The code expires in 15 minutes. If you did not request it, ignore this message.</p><p style="color:#6b7280;font-size:12px">QASyn · Autonomous Quality Engineering</p></div>`,
     text: `Your QASyn verification code is ${code}. It expires in 15 minutes.`,
   });
+}
+
+export async function sendLeadNotificationEmail(input: {
+  kind: "demo" | "contact" | "career";
+  name: string;
+  email: string;
+  company?: string;
+  role?: string;
+  jobTitle?: string;
+  portfolioUrl?: string;
+  message?: string;
+}): Promise<{ provider: "smtp" | "resend" | "outbox"; status: "sent" | "queued" | "failed" }> {
+  const label = input.kind === "demo" ? "Demo request" : input.kind === "career" ? "Job application" : "Contact request";
+  const rows: Array<[string, string]> = [
+    ["Type", label],
+    ["Name", input.name],
+    ["Email", input.email],
+    ...(input.company ? ([["Company", input.company]] as Array<[string, string]>) : []),
+    ...(input.role ? ([["Team size / role", input.role]] as Array<[string, string]>) : []),
+    ...(input.jobTitle ? ([["Role applied for", input.jobTitle]] as Array<[string, string]>) : []),
+    ...(input.portfolioUrl ? ([["Portfolio / LinkedIn / GitHub", input.portfolioUrl]] as Array<[string, string]>) : []),
+    ...(input.message ? ([["Message / experience", input.message]] as Array<[string, string]>) : []),
+  ];
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+  const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:auto;padding:24px"><h2>QASyn ${escapeHtml(label)}</h2><table style="border-collapse:collapse;width:100%">${rows
+    .map(([key, value]) => `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top">${escapeHtml(key)}</td><td style="padding:6px 0;color:#111827;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`)
+    .join("")}</table><p style="color:#6b7280;font-size:12px;margin-top:24px">Sent to ${escapeHtml(CONTACT_RECIPIENT_EMAIL)} by the QASyn marketing site.</p></div>`;
+  const text = [`QASyn ${label}`, ...rows.map(([key, value]) => `${key}: ${value}`), `Recipient: ${CONTACT_RECIPIENT_EMAIL}`].join("\n");
+  const result = await sendMail({
+    to: CONTACT_RECIPIENT_EMAIL,
+    subject: `QASyn ${label}: ${input.name}`,
+    html,
+    text,
+  });
+  try {
+    const logDir = path.join(process.cwd(), ".qasyn-data");
+    await mkdir(logDir, { recursive: true });
+    await appendFile(
+      path.join(logDir, "mail.log"),
+      `${JSON.stringify({ at: new Date().toISOString(), kind: input.kind, name: input.name, email: input.email, to: CONTACT_RECIPIENT_EMAIL, provider: result.provider, status: result.status })}\n`,
+      "utf8",
+    );
+  } catch (error) {
+    console.warn("[mailer] lead notification log skipped", error instanceof Error ? error.message : String(error));
+  }
+  return result;
 }
 
 export async function sendInvitationEmail(email: string, inviteUrl: string, organisationName: string, role: string): Promise<void> {
