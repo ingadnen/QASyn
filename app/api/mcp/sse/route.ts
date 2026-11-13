@@ -4,6 +4,7 @@ import { resolveOrgForMcp } from "@/lib/api-token-auth";
 import { ensureWal } from "@/lib/db";
 import { jsonError, readJson } from "@/lib/http";
 import { callMcpTool, QASYN_MCP_TOOLS } from "@/lib/mcp-server";
+import { quotaErrorResponse } from "@/lib/tenant";
 
 const rpcSchema = z.object({
   jsonrpc: z.literal("2.0"),
@@ -75,6 +76,8 @@ export async function POST(request: Request) {
       const data = await callMcpTool(auth.organisationId, params.name, (params.arguments ?? {}) as Record<string, unknown>);
       return NextResponse.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(data) }] } });
     } catch (e) {
+      const quota = quotaErrorResponse(e);
+      if (quota) return quota;
       return NextResponse.json({ jsonrpc: "2.0", id, error: { code: -32000, message: e instanceof Error ? e.message : "Tool execution failed" } });
     }
   }

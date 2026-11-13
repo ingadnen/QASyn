@@ -6,7 +6,7 @@ import { resolveGroundingUrl } from "@/lib/grounding-url";
 import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/http";
 import { parseIntegrationConfig } from "@/lib/integration-providers";
 import { buildStepHealMetadata, healSelectorWithBivia, isHealableAction, syntheticDomSummary } from "@/lib/selector-healing";
-import { audit, guardApi, quotaErrorResponse, readSettings, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, readSettings, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { updateTestCaseSchema } from "@/lib/validation";
@@ -175,6 +175,13 @@ async function handlePatch(request: Request, { params }: Params) {
   }
 
   if (input.action === "simulate_self_heal") {
+    try {
+      await assertQuotaAvailable(prisma, ctx.org.id, CREDIT_COSTS.testRun, ctx.user.id);
+    } catch (error) {
+      const quota = quotaErrorResponse(error);
+      if (quota) return quota;
+      throw error;
+    }
     await delay(MOCK_LATENCY_MS);
     let steps: Array<Record<string, unknown>> = [];
     try {
@@ -470,6 +477,13 @@ async function handlePatch(request: Request, { params }: Params) {
       steps = [];
     }
     if (steps.length === 0) return jsonError("Add at least one step before running.", 400);
+    try {
+      await assertQuotaAvailable(prisma, ctx.org.id, CREDIT_COSTS.testRun, ctx.user.id);
+    } catch (error) {
+      const quota = quotaErrorResponse(error);
+      if (quota) return quota;
+      throw error;
+    }
     await delay(MOCK_LATENCY_MS * 2);
     // Deterministic simulated execution: failing/flaky cases stop on a middle step
     // unless the AI auto-fix rerun recovers them.

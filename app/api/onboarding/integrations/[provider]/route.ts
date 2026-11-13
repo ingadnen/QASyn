@@ -16,6 +16,13 @@ interface RepoResult {
   url: string;
 }
 
+class IntegrationProbeRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "IntegrationProbeRejectedError";
+  }
+}
+
 function isSandboxHost(hostname: string): boolean {
   return (
     hostname === "localhost" ||
@@ -128,6 +135,9 @@ async function fetchRepositories(provider: string, config: Record<string, string
         })).filter((repo) => repo.name);
         if (repos.length > 0) return repos;
       }
+      if ((response.status === 401 || response.status === 403) && !isSandboxToken(config.token)) {
+        throw new IntegrationProbeRejectedError(`GitHub rejected the access token (HTTP ${response.status}).`);
+      }
     }
     if (provider === "AZURE_DEVOPS") {
       const parsed = parseAzureDevOpsUrl(config.organization || config.baseUrl || "");
@@ -139,14 +149,21 @@ async function fetchRepositories(provider: string, config: Record<string, string
           project: config.project || parsed.project,
           pat,
         });
-        const repositories = await fetchAzureRepositories(adoConfig);
-        if (repositories.length > 0) {
-          return repositories.map((repository) => ({
-            id: repository.id,
-            name: repository.name,
-            fullName: `${adoConfig.organization}/${repository.name}`,
-            url: repository.webUrl,
-          }));
+        try {
+          const repositories = await fetchAzureRepositories(adoConfig);
+          if (repositories.length > 0) {
+            return repositories.map((repository) => ({
+              id: repository.id,
+              name: repository.name,
+              fullName: `${adoConfig.organization}/${repository.name}`,
+              url: repository.webUrl,
+            }));
+          }
+        } catch (error) {
+          const status = (error as { status?: number }).status;
+          if ((status === 401 || status === 403) && !isSandboxToken(pat)) {
+            throw new IntegrationProbeRejectedError(`Azure DevOps rejected the personal access token (HTTP ${status}).`);
+          }
         }
       }
     }
@@ -165,8 +182,12 @@ async function fetchRepositories(provider: string, config: Record<string, string
         })).filter((repo) => repo.name);
         if (repos.length > 0) return repos;
       }
+      if ((response.status === 401 || response.status === 403) && !isSandboxToken(config.token)) {
+        throw new IntegrationProbeRejectedError(`GitLab rejected the access token (HTTP ${response.status}).`);
+      }
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof IntegrationProbeRejectedError) throw error;
     /* fall back to the configured repository */
   }
   return fallback;
@@ -228,15 +249,22 @@ export async function POST(request: Request, { params }: Params) {
     `${ctx.org.slug}${provider.data === "SLACK" ? "" : "/app"}`;
   const status = "CONNECTED";
 
+  let repositories: RepoResult[] = [];
+  if (provider.data === "GITHUB" || provider.data === "GITLAB" || provider.data === "AZURE_DEVOPS") {
+    try {
+      repositories = await fetchRepositories(provider.data, config);
+    } catch (error) {
+      if (error instanceof IntegrationProbeRejectedError) return jsonError(error.message, 400);
+      throw error;
+    }
+  }
+
   const integration = await prisma.integration.upsert({
     where: { organisationId_provider: { organisationId: ctx.org.id, provider: provider.data } },
     create: { organisationId: ctx.org.id, provider: provider.data, status, detail: provider.data === "SLACK" ? `#${config.channel || `${ctx.org.slug}-qa`}`.replace(/^#/, "#") : detail, configJson: JSON.stringify(config) },
     update: { status, detail: provider.data === "SLACK" ? `#${config.channel || `${ctx.org.slug}-qa`}`.replace(/^#/, "#") : detail, configJson: JSON.stringify(config) },
   });
   await audit(prisma, ctx, "integration.connected", meta.name);
-  const repositories = provider.data === "GITHUB" || provider.data === "GITLAB" || provider.data === "AZURE_DEVOPS"
-    ? await fetchRepositories(provider.data, config)
-    : [];
   return NextResponse.json({
     integration: { provider: integration.provider, status: integration.status, detail: integration.detail, config },
     repositories,

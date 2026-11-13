@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { buildStepsJson, runTestCases } from "@/lib/engine";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { guardPermission } from "@/lib/rbac-server";
-import { audit } from "@/lib/tenant";
+import { audit, quotaErrorResponse } from "@/lib/tenant";
 import { normalizeWebsite } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -147,12 +147,19 @@ export async function POST(request: Request) {
     return jsonError("No impacted or PR-specific test cases are available to run.", 400);
   }
 
-  const run = await runTestCases(prisma, ctx, uniqueCases, {
-    targetUrl,
-    trigger: `PR #${pr.prNumber}`,
-    mode: `PR Auto-Regression · ${environment?.name ?? "Deployed environment"}`,
-    deterministic: true,
-  });
+  let run: Awaited<ReturnType<typeof runTestCases>>;
+  try {
+    run = await runTestCases(prisma, ctx, uniqueCases, {
+      targetUrl,
+      trigger: `PR #${pr.prNumber}`,
+      mode: `PR Auto-Regression · ${environment?.name ?? "Deployed environment"}`,
+      deterministic: true,
+    });
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 
   const regressions = run.failed;
   const status = regressions > 0 ? "regression_caught" : "passed_baseline";

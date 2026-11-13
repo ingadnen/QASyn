@@ -6501,7 +6501,33 @@ async function main() {
       `${p20Readme.length} README chars · ${p20Guide.length} guide chars · ${p20BrokenIdentifier.test(p20Readme) || p20BrokenIdentifier.test(p20Guide) ? "broken identifier" : "clean"}`,
     );
 
-    // 20.7 — cleanup: restore purchased credits and keep future runs deterministic.
+    // 20.7 — organisation credit exhaustion must block execution with 402.
+    const p20OrgBeforeExhaust = await db.organisation.findUnique({
+      where: { id: p20Cgi.id },
+      select: { trialCredits: true, creditsUsed: true },
+    });
+    await db.organisation.update({
+      where: { id: p20Cgi.id },
+      data: { trialCredits: p20OrgBeforeExhaust?.creditsUsed ?? 0 },
+    });
+    const p20OrgBlocked = await apiJson(page, "/api/dashboard/crawl", "POST", {
+      targetUrl: `https://www.cgi.com/p20-org-quota-${RUN_ID}`,
+    });
+    check(
+      "PART 20 organisation credit exhaustion blocks execution with 402",
+      p20OrgBlocked.status === 402 && /No credits left in this workspace/.test(JSON.stringify(p20OrgBlocked.body)),
+      `status ${p20OrgBlocked.status} · ${JSON.stringify(p20OrgBlocked.body).slice(0, 160)}`,
+    );
+    await db.crawlSession.deleteMany({ where: { organisationId: p20Cgi.id, targetUrl: { contains: `p20-org-quota-${RUN_ID}` } } });
+    await db.organisation.update({
+      where: { id: p20Cgi.id },
+      data: {
+        trialCredits: p20OrgBeforeExhaust?.trialCredits ?? p20Cgi.trialCredits,
+        creditsUsed: p20OrgBeforeExhaust?.creditsUsed ?? p20Cgi.creditsUsed,
+      },
+    });
+
+    // 20.8 — cleanup: restore purchased credits and keep future runs deterministic.
     await db.creditEntry.deleteMany({ where: { organisationId: p20Cgi.id, note: { contains: `P20-${RUN_ID}` } } }).catch(() => undefined);
     await db.organisation.update({
       where: { id: p20Cgi.id },

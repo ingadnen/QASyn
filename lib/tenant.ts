@@ -130,16 +130,29 @@ export async function assertQuotaAvailable(
   amount: number,
   userId?: string,
 ): Promise<void> {
-  if (!userId || !Number.isFinite(amount) || amount <= 0) return;
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { organisationId: true, creditQuota: true, creditsConsumed: true },
+  if (!Number.isFinite(amount) || amount <= 0) return;
+
+  if (userId) {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { organisationId: true, creditQuota: true, creditsConsumed: true },
+    });
+    if (user && user.organisationId === organisationId && user.creditQuota > 0) {
+      if (user.creditsConsumed + amount > user.creditQuota) {
+        throw new QuotaExceededError(
+          `User token quota exceeded (${user.creditsConsumed}/${user.creditQuota}). Ask your workspace admin to increase your allocation.`,
+        );
+      }
+    }
+  }
+
+  const org = await db.organisation.findUnique({
+    where: { id: organisationId },
+    select: { trialCredits: true, creditsUsed: true },
   });
-  if (!user || user.organisationId !== organisationId || user.creditQuota <= 0) return;
-  if (user.creditsConsumed + amount > user.creditQuota) {
-    throw new QuotaExceededError(
-      `User token quota exceeded (${user.creditsConsumed}/${user.creditQuota}). Ask your workspace admin to increase your allocation.`,
-    );
+  if (!org) return;
+  if (org.trialCredits - org.creditsUsed < amount) {
+    throw new QuotaExceededError("No credits left in this workspace. Upgrade your plan or top up credits in Billing.");
   }
 }
 

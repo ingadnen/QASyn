@@ -14,7 +14,7 @@ import { normalizeGroundBox, type NormalisedBox } from "./bivia-box";
 import { recordBiviaDecision } from "./bivia-telemetry";
 import { prisma } from "./db";
 import { parseIntegrationConfig, type IntegrationConfig } from "./integration-providers";
-import { callTenantAiModel } from "./model-router";
+import { callTenantAiModel, resolveTenantAiModel } from "./model-router";
 import { impactedModules } from "./pr-catalog";
 import { readSettings, type AnalysisCodeSettings } from "./tenant";
 
@@ -884,6 +884,14 @@ export async function biviaBoolean(input: BiviaBooleanInput): Promise<BiviaBoole
     return result;
   };
 
+  const preferredTenantModel = input.organisationId
+    ? await resolveTenantAiModel(input.organisationId, "Grounding")
+    : null;
+  if (preferredTenantModel?.role === "Grounding") {
+    const tenant = await tenantBooleanDecision(input.organisationId, input.question, context, allowAbstain);
+    if (tenant) return telemetry(tenant);
+  }
+
   const imagePayload = input.screenshotBase64 ? { images: [{ b64: input.screenshotBase64 }] } : {};
   const first = await remoteRequest(config, "/boolean", {
     ...common,
@@ -925,9 +933,6 @@ export async function biviaBoolean(input: BiviaBooleanInput): Promise<BiviaBoole
     }
   }
 
-  const tenant = await tenantBooleanDecision(input.organisationId, input.question, context, allowAbstain);
-  if (tenant) return telemetry(tenant);
-
   const fallback = fallbackBoolean(input.question, context, input.screenshotBase64, allowAbstain, config.abstentionThreshold);
   return telemetry({
     ...fallback,
@@ -957,6 +962,14 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
     });
     return result;
   };
+  const preferredTenantModel = input.organisationId
+    ? await resolveTenantAiModel(input.organisationId, "Execution")
+    : null;
+  if (preferredTenantModel?.role === "Execution") {
+    const tenant = await tenantChoiceDecision(input.organisationId, input.question, input.options, context);
+    if (tenant) return telemetry(tenant);
+  }
+
   const remote = await remoteRequest(config, "/choice", {
     question: input.question,
     // Live Bivia expects `choices`; `options` is kept for older deployments.
@@ -995,9 +1008,6 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
       });
     }
   }
-
-  const tenant = await tenantChoiceDecision(input.organisationId, input.question, input.options, context);
-  if (tenant) return telemetry(tenant);
 
   const fallback = fallbackChoice(input.question, input.options, context, allowAbstain, config.abstentionThreshold);
   return telemetry({

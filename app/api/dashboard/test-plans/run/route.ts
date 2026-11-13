@@ -69,7 +69,6 @@ export async function POST(request: Request) {
   const creditCost = 5 * cases.length;
   try {
     await assertQuotaAvailable(prisma, ctx.org.id, creditCost, ctx.user.id);
-    await spendCredits(prisma, ctx.org.id, creditCost, ctx.user.id);
   } catch (error) {
     const quota = quotaErrorResponse(error);
     if (quota) return quota;
@@ -233,6 +232,13 @@ export async function POST(request: Request) {
     });
   }
 
+  try {
+    await spendCredits(prisma, ctx.org.id, creditCost, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
   await audit(prisma, ctx, "test_plan.run", `${plan.name} · ${cases.length} cases · ${browsers.join("/")} · ${passed} passed · ${failed} failed · ${notExecuted} not executed`);
   return NextResponse.json({
     passed,

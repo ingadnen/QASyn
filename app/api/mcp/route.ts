@@ -4,6 +4,7 @@ import { resolveOrgForMcp } from "@/lib/api-token-auth";
 import { jsonError, readJson } from "@/lib/http";
 import { callMcpTool, QASYN_MCP_TOOLS } from "@/lib/mcp-server";
 import { rateLimit } from "@/lib/rate-limit";
+import { quotaErrorResponse } from "@/lib/tenant";
 
 const rpcSchema = z.object({
   jsonrpc: z.literal("2.0"),
@@ -68,6 +69,8 @@ export async function POST(request: Request) {
       const data = await callMcpTool(auth.organisationId, params.name, (params.arguments ?? {}) as Record<string, unknown>);
       return NextResponse.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] } });
     } catch (error) {
+      const quota = quotaErrorResponse(error);
+      if (quota) return quota;
       return NextResponse.json({
         jsonrpc: "2.0",
         id,

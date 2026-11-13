@@ -13,7 +13,7 @@ import {
   prDetail,
   type CatalogPullRequest,
 } from "@/lib/pr-catalog";
-import { audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
+import { assertQuotaAvailable, audit, guardApi, quotaErrorResponse, spendCredits } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
 import { delay } from "@/lib/utils";
 import { createPrSchema } from "@/lib/validation";
@@ -149,6 +149,14 @@ export async function POST(request: Request) {
   });
   if (exists) return jsonError(`PR #${prNumber} has already been checked.`, 409);
 
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
+
   await delay(MOCK_LATENCY_MS);
 
   const created = await prisma.pullRequestCheck.create({
@@ -204,6 +212,14 @@ export async function PATCH(request: Request) {
       where: { id: pr.id },
       data: { changedFilesJson: JSON.stringify(manualFiles(pr.filesChanged)) },
     });
+  }
+
+  try {
+    await assertQuotaAvailable(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis, ctx.user.id);
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
   }
 
   await delay(MOCK_LATENCY_MS);

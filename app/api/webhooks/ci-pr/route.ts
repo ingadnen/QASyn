@@ -8,7 +8,7 @@ import { jsonError, readJson, validationError } from "@/lib/http";
 import { parseIntegrationConfig } from "@/lib/integration-providers";
 import { buildPrGateMarkdown, type PrGateBivia, type PrGateImpact } from "@/lib/pr-gate";
 import { runStrixScan } from "@/lib/strix";
-import { audit, readSettings } from "@/lib/tenant";
+import { audit, quotaErrorResponse, readSettings } from "@/lib/tenant";
 import { normalizeWebsite } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -208,12 +208,19 @@ export async function POST(request: Request) {
   const uniqueCases = [...new Map([...impacted, ...prCases].map((testCase) => [testCase.id, testCase])).values()];
   if (uniqueCases.length === 0) return jsonError("No impacted or PR-specific test cases are available to run.", 400);
 
-  const run = await runTestCases(prisma, actor, uniqueCases, {
-    targetUrl,
-    trigger: `Webhook PR #${input.prNumber}`,
-    mode: "CI/CD Webhook Gate",
-    deterministic: true,
-  });
+  let run: Awaited<ReturnType<typeof runTestCases>>;
+  try {
+    run = await runTestCases(prisma, actor, uniqueCases, {
+      targetUrl,
+      trigger: `Webhook PR #${input.prNumber}`,
+      mode: "CI/CD Webhook Gate",
+      deterministic: true,
+    });
+  } catch (error) {
+    const quota = quotaErrorResponse(error);
+    if (quota) return quota;
+    throw error;
+  }
 
   // Calibrated Bivia /score + /set risk, mirroring the gate endpoint.
   const analysisCode = readSettings(organisation).analysisCode ?? null;
