@@ -43,14 +43,18 @@ export interface AutopilotPhase {
 
 export interface AutopilotTestCaseResult {
   id: string;
+  code: string;
   title: string;
   module: string;
   steps: number;
+  passedSteps: number;
+  totalSteps: number;
   verifySteps: number;
   calibratedLocators: number;
   confidencePct: number;
   status: string;
   href: string;
+  studioUrl: string;
 }
 
 export interface AutopilotResult {
@@ -86,6 +90,51 @@ function hostOf(targetUrl: string): string {
 
 function moduleOf(flow: GroundedFlow): string {
   return flow.module || "Core";
+}
+
+/**
+ * Dynamic authoring plan for the live target: 1 landing case, up to 4 distinct
+ * navigation journeys and up to 2 interactive form/control cases.
+ */
+function authoringFlowsFor(flows: GroundedFlow[]): GroundedFlow[] {
+  if (flows.length === 0) return [];
+  const landing = flows.find((flow) => /^Verify .*Landing Page/i.test(flow.name)) ?? flows[0];
+  const navigation = flows.filter((flow) => /^Navigate /i.test(flow.name)).slice(0, 4);
+  const interactive = flows.filter((flow) => /^(Exercise|Complete) /i.test(flow.name)).slice(0, 2);
+  const selected = [landing, ...navigation, ...interactive].filter(Boolean);
+  const seen = new Set<string>();
+  const unique = selected.filter((flow) => {
+    const key = flow.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  // A very small page can still yield one useful secondary assertion.
+  for (const flow of flows) {
+    if (unique.length >= 2) break;
+    if (unique.some((item) => item.name === flow.name)) continue;
+    unique.push(flow);
+  }
+  return unique;
+}
+
+function autopilotTitleForFlow(flow: GroundedFlow, index: number, heading: string, host: string): string {
+  if (index === 0 && /Landing Page/i.test(flow.name)) {
+    return `Verify ${heading} Landing Page & Hero CTA → Primary Content & Navigation Render Without Errors — Autopilot`;
+  }
+  const navigate = /^Navigate (.+?) Journey/i.exec(flow.name)?.[1];
+  if (navigate) {
+    return `Navigate ${navigate.slice(0, 48)} Journey from ${host} Header → Target Section & Interactive Controls Load Successfully — Autopilot`;
+  }
+  const exercise = /^Exercise (.+?) Control/i.exec(flow.name)?.[1];
+  if (exercise) {
+    return `Exercise ${exercise.slice(0, 48)} Control on ${host} → Action Completes & State Updates Cleanly — Autopilot`;
+  }
+  const complete = /^Complete (.+?) Form/i.exec(flow.name)?.[1];
+  if (complete) {
+    return `Complete ${complete.slice(0, 48)} Form on ${host} → Validation & Confirmation Render Successfully — Autopilot`;
+  }
+  return `Verify ${flow.name.slice(0, 100)} → Expected Content & Interaction Render — Autopilot`;
 }
 
 /** Deterministic synthetic steps used only when the live DOM is unreachable. */
@@ -153,7 +202,9 @@ export async function runQualityAutopilot(
   }
   let flows: GroundedFlow[] = groundedFlowsFromDom(snapshot);
   if (flows.length === 0) flows = fallbackFlows(targetUrl);
-  flows = flows.slice(0, 6);
+  // Keep enough grounded journeys for 1 landing + 4 navigation + 2 interactive
+  // authoring candidates instead of truncating the live site to 6.
+  flows = flows.slice(0, 10);
 
   // A running crawl short-circuits startCrawl. Retire only sessions that have
   // been running for more than two minutes; a genuinely active crawl keeps its
@@ -293,9 +344,9 @@ export async function runQualityAutopilot(
     href: linkGraphify,
   });
 
-  // ── Phase 4 · Context7 + Bivia-calibrated authoring ────────────────────
+  // ── Phase 4 · QASyn Framework Intelligence + Vision AI authoring ────────
   const guidance = context7Guidance("playwright accessible locator test case generation", 3);
-  const authoringFlows = flows.slice(0, 2);
+  const authoringFlows = authoringFlowsFor(flows);
   const created: AutopilotTestCaseResult[] = [];
   let calibratedLocators = 0;
   let calibrationTotal = 0;
@@ -310,11 +361,7 @@ export async function runQualityAutopilot(
       }
     })();
     const heading = (snapshot?.h1 || snapshot?.title || host).replace(/\s+/g, " ").trim().slice(0, 52);
-    const linkLabel = (/^Navigate (.+?) Journey/.exec(flow.name)?.[1] ?? snapshot?.navLinks[0]?.text ?? "Primary").replace(/\s+/g, " ").trim().slice(0, 48);
-    const title =
-      flowIndex === 0
-        ? `Verify ${heading} Landing Page & Hero CTA → Primary Content & Navigation Render Without Errors — Autopilot`
-        : `Navigate ${linkLabel} Journey from ${host} Header → Target Section & Interactive Controls Load Successfully — Autopilot`;
+    const title = autopilotTitleForFlow(flow, flowIndex, heading, host);
     const count = Math.max(4, Math.min(7, flow.steps));
     const steps: Array<Record<string, unknown>> = groundedStepsForFlow(snapshot, targetUrl, flow.name, count + 1).map((step) => ({ ...step }));
     if (!steps.some((step) => step.action === "AI Assertion")) {
@@ -324,14 +371,14 @@ export async function runQualityAutopilot(
         target: `Verify "${flow.name.slice(0, 80)}" completes with no console or network errors`,
         value: "",
         selector: "",
-        expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors.",
+        expectedResult: "QASyn Vision AI visual verification confirms the use case completed with 0 console/network errors.",
       });
     }
     for (const step of steps) {
       if (step.action === "AI Assertion") {
         step.context7 = guidance.slice(0, 900);
         if (!step.expectedResult) {
-          step.expectedResult = "Bivia visual verification confirms the use case completed with 0 console/network errors.";
+          step.expectedResult = "QASyn Vision AI visual verification confirms the use case completed with 0 console/network errors.";
         }
         continue;
       }
@@ -401,14 +448,18 @@ export async function runQualityAutopilot(
         });
     created.push({
       id: testCase.id,
+      code: "",
       title: testCase.title,
       module: testCase.module,
       steps: steps.length,
+      passedSteps: 0,
+      totalSteps: steps.length,
       verifySteps: steps.filter((step) => step.action === "AI Assertion").length,
       calibratedLocators: steps.filter((step) => typeof step.calibratedProbability === "number").length,
       confidencePct: calibrationTotal > 0 ? Math.round((calibrationConfidence / calibrationTotal) * 10) / 10 : 0,
       status: testCase.status,
       href: `/dashboard/test-studio/${testCase.id}`,
+      studioUrl: `/dashboard/test-studio/${testCase.id}`,
     });
   }
 
@@ -507,9 +558,9 @@ export async function runQualityAutopilot(
   const avgConfidence = calibrationTotal > 0 ? Math.round((calibrationConfidence / calibrationTotal) * 10) / 10 : 0;
   phases.push({
     id: "authoring",
-    label: "Context7 + Bivia test authoring",
+    label: "QASyn Framework Intelligence + Vision AI test authoring",
     status: created.length > 0 ? "completed" : "failed",
-    detail: `${created.length} grounded test case(s) authored with AI Verification steps, Context7 Playwright guidance and Bivia-calibrated locators.`,
+    detail: `${created.length} grounded test case(s) authored with AI Verification steps, QASyn Framework Intelligence Playwright guidance and QASyn Vision AI calibrated locators.`,
     metric: `${aiVerifications} AI verification · ${calibratedLocators} calibrated locator(s) · ${avgConfidence.toFixed(1)}% confidence`,
     href: created[0]?.href,
   });
@@ -528,9 +579,24 @@ export async function runQualityAutopilot(
       where: { organisationId: actor.org.id, id: { in: created.map((testCase) => testCase.id) } },
       select: { id: true, status: true, stepsJson: true },
     });
-    const statusById = new Map(refreshed.map((testCase) => [testCase.id, testCase.status]));
-    for (const testCase of created) {
-      testCase.status = statusById.get(testCase.id) ?? testCase.status;
+    const totalCases = await db.testCase.count({ where: { organisationId: actor.org.id } });
+    const rowById = new Map(refreshed.map((testCase) => [testCase.id, testCase]));
+    for (const [index, testCase] of created.entries()) {
+      const row = rowById.get(testCase.id);
+      testCase.status = row?.status ?? testCase.status;
+      let stepRows: Array<Record<string, unknown>> = [];
+      try {
+        const parsed = JSON.parse(row?.stepsJson ?? "[]") as unknown;
+        if (Array.isArray(parsed)) stepRows = parsed.filter((step): step is Record<string, unknown> => Boolean(step) && typeof step === "object");
+      } catch {
+        stepRows = [];
+      }
+      testCase.totalSteps = stepRows.length || testCase.steps;
+      testCase.passedSteps = stepRows.filter((step) => String(step.status ?? "") === "passed").length;
+      if (testCase.status === "passing" && testCase.passedSteps === 0) testCase.passedSteps = testCase.totalSteps;
+      testCase.code = `TC-${String(Math.max(1, totalCases - index)).padStart(3, "0")}`;
+      testCase.studioUrl = `/dashboard/test-studio/${testCase.id}`;
+      testCase.href = testCase.studioUrl;
     }
     execution.autoFix = refreshed.some((testCase) => testCase.stepsJson.includes("biviaHeal"));
   }

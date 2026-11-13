@@ -42,10 +42,10 @@ export const QASYN_MCP_TOOLS: McpTool[] = [
   { name: "qasyn_ship_workflow", description: "Run the autonomous QASyn pipeline and return the Go/No-Go verdict.", inputSchema: obj({ name: { type: "string" } }) },
   { name: "qasyn_reproduce_bug", description: "Reproduce a bug from a support ticket description.", inputSchema: obj({ title: { type: "string" }, description: { type: "string" } }, ["title", "description"]) },
   { name: "qasyn_analyze_pr_impact", description: "Alias of qasyn_analyze_pr kept for existing agent skills.", inputSchema: obj({ prNumber: { type: "number" }, branch: { type: "string" }, title: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["prNumber", "branch", "title", "files"]) },
-  { name: "qasyn_context7_resolve", description: "Resolve Context7 live documentation for Playwright, Next.js, Tailwind, Prisma or TypeScript and return prompt-ready rules.", inputSchema: obj({ query: { type: "string" } }, ["query"]) },
+  { name: "qasyn_context7_resolve", description: "Resolve QASyn Framework Intelligence documentation for Playwright, Next.js, Tailwind, Prisma or TypeScript and return prompt-ready rules.", inputSchema: obj({ query: { type: "string" } }, ["query"]) },
   {
     name: "qasyn_bivia_decide",
-    description: "Ask Articul8 Bivia for a calibrated multimodal decision: decide (boolean/choice), boolean AI verification, ground an element, or score PR risk and select tests.",
+    description: "Ask QASyn Vision AI for a calibrated multimodal decision: decide (boolean/choice), boolean AI verification, ground an element, or score PR risk and select tests.",
     inputSchema: obj(
       {
         mode: { type: "string", enum: ["decide", "boolean", "ground", "score"], default: "decide" },
@@ -187,7 +187,7 @@ export async function callMcpTool(organisationId: string, name: string, args: Re
       const options = Array.isArray(args.options)
         ? (args.options as unknown[]).filter((option): option is string => typeof option === "string")
         : [];
-      const badge = "🧠 Calibrated by Articul8 Bivia";
+      const badge = "🧠 Verified by QASyn Vision AI";
 
       if (mode === "ground") {
         const targetDescription = str(args.targetDescription) || question;

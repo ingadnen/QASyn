@@ -149,18 +149,18 @@ export function AnalysisSettings({ readOnly, initial, environments }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="flex items-center gap-2 text-[18px] font-semibold text-[#262626]">
-              <span aria-hidden="true">🧠</span> Articul8 Bivia (Multimodal Decision Engine)
+              <span aria-hidden="true">✨</span> QASyn Vision AI
             </h3>
             <p className="mt-1 text-[13.5px] text-[#6b7280]">
-              Calibrated decisions for AI Verification, Smart Locator self-healing and PR impact. Bivia answers with a calibrated probability or abstains when evidence is insufficient.
+              Calibrated AI for visual verification, smart locator self-healing and PR impact. QASyn Vision AI answers with a calibrated probability or abstains when evidence is insufficient.
             </p>
           </div>
           <div className="flex flex-col items-end gap-1.5">
             <span className="rounded-full border border-[#ddd6fe] bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#4f46e5]">
-              1,000,000,000 Bivia tokens grant
+              Enterprise AI verification included
             </span>
             <a href="/dashboard/integrations" className="text-[11.5px] font-semibold text-[#5b4ee8] hover:underline">
-              Manage Bivia credentials →
+              Manage QASyn Vision AI credentials →
             </a>
           </div>
         </div>
@@ -186,13 +186,13 @@ export function AnalysisSettings({ readOnly, initial, environments }: Props) {
               onChange={(e) => set("biviaAbstentionThreshold", Number(e.target.value))}
               disabled={readOnly}
             />
-            <span className={helpCls}>Calibrated probability (0–1) below which Bivia abstains instead of guessing. Default 0.35.</span>
+            <span className={helpCls}>Calibrated probability (0–1) below which QASyn Vision AI abstains instead of guessing. Default 0.35.</span>
           </label>
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {([
-            ["biviaEnabled", "Use live Bivia API", "Off keeps the deterministic calibrated fallback, so verification still runs offline."],
+            ["biviaEnabled", "Use live QASyn Vision AI", "Off keeps the deterministic calibrated fallback, so verification still runs offline."],
             ["biviaVerifyAi", "AI Verification", "Calibrate every AI Assertion step with status, probability and abstain reason."],
             ["biviaMagicLocator", "Smart Locator / Magic UI", "Calibrate the best Playwright locator in Studio."],
             ["biviaPrRisk", "PR impact analysis", "Score PR risk and select the exact impacted regression tests."],

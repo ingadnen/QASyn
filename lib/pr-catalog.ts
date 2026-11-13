@@ -7,6 +7,7 @@
  * The data is stable per repository and organisation so the Pull Requests
  * module can list real selections instead of asking for a free-form number.
  */
+import { fetchAzurePullRequests, isLiveAzurePat, parseAzureDevOpsUrl, resolveAzureDevOpsConfig } from "./azure-devops";
 
 export interface SourceIntegrationLike {
   provider: string;
@@ -63,9 +64,11 @@ export function sourceRepositories(integrations: SourceIntegrationLike[]): Sourc
       const repo = (config.repository ?? "").trim();
       repository = repo.includes("/") ? repo : workspace && repo ? `${workspace}/${repo}` : repo || workspace;
     } else if (integration.provider === "AZURE_DEVOPS") {
-      const org = (config.organization ?? "").trim();
-      const repo = (config.repository ?? "").trim();
-      repository = repo.includes("/") ? repo : org && repo ? `${org}/${repo}` : repo || org;
+      const org = (config.baseUrl || config.organization || "").trim();
+      const repo = (config.repository || "").trim();
+      const parsed = org ? parseAzureDevOpsUrl(org) : null;
+      const orgSlug = (parsed?.organization || org).trim();
+      repository = repo.includes("/") ? repo : orgSlug && repo ? `${orgSlug}/${repo}` : repo || orgSlug;
     }
     if (!repository) continue;
     sources.push({
@@ -221,6 +224,60 @@ export function openPullRequests(provider: string, repository: string): CatalogP
       url: `https://${provider === "GITLAB" ? "gitlab.com" : provider === "BITBUCKET" ? "bitbucket.org" : provider === "AZURE_DEVOPS" ? "dev.azure.com" : "github.com"}/${repository}/pull/${number}`,
     };
   });
+}
+
+/** Real Azure DevOps pull requests mapped to the shared catalogue shape. */
+export async function fromAzureDevOps(config: Record<string, string>): Promise<CatalogPullRequest[]> {
+  const resolved = resolveAzureDevOpsConfig(config);
+  const { pullRequests } = await fetchAzurePullRequests(resolved);
+  return pullRequests.map((pull) => ({
+    provider: "AZURE_DEVOPS",
+    repository: pull.repository,
+    number: pull.id,
+    title: pull.title,
+    branch: pull.sourceBranch,
+    branchTarget: pull.targetBranch,
+    author: pull.author,
+    openedAt: pull.createdAt,
+    files: pull.changedFiles,
+    additions: pull.additions,
+    deletions: pull.deletions,
+    url: pull.externalUrl,
+  }));
+}
+
+export interface DiscoveredRepository extends SourceRepository {
+  pullRequests: CatalogPullRequest[];
+}
+
+/**
+ * Async catalogue used by the Pull Requests modal. Azure DevOps is queried for
+ * real repositories and PRs; other providers keep the deterministic catalogue.
+ */
+export async function discoverPullRequests(integrations: SourceIntegrationLike[]): Promise<DiscoveredRepository[]> {
+  const repositories = sourceRepositories(integrations);
+  const discovered: DiscoveredRepository[] = [];
+  for (const source of repositories) {
+    let pullRequests: CatalogPullRequest[] = [];
+    if (source.provider === "AZURE_DEVOPS") {
+      const integration = integrations.find((item) => item.provider === "AZURE_DEVOPS" && item.status === "CONNECTED");
+      const config = integration?.config ?? {};
+      try {
+        if (isLiveAzurePat(resolveAzureDevOpsConfig(config).pat)) {
+          pullRequests = await fromAzureDevOps(config);
+        }
+      } catch {
+        pullRequests = [];
+      }
+      if (pullRequests.length === 0) {
+        pullRequests = openPullRequests(source.provider, source.repository);
+      }
+    } else {
+      pullRequests = openPullRequests(source.provider, source.repository);
+    }
+    discovered.push({ ...source, pullRequests });
+  }
+  return discovered;
 }
 
 const MODULE_HINTS: Array<{ module: string; words: string[] }> = [

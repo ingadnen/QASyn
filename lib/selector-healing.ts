@@ -210,7 +210,7 @@ export async function healSelectorWithBivia(input: HealSelectorInput): Promise<B
     latencyMs: decision.latencyMs + groundingResult.latencyMs,
     abstainReason:
       decision.abstainReason ??
-      (!selected ? "Bivia abstained; no calibrated locator met the abstention threshold." : undefined),
+      (!selected ? "QASyn Vision AI abstained; no calibrated locator met the abstention threshold." : undefined),
     strategy: selected?.strategy ?? null,
     candidates: base.candidates,
     grounding: {

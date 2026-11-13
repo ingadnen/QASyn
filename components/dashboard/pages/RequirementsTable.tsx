@@ -7,6 +7,7 @@ import { Modal, StatusPill, cqaBtnSecondary, useAction } from "@/components/dash
 import { LinkTests } from "@/components/dashboard/pages/LinkTests";
 import { RowMenu } from "@/components/contextqa/row-menu";
 import { BulkButton, ColumnFilter, ColumnSort, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, tableCardClass, type TableSortState } from "@/components/contextqa/table-ui";
+import { AzureDevOpsSyncButton } from "@/components/dashboard/pages/AzureDevOpsSyncButton";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -272,7 +273,12 @@ export function RequirementsTable({
         onVisibleColumnsChange={setVisibleColumns}
         onRefresh={refresh}
         refreshing={isRefreshing}
-        actions={actions}
+        actions={
+          <div className="flex items-center gap-2">
+            {actions}
+            <AzureDevOpsSyncButton />
+          </div>
+        }
       />
 
       <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>

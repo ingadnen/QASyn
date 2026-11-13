@@ -378,7 +378,7 @@ export async function runTestCases(
     if (status === "failing") failed++;
     else passed++;
 
-    // Execute every AI Assertion step through Articul8 Bivia and persist the
+    // Execute every AI Assertion step through QASyn Vision AI and persist the
     // calibrated status, probability and abstain reason on the step itself.
     const biviaNotes: string[] = [];
     let stepsChanged = false;
@@ -425,7 +425,7 @@ export async function runTestCases(
         });
         stepsChanged = true;
         biviaNotes.push(
-          `✨ Healed by Bivia ${decision.probabilityPct.toFixed(1)}% calibrated · ${oldSelector || "(empty)"} → ${decision.newSelector}`,
+          `✨ Healed by QASyn Vision AI ${decision.probabilityPct.toFixed(1)}% calibrated · ${oldSelector || "(empty)"} → ${decision.newSelector}`,
         );
       }
     }
@@ -471,7 +471,7 @@ export async function runTestCases(
         };
         stepsChanged = true;
         biviaNotes.push(
-          `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${decision.abstainReason ? ` · ${decision.abstainReason}` : ""}`,
+          `🧠 QASyn Vision AI ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${decision.abstainReason ? ` · ${decision.abstainReason}` : ""}`,
         );
       }
     }
@@ -508,7 +508,7 @@ export async function runTestCases(
           status: stepStatus,
           url: targetUrl || String(steps.find((entry) => String(entry.action ?? "") === "Navigate")?.target ?? ""),
           stepNumber: index + 1,
-          detail: healed ? "Bivia re-resolved this locator; visual evidence persisted." : String(step.message ?? "Executed by the QASyn deterministic engine."),
+          detail: healed ? "QASyn Vision AI re-resolved this locator; visual evidence persisted." : String(step.message ?? "Executed by the QASyn deterministic engine."),
           capturedAt: now.toISOString(),
         });
       step.status = stepStatus;
@@ -525,7 +525,7 @@ export async function runTestCases(
         healed,
         expectedResult: step.expectedResult,
         message: healed
-          ? "Selector re-resolved by Bivia · visual evidence attached."
+          ? "Selector re-resolved by QASyn Vision AI · visual evidence attached."
           : stepStatus === "failed"
             ? "Assertion failed: expected the target to be visible within 15s. Screenshot attached."
             : "OK · screenshot attached.",
@@ -559,7 +559,7 @@ export async function runTestCases(
         failedStep,
         failedStepText: failedStep ? String(steps[failedStep - 1]?.target ?? "") || null : null,
         autoFix: healedDetails.length > 0,
-        createdBy: healedDetails.length > 0 ? "Articul8 Bivia" : "System",
+        createdBy: healedDetails.length > 0 ? "QASyn Vision AI" : "System",
         logJson: JSON.stringify(runLog),
       },
     });
@@ -580,8 +580,8 @@ export async function runTestCases(
           organisationId: actor.org.id,
           testCaseId: tc.id,
           version: versionCount + 1,
-          summary: `✨ Bivia self-healed selector: ${first.oldSelector} → ${first.newSelector} (${first.probabilityPct.toFixed(1)}% calibrated)`,
-          author: "Articul8 Bivia",
+          summary: `✨ QASyn Vision AI self-healed selector: ${first.oldSelector} → ${first.newSelector} (${first.probabilityPct.toFixed(1)}% calibrated)`,
+          author: "QASyn Vision AI",
           addedJson: JSON.stringify(healedDetails.map((entry) => entry.newSelector)),
           removedJson: JSON.stringify(healedDetails.map((entry) => entry.oldSelector)),
           stepsJson: JSON.stringify(steps),
@@ -809,7 +809,7 @@ function expectedResultForSeed(testType: string, action: string, index: number, 
       "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
       "The search and login input surfaces are visible and expose sanitised, validated form controls.",
       "The benign XSS/SQLi probe is accepted as literal text and is not executed by the browser.",
-      "Bivia confirms the probe payload is escaped and CSP/WAF blocks unescaped script execution.",
+      "QASyn Vision AI confirms the probe payload is escaped and CSP/WAF blocks unescaped script execution.",
       "The response does not reflect raw script tags into the DOM.",
       "No reflected XSS or SQL error leakage is observable anywhere in the page.",
     ][index % 6];
@@ -819,7 +819,7 @@ function expectedResultForSeed(testType: string, action: string, index: number, 
       "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
       "HSTS, CSP and X-Frame-Options headers are present with production-safe values.",
       "Session cookies are marked Secure and HttpOnly with a safe SameSite policy.",
-      "Bivia confirms the OWASP Top-10 posture across headers, cookies and transport.",
+      "QASyn Vision AI confirms the OWASP Top-10 posture across headers, cookies and transport.",
       "HSTS max-age and CSP frame-ancestors enforce HTTPS and frame isolation.",
       "No mixed content or insecure form action is present.",
     ][index % 6];
@@ -860,7 +860,7 @@ function expectedResultForSeed(testType: string, action: string, index: number, 
     "Target URL loads with HTTP 200 OK and renders the primary document shell without blocking errors.",
     "The primary page heading, navigation bar, and core layout landmarks are visible in the viewport.",
     "The interactive navigation control responds to click, updates the active view or menu state, and maintains layout stability.",
-    "Bivia visual verification confirms the target section heading and key content cards are rendered legibly.",
+    "QASyn Vision AI visual verification confirms the target section heading and key content cards are rendered legibly.",
     "Secondary section controls and interactive inputs accept focus and render the expected state.",
     "End-to-end user journey completes with zero unhandled console errors, zero 5xx network failures, and verified DOM state.",
   ][index % 6] ?? defaultExpectedResultForStep({ action, target, value });

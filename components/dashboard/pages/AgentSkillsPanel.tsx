@@ -142,7 +142,7 @@ export function AgentSkillsPanel({
         </div>
       </Card>
 
-      <Card title="Context7 Live Docs">
+      <Card title="QASyn Framework Intelligence">
         <div className="space-y-2 px-5 py-4" data-testid="context7-resolver">
           <p className="text-[12px] leading-5 text-[#6b7280]">
             Resolve a task to versioned library rules. The resolver feeds test generation and auto-healing with the same
@@ -153,7 +153,7 @@ export function AgentSkillsPanel({
               className="h-9 min-w-[220px] flex-1 rounded-lg border border-[#e5e7eb] px-3 text-[12.5px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              aria-label="Context7 query"
+              aria-label="QASyn Framework Intelligence query"
             />
             <button type="button" className={cqaBtnPrimary} disabled={loading} onClick={() => void resolve()}>
               <CqaIcon name="search" className="text-[15px]" />

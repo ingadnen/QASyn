@@ -123,7 +123,7 @@ export function MagicLocatorInspector({ step, readOnly, onApply }: Props) {
                       : "border-[#fedf89] bg-[#fffaeb] text-[#b54708]",
                   )}
                 >
-                  🧠 Calibrated by Articul8 Bivia · {result.bivia.probabilityPct.toFixed(1)}%
+                  🧠 Verified by QASyn Vision AI · {result.bivia.probabilityPct.toFixed(1)}%
                   {result.bivia.status === "abstained" ? " · abstained" : ""}
                   {result.bivia.abstainReason ? ` · ${result.bivia.abstainReason}` : ""}
                 </p>

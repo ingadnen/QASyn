@@ -441,8 +441,15 @@ export function buildStepHudScript(payload: StepEvidencePayload): string {
   })()`;
 }
 
+const PLAYWRIGHT_DOCKER_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+];
+
 async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExecutionOptions = {}): Promise<RealStepOutcome[]> {
-  const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  const browser = await pw.chromium.launch({ headless: true, args: PLAYWRIGHT_DOCKER_ARGS });
   const outcomes: RealStepOutcome[] = [];
   const started = Date.now();
   const budgetMs = Math.max(4_000, Math.min(options.timeoutMs ?? GLOBAL_TIMEOUT_MS, GLOBAL_TIMEOUT_MS));
@@ -805,7 +812,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
             verifiedAt: new Date().toISOString(),
             ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
           },
-          message: `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
+          message: `🧠 QASyn Vision AI ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
             decision.abstainReason ? ` · ${decision.abstainReason}` : ""
           } · screenshot ${assertionShot ? "captured" : "unavailable"}`,
           consoleLogs: [...consoleLogs],
@@ -886,7 +893,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
                   newSelector: decision.newSelector,
                   score: decision.probability,
                   biviaHeal,
-                  message: `✨ Healed by Bivia · ${decision.oldSelector || "(empty)"} → ${decision.newSelector} · ${decision.probabilityPct.toFixed(1)}% calibrated · ${retryMessage}`,
+                  message: `✨ Healed by QASyn Vision AI · ${decision.oldSelector || "(empty)"} → ${decision.newSelector} · ${decision.probabilityPct.toFixed(1)}% calibrated · ${retryMessage}`,
                   consoleLogs: [...consoleLogs],
                   networkErrors: [...networkErrors],
                   screenshotBase64: captured.screenshotBase64,
@@ -921,7 +928,7 @@ async function runWithPlaywright(steps: NlpStep[], pw: PwModule, options: WebExe
           newSelector,
           score: healScore,
           ...(biviaHeal ? { biviaHeal } : {}),
-          message: `Step failed (${e instanceof Error ? e.message : "error"}) · screenshot ${captured.screenshotBase64 ? "captured" : "unavailable"} · healing score ${healScore.toFixed(2)}${healed ? ` → repaired: ${newSelector}` : ""}${biviaHeal ? ` · Bivia ${biviaHeal.probabilityPct.toFixed(1)}% calibrated` : ""} · Context7 applied`,
+          message: `Step failed (${e instanceof Error ? e.message : "error"}) · screenshot ${captured.screenshotBase64 ? "captured" : "unavailable"} · healing score ${healScore.toFixed(2)}${healed ? ` → repaired: ${newSelector}` : ""}${biviaHeal ? ` · QASyn Vision AI ${biviaHeal.probabilityPct.toFixed(1)}% calibrated` : ""} · QASyn Framework Intelligence applied`,
           consoleLogs: [...consoleLogs],
           networkErrors: [...networkErrors],
           screenshotBase64: captured.screenshotBase64,
@@ -972,7 +979,7 @@ async function runWithHttp(steps: NlpStep[], options: WebExecutionOptions = {}):
           verifiedAt: new Date().toISOString(),
           ...(decision.abstainReason ? { abstainReason: decision.abstainReason } : {}),
         },
-        message: `🧠 Bivia ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
+        message: `🧠 QASyn Vision AI ${probabilityPct.toFixed(1)}% calibrated · ${stepStatus}${
           decision.abstainReason ? ` · ${decision.abstainReason}` : ""
         } · HTTP fallback context`,
         screenshotBase64: null,
@@ -1004,7 +1011,7 @@ async function runWithHttp(steps: NlpStep[], options: WebExecutionOptions = {}):
         healed: heal.healed,
         newSelector: heal.newSelector,
         score: heal.score,
-        message: `HTTP ${res.status} · ${dom.length} DOM elements parsed · healing score ${heal.score.toFixed(2)} · Context7 ${heal.strategy ?? "CSS"}`,
+        message: `HTTP ${res.status} · ${dom.length} DOM elements parsed · healing score ${heal.score.toFixed(2)} · QASyn Framework Intelligence ${heal.strategy ?? "CSS"}`,
         screenshotBase64: null,
       });
     } catch (e) {
@@ -1100,8 +1107,24 @@ export async function executeWebSteps(
   steps: NlpStep[],
   options: WebExecutionOptions = {},
 ): Promise<RealStepOutcome[]> {
-  const pw = await loadPlaywright();
-  const outcomes = pw ? await runWithPlaywright(steps, pw, options) : await runWithHttp(steps, options);
+  let outcomes: RealStepOutcome[] = [];
+  const pw = await loadPlaywright().catch(() => null);
+  if (pw) {
+    try {
+      outcomes = await runWithPlaywright(steps, pw, options);
+    } catch (error) {
+      console.error("[web-executor] Playwright execution failed; using HTTP/orchestrated evidence:", error);
+      outcomes = [];
+    }
+  }
+  if (outcomes.length === 0) {
+    try {
+      outcomes = await runWithHttp(steps, options);
+    } catch (error) {
+      console.error("[web-executor] HTTP execution fallback failed; using deterministic evidence:", error);
+      outcomes = [];
+    }
+  }
   return outcomes.map((outcome, index) => {
     if (outcome.screenshotBase64) {
       // Normalise real Playwright PNG captures into inline data URLs so callers
@@ -1259,8 +1282,9 @@ async function inspectWithFetch(url: string): Promise<TargetDomSnapshot | null> 
 
 /** Playwright inspection: real rendered DOM (SPA-safe). */
 async function inspectWithPlaywright(url: string, pw: PwModule): Promise<TargetDomSnapshot | null> {
-  const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  let browser: PwBrowser | null = null;
   try {
+    browser = await pw.chromium.launch({ headless: true, args: PLAYWRIGHT_DOCKER_ARGS });
     const page = await browser.newPage();
     await page.goto(url, { timeout: 8_000, waitUntil: "domcontentloaded" });
     const data = await page.evaluate(() => {
@@ -1310,7 +1334,7 @@ async function inspectWithPlaywright(url: string, pw: PwModule): Promise<TargetD
   } catch {
     return null;
   } finally {
-    await browser.close();
+    await browser?.close().catch(() => undefined);
   }
 }
 
@@ -1352,10 +1376,11 @@ export interface TargetCapture {
  */
 export async function captureTargetScreenshot(targetUrl: string): Promise<TargetCapture | null> {
   if (!isSafeUrl(targetUrl)) return null;
-  const pw = await loadPlaywright();
+  const pw = await loadPlaywright().catch(() => null);
   if (!pw) return null;
-  const browser = await pw.chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  let browser: PwBrowser | null = null;
   try {
+    browser = await pw.chromium.launch({ headless: true, args: PLAYWRIGHT_DOCKER_ARGS });
     const page = await browser.newPage({
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 QASyn/1.0",
@@ -1382,7 +1407,7 @@ export async function captureTargetScreenshot(targetUrl: string): Promise<Target
   } catch {
     return null;
   } finally {
-    await browser.close();
+    await browser?.close().catch(() => undefined);
   }
 }
 
@@ -1600,7 +1625,7 @@ export function groundedStepsForFlow(
       target: `Verify "${title.slice(0, 80)}" completes with zero console or network errors`,
       value: "",
       selector: "",
-      expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors.",
+      expectedResult: "QASyn Vision AI visual verification confirms the use case completed with 0 console/network errors.",
     });
   } else {
     steps.push(
@@ -1608,7 +1633,7 @@ export function groundedStepsForFlow(
       { id: "s3", action: "Click", target: 'Click "Services" in the main navigation', value: "", selector: "css:nav a", expectedResult: "Clicking 'Services' activates the navigation link or opens the target section." },
       { id: "s4", action: "Verify Element", target: "Verify the main content and interactive controls are visible", value: "", selector: "css:main", expectedResult: "Target section content and interactive controls are visible in the viewport." },
       { id: "s5", action: "Verify Element", target: "Verify the global footer and regional navigation landmarks are visible", value: "", selector: "css:footer", expectedResult: "Global navigation and footer landmarks remain accessible and properly aligned." },
-      { id: "s6", action: "AI Assertion", target: `Verify "${title.slice(0, 80)}" completes with zero console or network errors`, value: "", selector: "", expectedResult: "Bivia visual verification confirms the use case completed with 0 console/network errors." },
+      { id: "s6", action: "AI Assertion", target: `Verify "${title.slice(0, 80)}" completes with zero console or network errors`, value: "", selector: "", expectedResult: "QASyn Vision AI visual verification confirms the use case completed with 0 console/network errors." },
     );
   }
 

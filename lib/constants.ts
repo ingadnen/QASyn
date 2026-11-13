@@ -125,9 +125,9 @@ export const PROVIDER_META: Record<Provider, ProviderMeta> = {
     detailPlaceholder: "#qa-alerts",
   },
   BIVIA: {
-    name: "Articul8 Bivia",
+    name: "QASyn Vision AI",
     short: "B8",
-    description: "Calibrated multimodal decisions for AI Verification, Smart Locator and PR impact.",
+    description: "Calibrated multimodal AI for visual verification, smart locators and PR impact.",
     tile: "bg-[#111827] text-white",
     indexes: false,
     detailLabel: "Default mode",

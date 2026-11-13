@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isLiveAzurePat, postAzurePullRequestComment, resolveAzureDevOpsConfig } from "@/lib/azure-devops";
 import { CREDIT_COSTS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { riskFromFiles } from "@/lib/engine";
@@ -7,10 +8,9 @@ import { jsonError, MOCK_LATENCY_MS, readJson, validationError } from "@/lib/htt
 import { parseIntegrationConfig } from "@/lib/integration-providers";
 import { analyzePullRequest } from "@/lib/pr-analysis";
 import {
-  openPullRequests,
+  discoverPullRequests,
   parseCustomPrUrl,
   prDetail,
-  sourceRepositories,
   type CatalogPullRequest,
 } from "@/lib/pr-catalog";
 import { audit, guardApi, spendCredits } from "@/lib/tenant";
@@ -36,6 +36,22 @@ function manualFiles(count: number): string[] {
     const base = MANUAL_FILES[index % MANUAL_FILES.length];
     return index < MANUAL_FILES.length ? base : base.replace(/(\.[a-z]+)$/, `-${index}$1`);
   });
+}
+
+/** Posts the generated verdict to an Azure DevOps PR thread when a real PAT exists. */
+async function postAzureCommentForPullRequest(
+  organisationId: string,
+  pr: { provider: string | null; repository: string | null; prNumber: number; commentBody: string | null; commentPosted: boolean },
+): Promise<boolean> {
+  if (pr.provider !== "Azure DevOps" && pr.provider !== "AZURE_DEVOPS") return pr.commentPosted;
+  const integration = await prisma.integration.findUnique({
+    where: { organisationId_provider: { organisationId, provider: "AZURE_DEVOPS" } },
+  });
+  if (!integration || !pr.commentBody) return false;
+  const config = resolveAzureDevOpsConfig(parseIntegrationConfig(integration.configJson));
+  if (!isLiveAzurePat(config.pat)) return false;
+  const published = await postAzurePullRequestComment(config, pr.repository ?? "", pr.prNumber, pr.commentBody);
+  return published.posted;
 }
 
 export async function GET() {
@@ -72,7 +88,7 @@ export async function POST(request: Request) {
     const integrations = await prisma.integration.findMany({
       where: { organisationId: ctx.org.id, status: "CONNECTED", provider: input.provider },
     });
-    const sources = sourceRepositories(
+    const sources = await discoverPullRequests(
       integrations.map((integration) => ({
         provider: integration.provider,
         status: integration.status,
@@ -81,7 +97,7 @@ export async function POST(request: Request) {
     );
     const source = sources.find((item) => item.repository === input.repository);
     if (!source) return jsonError("This repository is not connected. Configure it in Integrations first.", 422);
-    selected = openPullRequests(source.provider, source.repository).find((item) => item.number === input.prNumber);
+    selected = source.pullRequests.find((item) => item.number === input.prNumber);
     if (!selected) return jsonError("Pull request not found in the connected repository.", 404);
     provider = selected.provider;
     repository = selected.repository;
@@ -154,7 +170,11 @@ export async function POST(request: Request) {
   });
 
   await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis);
-  const analyzed = await analyzePullRequest(created, ctx);
+  let analyzed = await analyzePullRequest(created, ctx);
+  const commentPosted = await postAzureCommentForPullRequest(ctx.org.id, analyzed);
+  if (commentPosted !== analyzed.commentPosted) {
+    analyzed = await prisma.pullRequestCheck.update({ where: { id: analyzed.id }, data: { commentPosted } });
+  }
   await audit(prisma, ctx, "pull_request.checked", `#${prNumber} ${title}`);
   return NextResponse.json({ pullRequest: prDetail(analyzed), detail: prDetail(analyzed) }, { status: 201 });
 }
@@ -181,7 +201,11 @@ export async function PATCH(request: Request) {
   }
 
   await delay(MOCK_LATENCY_MS);
-  const updated = await analyzePullRequest(pr, ctx);
+  let updated = await analyzePullRequest(pr, ctx);
+  const commentPosted = await postAzureCommentForPullRequest(ctx.org.id, updated);
+  if (commentPosted !== updated.commentPosted) {
+    updated = await prisma.pullRequestCheck.update({ where: { id: updated.id }, data: { commentPosted } });
+  }
   await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.prAnalysis);
   await audit(prisma, ctx, "pull_request.reanalysed", `#${pr.prNumber} ${pr.title}`);
   return NextResponse.json({ pullRequest: prDetail(updated), detail: prDetail(updated) });

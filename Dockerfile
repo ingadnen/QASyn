@@ -17,5 +17,5 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Créer/mettre à jour la base SQLite si nécessaire, puis lancer le serveur
-CMD ["sh", "-c", "npx prisma db push && npm run start"]
+# Créer/mettre à jour la base SQLite, seeder les comptes/environnements, puis lancer le serveur
+CMD ["sh", "-c", "npx prisma db push && npx tsx prisma/seed.ts && npm run start"]

@@ -133,7 +133,7 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
       ? [{
           at: new Date().toISOString(),
           level: "info",
-          message: `🧠 Bivia risk ${biviaRisk.riskScore}/10 (${biviaRisk.riskLevel}) · ${biviaRisk.probabilityPct.toFixed(1)}% calibrated · ${selected.length} recommended test(s)`,
+          message: `🧠 QASyn Vision AI risk ${biviaRisk.riskScore}/10 (${biviaRisk.riskLevel}) · ${biviaRisk.probabilityPct.toFixed(1)}% calibrated · ${selected.length} recommended test(s)`,
         }]
       : []),
     ...executed.map((test, index) => ({

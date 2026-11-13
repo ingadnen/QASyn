@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T04:45:43.498Z",
+  "generatedAt": "2026-11-13T00:13:49.705Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -349,7 +349,7 @@
         {
           "check": "PR modal lists connected repositories",
           "ok": true,
-          "detail": "Azure DevOps · cgi/digital-portal (base main), GitHub · cgi/digital-portal (base main), GitLab · cgi/digital-portal (base main)"
+          "detail": "Azure DevOps · ai-test-automations/AI Test Automation (base main), GitHub · cgi/digital-portal (base main), GitLab · cgi/digital-portal (base main)"
         },
         {
           "check": "PR modal loads real open pull requests",
@@ -359,7 +359,7 @@
         {
           "check": "Open PR shows number, title, branches, author and files",
           "ok": true,
-          "detail": "#740Add wallet payments to checkout 6 files feat/wallet-payments → main · @priya · Nov 11, 2026 src/checkout/wallet.tsx · src/checkout/payment-form.tsx · src/checkout/checkout-sess"
+          "detail": "#755Add wallet payments to checkout 6 files feat/wallet-payments → main · @priya · Nov 12, 2026 src/checkout/wallet.tsx · src/checkout/payment-form.tsx · src/checkout/checkout-sess"
         },
         {
           "check": "PR check opens the analysis drawer",
@@ -369,7 +369,7 @@
         {
           "check": "PR drawer names the analysed PR",
           "ok": true,
-          "detail": "740"
+          "detail": "755"
         },
         {
           "check": "PR drawer section \"Blast radius\"",
@@ -399,12 +399,12 @@
         {
           "check": "PR drawer computes a verdict",
           "ok": true,
-          "detail": "PR IMPACT ANALYSIS #740 Add wallet payments to checkout feat/wallet-payments → main · @priya close Passed baseline Low risk AZURE_DEVOPS · cgi/digital-portal Open in provider open_"
+          "detail": "PR IMPACT ANALYSIS #755 Add wallet payments to checkout feat/wallet-payments → main · @priya close 1 regression caught Low risk AZURE_DEVOPS · ai-test-automations/AI Test Automatio"
         },
         {
           "check": "PR drawer posts a provider comment automatically",
           "ok": true,
-          "detail": "ion.ts` - `src/api/payments/route.ts` - `src/billing/invoice.ts` - `src/ui/components/WalletButton.tsx` ### Impacted test cases - ✅ Pay with a wallet _Posted automatically by QASyn for CGI._ refresh Re-run analysis gavel 📋 Generate CI/CD PR Gate Comment Close"
+          "detail": "ion.ts` - `src/api/payments/route.ts` - `src/billing/invoice.ts` - `src/ui/components/WalletButton.tsx` ### Impacted test cases - ❌ Pay with a wallet _Posted automatically by QASyn for CGI._ refresh Re-run analysis gavel 📋 Generate CI/CD PR Gate Comment Close"
         },
         {
           "check": "Pull requests shows no raw JSON",
@@ -915,17 +915,17 @@
         {
           "check": "UI-created test case persisted",
           "ok": true,
-          "detail": "106 cases"
+          "detail": "127 cases"
         },
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-65925\",\"value\":\"\",\"selector\":\"\",\"expectedResult\":\"Target URL loads with HTTP 20"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-87495\",\"value\":\"\",\"selector\":\"\",\"expectedResult\":\"Target URL loads with HTTP 20"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-65925\",\"_testType\":\"Functional\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-87495\",\"_testType\":\"Functional\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -940,7 +940,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-65925"
+          "detail": "https://www.cgi.com/parity-87495"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -1297,7 +1297,7 @@
         {
           "check": "Suite created via wizard",
           "ok": true,
-          "detail": "9 suites"
+          "detail": "12 suites"
         },
         {
           "check": "Suite wizard dropdown propagation (cases fetched)",
@@ -1337,7 +1337,7 @@
         {
           "check": "Manage Test Cases modal content",
           "ok": true,
-          "detail": "Manage Test Cases close search TC-105 Upgrade to a paid plan Billing TC-104 Compare pricing plans Billing TC-103 Verify billing journey Billing TC-102 Update th"
+          "detail": "Manage Test Cases close search TC-126 Search Functionality and Results Azure DevOps TC-125 Authentication and Session Handling Azure DevOps TC-124 JavaScript Er"
         },
         {
           "check": "Suite deleted via API (id gone)",
@@ -1416,7 +1416,7 @@
         {
           "check": "Plan wizard suite options listed",
           "ok": true,
-          "detail": "8 checkboxes"
+          "detail": "11 checkboxes"
         },
         {
           "check": "Plan wizard shows suite dropdown options",
@@ -1431,12 +1431,12 @@
         {
           "check": "Plan created via wizard",
           "ok": true,
-          "detail": "7 plans"
+          "detail": "10 plans"
         },
         {
           "check": "Plan wizard suite selection used",
           "ok": true,
-          "detail": "www.bdc.ca crawl suite 47 cases"
+          "detail": "www.netflix.com crawl suite 47 cases"
         },
         {
           "check": "Plan detail shows name",
@@ -2001,7 +2001,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for par1ev9f close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
+          "detail": "Install command for par1vie4 close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
         },
         {
           "check": "Install command one-time token",
@@ -2168,62 +2168,67 @@
           "detail": ""
         },
         {
-          "check": "Integrations list Articul8 Bivia",
+          "check": "Integrations list QASyn Vision AI",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Bivia card shows the 1,000,000,000 Bivia tokens grant",
+          "check": "QASyn Vision AI card shows enterprise verification included",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Bivia integration card present",
+          "check": "QASyn Vision AI card never exposes the internal token grant",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Bivia card is Pro · Connected through BIVIA_API_KEY",
-          "ok": true,
-          "detail": "B8 Articul8 Bivia (Multimodal Decision Engine) PRO · CONNECTED Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR impact. Bivia reads "
-        },
-        {
-          "check": "Bivia configuration modal opens",
+          "check": "QASyn Vision AI integration card present",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Bivia modal field \"API Key\"",
+          "check": "QASyn Vision AI card shows connected workspace AI",
           "ok": true,
-          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
+          "detail": "B8 QASyn Vision AI PRO · CONNECTED Connected Calibrated multimodal AI for visual verification, smart locator self-healing and PR impact analysis. QASyn Vision AI reads the DOM, scr"
         },
         {
-          "check": "Bivia modal field \"Endpoint URL\"",
-          "ok": true,
-          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
-        },
-        {
-          "check": "Bivia modal field \"Default Mode\"",
-          "ok": true,
-          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
-        },
-        {
-          "check": "Bivia modal field \"Abstention Threshold\"",
-          "ok": true,
-          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
-        },
-        {
-          "check": "Bivia modal field \"Pro · Connected\"",
-          "ok": true,
-          "detail": "Configure Articul8 Bivia (Multimodal Decision Engine) close B8 Articul8 Bivia (Multimodal Decision Engine) Pro · Connected Connected Calibrated multimodal decisions for AI Verification, Smart Locator self-healing and PR "
-        },
-        {
-          "check": "Bivia modal Test Connection action",
+          "check": "QASyn Vision AI configuration modal opens",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Bivia Test Connection returns real checks",
+          "check": "QASyn Vision AI modal field \"API Key\"",
+          "ok": true,
+          "detail": "Configure QASyn Vision AI close B8 QASyn Vision AI Pro · Connected Connected Calibrated multimodal AI for visual verification, smart locator self-healing and PR impact analysis. QASyn Vision AI reads the DOM, screenshots"
+        },
+        {
+          "check": "QASyn Vision AI modal field \"Endpoint URL\"",
+          "ok": true,
+          "detail": "Configure QASyn Vision AI close B8 QASyn Vision AI Pro · Connected Connected Calibrated multimodal AI for visual verification, smart locator self-healing and PR impact analysis. QASyn Vision AI reads the DOM, screenshots"
+        },
+        {
+          "check": "QASyn Vision AI modal field \"Default Mode\"",
+          "ok": true,
+          "detail": "Configure QASyn Vision AI close B8 QASyn Vision AI Pro · Connected Connected Calibrated multimodal AI for visual verification, smart locator self-healing and PR impact analysis. QASyn Vision AI reads the DOM, screenshots"
+        },
+        {
+          "check": "QASyn Vision AI modal field \"Abstention Threshold\"",
+          "ok": true,
+          "detail": "Configure QASyn Vision AI close B8 QASyn Vision AI Pro · Connected Connected Calibrated multimodal AI for visual verification, smart locator self-healing and PR impact analysis. QASyn Vision AI reads the DOM, screenshots"
+        },
+        {
+          "check": "QASyn Vision AI modal field \"Pro · Connected\"",
+          "ok": true,
+          "detail": "Configure QASyn Vision AI close B8 QASyn Vision AI Pro · Connected Connected Calibrated multimodal AI for visual verification, smart locator self-healing and PR impact analysis. QASyn Vision AI reads the DOM, screenshots"
+        },
+        {
+          "check": "QASyn Vision AI modal Test Connection action",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "QASyn Vision AI Test Connection returns real checks",
           "ok": true,
           "detail": ""
         },
@@ -2295,7 +2300,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_65925\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_87495\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2523,7 +2528,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_585PkED9"
+          "detail": "cqa_ClqckpMq"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2556,9 +2561,9 @@
           "detail": ""
         },
         {
-          "check": "MCP qasyn_bivia_decide returns a calibrated Bivia response",
+          "check": "MCP qasyn_bivia_decide returns a calibrated QASyn Vision AI response",
           "ok": true,
-          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 197, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Calibrated by Articul8 Bivia\", \"calibratedPr"
+          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 479, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Verified by QASyn Vision AI\", \"calibratedPro"
         },
         {
           "check": "MCP role guide \"Admin\"",
@@ -2628,7 +2633,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 105, \"passRate\": 53, \"bugsReproduced\": 24, \"regressionsCaught\": 605, \"costA"
+          "detail": "200 { \"testCases\": 126, \"passRate\": 53, \"bugsReproduced\": 31, \"regressionsCaught\": 779, \"costA"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2638,7 +2643,7 @@
         {
           "check": "MCP tool \"qasyn_list_test_cases\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwd0hfqj00w2x98c7s128vf7\", \"title\": \"PR #743 · Regression flow\", \"module\":"
+          "detail": "200 [ { \"id\": \"cmwe7cmwo000jx9y4ss7ouvyj\", \"title\": \"Exercise Industries Control on www.cgi.co"
         },
         {
           "check": "MCP tool selector \"qasyn_run_test_case\"",
@@ -2648,7 +2653,7 @@
         {
           "check": "MCP tool \"qasyn_run_test_case\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCaseId\": \"cmwd0hfqj00w2x98c7s128vf7\", \"title\": \"PR #743 · Regression flow\", \"status\": \""
+          "detail": "200 { \"testCaseId\": \"cmwe7cmwo000jx9y4ss7ouvyj\", \"title\": \"Exercise Industries Control on www.cgi.co"
         },
         {
           "check": "MCP tool selector \"qasyn_start_crawl\"",
@@ -2658,7 +2663,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwd28ufx0064x9gwev5azonw\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
+          "detail": "200 { \"id\": \"cmwe7xv8f005ux9a4t5byi8su\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2678,7 +2683,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwd1i3ym000px93kzgmpebix\", \"title\": \"Pay with a wallet fails\", \"severity\":"
+          "detail": "200 [ { \"id\": \"cmwe7tec00009x9a4syyvvdyn\", \"title\": \"Pay with a wallet fails\", \"severity\":"
         },
         {
           "check": "MCP no page errors",
@@ -2900,42 +2905,42 @@
           "detail": ""
         },
         {
-          "check": "Analysis Bivia section",
+          "check": "Analysis QASyn Vision AI section",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analysis Bivia grant",
+          "check": "Analysis QASyn Vision AI enterprise inclusion",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analysis Bivia control \"Use live Bivia API\"",
+          "check": "Analysis QASyn Vision AI control \"Use live QASyn Vision AI\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analysis Bivia control \"AI Verification\"",
+          "check": "Analysis QASyn Vision AI control \"AI Verification\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analysis Bivia control \"Smart Locator / Magic UI\"",
+          "check": "Analysis QASyn Vision AI control \"Smart Locator / Magic UI\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analysis Bivia control \"PR impact analysis\"",
+          "check": "Analysis QASyn Vision AI control \"PR impact analysis\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analysis Bivia control \"Abstention threshold\"",
+          "check": "Analysis QASyn Vision AI control \"Abstention threshold\"",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "Analysis Bivia control \"Default mode\"",
+          "check": "Analysis QASyn Vision AI control \"Default mode\"",
           "ok": true,
           "detail": ""
         },
@@ -3820,7 +3825,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwd29vs9006wx9gwo9932oad"
+          "detail": "status 201 · cmwe7yyxr006mx9a44v1z7ah0"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3925,7 +3930,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 65925? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 87495? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -4179,7 +4184,7 @@
         {
           "check": "Plan run from list executes every linked case",
           "ok": true,
-          "detail": "total 105 · counted 105 · passed 55 · failed 9 · not executed 41"
+          "detail": "total 126 · counted 126 · passed 66 · failed 14 · not executed 46"
         },
         {
           "check": "Plan run from list returns a viewport",
@@ -4194,12 +4199,12 @@
         {
           "check": "Plan run from list persists an execution",
           "ok": true,
-          "detail": "60 → 61"
+          "detail": "70 → 71"
         },
         {
           "check": "Plan run from list persists a TestRun",
           "ok": true,
-          "detail": "267 → 268"
+          "detail": "326 → 327"
         },
         {
           "check": "Plan detail lists every linked suite",
@@ -4219,42 +4224,42 @@
         {
           "check": "Plan run from detail executes every linked case",
           "ok": true,
-          "detail": "total 105 · passed 55 · failed 9"
+          "detail": "total 126 · passed 66 · failed 14"
         },
         {
           "check": "Plan run from detail persists an execution",
           "ok": true,
-          "detail": "61 → 62"
+          "detail": "71 → 72"
         },
         {
           "check": "Plan run from detail persists a TestRun",
           "ok": true,
-          "detail": "268 → 269"
+          "detail": "327 → 328"
         },
         {
           "check": "Plan execution has START and END",
           "ok": true,
-          "detail": "FAILED · 2026-11-12T04:43:11.696Z"
+          "detail": "FAILED · 2026-11-13T00:10:31.776Z"
         },
         {
           "check": "Plan execution persists the viewport",
           "ok": true,
-          "detail": "{\"total\":105,\"passed\":55,\"failed\":9,\"notExecuted\":41,\"autoFixed\":221,\"durationMs\":106436,\"viewport\":\"1440×900 · Chromium"
+          "detail": "{\"total\":126,\"passed\":66,\"failed\":14,\"notExecuted\":46,\"autoFixed\":151,\"durationMs\":131550,\"viewport\":\"1440×900 · Chromiu"
         },
         {
           "check": "Plan counters refreshed after the run",
           "ok": true,
-          "detail": "lastRunAt 2026-11-12T04:43:11.696Z · passRate 85.9"
+          "detail": "lastRunAt 2026-11-13T00:10:31.776Z · passRate 82.5"
         },
         {
           "check": "Plan detail START card is populated",
           "ok": true,
-          "detail": "START Nov 11, 2026, 11:43 PM Latest run"
+          "detail": "START Nov 12, 2026, 7:10 PM Latest run"
         },
         {
           "check": "Plan detail END card is populated",
           "ok": true,
-          "detail": "END Nov 11, 2026, 11:43 PM Latest run"
+          "detail": "END Nov 12, 2026, 7:10 PM Latest run"
         },
         {
           "check": "Plan detail shows the latest viewport",
@@ -4354,7 +4359,7 @@
         {
           "check": "Tunnel connect persists connectedAt",
           "ok": true,
-          "detail": "2026-11-12T04:43:13.626Z"
+          "detail": "2026-11-13T00:10:33.940Z"
         },
         {
           "check": "Super Admin account exists",
@@ -4538,7 +4543,7 @@
         {
           "check": "PART 7 a test case with steps is available",
           "ok": true,
-          "detail": "cmwd0hfqj00w2x98c7s128vf7"
+          "detail": "cmwe7cmwo000jx9y4ss7ouvyj"
         },
         {
           "check": "PART 7 Studio title is visible",
@@ -4583,7 +4588,7 @@
         {
           "check": "PART 7 Studio renders step rows",
           "ok": true,
-          "detail": "6 row(s)"
+          "detail": "7 row(s)"
         },
         {
           "check": "PART 7 Studio step row has a selection checkbox",
@@ -4626,9 +4631,9 @@
           "detail": "3 candidate(s)"
         },
         {
-          "check": "PART 7 Magic UI shows the calibrated Bivia badge and exact confidence",
+          "check": "PART 7 Magic UI shows the QASyn Vision AI verification badge and exact confidence",
           "ok": true,
-          "detail": "🧠 Calibrated by Articul8 Bivia · 82.1% · 82.1%"
+          "detail": "🧠 Verified by QASyn Vision AI · 83.5% · 83.5%"
         },
         {
           "check": "PART 7 Magic UI exposes Apply Best Locator",
@@ -4638,7 +4643,7 @@
         {
           "check": "PART 7 Apply Best Locator confirms the applied strategy",
           "ok": true,
-          "detail": "✨ Magic UI Component & Smart Locator Element · Navigate https://staging.www.cgi.com Magic-MCP Scoring selectors… Test ID"
+          "detail": "✨ Magic UI Component & Smart Locator Element · Navigate https://www.cgi.com Magic-MCP Scoring selectors… Test ID page.ge"
         },
         {
           "check": "PART 7 Studio rail exposes Run History",
@@ -4653,22 +4658,22 @@
         {
           "check": "PART 7 Run History card shows #run and Passed/Failed",
           "ok": true,
-          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
+          "detail": "check_circle #11 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 07:10:31 PM Nov 12 ⏳ 00:01.15 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows automated trigger and author",
           "ok": true,
-          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
+          "detail": "check_circle #11 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 07:10:31 PM Nov 12 ⏳ 00:01.15 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows time and duration",
           "ok": true,
-          "detail": "check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
+          "detail": "check_circle #11 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 07:10:31 PM Nov 12 ⏳ 00:01.15 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows Standalone Run or plan pill",
           "ok": true,
-          "detail": "Release 2.8 sign-off · check_circle #10 Passed ⚙ Automated · 👤 cgi@cgi.com 11:43:11 PM Nov 11 ⏳ 00:01.24 Release 2.8 sign-off"
+          "detail": "Release 2.8 sign-off · check_circle #11 Passed ⚙ Automated · 👤 cgi@cgi.com auto_awesome ✨ Auto-fix rerun 07:10:31 PM Nov 12 ⏳ 00:01.15 Release"
         },
         {
           "check": "PART 7 Run History exposes Auto-fix rerun when applicable",
@@ -4741,39 +4746,39 @@
           "detail": "3 export(s)"
         },
         {
-          "check": "PART 7 MCP embeds the Context7 resolver",
+          "check": "PART 7 MCP embeds QASyn Framework Intelligence",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "PART 7 Context7 resolver returns versioned rules",
+          "check": "PART 7 QASyn Framework Intelligence returns versioned rules",
           "ok": true,
-          "detail": "menu_book Context7 live docs Resolve a QA task to versioned Playwright, Next.js, Tailwind, Prisma or TypeScript rules. The same rules are injected into test generation and self-hea"
+          "detail": "menu_book QASyn Framework Intelligence Resolve a QA task to versioned Playwright, Next.js, Tailwind, Prisma or TypeScript rules. The same rules are injected into test generation an"
         },
         {
-          "check": "PART 7 Context7 API resolves Playwright docs",
+          "check": "PART 7 QASyn Framework Intelligence API resolves Playwright docs",
           "ok": true,
           "detail": "Playwright v1.65 · 5 rules"
         },
         {
           "check": "PART 7 MCP tool runner returns a live JSON-RPC 200",
           "ok": true,
-          "detail": "{ \"status\": 200, \"elapsedMs\": 14, \"jsonrpc\": \"2.0\", \"id\": 1794458611191, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 105,\\n \\\"passRate\\\": 52,\\n \\\"bugsRep"
+          "detail": "{ \"status\": 200, \"elapsedMs\": 12, \"jsonrpc\": \"2.0\", \"id\": 1794528650059, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 126,\\n \\\"passRate\\\": 52,\\n \\\"bugsRep"
         },
         {
           "check": "PART 7 Agent Skills export writes .claude/CLAUDE.md",
           "ok": true,
-          "detail": ".claude/CLAUDE.md · 1664 chars"
+          "detail": ".claude/CLAUDE.md · 1684 chars"
         },
         {
           "check": "PART 7 Graphify API returns nodes and edges",
           "ok": true,
-          "detail": "63 node(s) · 32 edge(s)"
+          "detail": "65 node(s) · 31 edge(s)"
         },
         {
           "check": "PART 7 Graphify API covers URL/DOM/Requirement/Test/PR",
           "ok": true,
-          "detail": "{\"url\":8,\"dom\":16,\"requirement\":10,\"test\":24,\"pr\":5}"
+          "detail": "{\"url\":8,\"dom\":16,\"requirement\":10,\"test\":24,\"pr\":7}"
         },
         {
           "check": "PART 7 crawl details expose the Graphify Map tab",
@@ -4831,7 +4836,7 @@
           "detail": "page.getByTestId('pay-now') · 90"
         },
         {
-          "check": "PART 7 Magic Locator is calibrated by Articul8 Bivia",
+          "check": "PART 7 Magic Locator is calibrated by QASyn Vision AI",
           "ok": true,
           "detail": "answered · 66% · bivia-api"
         },
@@ -4876,7 +4881,7 @@
     },
     {
       "id": "part8-enterprise",
-      "name": "PART 8 - Self-healing, grounding, Bivia telemetry, Autopilot, PR gate",
+      "name": "PART 8 - Self-healing, grounding, QASyn Vision AI telemetry, Autopilot, PR gate",
       "route": "/dashboard/overview",
       "checks": [
         {
@@ -4902,22 +4907,22 @@
         {
           "check": "PART 8 a test case is available for self-healing",
           "ok": true,
-          "detail": "PR #743 · Regression flow"
+          "detail": "Exercise Industries Control on www.cgi.com → Action Completes & State Updates Cleanly — Autopilot"
         },
         {
-          "check": "PART 8 Simulate Self-Healing re-grounds the broken selector with Bivia",
+          "check": "PART 8 Simulate Self-Healing re-grounds the broken selector with QASyn Vision AI",
           "ok": true,
-          "detail": "#broken-legacy-selector-999 → page.getByText(/the current page URL contains staging\\.www\\.cgi\\.com/i) · 61.6%"
+          "detail": "#broken-legacy-selector-999 → page.getByTestId('the-cgi-at-50-years-heading-is-visible') · 96.8%"
         },
         {
           "check": "PART 8 healed step keeps the raw grounding box and confidence",
           "ok": true,
-          "detail": "{\"x\":351,\"y\":172,\"width\":241,\"height\":54,\"rawBox\":[351,172,592,226],\"space\":\"milli\",\"label\":\"Verify that the current page URL contains staging.www.cgi.com\",\"con"
+          "detail": "{\"x\":967,\"y\":344,\"width\":20,\"height\":40,\"rawBox\":[967,344,987,384],\"space\":\"milli\",\"label\":\"Verify the \\\"CGI at 50 years\\\" heading is visible\",\"confidence\":0.76"
         },
         {
           "check": "PART 8 healed selector is persisted in SQLite",
           "ok": true,
-          "detail": "passing · page.getByText(/the current page URL contains staging\\.www\\.cgi\\.com/i)"
+          "detail": "passing · page.getByTestId('the-cgi-at-50-years-heading-is-visible')"
         },
         {
           "check": "PART 8 self-heal creates an ✨ Auto-fix rerun",
@@ -4927,12 +4932,12 @@
         {
           "check": "PART 8 self-heal run number is scoped to its test case",
           "ok": true,
-          "detail": "run #11 · case max #11"
+          "detail": "run #12 · case max #12"
         },
         {
           "check": "PART 8 Version History documents the old → new selector",
           "ok": true,
-          "detail": "✨ Bivia self-healed selector: #broken-legacy-selector-999 → page.getByText(/the current page URL contains staging\\.www\\.cgi\\.com/i) (61.6% calibrated)"
+          "detail": "✨ QASyn Vision AI self-healed selector: #broken-legacy-selector-999 → page.getByTestId('the-cgi-at-50-years-heading-is-visible') (96.8% calibrated)"
         },
         {
           "check": "PART 8 Studio exposes 🧪 Simulate Self-Healing",
@@ -4940,22 +4945,22 @@
           "detail": ""
         },
         {
-          "check": "PART 8 Studio step list shows ✨ Healed by Bivia",
+          "check": "PART 8 Studio step list shows ✨ Healed by QASyn Vision AI",
           "ok": true,
           "detail": ""
         },
         {
           "check": "PART 8 Step Details shows the healed selector evidence",
           "ok": true,
-          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 61.6% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
+          "detail": "Step Details close 2 Verify Element ✨ Healed by QASyn Vision AI · 96.8% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check"
         },
         {
           "check": "PART 8 Step Details renders the neon bounding-box overlay",
           "ok": true,
-          "detail": "Step Details close 2 Verify Element ✨ Healed by Bivia · 61.6% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check Salesforc"
+          "detail": "Step Details close 2 Verify Element ✨ Healed by QASyn Vision AI · 96.8% Action type Navigate Click Enter Text Verify Element API Call AI Assertion OCR/Document Validation KYC Check"
         },
         {
-          "check": "PART 8 Step Details exposes 🎯 Run Bivia Visual Grounding",
+          "check": "PART 8 Step Details exposes 🎯 Run QASyn Vision Grounding",
           "ok": true,
           "detail": ""
         },
@@ -4965,22 +4970,22 @@
           "detail": ""
         },
         {
-          "check": "PART 8 Version History shows the Bivia self-heal entry",
+          "check": "PART 8 Version History shows the QASyn Vision AI self-heal entry",
           "ok": true,
-          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium CG PR #743 · Regress"
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium CG Exercise Industri"
         },
         {
-          "check": "PART 8 visual testing embeds the Bivia grounding canvas",
+          "check": "PART 8 visual testing embeds the QASyn Vision grounding canvas",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "PART 8 overlay exposes 🎯 Bivia Grounded · [x1, y1, x2, y2] · confidence",
+          "check": "PART 8 overlay exposes 🎯 QASyn Vision Grounded · [x1, y1, x2, y2] · confidence",
           "ok": true,
-          "detail": "🎯 Bivia Grounded · [320, 180, 960, 420] · 88.0% confidence"
+          "detail": "🎯 QASyn Vision Grounded · [320, 180, 960, 420] · 88.0% confidence"
         },
         {
-          "check": "PART 8 visual testing exposes 🎯 Run Bivia Visual Grounding",
+          "check": "PART 8 visual testing exposes 🎯 Run QASyn Vision Grounding",
           "ok": true,
           "detail": ""
         },
@@ -4992,12 +4997,12 @@
         {
           "check": "PART 8 Autopilot persists a completed live crawl",
           "ok": true,
-          "detail": "completed · 23 pages · 6 flows"
+          "detail": "completed · 23 pages · 10 flows"
         },
         {
           "check": "PART 8 Autopilot crawl requirement has linked test cases (> 0)",
           "ok": true,
-          "detail": "2 linked · 2 relation(s) · covered"
+          "detail": "7 linked · 7 relation(s) · covered"
         },
         {
           "check": "PART 8 Autopilot persists the Strix OWASP/header scan",
@@ -5007,22 +5012,32 @@
         {
           "check": "PART 8 Autopilot builds the Graphify topology",
           "ok": true,
-          "detail": "56 nodes · 32 edges"
+          "detail": "58 nodes · 31 edges"
         },
         {
-          "check": "PART 8 Autopilot authors a Context7 + Bivia-calibrated test case",
+          "check": "PART 8 Autopilot authors a QASyn Framework Intelligence + Vision AI-calibrated test case",
           "ok": true,
           "detail": "Verify CGI at 50 years Landing Page & Hero CTA → Primary Content & Navigation Render Without Errors — Autopilot · 1 AI verification · 2 calibrated · 85.7%"
         },
         {
-          "check": "PART 8 authored case persists AI Verification, Context7 and scored locators",
+          "check": "PART 8 Autopilot authors a dynamic target-adaptive suite (3-8 cases)",
           "ok": true,
-          "detail": "ai · 795599 chars"
+          "detail": "7 case(s) · Verify CGI at 50 years Landing Page & Hero CTA → Primary Content & Navigation Render Without Errors — Autopilot | Navigate FR Journey from www.cgi.com Header → Target Section & Interactive Controls Load Successfully — Au"
+        },
+        {
+          "check": "PART 8 Autopilot returns code, passedSteps, totalSteps and studioUrl for every case",
+          "ok": true,
+          "detail": "TC-126:7/7 · TC-125:6/7 · TC-124:7/7 · TC-123:7/7 · TC-122:7/7 · TC-121:7/7 · TC-120:7/7"
+        },
+        {
+          "check": "PART 8 authored case persists AI Verification, QASyn Framework Intelligence and scored locators",
+          "ok": true,
+          "detail": "ai · 2668561 chars"
         },
         {
           "check": "PART 8 Autopilot executes the new cases immediately in Studio",
           "ok": true,
-          "detail": "2/2 passed"
+          "detail": "6/7 passed"
         },
         {
           "check": "PART 8 Autopilot returns Crawl, Strix, Graphify and Studio links",
@@ -5040,6 +5055,11 @@
           "detail": "5 phase(s) · https://www.cgi.com"
         },
         {
+          "check": "PART 8 Autopilot modal renders every generated case with code, status and Studio link",
+          "ok": true,
+          "detail": ""
+        },
+        {
           "check": "PART 8 Crawl page exposes 🚀 Launch Quality Autopilot",
           "ok": true,
           "detail": ""
@@ -5047,22 +5067,22 @@
         {
           "check": "PART 8 Crawl table shows the Autopilot linked test cases",
           "ok": true,
-          "detail": " REQ-505 12-Nov-2026-4-43-46-AM_crawl Auto Crawl language Crawl - Completed 2 Linked Claire Girard 11 Nov 2026, 23:43 more_horiz"
+          "detail": " REQ-525 13-Nov-2026-12-11-09-AM_crawl Auto Crawl language Crawl - Completed 7 Linked Claire Girard 12 Nov 2026, 19:11 more_horiz"
         },
         {
           "check": "PART 8 PR Gate API returns a calibrated Markdown report",
           "ok": true,
-          "detail": "200 · 1573 chars · bivia-calibrated-fallback"
+          "detail": "200 · 1708 chars · bivia-calibrated-fallback"
         },
         {
-          "check": "PART 8 PR Gate emits the Bivia verdict + risk score + confidence",
+          "check": "PART 8 PR Gate emits the QASyn Vision AI verdict + risk score + confidence",
           "ok": true,
           "detail": "10/10 · 97% · high"
         },
         {
-          "check": "PART 8 PR Gate lists the Bivia /set impacted tests with Passed/Failed",
+          "check": "PART 8 PR Gate lists the QASyn Vision AI impacted tests with Passed/Failed",
           "ok": true,
-          "detail": "| Test case | Module | Result | / | --- | --- | --- | / | PR #743 · Regression flow | Core | ✅ Passed | / | PR #743 · Smoke check on Staging | Core | ❌ Failed |"
+          "detail": "| Test case | Module | Result | / | --- | --- | --- | / | Exercise Industries Control on www.cgi.com → Action Completes & State Updates Cleanly — Autopilot | Core | ✅ Passed | / | Exercise Services Control on www.cgi.com → Action Completes & State Updates Cleanly — Autopilot | Core | ❌ Failed |"
         },
         {
           "check": "PART 8 PR Gate includes the Strix security summary",
@@ -5072,7 +5092,7 @@
         {
           "check": "PART 8 PR list shows the gate pull request",
           "ok": true,
-          "detail": "#926748"
+          "detail": "#952431"
         },
         {
           "check": "PART 8 PR drawer exposes 📋 Generate CI/CD PR Gate Comment",
@@ -5087,37 +5107,37 @@
         {
           "check": "PART 8 PR gate modal renders the generated Markdown",
           "ok": true,
-          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #926748 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
+          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #952431 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
         },
         {
-          "check": "PART 8 Bivia telemetry ledger meters boolean/choice/ground/score/set",
+          "check": "PART 8 QASyn AI telemetry ledger meters boolean/choice/ground/score/set",
           "ok": true,
-          "detail": "1156 entry(ies) · score, set, boolean, choice, ground"
+          "detail": "1603 entry(ies) · score, set, boolean, choice, ground"
         },
         {
           "check": "PART 8 telemetry compaction is atomic and leaves no partial ledger",
           "ok": true,
-          "detail": "1160 NDJSON line(s) · 0 temp file(s)"
+          "detail": "1607 NDJSON line(s) · 0 temp file(s)"
         },
         {
-          "check": "PART 8 billing usage renders the 1B token grant observatory",
+          "check": "PART 8 billing usage renders QASyn Autonomous AI telemetry",
           "ok": true,
-          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. Live ledger Tokens Grant 1,000,000,000 Tokens Used 8,238,631 1,156 decision(s) To"
+          "detail": "✨ QASyn Autonomous AI Execution & Calibration Telemetry Every visual verification, calibrated decision and self-healed selector is measured in real time. Live telemetry visibility AI VISUAL VERIFICATIONS RUN 1,603 passed, failed and abstain"
         },
         {
-          "check": "PART 8 observatory reports confidence, abstention, latency and cost saved",
+          "check": "PART 8 customer telemetry hides internal token-grant branding",
           "ok": true,
-          "detail": "PI · 437 fallback savings ESTIMATED LLM COST SAVED ($) $7.64 7,516,810 image · 647,837 text tokens Derived estimates only · the ledger stores no prompt text, image bytes or API key. Last decision 11/11/2026, 11:43:56 PM."
+          "detail": "es 485 my_location Locator grounding 120 speed Risk scoring 102 checklist Test selection 102 Derived from QASyn's persistent AI decision ledger. No prompt text, screenshots or credentials are stored. Last AI decision 11/12/2026, 7:11:22 PM."
         },
         {
-          "check": "PART 8 Integrations Bivia card embeds the token observatory",
+          "check": "PART 8 Integrations card embeds QASyn Autonomous AI telemetry",
           "ok": true,
           "detail": ""
         },
         {
-          "check": "PART 8 Overview embeds the token observatory",
+          "check": "PART 8 Overview embeds QASyn Autonomous AI telemetry",
           "ok": true,
-          "detail": "🧠 Articul8 Bivia 1B Token Grant Observatory Every boolean, choice, ground, score and set decision is metered against the workspace grant. L"
+          "detail": "✨ QASyn Autonomous AI Execution & Calibration Telemetry Every visual verification, calibrated decision and self-healed selector is measured in real time. Live telemetry visibility "
         },
         {
           "check": "PART 8 has no page errors",
@@ -5136,7 +5156,7 @@
         {
           "check": "PART 9 a disposable test case is available for screenshot evidence",
           "ok": true,
-          "detail": "status 201 · cmwd2cciy00lwx9gwt68l8yxl"
+          "detail": "status 201 · cmwe81o9h00p1x9a4rh92lmh1"
         },
         {
           "check": "PART 9 failed and skipped steps persist screenshot evidence in the run response",
@@ -5156,7 +5176,7 @@
         {
           "check": "PART 9 self-heal captures a screenshot and grounds the test case URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-evidence-65925 · image/png"
+          "detail": "https://www.cgi.com/parity-evidence-87495 · image/png"
         },
         {
           "check": "PART 9 Studio renders the executed steps",
@@ -5226,12 +5246,12 @@
         {
           "check": "PART 9 categorical columns expose a distinct-value dropdown",
           "ok": true,
-          "detail": "5 option(s)"
+          "detail": "8 option(s)"
         },
         {
           "check": "PART 9 selecting a distinct value filters rows and marks the column",
           "ok": true,
-          "detail": "Functional · 10 row(s) · Type: Functional"
+          "detail": "Accessibility · 3 row(s) · Type: Accessibility"
         },
         {
           "check": "PART 9 column filter Clear resets the active filter",
@@ -5261,7 +5281,7 @@
         {
           "check": "PART 9 the selected test type persists in variablesJson._testType",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-65925\",\"_testType\":\"Penetration\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-87495\",\"_testType\":\"Penetration\"}"
         },
         {
           "check": "PART 9 the Type column displays the exact selected type",
@@ -5271,7 +5291,7 @@
         {
           "check": "PART 9 editing a test type persists the new value",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-65925\",\"_testType\":\"Accessibility\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-87495\",\"_testType\":\"Accessibility\"}"
         },
         {
           "check": "PART 9 the Type column follows the edited type",
@@ -5286,7 +5306,7 @@
         {
           "check": "PART 9 PR auto-regression creates PR-specific Smoke and Regression cases",
           "ok": true,
-          "detail": "Smoke:PR #932374 · Smoke check on Staging | Regression:PR #932374 · Regression flow"
+          "detail": "Smoke:PR #981534 · Smoke check on Staging | Regression:PR #981534 · Regression flow"
         },
         {
           "check": "PART 9 PR auto-regression runs against the selected deployed environment",
@@ -5306,7 +5326,7 @@
         {
           "check": "PART 9 PR-specific cases persist their test type and target URL",
           "ok": true,
-          "detail": "PR #932374 · Smoke check on Staging | PR #932374 · Regression flow"
+          "detail": "PR #981534 · Smoke check on Staging | PR #981534 · Regression flow"
         },
         {
           "check": "PART 9 PR-specific case runs store screenshots in TestCaseRun.logJson",
@@ -5316,7 +5336,7 @@
         {
           "check": "PART 9 the pull-request list shows the auto-regression PR",
           "ok": true,
-          "detail": "#932374"
+          "detail": "#981534"
         },
         {
           "check": "PART 9 PR drawer exposes auto-regression with an environment selector",
@@ -5336,7 +5356,7 @@
         {
           "check": "PART 9 Super Admin provisions an enterprise tenant",
           "ok": true,
-          "detail": "PART9 Enterprise 65925 · enterprise · 250000 credits"
+          "detail": "PART9 Enterprise 87495 · enterprise · 250000 credits"
         },
         {
           "check": "PART 9 provisioning seeds Production + Staging environments, a credit ledger and an admin",
@@ -5381,7 +5401,7 @@
         {
           "check": "PART 9 the Configure modal exposes plan, seats, SSO/SLA and default environment",
           "ok": true,
-          "detail": "Configure enterprise · PART9 Enterprise 65925 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free sta"
+          "detail": "Configure enterprise · PART9 Enterprise 87495 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free sta"
         },
         {
           "check": "PART 9 README documents architecture, modules, test types, Bivia, PR gate, Super Admin and operations",
@@ -5435,7 +5455,7 @@
         {
           "check": "PART 10 a 6-step Regression case is available",
           "ok": true,
-          "detail": "status 201 · cmwd2d20y00o5x9gw7hne9w1w"
+          "detail": "status 201 · cmwe82fnq00rax9a41jggusws"
         },
         {
           "check": "PART 10 buildStepsJson emits exactly 6 steps for stepsCount 6",
@@ -5485,12 +5505,12 @@
         {
           "check": "PART 10 the CI/CD webhook returns a verdict, PR-specific tests and a Markdown report",
           "ok": true,
-          "detail": "200 · APPROVED · Smoke:4/Regression:6 · 1855 chars"
+          "detail": "200 · BLOCKED · Smoke:4/Regression:6 · 1865 chars"
         },
         {
           "check": "PART 10 the webhook persists the gate result on PullRequestCheck",
           "ok": true,
-          "detail": "passed_baseline · 8 run · 0 regression(s)"
+          "detail": "regression_caught · 8 run · 1 regression(s)"
         },
         {
           "check": "PART 10 webhook PR cases store 6/6 screenshot lines (Smoke 4 + Regression 6)",
@@ -5579,7 +5599,7 @@
         {
           "check": "PART 11 hero tabs switch between grounding, PR gate and the 11-type engine",
           "ok": true,
-          "detail": "🎯 Bivia Visual Grounding 🛡️ PR Gatekeeper 🧬 11-Type Engine ● LIVE Functional End-to-End (E2E) Regression Smoke Sanity"
+          "detail": "🎯 QASyn Vision Grounding 🛡️ PR Gatekeeper 🧬 11-Type Engine ● LIVE Functional End-to-End (E2E) Regression Smoke Sanity"
         },
         {
           "check": "PART 11 README documents the QASyn route, API namespace and marketing experience",
@@ -5589,12 +5609,12 @@
         {
           "check": "PART 11 POST /api/webhooks/ci-pr honours failOnRegression with HTTP 422 and ok:false",
           "ok": true,
-          "detail": "422 · BLOCKED · 1 regression(s)"
+          "detail": "422 · BLOCKED · 2 regression(s)"
         },
         {
           "check": "PART 11 the PR drawer webhook snippet uses the dynamic browser origin",
           "ok": true,
-          "detail": "45403 chars"
+          "detail": "45575 chars"
         },
         {
           "check": "PART 11 has no page errors",
@@ -5613,7 +5633,7 @@
         {
           "check": "PART 12 zero UTF-8 mojibake remains in app/, components/ and lib/",
           "ok": true,
-          "detail": "461 file(s) clean"
+          "detail": "464 file(s) clean"
         },
         {
           "check": "PART 12 no accidental derniers-commits.txt in the repository root",
@@ -5687,7 +5707,7 @@
         {
           "check": "PART 13 the Visual Evidence Lightbox badge reads PNG Live Capture",
           "ok": true,
-          "detail": "🕰 Visual Evidence Lightbox Navigate · Navigate to https://www.cgi.com · 11/11/2026, 23:45:09 ✓ Expected: Target URL loads with HTTP 200 OK and renders the prim"
+          "detail": "🕰 Visual Evidence Lightbox Navigate · Navigate to https://www.cgi.com · 12/11/2026, 19:12:45 ✓ Expected: Target URL loads with HTTP 200 OK and renders the prim"
         },
         {
           "check": "PART 13 small-batch runTestCases (CI webhook) persists real PNG evidence",
@@ -5795,7 +5815,7 @@
         {
           "check": "PART 15 /dashboard/pull-requests exposes sortable headers and reorders rows",
           "ok": true,
-          "detail": "7 sortable header(s) · 5 row(s) · orderChanged=true · dir=asc"
+          "detail": "7 sortable header(s) · 7 row(s) · orderChanged=true · dir=asc"
         },
         {
           "check": "PART 15 /dashboard/uploads exposes sortable headers and reorders rows",
@@ -5804,6 +5824,164 @@
         },
         {
           "check": "PART 15 has no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "part16-azure-devops",
+      "name": "Phase 16 - Azure DevOps REST sync (PRs, Boards, Test Plans, Suites & Cases)",
+      "route": "/dashboard/integrations",
+      "checks": [
+        {
+          "check": "PART 16 Azure DevOps URL parser handles encoded browser URLs",
+          "ok": true,
+          "detail": "ai-test-automations / AI Test Automation · https://dev.azure.com/ai-test-automations"
+        },
+        {
+          "check": "PART 16 full sync imports PRs, Work Items, Test Plans, Suites & Test Cases",
+          "ok": true,
+          "detail": "HTTP 200 · mirror · 2 PRs · 4 work items · 1 plans · 1 suites · 13 cases"
+        },
+        {
+          "check": "PART 16 Boards Work Items are imported as ADO-958 / ADO-957 requirements",
+          "ok": true,
+          "detail": "ADO-424:13 · ADO-957:13 · ADO-958:13"
+        },
+        {
+          "check": "PART 16 Azure Test Suite imports with 13 linked test cases",
+          "ok": true,
+          "detail": "QA Agent Suite (ADO #887) · 13 linked · count 13"
+        },
+        {
+          "check": "PART 16 Azure Test Plan imports with its suite and 13 cases",
+          "ok": true,
+          "detail": "QA Agent Plan — PBI 424 (ADO #885) · 1 suite(s) · 13 case(s)"
+        },
+        {
+          "check": "PART 16 imported ADO cases carry 6 steps with expectedResult and _adoId metadata",
+          "ok": true,
+          "detail": "Landing Page Loads Correctly:6 · Language Selector:6"
+        },
+        {
+          "check": "PART 16 an imported ADO test case executes in Test Studio with 6/6 PNG evidence",
+          "ok": true,
+          "detail": "HTTP 200 · 6 line(s) · 6 PNG"
+        },
+        {
+          "check": "PART 16 QA Agent Plan — PBI 424 appears in /dashboard/plans/test-plans",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable set"
+        },
+        {
+          "check": "PART 16 QA Agent Suite appears with 13 linked cases in /dashboard/plans/suites",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium "
+        },
+        {
+          "check": "PART 16 ADO-958 and ADO-957 appear in /dashboard/requirements",
+          "ok": true,
+          "detail": "958=true 957=true · C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book cha"
+        },
+        {
+          "check": "PART 16 imported cases appear in /dashboard/test-cases",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium "
+        },
+        {
+          "check": "PART 16 imported Azure DevOps PRs appear in /dashboard/pull-requests",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium "
+        },
+        {
+          "check": "PART 16 Azure DevOps sync trigger is present on /dashboard/integrations",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 16 the integrations sync console displays the imported counts",
+          "ok": true,
+          "detail": "✅ Synced: 2 PRs · 4 Work Items · 1 Test Plans · 1 Suites · 13 Test Cases PRs Requirements Plans Suites Cases"
+        },
+        {
+          "check": "PART 16 the quick Sync Azure DevOps button is present on test plans",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 16 the quick Sync Azure DevOps button works from test plans",
+          "ok": true,
+          "detail": "C menu add grid_view merge travel_explore code description fact_check content_paste_go database cloud_upload article group lan webhook credit_card cable settings help menu_book chat workspace_premium "
+        },
+        {
+          "check": "PART 16 has no page errors",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pageErrors": [],
+      "ok": true
+    },
+    {
+      "id": "part17-hardening",
+      "name": "Phase 17 - Production hardening, dynamic Autopilot and enterprise white-labeling",
+      "route": "/dashboard/overview",
+      "checks": [
+        {
+          "check": "PART 17 Playwright uses Docker-safe Chromium flags",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 17 web executor falls back gracefully instead of throwing",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 17 Docker boot seeds Prisma idempotently before start",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 17 test-cases PATCH is wrapped with structured error handling",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 17 telemetry creates .qasyn-data recursively and never throws",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "PART 17 white-label is clean on /dashboard/overview",
+          "ok": true,
+          "detail": "clean"
+        },
+        {
+          "check": "PART 17 white-label is clean on /dashboard/billing/usage",
+          "ok": true,
+          "detail": "clean"
+        },
+        {
+          "check": "PART 17 white-label is clean on /dashboard/integrations",
+          "ok": true,
+          "detail": "clean"
+        },
+        {
+          "check": "PART 17 white-label is clean on /dashboard/visual-testing",
+          "ok": true,
+          "detail": "clean"
+        },
+        {
+          "check": "PART 17 white-label is clean on /dashboard/settings/analysis",
+          "ok": true,
+          "detail": "clean"
+        },
+        {
+          "check": "PART 17 has no page errors",
           "ok": true,
           "detail": ""
         },
@@ -5832,5 +6010,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 1108
+  "totalChecks": 1140
 }

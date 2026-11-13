@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel } from "@/components/dashboard/ui";
 import { BiviaObservatory } from "@/components/dashboard/pages/BiviaObservatory";
+import type { AzureSyncSummary } from "@/components/dashboard/pages/AzureDevOpsSyncButton";
 import { apiFetch, errorMessage } from "@/lib/api";
+import { parseAzureDevOpsUrl } from "@/lib/azure-devops";
 import type { BiviaObservatorySummary } from "@/lib/bivia-telemetry";
 import {
   INTEGRATION_PROVIDERS,
@@ -136,6 +138,8 @@ function ConfigureModal({
   const [checks, setChecks] = useState<Array<{ label: string; ok: boolean }> | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [effects, setEffects] = useState<string[] | null>(null);
+  const [syncPending, setSyncPending] = useState(false);
+  const [syncSummary, setSyncSummary] = useState<AzureSyncSummary | null>(null);
   const connected = row?.status === "CONNECTED" || row?.status === "INDEXING";
   const biviaLive = definition.key === "BIVIA" && biviaReady;
   const effectivelyConnected = connected || biviaLive;
@@ -150,6 +154,7 @@ function ConfigureModal({
     setChecks(null);
     setMessage(null);
     setEffects(null);
+    setSyncSummary(null);
     setError(null);
   }, [definition]);
 
@@ -205,6 +210,48 @@ function ConfigureModal({
     }
   }
 
+  async function syncAzureDevOps() {
+    setSyncPending(true);
+    setError(null);
+    setMessage(null);
+    setSyncSummary(null);
+    try {
+      const rawOrganization = (form.organization || "").trim() || "https://dev.azure.com/ai-test-automations";
+      const parsed = parseAzureDevOpsUrl(rawOrganization);
+      const baseUrl = /^https?:\/\//i.test(rawOrganization)
+        ? rawOrganization
+        : `https://dev.azure.com/${rawOrganization.replace(/^@/, "")}`;
+      const summary = await apiFetch<AzureSyncSummary>("/api/dashboard/integrations/azure-devops/sync", {
+        method: "POST",
+        json: {
+          direction: "both",
+          baseUrl,
+          project: form.project || parsed.project || "AI Test Automation",
+          token: form.pat || undefined,
+          repository: form.repository || undefined,
+        },
+      });
+      setSyncSummary(summary);
+      const counts = summary.counts;
+      toast(
+        `✅ Azure DevOps synced: ${counts.pullRequests} PRs · ${counts.workItems} Work Items · ${counts.testPlans} Test Plans · ${counts.testSuites} Suites · ${counts.testCases} Test Cases.`,
+        "success",
+      );
+      onSaved({
+        provider: "AZURE_DEVOPS",
+        status: "CONNECTED",
+        detail: `${summary.organization} / ${summary.project}`,
+        config: { ...form, organization: summary.organization, project: summary.project },
+        lastSyncAt: summary.syncedAt,
+        connectedAt: row?.connectedAt ?? new Date().toISOString(),
+      });
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setSyncPending(false);
+    }
+  }
+
   return (
     <Modal
       open
@@ -214,6 +261,18 @@ function ConfigureModal({
       footer={
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
+            {definition.key === "AZURE_DEVOPS" && (
+              <button
+                type="button"
+                data-testid="azure-devops-sync-btn"
+                className={cqaBtnPrimary}
+                disabled={readOnly || syncPending || pending !== null}
+                onClick={() => void syncAzureDevOps()}
+              >
+                <CqaIcon name="sync" className="text-[16px]" />
+                {syncPending ? "Syncing Azure DevOps…" : "🔄 Sync Azure DevOps (PRs, Boards, Test Plans, Suites & Cases)"}
+              </button>
+            )}
             <button type="button" className={cqaBtnSecondary} disabled={readOnly || pending !== null} onClick={() => call("test")}>
               <CqaIcon name="cable" className="text-[16px]" />
               {pending === "test" ? "Testing…" : "Test Connection"}
@@ -262,11 +321,11 @@ function ConfigureModal({
             <p className="mt-1 text-[12px] leading-5 text-[#6b7280]">{definition.description}</p>
             {definition.key === "BIVIA" && (
               <p data-testid="bivia-grant" className="mt-1.5 inline-flex rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
-                1,000,000,000 Bivia tokens grant
+                Enterprise AI verification included
               </p>
             )}
             {biviaLive && (
-              <p className="mt-1 text-[11px] font-medium text-[#067647]">Connected through the workspace BIVIA_API_KEY.</p>
+              <p className="mt-1 text-[11px] font-medium text-[#067647]">Connected through the workspace QASyn Vision AI credential.</p>
             )}
             {row?.lastSyncAt && <p className="mt-1 text-[11px] text-[#9ca3af]">Last sync: {formatWhen(row.lastSyncAt)}</p>}
           </div>
@@ -304,6 +363,24 @@ function ConfigureModal({
           </ul>
         )}
 
+        {syncSummary && (
+          <div
+            data-testid="azure-devops-sync-result"
+            className="rounded-lg border border-[#b2ddff] bg-[#eff8ff] px-3 py-2 text-[12px] text-[#175cd3]"
+          >
+            ✅ Synced: {syncSummary.counts.pullRequests} PRs · {syncSummary.counts.workItems} Work Items ·{" "}
+            {syncSummary.counts.testPlans} Test Plans · {syncSummary.counts.testSuites} Suites ·{" "}
+            {syncSummary.counts.testCases} Test Cases
+            <div className="mt-1 flex flex-wrap gap-3 text-[11px] font-semibold">
+              <a className="underline" href="/dashboard/pull-requests">Pull Requests</a>
+              <a className="underline" href="/dashboard/requirements">Requirements</a>
+              <a className="underline" href="/dashboard/plans/test-plans">Test Plans</a>
+              <a className="underline" href="/dashboard/plans/suites">Test Suites</a>
+              <a className="underline" href="/dashboard/test-cases">Test Cases</a>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-3 sm:grid-cols-2">
           {definition.fields.map((field) => (
             <label key={field.key} className={cn("block", field.type === "textarea" && "sm:col-span-2")}>
@@ -311,7 +388,21 @@ function ConfigureModal({
                 {field.label}
                 {field.required && <span className="ml-0.5 text-[#d92d20]">*</span>}
               </span>
-              {fieldInput(field, form[field.key] ?? "", (value) => setForm((prev) => ({ ...prev, [field.key]: value })), readOnly || pending !== null)}
+              {fieldInput(
+                field,
+                form[field.key] ?? "",
+                (value) => {
+                  if (definition.key === "AZURE_DEVOPS" && field.key === "organization" && /dev\.azure\.com/i.test(value)) {
+                    const parsed = parseAzureDevOpsUrl(value);
+                    if (parsed.organization && parsed.project) {
+                      setForm((prev) => ({ ...prev, organization: parsed.orgUrl, project: parsed.project }));
+                      return;
+                    }
+                  }
+                  setForm((prev) => ({ ...prev, [field.key]: value }));
+                },
+                readOnly || pending !== null,
+              )}
               {field.help && <span className="mt-1 block text-[11px] text-[#9ca3af]">{field.help}</span>}
             </label>
           ))}
@@ -339,6 +430,8 @@ export function Integrations({
   const [tab, setTab] = useState<IntegrationCategory>("All Plugins");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<IntegrationDefinition | null>(null);
+  const [azureSyncing, setAzureSyncing] = useState(false);
+  const [azureSync, setAzureSync] = useState<AzureSyncSummary | null>(null);
 
   useEffect(() => setRows(integrations), [integrations]);
 
@@ -362,6 +455,46 @@ export function Integrations({
       if (row.status !== "DISCONNECTED") next.unshift(row);
       return next;
     });
+  }
+
+  async function syncAzureCard(row: IntegrationRow | undefined) {
+    if (azureSyncing) return;
+    setAzureSyncing(true);
+    try {
+      const config = row?.config ?? {};
+      const rawOrganization = config.baseUrl || config.organization || "https://dev.azure.com/ai-test-automations";
+      const baseUrl = /^https?:\/\//i.test(rawOrganization)
+        ? rawOrganization
+        : `https://dev.azure.com/${rawOrganization.replace(/^@/, "")}`;
+      const summary = await apiFetch<AzureSyncSummary>("/api/dashboard/integrations/azure-devops/sync", {
+        method: "POST",
+        json: {
+          direction: "both",
+          baseUrl,
+          project: config.project || "AI Test Automation",
+          token: config.pat || undefined,
+          repository: config.repository || undefined,
+        },
+      });
+      setAzureSync(summary);
+      saved({
+        provider: "AZURE_DEVOPS",
+        status: "CONNECTED",
+        detail: `${summary.organization} / ${summary.project}`,
+        config: { ...config, organization: summary.organization, project: summary.project },
+        lastSyncAt: summary.syncedAt,
+        connectedAt: row?.connectedAt ?? new Date().toISOString(),
+      });
+      const counts = summary.counts;
+      toast(
+        `✅ Synced: ${counts.pullRequests} PRs · ${counts.workItems} Work Items · ${counts.testPlans} Test Plans · ${counts.testSuites} Suites · ${counts.testCases} Test Cases.`,
+        "success",
+      );
+    } catch (caught) {
+      toast(errorMessage(caught), "error");
+    } finally {
+      setAzureSyncing(false);
+    }
   }
 
   return (
@@ -436,10 +569,27 @@ export function Integrations({
                   </div>
                 </div>
                 <p className="line-clamp-3 min-h-[48px] text-[12px] leading-5 text-[#6b7280]">{definition.description}</p>
+                {definition.key === "AZURE_DEVOPS" && azureSync && (
+                  <div
+                    data-testid="azure-devops-sync-result"
+                    className="rounded-lg border border-[#b2ddff] bg-[#eff8ff] px-2.5 py-2 text-[11px] text-[#175cd3]"
+                  >
+                    ✅ Synced: {azureSync.counts.pullRequests} PRs · {azureSync.counts.workItems} Work Items ·{" "}
+                    {azureSync.counts.testPlans} Test Plans · {azureSync.counts.testSuites} Suites ·{" "}
+                    {azureSync.counts.testCases} Test Cases
+                    <div className="mt-1 flex flex-wrap gap-2 text-[10.5px] font-semibold">
+                      <a className="underline" href="/dashboard/pull-requests">PRs</a>
+                      <a className="underline" href="/dashboard/requirements">Requirements</a>
+                      <a className="underline" href="/dashboard/plans/test-plans">Plans</a>
+                      <a className="underline" href="/dashboard/plans/suites">Suites</a>
+                      <a className="underline" href="/dashboard/test-cases">Cases</a>
+                    </div>
+                  </div>
+                )}
                 {definition.key === "BIVIA" && (
                   <div className="space-y-2">
                     <p data-testid="bivia-grant" className="inline-flex w-fit rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
-                      1,000,000,000 Bivia tokens grant
+                      Enterprise AI verification included
                     </p>
                     <div data-testid="bivia-card-observatory">
                       <BiviaObservatory summary={biviaSummary} compact />
@@ -450,7 +600,7 @@ export function Integrations({
                   {connected
                     ? row?.detail || "Configured"
                     : biviaLive
-                      ? "Connected through the workspace BIVIA_API_KEY."
+                      ? "Connected through the workspace QASyn Vision AI credential."
                       : "Add credentials and project details to connect."}
                 </p>
               </div>
@@ -458,14 +608,28 @@ export function Integrations({
                 <span className="text-[10.5px] text-[#9ca3af]">
                   {connected ? `Last sync ${formatWhen(row?.lastSyncAt ?? null)}` : biviaLive ? "Workspace API key" : "Not configured"}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setActive(definition)}
-                  className="inline-flex h-7 items-center gap-1 rounded-md border border-[#e5e7eb] bg-white px-2.5 text-[11.5px] font-semibold text-[#5b4ee8] transition hover:bg-[#f5f4ff]"
-                >
-                  <CqaIcon name={effectivelyConnected ? "settings" : "link"} className="text-[14px]" />
-                  {effectivelyConnected ? "Configure" : "Connect"}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {definition.key === "AZURE_DEVOPS" && (
+                    <button
+                      type="button"
+                      data-testid="azure-devops-sync-btn"
+                      onClick={() => void syncAzureCard(row)}
+                      disabled={readOnly || azureSyncing}
+                      className="inline-flex h-7 items-center gap-1 rounded-md border border-[#b2ddff] bg-[#eff8ff] px-2.5 text-[11.5px] font-semibold text-[#175cd3] transition hover:bg-[#d1e9ff] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <CqaIcon name="sync" className={cn("text-[14px]", azureSyncing && "animate-spin")} />
+                      {azureSyncing ? "Syncing…" : "🔄 Sync Azure DevOps"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setActive(definition)}
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-[#e5e7eb] bg-white px-2.5 text-[11.5px] font-semibold text-[#5b4ee8] transition hover:bg-[#f5f4ff]"
+                  >
+                    <CqaIcon name={effectivelyConnected ? "settings" : "link"} className="text-[14px]" />
+                    {effectivelyConnected ? "Configure" : "Connect"}
+                  </button>
+                </div>
               </div>
             </article>
           );

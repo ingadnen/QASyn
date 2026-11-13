@@ -816,7 +816,7 @@ export async function biviaBoolean(input: BiviaBooleanInput): Promise<BiviaBoole
         status: "abstained",
         value: false,
         probability: probability ?? 0.2,
-        abstainReason: normalizeReason(remote.body) ?? "Bivia abstained on this visual decision.",
+        abstainReason: normalizeReason(remote.body) ?? "QASyn Vision AI abstained on this visual decision.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
       });
@@ -883,7 +883,7 @@ export async function biviaChoice(input: BiviaChoiceInput): Promise<BiviaChoiceR
         value: null,
         optionIndex: index ?? -1,
         probability: probability ?? 0.2,
-        abstainReason: normalizeReason(remote.body) ?? "Bivia abstained on this choice.",
+        abstainReason: normalizeReason(remote.body) ?? "QASyn Vision AI abstained on this choice.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
       });
@@ -951,7 +951,7 @@ export async function biviaGround(input: BiviaGroundInput): Promise<BiviaGroundR
         ...fallback,
         status: "abstained",
         confidence: 0.2,
-        abstainReason: normalizeReason(remote.body) ?? "Bivia could not ground this target.",
+        abstainReason: normalizeReason(remote.body) ?? "QASyn Vision AI could not ground this target.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
       });
@@ -972,7 +972,7 @@ export async function biviaGround(input: BiviaGroundInput): Promise<BiviaGroundR
         ...fallback,
         status: "abstained",
         confidence: 0.2,
-        abstainReason: "Bivia did not find the requested target in the screenshot.",
+        abstainReason: "QASyn Vision AI did not find the requested target in the screenshot.",
         latencyMs: remote.latencyMs,
         provider: "bivia-api",
       });
@@ -1122,7 +1122,7 @@ export async function testBiviaConnection(
       { ...config, remoteEnabled: true },
       "/boolean",
       {
-        question: "Connectivity probe: is the Bivia decision engine reachable?",
+        question: "Connectivity probe: is the QASyn Vision AI engine reachable?",
         context: "QASyn integration Test Connection",
         mode: config.mode,
         allow_abstain: true,
@@ -1136,7 +1136,7 @@ export async function testBiviaConnection(
   const checks: BiviaConnectionCheck[] = [
     { label: "Credentials format accepted", ok: keyFormatOk },
     { label: "Endpoint URL resolves", ok: urlOk },
-    { label: "Live Bivia API handshake", ok: live },
+    { label: "Live QASyn Vision AI handshake", ok: live },
     { label: "Calibrated local fallback ready", ok: true },
   ];
   const ok = live || (keyFormatOk && urlOk);
@@ -1144,14 +1144,14 @@ export async function testBiviaConnection(
     ok,
     checks,
     message: live
-      ? "Articul8 Bivia is reachable and accepted the calibrated decision handshake."
+      ? "QASyn Vision AI is reachable and accepted the calibrated decision handshake."
       : ok
-        ? "Bivia credentials are configured; the live API is unreachable, so the calibrated local fallback is active."
-        : "Articul8 Bivia is not configured. Add an API key or set BIVIA_API_KEY.",
+        ? "QASyn Vision AI credentials are configured; the live API is unreachable, so the calibrated local fallback is active."
+        : "QASyn Vision AI is not configured. Add an API key or set the workspace credential.",
     latencyMs: Math.max(1, Date.now() - started),
     provider: live ? "bivia-api" : "bivia-calibrated-fallback",
   };
 }
 
 /** Exported for deterministic unit checks and UI copy. */
-export const BIVIA_TOKEN_GRANT = "1,000,000,000 Bivia tokens grant";
+export const QASYN_VISION_ENTERPRISE = "QASyn Vision AI enterprise verification";

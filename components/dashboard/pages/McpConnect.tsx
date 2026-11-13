@@ -242,14 +242,14 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     name: "qasyn_context7_resolve",
-    label: "Context7 live docs",
+    label: "QASyn Framework Intelligence",
     description: "Resolve Playwright / Next.js rules for generation and healing.",
     icon: "menu_book",
     sample: { query: "Playwright locator for the checkout pay button" },
   },
   {
     name: "qasyn_bivia_decide",
-    label: "Bivia calibrated decision",
+    label: "QASyn Vision AI decision",
     description: "Calibrated decide / boolean / ground / PR score with abstention.",
     icon: "psychology",
     sample: {
@@ -1040,11 +1040,11 @@ export function McpConnect({
         )}
       </section>
 
-      <section className={cn(cqaCard, "p-4")} aria-label="Context7 live documentation" data-testid="context7-resolver">
+      <section className={cn(cqaCard, "p-4")} aria-label="QASyn Framework Intelligence" data-testid="context7-resolver">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[#111827]">
-              <CqaIcon name="menu_book" className="text-[18px] text-[#5b4ee8]" /> Context7 live docs
+              <CqaIcon name="menu_book" className="text-[18px] text-[#5b4ee8]" /> QASyn Framework Intelligence
             </h2>
             <p className="mt-0.5 text-[12px] text-[#6b7280]">
               Resolve a QA task to versioned Playwright, Next.js, Tailwind, Prisma or TypeScript rules. The same rules
@@ -1061,7 +1061,7 @@ export function McpConnect({
             className={cn(cqaInput, "h-9 min-w-[260px] flex-1")}
             value={contextQuery}
             onChange={(event) => setContextQuery(event.target.value)}
-            aria-label="Context7 query"
+            aria-label="QASyn Framework Intelligence query"
             placeholder="e.g. Playwright accessible locator for a checkout button"
           />
           <button type="button" className={cqaBtnPrimary} disabled={contextLoading} onClick={() => void resolveContext()}>

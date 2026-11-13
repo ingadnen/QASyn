@@ -718,7 +718,7 @@ export function StudioWorkspace({
       const healedUrl = evidenceDataUrl(result.screenshotBase64, result.screenshotMime);
       if (healedUrl && detailStep) setSelfHealEvidence({ stepId: detailStep.id, dataUrl: healedUrl });
       toast(
-        `✨ Self-healed by Bivia · ${result.oldSelector} → ${result.newSelector} · ${result.probabilityPct.toFixed(1)}% calibrated`,
+        `✨ Self-healed by QASyn Vision AI · ${result.oldSelector} → ${result.newSelector} · ${result.probabilityPct.toFixed(1)}% calibrated`,
         "success",
       );
       router.refresh();
@@ -963,7 +963,7 @@ export function StudioWorkspace({
             type="button"
             onClick={() => void simulateSelfHeal()}
             disabled={readOnly || selfHealing}
-            title="Corrupt a selector and let Bivia re-ground it"
+            title="Corrupt a selector and let QASyn Vision AI re-ground it"
             data-testid="studio-simulate-self-heal"
             className={cn(cqaBtnSecondary, "h-9 px-3")}
           >
@@ -1121,7 +1121,7 @@ export function StudioWorkspace({
                                 title={`${step.biviaHeal.oldSelector} → ${step.biviaHeal.newSelector} · ${step.biviaHeal.probabilityPct.toFixed(1)}% calibrated`}
                                 className="mb-1 ml-1 inline-flex items-center gap-1 rounded border border-[#d8b4fe] bg-[#faf5ff] px-1.5 py-[1px] text-[10.5px] font-semibold text-[#7e22ce]"
                               >
-                                ✨ Healed by Bivia
+                                ✨ Healed by QASyn Vision AI
                               </span>
                             ) : null}
                             <p className="flex flex-wrap items-center gap-1.5 text-[13px] leading-5 text-[#1f2937]">
@@ -1746,7 +1746,7 @@ export function StudioWorkspace({
               {detailStep.bivia && (
                 <span
                   data-testid="bivia-step-verification"
-                  title={`Articul8 Bivia (${detailStep.bivia.provider})`}
+                  title="QASyn Vision AI verification"
                   className={cn(
                     "inline-flex items-center gap-1 rounded border px-1.5 py-[1px] text-[10.5px] font-semibold",
                     detailStep.bivia.status === "passed"
@@ -1756,7 +1756,7 @@ export function StudioWorkspace({
                         : "border-[#fedf89] bg-[#fffaeb] text-[#b54708]",
                   )}
                 >
-                  🧠 Bivia {detailStep.bivia.probability.toFixed(1)}% calibrated · {detailStep.bivia.status}
+                  🧠 QASyn Vision AI {detailStep.bivia.probability.toFixed(1)}% calibrated · {detailStep.bivia.status}
                 </span>
               )}
               {detailStep.biviaHeal?.healed && (
@@ -1765,7 +1765,7 @@ export function StudioWorkspace({
                   title={`${detailStep.biviaHeal.oldSelector} → ${detailStep.biviaHeal.newSelector}`}
                   className="inline-flex items-center gap-1 rounded border border-[#d8b4fe] bg-[#faf5ff] px-1.5 py-[1px] text-[10.5px] font-semibold text-[#7e22ce]"
                 >
-                  ✨ Healed by Bivia · {detailStep.biviaHeal.probabilityPct.toFixed(1)}%
+                  ✨ Healed by QASyn Vision AI · {detailStep.biviaHeal.probabilityPct.toFixed(1)}%
                 </span>
               )}
             </div>
@@ -1849,14 +1849,14 @@ export function StudioWorkspace({
                 data-testid="studio-heal-evidence"
                 className="rounded-lg border border-[#e9d5ff] bg-[#faf5ff] px-3 py-2.5 text-[12px] text-[#6b21a8]"
               >
-                <p className="font-semibold">✨ Healed by Bivia · {detailStep.biviaHeal.probabilityPct.toFixed(1)}% calibrated</p>
+                <p className="font-semibold">✨ Healed by QASyn Vision AI · {detailStep.biviaHeal.probabilityPct.toFixed(1)}% calibrated</p>
                 <p className="mt-1 break-all font-mono text-[11px] text-[#7e22ce]">
                   <span className="text-[#9d174d] line-through">{detailStep.biviaHeal.oldSelector || "(empty)"}</span>
                   {" → "}
                   <span className="font-semibold">{detailStep.biviaHeal.newSelector}</span>
                 </p>
                 <p className="mt-1 text-[10.5px] text-[#9333ea]">
-                  {detailStep.biviaHeal.provider} · {detailStep.biviaHeal.strategy ?? "Bivia"} · {detailStep.biviaHeal.screenshotCaptured ? "screenshot captured" : "visual preview"} ·{" "}
+                  QASyn Vision AI · {detailStep.biviaHeal.strategy ?? "calibrated"} · {detailStep.biviaHeal.screenshotCaptured ? "screenshot captured" : "visual preview"} ·{" "}
                   {detailStep.biviaHeal.domCaptured ? "DOM captured" : "synthetic DOM"}
                 </p>
                 {(evidenceDataUrl(detailStep.biviaHeal.screenshotBase64, detailStep.biviaHeal.screenshotMime) ??
@@ -1890,7 +1890,7 @@ export function StudioWorkspace({
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">
-                    <CqaIcon name="my_location" className="text-[15px] text-[#5b4ee8]" /> Bivia visual grounding
+                    <CqaIcon name="my_location" className="text-[15px] text-[#5b4ee8]" /> QASyn Vision AI grounding
                   </p>
                   <p className="mt-0.5 text-[11px] leading-4 text-[#6b7280]">
                     Grounds this step on the live page and returns a normalized 0–1000 bounding box.
@@ -1904,7 +1904,7 @@ export function StudioWorkspace({
                   className={cn(cqaBtnSecondary, "h-8 px-3 text-[12px]")}
                 >
                   <CqaIcon name={groundBusy ? "hourglass_top" : "my_location"} className="text-[15px]" />
-                  {groundBusy ? "Grounding…" : "🎯 Run Bivia Visual Grounding"}
+                  {groundBusy ? "Grounding…" : "🎯 Run QASyn Vision Grounding"}
                 </button>
               </div>
               {groundError && <p className="mt-2 text-[11.5px] text-[#b42318]">{groundError}</p>}
@@ -1974,7 +1974,7 @@ export function StudioWorkspace({
                   <p className="text-[#94a3b8]">selector: {detailStep.selector || "auto-resolved"}</p>
                   {detailStep.bivia && (
                     <p className="text-[#a7f3d0]">
-                      🧠 Bivia: {detailStep.bivia.probability.toFixed(1)}% calibrated · {detailStep.bivia.status}
+                      🧠 QASyn Vision AI: {detailStep.bivia.probability.toFixed(1)}% calibrated · {detailStep.bivia.status}
                     </p>
                   )}
                   {detailStep.bivia?.abstainReason && <p className="text-[#fbbf24]">abstain: {detailStep.bivia.abstainReason}</p>}

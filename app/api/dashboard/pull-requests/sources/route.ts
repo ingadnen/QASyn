@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseIntegrationConfig } from "@/lib/integration-providers";
-import { openPullRequests, sourceRepositories } from "@/lib/pr-catalog";
+import { discoverPullRequests } from "@/lib/pr-catalog";
 import { guardApi } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
@@ -23,12 +23,14 @@ export async function GET() {
     orderBy: { provider: "asc" },
   });
 
-  const sources = sourceRepositories(
-    integrations.map((integration) => ({
-      provider: integration.provider,
-      status: integration.status,
-      config: parseIntegrationConfig(integration.configJson),
-    })),
+  const sources = (
+    await discoverPullRequests(
+      integrations.map((integration) => ({
+        provider: integration.provider,
+        status: integration.status,
+        config: parseIntegrationConfig(integration.configJson),
+      })),
+    )
   ).map((source) => ({
     provider: source.provider,
     providerName: source.providerName,
@@ -36,7 +38,7 @@ export async function GET() {
       {
         repository: source.repository,
         baseBranch: source.baseBranch,
-        pullRequests: openPullRequests(source.provider, source.repository),
+        pullRequests: source.pullRequests,
       },
     ],
   }));

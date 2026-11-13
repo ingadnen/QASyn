@@ -116,7 +116,7 @@ export function resolveContext7(query: string): Context7Resolution {
   const resolved = best.score > 0;
   const rules = best.library.rules;
   const injectedPrompt = [
-    `Context7 live documentation · ${best.library.name} v${best.library.version}`,
+    `QASyn Framework Intelligence · ${best.library.name} v${best.library.version}`,
     `Source: ${best.library.docsUrl}`,
     ...rules.map((rule) => `- ${rule}`),
     `Reference snippet: ${best.library.snippet}`,
@@ -135,5 +135,5 @@ export function resolveContext7(query: string): Context7Resolution {
 /** Short guidance block injected into generation and self-healing prompts. */
 export function context7Guidance(query: string, limit = 3): string {
   const resolution = resolveContext7(query);
-  return resolution.rules.slice(0, limit).map((rule) => `Context7/${resolution.library.name}: ${rule}`).join("\n");
+  return resolution.rules.slice(0, limit).map((rule) => `QASyn Framework Intelligence/${resolution.library.name}: ${rule}`).join("\n");
 }

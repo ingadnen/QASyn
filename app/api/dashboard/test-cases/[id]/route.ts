@@ -16,7 +16,24 @@ import { expectedResultForStep } from "@/lib/step-expected";
 type Params = { params: Promise<{ id: string }> };
 
 /** PATCH /api/dashboard/test-cases/[id] { action: "run" | "set" | "edit" } */
-export async function PATCH(request: Request, { params }: Params) {
+export async function PATCH(request: Request, context: Params) {
+  try {
+    return await handlePatch(request, context);
+  } catch (error) {
+    console.error("[test-cases PATCH error]", error);
+    const detail = error instanceof Error ? error.stack || error.message : String(error);
+    return NextResponse.json(
+      {
+        error: "Test execution could not be completed.",
+        detail,
+        code: (error as { code?: string }).code ?? undefined,
+      },
+      { status: 500 },
+    );
+  }
+}
+
+async function handlePatch(request: Request, { params }: Params) {
   const guard = await guardPermission("testCasesEdit", { write: true });
   if (!guard.ok) return guard.response;
   void ensureWal();
@@ -233,7 +250,7 @@ export async function PATCH(request: Request, { params }: Params) {
         status: "healed",
         url: groundingUrl || navigateTarget,
         stepNumber: index + 1,
-        detail: "Bivia self-heal evidence · selector re-grounded",
+        detail: "QASyn Vision AI self-heal evidence · selector re-grounded",
         capturedAt: new Date().toISOString(),
       });
     const evidenceMime = capturedShot ? "image/png" : "image/svg+xml";
@@ -251,7 +268,7 @@ export async function PATCH(request: Request, { params }: Params) {
       // from the deterministic magic-locator candidate set.
       const fallbackCandidate = decision.candidates?.[0] ?? null;
       if (!fallbackCandidate) {
-        return jsonError(decision.abstainReason || "Bivia could not calibrate a replacement selector.", 422);
+        return jsonError(decision.abstainReason || "QASyn Vision AI could not calibrate a replacement selector.", 422);
       }
       decision.status = "healed";
       decision.newSelector = fallbackCandidate.selector;
@@ -301,13 +318,15 @@ export async function PATCH(request: Request, { params }: Params) {
         expectedResult: step.expectedResult,
         message:
           stepIndex === index
-            ? `Selector re-resolved by Bivia (${decision.probabilityPct.toFixed(1)}% calibrated): ${oldSelector} → ${decision.newSelector}`
+            ? `Selector re-resolved by QASyn Vision AI (${decision.probabilityPct.toFixed(1)}% calibrated): ${oldSelector} → ${decision.newSelector}`
             : "OK · screenshot attached.",
         screenshotBase64: stepEvidence,
         screenshotMime: stepIndex === index ? evidenceMime : "image/svg+xml",
       };
     });
-    const { updated, run, version } = await prisma.$transaction(
+    let persisted: { updated: typeof tc; run: { id: string } | null; version: { id: string } | null } | null = null;
+    try {
+      persisted = await prisma.$transaction(
       async (tx) => {
         const updated = await tx.testCase.update({
           where: { id: tc.id },
@@ -326,12 +345,12 @@ export async function PATCH(request: Request, { params }: Params) {
             runNumber: (lastRun?.runNumber ?? 0) + 1,
             status: "PASSED",
             trigger: "Self-Healing",
-            mode: "Bivia Auto-Heal",
+            mode: "QASyn Vision Auto-Heal",
             durationMs: 18_400 + steps.length * 1_900,
             failedStep: index + 1,
             failedStepText: `${action}: ${target} — ${oldSelector} not found`,
             autoFix: true,
-            createdBy: "Articul8 Bivia",
+            createdBy: "QASyn Vision AI",
             logJson: JSON.stringify(log),
           },
         });
@@ -341,8 +360,8 @@ export async function PATCH(request: Request, { params }: Params) {
             organisationId: ctx.org.id,
             testCaseId: tc.id,
             version: versionCount + 1,
-            summary: `✨ Bivia self-healed selector: ${oldSelector} → ${decision.newSelector} (${decision.probabilityPct.toFixed(1)}% calibrated)`,
-            author: "Articul8 Bivia",
+            summary: `✨ QASyn Vision AI self-healed selector: ${oldSelector} → ${decision.newSelector} (${decision.probabilityPct.toFixed(1)}% calibrated)`,
+            author: "QASyn Vision AI",
             addedJson: JSON.stringify([decision.newSelector]),
             removedJson: JSON.stringify([oldSelector]),
             stepsJson: JSON.stringify(steps),
@@ -352,7 +371,46 @@ export async function PATCH(request: Request, { params }: Params) {
         return { updated, run, version };
       },
       { timeout: 30_000 },
-    );
+      );
+    } catch (error) {
+      console.error("[test-cases self-heal persistence]", error);
+      await audit(
+        prisma,
+        ctx,
+        "test_case.self_healed",
+        `${tc.title} · ${oldSelector} → ${decision.newSelector} · evidence generated (persistence warning)`,
+      );
+      return NextResponse.json({
+        healed: true,
+        steps,
+        run: null,
+        version: null,
+        testCase: tc,
+        warning: `Self-heal evidence generated; run history persistence failed: ${error instanceof Error ? error.message : String(error)}`,
+        oldSelector,
+        newSelector: decision.newSelector,
+        probabilityPct: decision.probabilityPct,
+        probability: decision.probability,
+        provider: decision.provider,
+        strategy: decision.strategy,
+        grounding: decision.grounding,
+        screenshotBase64: evidenceScreenshot,
+        screenshotMime: evidenceMime,
+        groundingUrl: groundingUrl || navigateTarget,
+        decision: {
+          status: decision.status,
+          oldSelector: decision.oldSelector,
+          newSelector: decision.newSelector,
+          probability: decision.probability,
+          probabilityPct: decision.probabilityPct,
+          provider: decision.provider,
+          latencyMs: decision.latencyMs,
+          strategy: decision.strategy,
+          abstainReason: decision.abstainReason,
+        },
+      });
+    }
+    const { updated, run, version } = persisted;
     await audit(
       prisma,
       ctx,
@@ -526,56 +584,70 @@ export async function PATCH(request: Request, { params }: Params) {
       };
     });
     const status = shouldFail ? "failing" : "passing";
-    await prisma.testCase.update({
-      where: { id: tc.id },
-      data: { status, lastRunAt: now, stepsJson: JSON.stringify(steps) },
-    });
-    for (const suite of await prisma.testSuite.findMany({ where: { organisationId: ctx.org.id, testCases: { some: { id: tc.id } } } })) {
-      const members = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id, testSuites: { some: { id: suite.id } } } });
-      const passing = members.filter((c) => c.status === "passing").length;
-      await prisma.testSuite.update({ where: { id: suite.id }, data: { passRate: members.length ? Math.round((passing / members.length) * 100) : 0, lastRunAt: now } });
-    }
-    for (const plan of await prisma.testPlan.findMany({ where: { organisationId: ctx.org.id, testCases: { some: { id: tc.id } } } })) {
-      const members = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id, testPlans: { some: { id: plan.id } } } });
-      const passing = members.filter((c) => c.status === "passing").length;
-      await prisma.testPlan.update({ where: { id: plan.id }, data: { passRate: members.length ? Math.round((passing / members.length) * 100) : 0, lastRunAt: now } });
-    }
-    const durationMs = 36_000 + steps.length * 1_900;
-    const lastRun = await prisma.testCaseRun.findFirst({ where: { testCaseId: tc.id }, orderBy: { runNumber: "desc" }, select: { runNumber: true } });
-    const createdRun = await prisma.testCaseRun.create({
-      data: {
-        organisationId: ctx.org.id,
-        testCaseId: tc.id,
-        runNumber: (lastRun?.runNumber ?? 0) + 1,
-        status: shouldFail ? "FAILED" : "PASSED",
-        trigger: "Automated",
-        mode: "Standalone Run",
-        durationMs,
-        failedStep,
-        failedStepText: failedStep ? steps[failedStep - 1]?.target ?? null : null,
-        autoFix: Boolean(input.autoFix),
-        createdBy: ctx.user.name || "System",
-        logJson: JSON.stringify(log),
-      },
-    });
-    if (input.autoFix) {
-      const versionCount = await prisma.testCaseVersion.count({ where: { testCaseId: tc.id } });
-      await prisma.testCaseVersion.create({
+    const executionResult = { passed: shouldFail ? 0 : 1, failed: shouldFail ? 1 : 0, total: 1 };
+    try {
+      await prisma.testCase.update({
+        where: { id: tc.id },
+        data: { status, lastRunAt: now, stepsJson: JSON.stringify(steps) },
+      });
+      for (const suite of await prisma.testSuite.findMany({ where: { organisationId: ctx.org.id, testCases: { some: { id: tc.id } } } })) {
+        const members = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id, testSuites: { some: { id: suite.id } } } });
+        const passing = members.filter((c) => c.status === "passing").length;
+        await prisma.testSuite.update({ where: { id: suite.id }, data: { passRate: members.length ? Math.round((passing / members.length) * 100) : 0, lastRunAt: now } });
+      }
+      for (const plan of await prisma.testPlan.findMany({ where: { organisationId: ctx.org.id, testCases: { some: { id: tc.id } } } })) {
+        const members = await prisma.testCase.findMany({ where: { organisationId: ctx.org.id, testPlans: { some: { id: plan.id } } } });
+        const passing = members.filter((c) => c.status === "passing").length;
+        await prisma.testPlan.update({ where: { id: plan.id }, data: { passRate: members.length ? Math.round((passing / members.length) * 100) : 0, lastRunAt: now } });
+      }
+      const durationMs = 36_000 + steps.length * 1_900;
+      const lastRun = await prisma.testCaseRun.findFirst({ where: { testCaseId: tc.id }, orderBy: { runNumber: "desc" }, select: { runNumber: true } });
+      const createdRun = await prisma.testCaseRun.create({
         data: {
           organisationId: ctx.org.id,
           testCaseId: tc.id,
-          version: versionCount + 1,
-          summary: "Auto-fix (attempt 1)",
-          author: "System",
-          addedJson: "[]",
-          removedJson: "[]",
-          stepsJson: JSON.stringify(steps),
+          runNumber: (lastRun?.runNumber ?? 0) + 1,
+          status: shouldFail ? "FAILED" : "PASSED",
+          trigger: "Automated",
+          mode: "Standalone Run",
+          durationMs,
+          failedStep,
+          failedStepText: failedStep ? steps[failedStep - 1]?.target ?? null : null,
+          autoFix: Boolean(input.autoFix),
+          createdBy: ctx.user?.name || ctx.user?.email || "System",
+          logJson: JSON.stringify(log),
         },
       });
+      if (input.autoFix) {
+        const versionCount = await prisma.testCaseVersion.count({ where: { testCaseId: tc.id } });
+        await prisma.testCaseVersion.create({
+          data: {
+            organisationId: ctx.org.id,
+            testCaseId: tc.id,
+            version: versionCount + 1,
+            summary: "Auto-fix (attempt 1)",
+            author: "System",
+            addedJson: "[]",
+            removedJson: "[]",
+            stepsJson: JSON.stringify(steps),
+          },
+        });
+      }
+      await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.testRun);
+      await audit(prisma, ctx, "test_case.run_steps", `${tc.title} · ${log.length} steps · ${shouldFail ? "failing" : "passing"}`);
+      return NextResponse.json({ result: executionResult, log, run: createdRun });
+    } catch (error) {
+      // Evidence was generated in memory; a persistence fault must not turn the
+      // Studio run into an opaque 500 / "0/0 passed" response.
+      console.error("[test-cases run_steps persistence]", error);
+      await audit(prisma, ctx, "test_case.run_steps", `${tc.title} · ${log.length} steps · evidence generated (persistence warning)`);
+      return NextResponse.json({
+        result: executionResult,
+        log,
+        run: null,
+        warning: `Run evidence generated; run history persistence failed: ${error instanceof Error ? error.message : String(error)}`,
+      });
     }
-    await spendCredits(prisma, ctx.org.id, CREDIT_COSTS.testRun);
-    await audit(prisma, ctx, "test_case.run_steps", `${tc.title} · ${log.length} steps · ${shouldFail ? "failing" : "passing"}`);
-    return NextResponse.json({ result: { passed: shouldFail ? 0 : 1, failed: shouldFail ? 1 : 0, total: 1 }, log, run: createdRun });
   }
 
   await delay(MOCK_LATENCY_MS / 2);

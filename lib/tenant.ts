@@ -85,9 +85,24 @@ export async function guardOwnOrg(): Promise<Guard> {
 }
 
 export async function audit(db: Db, ctx: Pick<OrgContext, "org" | "user">, action: string, target: string) {
-  await db.systemAuditLog.create({
-    data: { organisationId: ctx.org.id, actorEmail: ctx.user.email, action, target: target.slice(0, 200) },
-  });
+  // Audit must never fail the business operation: re-seeded users, deleted
+  // users and partial sessions can leave the actor without an id/email.
+  const actorEmail =
+    String(ctx.user?.email ?? "").trim() ||
+    String(ctx.user?.name ?? "").trim() ||
+    "system@qasyn.local";
+  try {
+    await db.systemAuditLog.create({
+      data: {
+        organisationId: ctx.org.id,
+        actorEmail,
+        action,
+        target: target.slice(0, 200),
+      },
+    });
+  } catch (error) {
+    console.warn("[audit] audit write skipped", { action, actorEmail, error: error instanceof Error ? error.message : String(error) });
+  }
 }
 
 /** Deducts simulated credits (never below zero). */

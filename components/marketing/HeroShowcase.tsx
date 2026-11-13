@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type TabId = "grounding" | "pr" | "types";
 
 const TABS: Array<{ id: TabId; label: string; icon: string }> = [
-  { id: "grounding", label: "Bivia Visual Grounding", icon: "🎯" },
+  { id: "grounding", label: "QASyn Vision Grounding", icon: "🎯" },
   { id: "pr", label: "PR Gatekeeper", icon: "🛡️" },
   { id: "types", label: "11-Type Engine", icon: "🧬" },
 ];
@@ -49,7 +49,7 @@ function GroundingPanel() {
         <div className="absolute left-4 top-16 h-2.5 w-36 rounded bg-white/[0.07]" />
         <div className="absolute bottom-5 left-4 h-8 w-24 rounded-md bg-gradient-to-r from-quantum-500 to-cobalt-400 opacity-80" />
         <div className="absolute bottom-[18%] left-[8%] right-[12%] top-[26%] rounded-md border-2 border-quantum-400 shadow-[0_0_24px_rgba(34,211,238,0.55),inset_0_0_18px_rgba(34,211,238,0.18)]">
-          <span className="absolute -top-6 left-0 rounded bg-quantum-500 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#04121a]">BIVIA · 96.8%</span>
+          <span className="absolute -top-6 left-0 rounded bg-quantum-500 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-[#04121a]">QASYN AI · 96.8%</span>
           <span className="absolute -bottom-2 -right-2 size-2.5 rounded-full bg-quantum-300 shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
         </div>
       </div>

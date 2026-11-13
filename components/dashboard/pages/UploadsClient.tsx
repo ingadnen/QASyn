@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ColumnFilter, ColumnSort, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
-import { formatDateTime, timeAgo } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
 export interface UploadTableRow {
   id: string;
@@ -78,7 +78,7 @@ export function UploadsTable({ rows, readOnly }: { rows: UploadTableRow[]; readO
                   <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{upload.sizeBytes === 0 ? "—" : `${(upload.sizeBytes / 1024).toFixed(0)} KB`}</td>
                   <td className="px-4 py-3 text-[12.5px] text-[#4b5563]">{upload.uploadedBy}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#6b7280]" title={formatDateTime(upload.createdAt)}>
-                    {timeAgo(upload.createdAt)}
+                    {formatDateTime(upload.createdAt)}
                   </td>
                   <td className="px-4 py-3"><DeleteUploadButton id={upload.id} name={upload.fileName} readOnly={readOnly} /></td>
                 </tr>

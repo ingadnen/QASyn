@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { CreateCollectionButton } from "@/components/dashboard/pages/CreateCollectionButton";
+import { AzureDevOpsSyncButton } from "@/components/dashboard/pages/AzureDevOpsSyncButton";
 import { CqaIcon, Modal, cqaBtnPrimary, cqaBtnSecondary, cqaCard, cqaInput, cqaLabel, useAction } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
 import { BulkButton, ColumnFilter, ColumnSort, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, tableCardClass, type TableSortState } from "@/components/contextqa/table-ui";
@@ -316,6 +317,7 @@ export function SuitesClient({
                 <CqaIcon name="folder" className="text-[16px]" /> Modular
               </button>
             </div>
+            <AzureDevOpsSyncButton />
             <CreateCollectionButton kind="suites" readOnly={readOnly} label="Create Test Suite" defaultEmail={defaultEmail} />
           </>
         }

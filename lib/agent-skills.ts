@@ -30,7 +30,7 @@ export const AGENT_SKILLS: AgentSkill[] = [
     body: `## playwright-self-healing
 When a Playwright step fails because a locator no longer matches:
 1. Fetch the execution evidence and the failing step selector.
-2. Resolve Context7 Playwright rules before proposing a replacement.
+2. Resolve QASyn Framework Intelligence Playwright rules before proposing a replacement.
 3. Rank replacements: getByRole > getByLabel > getByTestId > getByText > CSS.
 4. Never use nth-child, generated utility classes or absolute XPath.
 5. Apply the best locator, re-run only the failed step, and keep the old selector as fallback.

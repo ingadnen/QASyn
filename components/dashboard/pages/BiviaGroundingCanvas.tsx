@@ -95,7 +95,7 @@ export function BiviaGroundingCanvas({
   const top = Math.max(0, Math.min(100, box.y / 10));
   const width = Math.max(1.5, Math.min(100 - left, box.width / 10));
   const height = Math.max(1.5, Math.min(100 - top, box.height / 10));
-  const caption = label || box.label || "Bivia grounded target";
+  const caption = label || box.label || "QASyn Vision grounded target";
 
   return (
     <figure className={cn("min-w-0", className)} data-testid="bivia-grounding-canvas">
@@ -111,7 +111,7 @@ export function BiviaGroundingCanvas({
           data-testid="bivia-grounding-overlay"
           role="img"
           tabIndex={0}
-          aria-label={`Bivia grounded ${caption} at ${rawBox.join(", ")} with ${pct.toFixed(1)}% confidence`}
+          aria-label={`QASyn Vision grounded ${caption} at ${rawBox.join(", ")} with ${pct.toFixed(1)}% confidence`}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           onFocus={() => setHovered(true)}
@@ -136,7 +136,7 @@ export function BiviaGroundingCanvas({
             data-testid="bivia-grounding-badge"
             className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#67e8f9]/50 bg-[#083344]/92 px-2.5 py-1 text-[10.5px] font-semibold text-[#cffafe] shadow-[0_4px_18px_rgba(8,51,68,0.35)] backdrop-blur"
           >
-            🎯 Bivia Grounded · [{rawBox.join(", ")}] · {pct.toFixed(1)}% confidence
+            🎯 QASyn Vision Grounded · [{rawBox.join(", ")}] · {pct.toFixed(1)}% confidence
           </span>
           {box.space && (
             <span className="rounded-full bg-white/85 px-2 py-0.5 text-[9.5px] font-medium text-[#475569]">

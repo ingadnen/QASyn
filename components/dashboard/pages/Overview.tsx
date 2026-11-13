@@ -418,7 +418,7 @@ export function Overview(props: OverviewProps) {
             <CqaIcon name="rocket_launch" className="text-[17px] text-[#5b4ee8]" /> Quality Autopilot
           </p>
           <p className="mt-0.5 text-[11.5px] leading-4 text-[#4b5563]">
-            Crawl, Strix-scan, Graphify, author Bivia-calibrated test cases and execute them in Studio — in one click.
+            Crawl, Strix-scan, Graphify, author QASyn Vision-calibrated test cases and execute them in Studio - in one click.
           </p>
         </div>
         <AutopilotButton defaultTarget={props.autopilotTarget} readOnly={props.readOnly} />

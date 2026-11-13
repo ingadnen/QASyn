@@ -76,7 +76,7 @@ export function MarketingFooter() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="inline-flex items-center gap-2 text-xs font-medium text-emerald-300">
               <span className="quantum-pulse size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" aria-hidden="true" />
-              All 19 QASyn Modules Operational · Articul8 Bivia 1B Grant Active
+              All 19 QASyn Modules Operational · QASyn Vision AI Active
             </p>
             <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
               {QUICK_LINKS.map((link) => (
@@ -136,7 +136,7 @@ export function MarketingFooter() {
       <div className="border-t border-white/5">
         <div className="mx-auto flex max-w-[1440px] flex-wrap justify-between gap-2 px-6 sm:px-8 lg:px-12 py-5 text-xs text-slate-500">
           <span>© {new Date().getFullYear()} QASyn — local prototype, not affiliated with any vendor.</span>
-          <span>Next.js 15 · Prisma · SQLite · Articul8 Bivia</span>
+          <span>Next.js 15 · Prisma · SQLite · QASyn Vision AI</span>
         </div>
       </div>
     </footer>

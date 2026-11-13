@@ -38,7 +38,7 @@ export function defaultExpectedResultForStep(step: ExpectedStepShape): string {
     case "api call":
       return `The endpoint returns a 2xx response with the documented content-type, schema and latency budget.`;
     case "ai assertion":
-      return `Bivia visual verification confirms ${focus} renders correctly with zero console errors and zero 5xx network failures.`;
+      return `QASyn Vision AI visual verification confirms ${focus} renders correctly with zero console errors and zero 5xx network failures.`;
     case "ocr/document validation":
       return `The captured document is legible, the expected fields are extracted, and values match the source.`;
     case "kyc check":

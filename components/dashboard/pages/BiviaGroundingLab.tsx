@@ -66,10 +66,10 @@ export function BiviaGroundingLab({
         <div>
           <h2 className="flex items-center gap-2 text-[14px] font-semibold text-[#111827]">
             <span className="flex size-7 items-center justify-center rounded-lg bg-[#ecfeff] text-[15px]">🎯</span>
-            Bivia visual grounding canvas
+            QASyn Vision grounding canvas
           </h2>
           <p className="mt-1 text-[11.5px] leading-4 text-[#6b7280]">
-            Ground any UI target to a normalized bounding box with a neon overlay. Coordinates are shown exactly as Bivia returns them.
+            Ground any UI target to a normalized bounding box with a neon overlay. Coordinates are shown exactly as QASyn Vision AI returns them.
           </p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-[#ecfeff] px-2.5 py-1 text-[10.5px] font-semibold text-[#0e7490]">
@@ -77,7 +77,7 @@ export function BiviaGroundingLab({
         </span>
       </header>
       <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <BiviaGroundingCanvas box={box} confidence={confidence} imageSrc={image} title="Bivia grounding preview" />
+        <BiviaGroundingCanvas box={box} confidence={confidence} imageSrc={image} title="QASyn Vision grounding preview" />
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -100,7 +100,7 @@ export function BiviaGroundingLab({
           </label>
           <button type="submit" data-testid="bivia-ground-run" disabled={busy} className={cn(cqaBtnPrimary, "w-full")}>
             <CqaIcon name={busy ? "hourglass_top" : "my_location"} className="text-[16px]" />
-            {busy ? "Grounding…" : "🎯 Run Bivia Visual Grounding"}
+            {busy ? "Grounding…" : "🎯 Run QASyn Vision Grounding"}
           </button>
           <ErrorNote error={error} />
           <p className="text-[10.5px] leading-4 text-[#9ca3af]">

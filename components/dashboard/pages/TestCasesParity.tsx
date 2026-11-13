@@ -17,6 +17,7 @@ import {
 } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
 import { BulkButton, ColumnFilter, ColumnSort, DataToolbar, SelectAllCheckbox, SelectionBar, TablePagination, matchesColumnFilters, nextTableSort, sortTableRows, tableCardClass, type TableSortState } from "@/components/contextqa/table-ui";
+import { AzureDevOpsSyncButton } from "@/components/dashboard/pages/AzureDevOpsSyncButton";
 import { apiFetch, errorMessage } from "@/lib/api";
 import { TEST_TYPES } from "@/lib/constants";
 import { toast } from "@/lib/toast";
@@ -469,6 +470,7 @@ export function TestCasesParity({
         refreshing={isRefreshing}
         actions={
           <>
+            <AzureDevOpsSyncButton />
             {tab === "cases" ? (
               <select aria-label="Scope" className="h-9 rounded-lg border border-[#e5e7eb] bg-white px-2.5 text-[12.5px] text-[#374151]" value={scope} onChange={(e) => setScope(e.target.value)}>
                 <option>All Test Cases</option>

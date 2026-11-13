@@ -47,6 +47,7 @@ export function RowMenu({
   const [position, setPosition] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const openedAtRef = useRef(0);
 
   useEffect(() => setMounted(true), []);
 
@@ -82,7 +83,13 @@ export function RowMenu({
       if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
       setOpen(false);
     };
-    const onClose = () => setOpen(false);
+    const onClose = () => {
+      // Ignore scroll/resize jitter fired by the programmatic scroll that
+      // brought the trigger into view: without this guard the menu can open and
+      // immediately close under Playwright (and on trackpads).
+      if (Date.now() - openedAtRef.current < 250) return;
+      setOpen(false);
+    };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setOpen(false);
@@ -117,7 +124,10 @@ export function RowMenu({
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          openedAtRef.current = Date.now();
+          setOpen((value) => !value);
+        }}
         className={cn(
           triggerLabel
             ? "inline-flex h-9 items-center gap-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-medium text-[#374151] transition hover:bg-[#f9fafb]"

@@ -21,7 +21,7 @@ const DEFAULT_PHASES: Array<{ id: AutopilotResult["phases"][number]["id"]; label
   { id: "crawl", label: "Live DOM crawl", icon: "travel_explore", hint: "Capture the rendered page and map real flows." },
   { id: "security", label: "Strix OWASP / header scan", icon: "shield", hint: "Passive headers, cookies, transport and OWASP surface." },
   { id: "graph", label: "Graphify topology", icon: "account_tree", hint: "Project crawl, DOM and tests into one quality graph." },
-  { id: "authoring", label: "Context7 + Bivia authoring", icon: "auto_awesome", hint: "Grounded test cases with AI Verification and scored locators." },
+  { id: "authoring", label: "QASyn Framework Intelligence + Vision AI authoring", icon: "auto_awesome", hint: "Grounded test cases with AI Verification and scored locators." },
   { id: "execution", label: "Studio execution", icon: "play_circle", hint: "Run the new cases immediately in Test Studio." },
 ];
 
@@ -89,7 +89,7 @@ export function AutopilotButton({
         <div className="space-y-4">
           <p className="text-[12.5px] leading-5 text-[#6b7280]">
             One click runs five live phases end to end: crawl the rendered app, scan its OWASP surface, build the Graphify
-            topology, author Bivia-calibrated test cases and execute them immediately in Test Studio.
+            topology, author QASyn Vision-calibrated test cases and execute them immediately in Test Studio.
           </p>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -198,8 +198,28 @@ export function AutopilotButton({
 
           {result && (
             <div className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3" data-testid="autopilot-results">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[12px] font-semibold text-[#111827]">Autopilot artifacts</span>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <span className="text-[12px] font-semibold text-[#111827]">Autopilot artifacts</span>
+                  <p className="mt-0.5 text-[11px] font-medium text-[#4b5563]">
+                    {result.testCases.length} grounded test case(s) authored · {result.execution.passed}/{result.execution.total} test case(s) passed in Test Studio
+                  </p>
+                </div>
+                <Link
+                  href={`/dashboard/test-cases?search=${encodeURIComponent((() => {
+                    try {
+                      return new URL(result.targetUrl).host;
+                    } catch {
+                      return result.targetUrl;
+                    }
+                  })())}`}
+                  data-testid="autopilot-view-all"
+                  className="text-[11px] font-semibold text-[#5b4ee8] hover:underline"
+                >
+                  View All in Test Cases →
+                </Link>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-white px-2 py-0.5 text-[10.5px] font-medium text-[#4b5563]">
                   Strix {result.security.grade} · {result.security.score}/100
                 </span>
@@ -210,17 +230,39 @@ export function AutopilotButton({
                   {result.execution.passed}/{result.execution.total} passed
                 </span>
               </div>
+
+              <ul className="mt-3 divide-y divide-[#eef0f3] overflow-hidden rounded-lg border border-[#e5e7eb] bg-white" data-testid="autopilot-test-case-list">
+                {result.testCases.map((testCase, index) => {
+                  const status = testCase.status === "passing" ? "Passed" : testCase.status === "failing" ? "Failed" : testCase.status;
+                  return (
+                    <li key={testCase.id} data-testid="autopilot-test-case" className="flex flex-wrap items-center gap-2 px-3 py-2">
+                      <span className="rounded bg-[#eef2ff] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#4f46e5]">
+                        {testCase.code || `TC-${String(index + 1).padStart(3, "0")}`}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-[#111827]" title={testCase.title}>
+                        {testCase.title}
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                          status === "Passed" ? "bg-[#ecfdf3] text-[#067647]" : status === "Failed" ? "bg-[#fef3f2] text-[#b42318]" : "bg-[#f3f4f6] text-[#4b5563]",
+                        )}
+                      >
+                        {status}
+                      </span>
+                      <Link
+                        href={testCase.studioUrl || testCase.href}
+                        data-testid="autopilot-test-link"
+                        className="text-[10.5px] font-semibold text-[#4f46e5] hover:underline"
+                      >
+                        Open in Studio →
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {result.testCases.map((testCase) => (
-                  <Link
-                    key={testCase.id}
-                    href={testCase.href}
-                    data-testid="autopilot-test-link"
-                    className="inline-flex items-center gap-1 rounded-md border border-[#c7d2fe] bg-white px-2 py-1 text-[11px] font-semibold text-[#4f46e5] hover:bg-[#eef2ff]"
-                  >
-                    <CqaIcon name="fact_check" className="text-[13px]" /> {testCase.title}
-                  </Link>
-                ))}
                 <Link
                   href={result.links.security}
                   data-testid="autopilot-strix-link"

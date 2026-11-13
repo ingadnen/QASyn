@@ -13,6 +13,7 @@ import {
   cqaLabel,
 } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
+import { AzureDevOpsSyncButton } from "@/components/dashboard/pages/AzureDevOpsSyncButton";
 import { ColumnFilter, ColumnSort, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import type { CatalogPullRequest } from "@/lib/pr-catalog";
@@ -537,7 +538,7 @@ function PrDetailDrawer({
       >
         <div className="space-y-3">
           <p className="text-[12.5px] leading-5 text-[#6b7280]">
-            Copy-ready merge gate for GitHub, GitLab, Azure DevOps or Jenkins. It combines the calibrated Bivia verdict,
+            Copy-ready merge gate for GitHub, GitLab, Azure DevOps or Jenkins. It combines the calibrated QASyn Vision AI verdict,
             the <code className="rounded bg-[#f3f4f6] px-1 py-0.5 text-[11px]">/set</code> impacted-test table and the Strix security summary.
           </p>
           {gateError && (
@@ -547,13 +548,13 @@ function PrDetailDrawer({
           )}
           {gatePending && (
             <div className="flex items-center gap-2 rounded-lg border border-[#c7d2fe] bg-[#eef2ff] px-3 py-2 text-[12px] text-[#4f46e5]">
-              <CqaIcon name="hourglass_top" className="animate-pulse text-[16px]" /> Calibrating Bivia risk and running Strix…
+              <CqaIcon name="hourglass_top" className="animate-pulse text-[16px]" /> Calibrating QASyn Vision AI risk and running Strix…
             </div>
           )}
           {gateMeta && (
             <div className="flex flex-wrap gap-1.5">
               <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#5b4ee8]">
-                🧠 Bivia {gateMeta.bivia ? `${gateMeta.bivia.riskScore.toFixed(1)}/10 · ${gateMeta.bivia.probabilityPct.toFixed(1)}%` : "fallback"}
+                🧠 QASyn Vision AI {gateMeta.bivia ? `${gateMeta.bivia.riskScore.toFixed(1)}/10 · ${gateMeta.bivia.probabilityPct.toFixed(1)}%` : "fallback"}
               </span>
               <span className="rounded-full bg-[#ecfdf3] px-2 py-0.5 text-[10.5px] font-semibold text-[#067647]">
                 🛡️ Strix {gateMeta.security?.grade ?? "?"} · {gateMeta.security?.score ?? 0}/100 · {gateMeta.security?.findings ?? 0} finding(s)
@@ -916,7 +917,8 @@ export function PullRequestsBoard({
 
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <AzureDevOpsSyncButton />
         <button
           type="button"
           disabled={readOnly}
