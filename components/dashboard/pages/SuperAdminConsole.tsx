@@ -109,6 +109,8 @@ interface ImapMessageView {
   seq: number;
   subject: string;
   from: string;
+  replyTo?: string;
+  to?: string;
   date: string;
   snippet: string;
 }
@@ -190,6 +192,7 @@ export function SuperAdminConsole() {
   const [imapMessages, setImapMessages] = useState<ImapMessageView[]>([]);
   const [imapBusy, setImapBusy] = useState(false);
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
+  const [replyToEmail, setReplyToEmail] = useState("");
   const [replySubject, setReplySubject] = useState("");
   const [replyMessage, setReplyMessage] = useState("");
   const [replyBusy, setReplyBusy] = useState(false);
@@ -413,8 +416,13 @@ export function SuperAdminConsole() {
     }
   }
 
+  function emailAddress(value: string | undefined): string {
+    return ((/<([^>]+)>/.exec(value || "")?.[1] || value || "").trim());
+  }
+
   function openReply(target: ReplyTarget, subject: string) {
     setReplyTarget(target);
+    setReplyToEmail(target.to);
     setReplySubject(subject);
     setReplyMessage("");
   }
@@ -428,20 +436,27 @@ export function SuperAdminConsole() {
   }
 
   function openImapReply(message: ImapMessageView) {
-    const email = /<([^>]+)>/.exec(message.from)?.[1] || message.from;
+    const platformEmail = (emailDraft?.smtpUser || "").trim().toLowerCase();
+    const replyEmail = emailAddress(message.replyTo);
+    const fromEmail = emailAddress(message.from);
+    const snippetEmail = /\bEmail\s+([^\s<>]+@[^\s<>]+)/i.exec(message.snippet || "")?.[1] || "";
+    const email =
+      replyEmail && replyEmail.toLowerCase() !== platformEmail
+        ? replyEmail
+        : snippetEmail || fromEmail || replyEmail;
     const name = message.from.replace(/<[^>]+>/, "").trim() || email;
     openReply({ to: email, name, label: "email" }, message.subject.startsWith("Re:") ? message.subject : `Re: ${message.subject}`);
   }
 
   async function sendWebmailReply() {
-    if (!replyTarget || !replySubject.trim() || !replyMessage.trim()) return;
+    if (!replyTarget || !replyToEmail.trim() || !replySubject.trim() || !replyMessage.trim()) return;
     setReplyBusy(true);
     try {
       const result = await apiFetch<{ ok: boolean; provider: string; status: string; to: string }>(
         "/api/dashboard/super-admin",
         {
           method: "POST",
-          json: { action: "send_webmail_reply", to: replyTarget.to, subject: replySubject.trim(), message: replyMessage.trim() },
+          json: { action: "send_webmail_reply", to: replyToEmail.trim(), subject: replySubject.trim(), message: replyMessage.trim() },
         },
       );
       await refreshConsole();
@@ -1193,14 +1208,24 @@ export function SuperAdminConsole() {
               Leads, demo requests, job applications, CV downloads, live IMAP mail and delivery logs in one place.
             </p>
           </div>
-          <a
-            href="https://mailserver.businessidentity.llc"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-[11.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
-          >
-            Launch Northwest Webmail ↗
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-testid="super-admin-compose-email"
+              className={cqaBtnPrimary}
+              onClick={() => openReply({ to: "", name: "New message", label: "compose" }, "")}
+            >
+              ✉️ Compose Email
+            </button>
+            <a
+              href="https://mailserver.businessidentity.llc"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-[11.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
+            >
+              Launch Northwest Webmail ↗
+            </a>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -1312,7 +1337,15 @@ export function SuperAdminConsole() {
                     <p className="text-[12.5px] font-semibold text-[#111827]">{message.subject}</p>
                     <p className="ml-auto text-[10.5px] text-[#9ca3af]">{message.date}</p>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-[#6b7280]">{message.from}</p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                    <p className="text-[11px] text-[#6b7280]">From: {message.from}</p>
+                    {message.replyTo && emailAddress(message.replyTo).toLowerCase() !== emailAddress(message.from).toLowerCase() && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        Reply-To: {message.replyTo}
+                      </span>
+                    )}
+                  </div>
+                  {message.to && <p className="mt-0.5 text-[10.5px] text-[#9ca3af]">To: {message.to}</p>}
                   <p className="mt-2 text-[12px] leading-5 text-[#374151]">{message.snippet || "No preview available."}</p>
                   <button
                     type="button"
@@ -1516,7 +1549,7 @@ export function SuperAdminConsole() {
       <Modal
         open={Boolean(replyTarget)}
         onClose={() => setReplyTarget(null)}
-        title={`Reply by email · ${replyTarget?.name ?? ""}`}
+        title={replyTarget?.label === "compose" ? "Compose email" : `Reply by email · ${replyTarget?.name ?? ""}`}
         size="lg"
         footer={
           <>
@@ -1525,18 +1558,27 @@ export function SuperAdminConsole() {
               type="button"
               className={cqaBtnPrimary}
               data-testid="super-admin-send-webmail-reply"
-              disabled={replyBusy || !replySubject.trim() || !replyMessage.trim()}
+              disabled={replyBusy || !replyToEmail.trim() || !replySubject.trim() || !replyMessage.trim()}
               onClick={() => void sendWebmailReply()}
             >
-              {replyBusy ? "Sending…" : "Send reply"}
+              {replyBusy ? "Sending…" : replyTarget?.label === "compose" ? "Send email" : "Send reply"}
             </button>
           </>
         }
       >
         <div className="space-y-3">
-          <p className="text-[12.5px] text-[#6b7280]">
-            To <strong className="text-[#111827]">{replyTarget?.to}</strong> · {replyTarget?.label}
-          </p>
+          <label className="block">
+            <span className={cqaLabel}>Recipient (To)</span>
+            <input
+              data-testid="super-admin-webmail-reply-to"
+              type="email"
+              className={cqaInput}
+              value={replyToEmail}
+              onChange={(e) => setReplyToEmail(e.target.value)}
+              placeholder="client@example.com"
+            />
+          </label>
+          <p className="text-[11.5px] text-[#6b7280]">{replyTarget?.label}</p>
           <label className="block">
             <span className={cqaLabel}>Subject</span>
             <input

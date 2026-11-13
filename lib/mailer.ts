@@ -300,7 +300,7 @@ export async function sendLeadNotificationEmail(input: {
     ...(input.attachments?.length ? ([["Attachments", input.attachments.map((attachment) => attachment.filename).join(", ")]] as Array<[string, string]>) : []),
   ];
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:auto;padding:24px"><h2>QASyn ${escapeHtml(label)}</h2><table style="border-collapse:collapse;width:100%">${rows
-    .map(([key, value]) => `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top">${escapeHtml(key)}</td><td style="padding:6px 0;color:#111827;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`)
+    .map(([key, value]) => `<tr><td style="padding:6px 16px 6px 0;color:#6b7280;vertical-align:top;white-space:nowrap;width:190px">${escapeHtml(key)}</td><td style="padding:6px 0;color:#111827;white-space:pre-wrap;word-break:break-word">${escapeHtml(value)}</td></tr>`)
     .join("")}</table><p style="color:#6b7280;font-size:12px;margin-top:24px">Sent to ${escapeHtml(recipient)} by the QASyn marketing site.</p></div>`;
   const text = [`QASyn ${label}`, ...rows.map(([key, value]) => `${key}: ${value}`), `Recipient: ${recipient}`].join("\n");
   const safeName = input.name.replace(/["\\\r\n]+/g, " ").trim() || "QASyn Lead";
@@ -369,13 +369,17 @@ export async function sendLeadConfirmationEmailToSender(input: {
 
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>${heading}</h2>${bodyHtml}<p style="margin-top:24px">Kind regards,<br/><strong>QASyn Team</strong></p><p style="color:#6b7280;font-size:12px;margin-top:24px">QASyn · Autonomous Quality Engineering</p></div>`;
   const text = `${bodyText}\n\nKind regards,\nQASyn Team\n\nQASyn · Autonomous Quality Engineering`;
-  return sendMail({
-    to: input.email,
-    subject,
-    html,
-    text,
-    replyTo: '"QASyn Team" <info@qasyn.io>',
-  });
+  const runtime = await getPlatformEmailRuntimeSecrets();
+  return sendMail(
+    {
+      to: input.email,
+      subject,
+      html,
+      text,
+      replyTo: runtime.contactRecipientEmail || runtime.fromAddress,
+    },
+    runtime,
+  );
 }
 
 export async function sendInvitationEmail(email: string, inviteUrl: string, organisationName: string, role: string): Promise<void> {

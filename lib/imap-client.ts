@@ -4,6 +4,8 @@ export interface ImapMessage {
   seq: number;
   subject: string;
   from: string;
+  replyTo: string;
+  to: string;
   date: string;
   snippet: string;
 }
@@ -31,15 +33,124 @@ function decodeEntities(value: string): string {
     .replace(/&#39;/g, "'");
 }
 
+function bufferText(buffer: Buffer, charset: string): string {
+  const normalized = charset.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (normalized === "iso88591" || normalized === "latin1") return buffer.toString("latin1");
+  if (normalized === "usascii" || normalized === "ascii") return buffer.toString("ascii");
+  if (normalized === "utf16le" || normalized === "utf16") return buffer.toString("utf16le");
+  return buffer.toString("utf8");
+}
+
+/** Decodes RFC 2047 encoded-words (B and Q variants) in headers. */
+function decodeMimeHeader(value: string): string {
+  if (!value) return value;
+  return value
+    .replace(/(\?=)\s+(=\?)/g, "$1$2")
+    .replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (_match, charset: string, encoding: string, encoded: string) => {
+      try {
+        if (encoding.toUpperCase() === "B") {
+          return bufferText(Buffer.from(encoded, "base64"), charset);
+        }
+        const source = encoded.replace(/_/g, " ");
+        const bytes: number[] = [];
+        let result = "";
+        for (let index = 0; index < source.length; index++) {
+          if (source[index] === "=" && /^[0-9A-Fa-f]{2}$/.test(source.slice(index + 1, index + 3))) {
+            bytes.push(Number.parseInt(source.slice(index + 1, index + 3), 16));
+            index += 2;
+          } else {
+            if (bytes.length > 0) {
+              result += bufferText(Buffer.from(bytes), charset);
+              bytes.length = 0;
+            }
+            result += source[index];
+          }
+        }
+        if (bytes.length > 0) result += bufferText(Buffer.from(bytes), charset);
+        return result;
+      } catch {
+        return encoded;
+      }
+    });
+}
+
+function decodeQuotedPrintable(value: string): string {
+  const source = value.replace(/=\r?\n/g, "");
+  const bytes: number[] = [];
+  let result = "";
+  for (let index = 0; index < source.length; index++) {
+    if (source[index] === "=" && /^[0-9A-Fa-f]{2}$/.test(source.slice(index + 1, index + 3))) {
+      bytes.push(Number.parseInt(source.slice(index + 1, index + 3), 16));
+      index += 2;
+    } else {
+      if (bytes.length > 0) {
+        result += Buffer.from(bytes).toString("utf8");
+        bytes.length = 0;
+      }
+      result += source[index];
+    }
+  }
+  if (bytes.length > 0) result += Buffer.from(bytes).toString("utf8");
+  return result;
+}
+
 function stripHtml(value: string): string {
-  return decodeEntities(
-    value
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<[^>]+>/g, " "),
-  )
+  const protectedEmails: string[] = [];
+  const withPlaceholders = value.replace(/<([^<>\s]+@[^<>\s]+)>/g, (match) => {
+    const token = `__QASYN_EMAIL_${protectedEmails.length}__`;
+    protectedEmails.push(match);
+    return token;
+  });
+  const stripped = withPlaceholders
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<\/?[a-zA-Z][^>]*>/g, " ");
+  return decodeEntities(stripped)
+    .replace(/__QASYN_EMAIL_(\d+)__/g, (_match, index: string) => protectedEmails[Number(index)] ?? "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function normalizeHeaderBlock(value: string): string {
+  return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n[ \t]+/g, " ");
+}
+
+function extractMimeText(raw: string): string {
+  const text = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const boundaryMatch = /^--([^\n-][^\n]*?)\s*$/m.exec(text);
+  if (boundaryMatch) {
+    const boundary = boundaryMatch[1].trim();
+    const parts = text.split(new RegExp(`^--${boundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:--)?\\s*$`, "m"));
+    let htmlPart = "";
+    let plainPart = "";
+    for (const part of parts) {
+      const separator = part.indexOf("\n\n");
+      if (separator < 0) continue;
+      const headers = normalizeHeaderBlock(part.slice(0, separator)).toLowerCase();
+      if (!headers.includes("content-type:")) continue;
+      if (headers.includes("content-disposition: attachment")) continue;
+      if (headers.includes("content-transfer-encoding: base64")) continue;
+      let body = part.slice(separator + 2);
+      if (headers.includes("content-transfer-encoding: quoted-printable")) body = decodeQuotedPrintable(body);
+      if (headers.includes("content-type: text/html") && !htmlPart) htmlPart = body;
+      else if (headers.includes("content-type: text/plain") && !plainPart) plainPart = body;
+    }
+    if (htmlPart) return stripHtml(htmlPart);
+    if (plainPart) return decodeEntities(plainPart).replace(/\s+/g, " ").trim();
+  }
+
+  const separator = text.indexOf("\n\n");
+  if (separator > 0) {
+    const headers = normalizeHeaderBlock(text.slice(0, separator)).toLowerCase();
+    if (headers.includes("content-type:") && !headers.includes("content-disposition: attachment") && !headers.includes("content-transfer-encoding: base64")) {
+      let body = text.slice(separator + 2);
+      if (headers.includes("content-transfer-encoding: quoted-printable")) body = decodeQuotedPrintable(body);
+      if (headers.includes("content-type: text/html")) return stripHtml(body);
+      if (headers.includes("content-type: text/plain")) return decodeEntities(body).replace(/\s+/g, " ").trim();
+    }
+  }
+
+  return stripHtml(text);
 }
 
 /** Minimal recursive parser for IMAP parenthesised values and quoted strings. */
@@ -102,31 +213,69 @@ function parseImapValue(input: string, start: number): { value: unknown; next: n
   return { value, next: index };
 }
 
-function parseEnvelope(block: string): { subject: string; from: string; date: string } {
+export function formatImapAddressList(list: unknown): string {
+  if (!Array.isArray(list)) return "";
+  return list
+    .map((item) => {
+      if (!Array.isArray(item)) return "";
+      const name = typeof item[0] === "string" ? decodeMimeHeader(item[0]) : "";
+      const mailbox = typeof item[2] === "string" ? item[2] : "";
+      const host = typeof item[3] === "string" ? item[3] : "";
+      const email = mailbox && host ? `${mailbox}@${host}` : mailbox || host;
+      if (!email) return name;
+      return name ? `${name} <${email}>` : email;
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
+function emailAddress(value: string): string {
+  return (/<([^>]+)>/.exec(value)?.[1] || value).trim();
+}
+
+function parseEnvelope(block: string): { subject: string; from: string; replyTo: string; to: string; date: string } {
   const marker = block.indexOf("ENVELOPE (");
-  if (marker < 0) return { subject: "(no subject)", from: "", date: "" };
+  if (marker < 0) return { subject: "(no subject)", from: "", replyTo: "", to: "", date: "" };
   const parsed = parseImapValue(block, marker + "ENVELOPE ".length);
-  if (!Array.isArray(parsed.value)) return { subject: "(no subject)", from: "", date: "" };
+  if (!Array.isArray(parsed.value)) return { subject: "(no subject)", from: "", replyTo: "", to: "", date: "" };
   const envelope = parsed.value as unknown[];
   const date = typeof envelope[0] === "string" ? envelope[0] : "";
-  const subject = typeof envelope[1] === "string" ? envelope[1] : "(no subject)";
-  const fromList = Array.isArray(envelope[2]) ? envelope[2] : [];
-  const first = Array.isArray(fromList[0]) ? fromList[0] : [];
-  const name = typeof first[0] === "string" ? first[0] : "";
-  const mailbox = typeof first[2] === "string" ? first[2] : "";
-  const host = typeof first[3] === "string" ? first[3] : "";
-  const email = mailbox && host ? `${mailbox}@${host}` : mailbox || host;
-  return { subject, from: name ? `${name} <${email}>` : email, date };
+  const subject = typeof envelope[1] === "string" ? decodeMimeHeader(envelope[1]) : "(no subject)";
+  const from = formatImapAddressList(envelope[2]);
+  const replyTo = formatImapAddressList(envelope[4]);
+  const to = formatImapAddressList(envelope[5]);
+  return {
+    subject,
+    from: decodeMimeHeader(from),
+    replyTo: decodeMimeHeader(replyTo),
+    to: decodeMimeHeader(to),
+    date,
+  };
 }
 
 function extractSnippet(block: string): string {
   const literal = /BODY\[TEXT\][^\r\n]*\{(\d+)\}\r\n/.exec(block);
   if (literal) {
     const start = literal.index + literal[0].length;
-    return stripHtml(block.slice(start, start + Number(literal[1]))).slice(0, 500);
+    return extractMimeText(block.slice(start, start + Number(literal[1]))).slice(0, 500);
   }
   const quoted = /BODY\[TEXT\][^\r\n]*"((?:[^"\\]|\\.)*)"/.exec(block);
-  return quoted ? stripHtml(quoted[1]).slice(0, 500) : "";
+  return quoted ? extractMimeText(quoted[1]).slice(0, 500) : "";
+}
+
+/**
+ * Parses one FETCH block into a message. Exported so parity tests can verify
+ * reply-to resolution without a live IMAP server.
+ */
+export function parseImapMessageBlock(block: string, platformMailbox = ""): Omit<ImapMessage, "seq"> {
+  const envelope = parseEnvelope(block);
+  const snippet = extractSnippet(block);
+  const platform = platformMailbox.trim().toLowerCase();
+  const replyEmail = emailAddress(envelope.replyTo).toLowerCase();
+  const leadEmail = /\bEmail\s+([^\s<>]+@[^\s<>]+)/i.exec(snippet)?.[1];
+  const replyTo =
+    (!replyEmail || replyEmail === platform) && leadEmail ? leadEmail : envelope.replyTo;
+  return { ...envelope, replyTo, snippet };
 }
 
 function splitFetchBlocks(response: string): Array<{ seq: number; block: string }> {
@@ -257,8 +406,7 @@ export async function fetchLatestImapMessages(options: ImapOptions): Promise<Ima
     const fetchResponse = await command(`FETCH ${start}:${total} (ENVELOPE BODY.PEEK[TEXT]<0.4096>)`);
     const messages = splitFetchBlocks(fetchResponse).map(({ seq, block }) => ({
       seq,
-      ...parseEnvelope(block),
-      snippet: extractSnippet(block),
+      ...parseImapMessageBlock(block, user),
     }));
     await command("LOGOUT").catch(() => undefined);
     return messages.sort((left, right) => right.seq - left.seq);

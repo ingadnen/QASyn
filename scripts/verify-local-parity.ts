@@ -13,6 +13,7 @@ import path from "node:path";
 import { parseAzureDevOpsUrl } from "../lib/azure-devops";
 import { normalizeGroundBox } from "../lib/bivia-box";
 import { getPlatformEmailRuntimeSecrets } from "../lib/email-config";
+import { parseImapMessageBlock } from "../lib/imap-client";
 import { readLeadAttachments } from "../lib/lead-attachments";
 import { PLAN_CREDITS, TEST_TYPES } from "../lib/constants";
 import { QuotaExceededError, spendCredits } from "../lib/tenant";
@@ -6874,6 +6875,32 @@ async function main() {
       p28Ui.includes("Launch Northwest Webmail") &&
       p28Ui.includes("saveEmailConfig({ silent: true })"),
     `crypto ${p28Crypto.length} · mailer ${p28Mailer.length} · imap ${p28Imap.length} · UI ${p28Ui.length}`,
+  );
+
+  const p29ImapBody = `<html><body><table><tr><td>Email</td><td>testadnen2@gmail.com</td></tr><tr><td>Name</td><td>Test User</td></tr></table></body></html>`;
+  const p29ImapBlock = `* 7 FETCH (ENVELOPE ("Fri, 13 Nov 2026 12:00:00 +0000" "=?UTF-8?B?VGVzdCBsZWFk?=" (("QASyn" NIL "adnen.rebhi" "qasyn.com")) NIL (("QASyn" NIL "adnen.rebhi" "qasyn.com")) (("Test User" NIL "testadnen2" "gmail.com")) NIL NIL NIL "<lead@qasyn.com>") BODY[TEXT] {${p29ImapBody.length}}\r\n${p29ImapBody}\r\n)`;
+  const p29Parsed = parseImapMessageBlock(p29ImapBlock, "adnen.rebhi@qasyn.com");
+  check(
+    "PART 21 IMAP reply-to resolves to the lead email instead of the platform sender",
+    p29Parsed.subject === "Test lead" &&
+      p29Parsed.replyTo === "testadnen2@gmail.com" &&
+      p29Parsed.to.includes("testadnen2@gmail.com") &&
+      p29Parsed.snippet.includes("Email testadnen2@gmail.com"),
+    `${p29Parsed.subject} · ${p29Parsed.replyTo || "missing"} · ${p29Parsed.snippet.slice(0, 80)}`,
+  );
+
+  const p29Ui = fs.readFileSync(path.join(process.cwd(), "components", "dashboard", "pages", "SuperAdminConsole.tsx"), "utf8");
+  const p29Mailer = fs.readFileSync(path.join(process.cwd(), "lib", "mailer.ts"), "utf8");
+  check(
+    "PART 21 Webmail reply composer exposes editable To and compose, and mailer uses inbox reply-to",
+    p29Ui.includes('data-testid="super-admin-webmail-reply-to"') &&
+      p29Ui.includes('data-testid="super-admin-compose-email"') &&
+      p29Ui.includes("setReplyToEmail") &&
+      p29Ui.includes("message.replyTo") &&
+      p29Mailer.includes("white-space:nowrap;width:190px") &&
+      p29Mailer.includes("word-break:break-word") &&
+      p29Mailer.includes("replyTo: runtime.contactRecipientEmail || runtime.fromAddress"),
+    `UI ${p29Ui.length} · mailer ${p29Mailer.length}`,
   );
 
   const p21Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
