@@ -16,6 +16,8 @@ import {
   updatePlatformEmailConfig,
 } from "@/lib/email-config";
 import { sendMail } from "@/lib/mailer";
+import { fetchLatestImapMessages } from "@/lib/imap-client";
+import { readLeadAttachments } from "@/lib/lead-attachments";
 import { PLANS, USER_ROLES } from "@/lib/types";
 import { normalizeWebsite } from "@/lib/utils";
 
@@ -118,6 +120,13 @@ const enterpriseSchema = z.discriminatedUnion("action", [
     resendApiKey: z.string().trim().max(1_000).optional(),
   }),
   z.object({ action: z.literal("test_email_config") }),
+  z.object({
+    action: z.literal("send_webmail_reply"),
+    to: z.string().trim().email().max(160),
+    subject: z.string().trim().min(1).max(240),
+    message: z.string().trim().min(1).max(20_000),
+  }),
+  z.object({ action: z.literal("sync_imap_inbox") }),
 ]);
 
 /** URL-safe slug used for enterprise tenant provisioning. */
@@ -140,6 +149,14 @@ function parseJson<T>(value: string | null | undefined, fallback: T): T {
   }
 }
 
+function textValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+}
+
 async function requireSuperAdmin() {
   const guard = await guardPermission("settingsManage", { write: true });
   if (!guard.ok) return guard;
@@ -153,7 +170,7 @@ export async function GET() {
   const guard = await requireSuperAdmin();
   if (!guard.ok) return guard.response;
 
-  const [organisations, users, platformSkills, paymentConfig, emailConfig, mailDeliveryLog] = await Promise.all([
+  const [organisations, users, platformSkills, paymentConfig, emailConfig, mailDeliveryLog, leads, emailOutbox] = await Promise.all([
     prisma.organisation.findMany({
       select: {
         id: true,
@@ -177,7 +194,46 @@ export async function GET() {
     getPaymentConfig(),
     getPlatformEmailConfig(),
     readMailDeliveryLog(10),
+    prisma.leadCapture.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: { id: true, email: true, source: true, metadataJson: true, createdAt: true },
+    }),
+    prisma.emailOutbox.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: { id: true, to: true, subject: true, provider: true, status: true, error: true, createdAt: true },
+    }),
   ]);
+
+  const leadSubmissions = await Promise.all(
+    leads.map(async (lead) => {
+      const metadata = parseJson<Record<string, unknown>>(lead.metadataJson, {});
+      const attachments = await readLeadAttachments(lead.id);
+      const kind = metadata.kind === "demo" || metadata.kind === "career" ? metadata.kind : "contact";
+      return {
+        id: lead.id,
+        email: lead.email,
+        source: lead.source,
+        kind,
+        name: textValue(metadata.name) ?? lead.email.split("@")[0],
+        company: textValue(metadata.company),
+        role: textValue(metadata.role),
+        jobTitle: textValue(metadata.jobTitle),
+        portfolioUrl: textValue(metadata.portfolioUrl),
+        message: textValue(metadata.message),
+        createdAt: lead.createdAt.toISOString(),
+        cvFileName: attachments?.cv?.fileName,
+        cvMimeType: attachments?.cv?.mimeType,
+        coverLetterFileName: attachments?.coverLetter?.fileName,
+        coverLetterMimeType: attachments?.coverLetter?.mimeType,
+        cvDownloadUrl: attachments?.cv ? `/api/dashboard/super-admin/lead-attachments/${lead.id}?kind=cv` : undefined,
+        coverLetterDownloadUrl: attachments?.coverLetter
+          ? `/api/dashboard/super-admin/lead-attachments/${lead.id}?kind=cover-letter`
+          : undefined,
+      };
+    }),
+  );
 
   return NextResponse.json({
     organisations: organisations.map(({ settingsJson, integrations, ...org }) => {
@@ -195,6 +251,8 @@ export async function GET() {
     paymentConfig: toSuperAdminPaymentConfig(paymentConfig),
     emailConfig,
     mailDeliveryLog,
+    leadSubmissions,
+    emailOutbox: emailOutbox.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() })),
     roles: USER_ROLES,
     plans: PLANS,
     eternalCredits: ETERNAL_TRIAL_CREDITS,
@@ -210,6 +268,57 @@ export async function POST(request: Request) {
   const parsed = enterpriseSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   const input = parsed.data;
+
+  if (input.action === "send_webmail_reply") {
+    const runtime = await getPlatformEmailRuntimeSecrets();
+    const message = input.message.replace(/\r\n/g, "\n");
+    const result = await sendMail(
+      {
+        to: input.to,
+        subject: input.subject,
+        html: `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><p>${escapeHtml(message).replace(/\n/g, "<br/>")}</p><p style="margin-top:24px;color:#6b7280">QASyn Team</p></div>`,
+        text: message,
+        replyTo: runtime.fromAddress,
+      },
+      runtime,
+    );
+    await prisma.systemAuditLog.create({
+      data: {
+        organisationId: ctx.org.id,
+        actorEmail: ctx.user.email,
+        action: "super_admin.webmail_reply_sent",
+        target: `Reply to ${input.to} · ${input.subject}`.slice(0, 200),
+      },
+    });
+    return NextResponse.json({ ok: result.status !== "failed", provider: result.provider, status: result.status, to: input.to });
+  }
+
+  if (input.action === "sync_imap_inbox") {
+    const runtime = await getPlatformEmailRuntimeSecrets();
+    try {
+      const messages = await fetchLatestImapMessages({
+        host: runtime.smtpHost,
+        port: 993,
+        user: runtime.smtpUser,
+        pass: runtime.smtpPass,
+        limit: 15,
+      });
+      await prisma.systemAuditLog.create({
+        data: {
+          organisationId: ctx.org.id,
+          actorEmail: ctx.user.email,
+          action: "super_admin.imap_inbox_synced",
+          target: `${runtime.smtpHost || "IMAP"} · ${messages.length} message(s)`.slice(0, 200),
+        },
+      });
+      return NextResponse.json({ ok: true, host: runtime.smtpHost, messages });
+    } catch (error) {
+      return NextResponse.json(
+        { ok: false, error: error instanceof Error ? error.message : String(error), messages: [] },
+        { status: 502 },
+      );
+    }
+  }
 
   if (input.action === "update_email_config") {
     const patch = Object.fromEntries(Object.entries(input).filter(([key]) => key !== "action")) as Parameters<

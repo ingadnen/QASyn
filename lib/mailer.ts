@@ -12,13 +12,31 @@ import {
 
 export const CONTACT_RECIPIENT_EMAIL = DEFAULT_CONTACT_RECIPIENT_EMAIL;
 
+export type MailAttachment = {
+  filename: string;
+  contentType: string;
+  base64Content: string;
+};
+
 type MailInput = {
   to: string;
   subject: string;
   html: string;
   text?: string;
   replyTo?: string;
+  attachments?: MailAttachment[];
 };
+
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+
+function safeAttachmentFilename(value: string): string {
+  return value.replace(/[\r\n"\\/]+/g, "_").trim().slice(0, 180) || "attachment";
+}
+
+function attachmentBase64(value: string): string {
+  return value.replace(/^data:[^;]+;base64,/, "").replace(/\s+/g, "");
+}
 
 type SmtpResponse = { code: number; text: string };
 
@@ -120,11 +138,44 @@ async function sendSmtp(input: MailInput, runtime: PlatformEmailRuntimeSecrets):
       `Date: ${new Date().toUTCString()}`,
       `Message-ID: ${messageId}`,
       "MIME-Version: 1.0",
-      'Content-Type: text/html; charset="UTF-8"',
     ];
-    const body = input.html.replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..");
-    const message = `${headers.join("\r\n")}\r\n\r\n${body}`;
-    socket.write(`${message}\r\n.\r\n`);
+    const attachments = (input.attachments ?? []).filter((attachment) => attachment.base64Content);
+    let message: string;
+    if (attachments.length === 0) {
+      headers.push('Content-Type: text/html; charset="UTF-8"');
+      message = `${headers.join("\r\n")}\r\n\r\n${input.html}`;
+    } else {
+      const boundary = `qasyn-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+      const parts: string[] = [
+        `--${boundary}`,
+        'Content-Type: text/html; charset="UTF-8"',
+        "Content-Transfer-Encoding: 8bit",
+        "",
+        input.html,
+      ];
+      for (const attachment of attachments) {
+        const filename = safeAttachmentFilename(attachment.filename);
+        const contentType = sanitizeHeader(attachment.contentType || "application/octet-stream");
+        const base64 = attachmentBase64(attachment.base64Content).replace(/(.{76})/g, "$1\r\n");
+        parts.push(
+          `--${boundary}`,
+          `Content-Type: ${contentType}; name="${filename}"`,
+          `Content-Disposition: attachment; filename="${filename}"`,
+          "Content-Transfer-Encoding: base64",
+          "",
+          base64,
+        );
+      }
+      parts.push(`--${boundary}--`, "");
+      message = `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
+    }
+    const normalized = message.replace(/\r?\n/g, "\r\n");
+    const dotStuffed = normalized
+      .split("\r\n")
+      .map((line) => (line.startsWith(".") ? `.${line}` : line))
+      .join("\r\n");
+    socket.write(`${dotStuffed}\r\n.\r\n`);
     const accepted = await readSmtpResponse(socket);
     if (accepted.code >= 400) throw new Error(`SMTP message rejected: ${accepted.text}`);
     await smtpCommand(socket, "QUIT").catch(() => undefined);
@@ -149,6 +200,14 @@ async function sendResend(input: MailInput, runtime: PlatformEmailRuntimeSecrets
       html: input.html,
       text: input.text,
       ...(input.replyTo ? { reply_to: clean(input.replyTo) } : {}),
+      ...(input.attachments?.length
+        ? {
+            attachments: input.attachments.map((attachment) => ({
+              filename: safeAttachmentFilename(attachment.filename),
+              content: attachmentBase64(attachment.base64Content),
+            })),
+          }
+        : {}),
     }),
     signal: AbortSignal.timeout(12_000),
   });
@@ -223,6 +282,7 @@ export async function sendLeadNotificationEmail(input: {
   portfolioUrl?: string;
   message?: string;
   source?: string;
+  attachments?: MailAttachment[];
 }): Promise<{ provider: "smtp" | "resend" | "outbox"; status: "sent" | "queued" | "failed" }> {
   const runtime = await getPlatformEmailRuntimeSecrets();
   const recipient = runtime.contactRecipientEmail;
@@ -237,9 +297,8 @@ export async function sendLeadNotificationEmail(input: {
     ...(input.jobTitle ? ([["Role applied for", input.jobTitle]] as Array<[string, string]>) : []),
     ...(input.portfolioUrl ? ([["Portfolio / LinkedIn / GitHub", input.portfolioUrl]] as Array<[string, string]>) : []),
     ...(input.message ? ([["Message / experience", input.message]] as Array<[string, string]>) : []),
+    ...(input.attachments?.length ? ([["Attachments", input.attachments.map((attachment) => attachment.filename).join(", ")]] as Array<[string, string]>) : []),
   ];
-  const escapeHtml = (value: string) =>
-    value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:auto;padding:24px"><h2>QASyn ${escapeHtml(label)}</h2><table style="border-collapse:collapse;width:100%">${rows
     .map(([key, value]) => `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top">${escapeHtml(key)}</td><td style="padding:6px 0;color:#111827;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`)
     .join("")}</table><p style="color:#6b7280;font-size:12px;margin-top:24px">Sent to ${escapeHtml(recipient)} by the QASyn marketing site.</p></div>`;
@@ -253,6 +312,7 @@ export async function sendLeadNotificationEmail(input: {
       html,
       text,
       replyTo: `"${safeName}" <${input.email}>`,
+      attachments: input.attachments,
     },
     runtime,
   );
@@ -268,6 +328,54 @@ export async function sendLeadNotificationEmail(input: {
     console.warn("[mailer] lead notification log skipped", error instanceof Error ? error.message : String(error));
   }
   return result;
+}
+
+export async function sendLeadConfirmationEmailToSender(input: {
+  kind: "demo" | "contact" | "career";
+  name: string;
+  email: string;
+  company?: string;
+  role?: string;
+  jobTitle?: string;
+  message?: string;
+  hasCv?: boolean;
+  hasCoverLetter?: boolean;
+}): Promise<{ provider: "smtp" | "resend" | "outbox"; status: "sent" | "queued" | "failed" }> {
+  const name = input.name.trim() || "there";
+  const safeName = escapeHtml(name);
+  let subject: string;
+  let heading: string;
+  let bodyHtml: string;
+  let bodyText: string;
+
+  if (input.kind === "career") {
+    const roleTitle = input.jobTitle?.trim() || "the role";
+    const received = `${input.hasCv ? "your CV / resume" : "your candidature"}${input.hasCoverLetter ? " and cover letter" : ""}`;
+    subject = `We received your application for ${roleTitle} — QASyn`;
+    heading = "Application received";
+    bodyHtml = `<p>Dear ${safeName},</p><p>Thank you for applying for <strong>${escapeHtml(roleTitle)}</strong> at QASyn. We have received ${received}.</p><p>Our engineering and hiring team is reviewing your application. If your profile and experience match our criteria, we will contact you directly to schedule the next steps.</p>`;
+    bodyText = `Dear ${name},\n\nThank you for applying for ${roleTitle} at QASyn. We have received ${received}.\n\nOur engineering and hiring team is reviewing your application. If your profile and experience match our criteria, we will contact you directly to schedule the next steps.`;
+  } else if (input.kind === "demo") {
+    subject = "Your QASyn personalized demo request is confirmed";
+    heading = "Your demo request is confirmed";
+    bodyHtml = `<p>Dear ${safeName},</p><p>Thank you for booking a personalized QASyn walkthrough${input.company ? ` for <strong>${escapeHtml(input.company)}</strong>` : ""}. We have received your request and a QASyn Solutions Architect will reach out within one business day to schedule the 30-minute session.</p>${input.message ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;color:#475569"><strong>Your request:</strong><br/>${escapeHtml(input.message).replace(/\n/g, "<br/>")}</p>` : ""}`;
+    bodyText = `Dear ${name},\n\nThank you for booking a personalized QASyn walkthrough${input.company ? ` for ${input.company}` : ""}. We have received your request and a QASyn Solutions Architect will reach out within one business day to schedule the 30-minute session.${input.message ? `\n\nYour request:\n${input.message}` : ""}`;
+  } else {
+    subject = "We received your message — QASyn Support & Sales";
+    heading = "Message received";
+    bodyHtml = `<p>Dear ${safeName},</p><p>Thank you for contacting QASyn. Our team has received your inquiry and will reply within one business day.</p>${input.message ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;color:#475569"><strong>Your message:</strong><br/>${escapeHtml(input.message).replace(/\n/g, "<br/>")}</p>` : ""}`;
+    bodyText = `Dear ${name},\n\nThank you for contacting QASyn. Our team has received your inquiry and will reply within one business day.${input.message ? `\n\nYour message:\n${input.message}` : ""}`;
+  }
+
+  const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h2>${heading}</h2>${bodyHtml}<p style="margin-top:24px">Kind regards,<br/><strong>QASyn Team</strong></p><p style="color:#6b7280;font-size:12px;margin-top:24px">QASyn · Autonomous Quality Engineering</p></div>`;
+  const text = `${bodyText}\n\nKind regards,\nQASyn Team\n\nQASyn · Autonomous Quality Engineering`;
+  return sendMail({
+    to: input.email,
+    subject,
+    html,
+    text,
+    replyTo: '"QASyn Team" <info@qasyn.io>',
+  });
 }
 
 export async function sendInvitationEmail(email: string, inviteUrl: string, organisationName: string, role: string): Promise<void> {

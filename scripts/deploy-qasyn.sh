@@ -4,6 +4,15 @@ set -e
 cd "__REPO_DIR__"
 mkdir -p /opt/qasyn/data /opt/qasyn/.qasyn-data
 touch /opt/qasyn/.env
+sed -i 's/\r$//' /opt/qasyn/.env || true
+if ! grep -q '^QASYN_SECRET=' /opt/qasyn/.env 2>/dev/null; then
+  if command -v openssl >/dev/null 2>&1; then
+    qasyn_secret=$(openssl rand -hex 32)
+  else
+    qasyn_secret=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
+  fi
+  printf 'QASYN_SECRET=%s\n' "$qasyn_secret" >> /opt/qasyn/.env
+fi
 
 # Preserve Hostinger Docker Manager environment values by merging the four
 # production keys into /opt/qasyn/.env only when they are not already set.
@@ -30,7 +39,7 @@ docker run -d --name qasyn --restart unless-stopped -p 3000:3000 \
   -v /opt/qasyn/data:/app/prisma/data \
   -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \
   --label "traefik.enable=true" \
-  --label "traefik.http.routers.qasyn.rule=Host(\`qasyn.com\`) || Host(\`www.qasyn.com\`) || Host(\`qasyn.io\`) || Host(\`www.qasyn.io\`)" \
+  --label "traefik.http.routers.qasyn.rule=Host(\`qasyn.com\`) || Host(\`www.qasyn.com\`) || Host(\`qasyn.io\`) || Host(\`www.qasyn.io\`) || Host(\`mail.qasyn.com\`) || Host(\`mail.qasyn.io\`)" \
   --label "traefik.http.routers.qasyn.entrypoints=websecure" \
   --label "traefik.http.routers.qasyn.tls.certresolver=letsencrypt" \
   --label "traefik.http.services.qasyn.loadbalancer.server.port=3000" \

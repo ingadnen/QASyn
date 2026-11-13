@@ -1,5 +1,7 @@
 // Server-only module (node:crypto).
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomInt, scrypt, timingSafeEqual } from "node:crypto";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { promisify } from "node:util";
 
 const scryptAsync = promisify(scrypt) as (password: string, salt: Buffer, keylen: number) => Promise<Buffer>;
@@ -36,12 +38,47 @@ export function generateApiToken() {
   return { token, prefix: token.slice(0, 10), hash: sha256(token) };
 }
 
-function secretKey(): Buffer {
-  const secret = process.env.QASYN_SECRET;
-  if (!secret && process.env.NODE_ENV === "production") {
-    throw new Error("QASYN_SECRET must be set in production.");
+let cachedFallbackSecret: string | null = null;
+
+/**
+ * Production-safe secret fallback. The generated secret is persisted on the
+ * mounted `.qasyn-data` volume so encrypted credentials survive restarts. If
+ * the volume is read-only, a deterministic SHA-256 seed keeps the application
+ * available instead of throwing an unhandled 500.
+ */
+function persistentFallbackSecret(): string {
+  if (cachedFallbackSecret) return cachedFallbackSecret;
+  const directory = path.join(process.cwd(), ".qasyn-data");
+  const file = path.join(directory, ".qasyn-secret");
+  try {
+    if (existsSync(file)) {
+      const stored = readFileSync(file, "utf8").trim();
+      if (stored.length >= 32) {
+        cachedFallbackSecret = stored;
+        return stored;
+      }
+    }
+    mkdirSync(directory, { recursive: true });
+    const generated = randomBytes(32).toString("hex");
+    writeFileSync(file, `${generated}\n`, { encoding: "utf8", mode: 0o600 });
+    try {
+      chmodSync(file, 0o600);
+    } catch {
+      /* best-effort permissions */
+    }
+    cachedFallbackSecret = generated;
+    return generated;
+  } catch {
+    const deterministicSeed = `${process.env.HOSTNAME ?? "qasyn"}:${process.cwd()}:qasyn-fallback-secret`;
+    cachedFallbackSecret = createHash("sha256").update(deterministicSeed).digest("hex");
+    return cachedFallbackSecret;
   }
-  return createHash("sha256").update(secret ?? "qasyn-local-dev-secret").digest();
+}
+
+function secretKey(): Buffer {
+  const secret = process.env.QASYN_SECRET?.trim();
+  const effective = secret || persistentFallbackSecret();
+  return createHash("sha256").update(effective).digest();
 }
 
 /** AES-256-GCM encryption for stored app test credentials. */

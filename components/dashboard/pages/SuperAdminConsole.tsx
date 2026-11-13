@@ -75,6 +75,50 @@ interface MailDeliveryLogEntry {
   error?: string | null;
 }
 
+interface LeadSubmissionView {
+  id: string;
+  email: string;
+  source: string;
+  kind: "demo" | "contact" | "career";
+  name: string;
+  company?: string;
+  role?: string;
+  jobTitle?: string;
+  portfolioUrl?: string;
+  message?: string;
+  createdAt: string;
+  cvFileName?: string;
+  cvMimeType?: string;
+  coverLetterFileName?: string;
+  coverLetterMimeType?: string;
+  cvDownloadUrl?: string;
+  coverLetterDownloadUrl?: string;
+}
+
+interface EmailOutboxView {
+  id: string;
+  to: string;
+  subject: string;
+  provider: string;
+  status: string;
+  error?: string | null;
+  createdAt: string;
+}
+
+interface ImapMessageView {
+  seq: number;
+  subject: string;
+  from: string;
+  date: string;
+  snippet: string;
+}
+
+interface ReplyTarget {
+  to: string;
+  name: string;
+  label: string;
+}
+
 interface ConsolePayload {
   organisations: ConsoleOrg[];
   users: ConsoleUser[];
@@ -82,6 +126,8 @@ interface ConsolePayload {
   paymentConfig?: PaymentConfigView;
   emailConfig?: EmailConfigView;
   mailDeliveryLog?: MailDeliveryLogEntry[];
+  leadSubmissions?: LeadSubmissionView[];
+  emailOutbox?: EmailOutboxView[];
   roles: string[];
   plans: string[];
 }
@@ -138,6 +184,15 @@ export function SuperAdminConsole() {
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailTestBusy, setEmailTestBusy] = useState(false);
   const [mailDeliveryLog, setMailDeliveryLog] = useState<MailDeliveryLogEntry[]>([]);
+  const [leadSubmissions, setLeadSubmissions] = useState<LeadSubmissionView[]>([]);
+  const [emailOutbox, setEmailOutbox] = useState<EmailOutboxView[]>([]);
+  const [webmailTab, setWebmailTab] = useState<"submissions" | "imap" | "sent">("submissions");
+  const [imapMessages, setImapMessages] = useState<ImapMessageView[]>([]);
+  const [imapBusy, setImapBusy] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
+  const [replySubject, setReplySubject] = useState("");
+  const [replyMessage, setReplyMessage] = useState("");
+  const [replyBusy, setReplyBusy] = useState(false);
 
   const organisations = useMemo(
     () =>
@@ -177,6 +232,8 @@ export function SuperAdminConsole() {
         setPaymentDraft(payload.paymentConfig ?? null);
         setEmailDraft(payload.emailConfig ?? null);
         setMailDeliveryLog(payload.mailDeliveryLog ?? []);
+        setLeadSubmissions(payload.leadSubmissions ?? []);
+        setEmailOutbox(payload.emailOutbox ?? []);
         setModelOrg(payload.organisations[0]?.id ?? "");
         setDrafts(
           Object.fromEntries(
@@ -295,8 +352,18 @@ export function SuperAdminConsole() {
     setEmailDraft((current) => (current ? { ...current, ...patch } : current));
   }
 
-  async function saveEmailConfig() {
-    if (!emailDraft) return;
+  async function refreshConsole() {
+    const payload = await apiFetch<ConsolePayload>("/api/dashboard/super-admin", { method: "GET" });
+    setData(payload);
+    setPaymentDraft(payload.paymentConfig ?? null);
+    setEmailDraft(payload.emailConfig ?? null);
+    setMailDeliveryLog(payload.mailDeliveryLog ?? []);
+    setLeadSubmissions(payload.leadSubmissions ?? []);
+    setEmailOutbox(payload.emailOutbox ?? []);
+  }
+
+  async function saveEmailConfig(options?: { silent?: boolean }): Promise<boolean> {
+    if (!emailDraft) return false;
     setEmailBusy(true);
     try {
       const result = await apiFetch<{ emailConfig: EmailConfigView }>("/api/dashboard/super-admin", {
@@ -317,29 +384,89 @@ export function SuperAdminConsole() {
       setEmailDraft(result.emailConfig);
       setEmailPass("");
       setEmailResendKey("");
-      toast("Outbound email configuration saved.", "success");
+      if (!options?.silent) toast("Outbound email configuration saved.", "success");
+      return true;
     } catch (e) {
       toast(errorMessage(e), "error");
+      return false;
     } finally {
       setEmailBusy(false);
     }
   }
 
   async function testEmailConfig() {
+    if (!emailDraft) return;
     setEmailTestBusy(true);
     try {
+      const saved = await saveEmailConfig({ silent: true });
+      if (!saved) return;
       const result = await apiFetch<{ ok: boolean; provider: string; status: string; recipient: string }>(
         "/api/dashboard/super-admin",
         { method: "POST", json: { action: "test_email_config" } },
       );
-      const refreshed = await apiFetch<ConsolePayload>("/api/dashboard/super-admin", { method: "GET" });
-      setEmailDraft(refreshed.emailConfig ?? null);
-      setMailDeliveryLog(refreshed.mailDeliveryLog ?? []);
+      await refreshConsole();
       toast(`Test email ${result.status} via ${result.provider} → ${result.recipient}`, result.status === "sent" ? "success" : "info");
     } catch (e) {
       toast(errorMessage(e), "error");
     } finally {
       setEmailTestBusy(false);
+    }
+  }
+
+  function openReply(target: ReplyTarget, subject: string) {
+    setReplyTarget(target);
+    setReplySubject(subject);
+    setReplyMessage("");
+  }
+
+  function openLeadReply(lead: LeadSubmissionView) {
+    const label = lead.kind === "career" ? "job application" : lead.kind === "demo" ? "demo request" : "message";
+    openReply(
+      { to: lead.email, name: lead.name, label },
+      `Re: QASyn — ${lead.kind === "career" ? "your application" : lead.kind === "demo" ? "your demo request" : "your message"}`,
+    );
+  }
+
+  function openImapReply(message: ImapMessageView) {
+    const email = /<([^>]+)>/.exec(message.from)?.[1] || message.from;
+    const name = message.from.replace(/<[^>]+>/, "").trim() || email;
+    openReply({ to: email, name, label: "email" }, message.subject.startsWith("Re:") ? message.subject : `Re: ${message.subject}`);
+  }
+
+  async function sendWebmailReply() {
+    if (!replyTarget || !replySubject.trim() || !replyMessage.trim()) return;
+    setReplyBusy(true);
+    try {
+      const result = await apiFetch<{ ok: boolean; provider: string; status: string; to: string }>(
+        "/api/dashboard/super-admin",
+        {
+          method: "POST",
+          json: { action: "send_webmail_reply", to: replyTarget.to, subject: replySubject.trim(), message: replyMessage.trim() },
+        },
+      );
+      await refreshConsole();
+      setReplyTarget(null);
+      toast(`Reply ${result.status} via ${result.provider} → ${result.to}`, result.status === "sent" ? "success" : "info");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setReplyBusy(false);
+    }
+  }
+
+  async function syncImapInbox() {
+    setImapBusy(true);
+    try {
+      const result = await apiFetch<{ ok: boolean; messages?: ImapMessageView[]; host?: string }>("/api/dashboard/super-admin", {
+        method: "POST",
+        json: { action: "sync_imap_inbox" },
+      });
+      setImapMessages(result.messages ?? []);
+      toast(`${result.messages?.length ?? 0} message(s) synced from ${result.host ?? "IMAP"}.`, "success");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setImapBusy(false);
     }
   }
 
@@ -1058,6 +1185,225 @@ export function SuperAdminConsole() {
         )}
       </div>
 
+      <div id="webmail-inbox" className={`${cqaCard} p-5`} data-testid="super-admin-webmail-inbox">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-[16px] font-semibold text-[#262626]">📬 Webmail &amp; Candidatures Inbox</h2>
+            <p className="mt-1 text-[12.5px] text-[#6b7280]">
+              Leads, demo requests, job applications, CV downloads, live IMAP mail and delivery logs in one place.
+            </p>
+          </div>
+          <a
+            href="https://mailserver.businessidentity.llc"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-[11.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
+          >
+            Launch Northwest Webmail ↗
+          </a>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            { id: "submissions" as const, label: "Submissions & Candidatures (Leads, Demos & CVs)" },
+            { id: "imap" as const, label: "Live IMAP Inbox (mailserver.businessidentity.llc)" },
+            { id: "sent" as const, label: "Sent & Outbox Log" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              data-testid={`super-admin-webmail-tab-${tab.id}`}
+              onClick={() => setWebmailTab(tab.id)}
+              className={
+                webmailTab === tab.id
+                  ? "rounded-full bg-[#5b4ee8] px-3 py-1.5 text-[11.5px] font-semibold text-white"
+                  : "rounded-full border border-[#d1d5db] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {webmailTab === "submissions" && (
+          <div className="mt-4 space-y-3" data-testid="super-admin-webmail-submissions">
+            {leadSubmissions.map((lead) => {
+              const badge = lead.kind === "career" ? "Job Application" : lead.kind === "demo" ? "Demo Request" : "Contact";
+              const badgeClass =
+                lead.kind === "career"
+                  ? "bg-violet-50 text-violet-700"
+                  : lead.kind === "demo"
+                    ? "bg-sky-50 text-sky-700"
+                    : "bg-slate-100 text-slate-600";
+              return (
+                <article key={lead.id} className="rounded-lg border border-[#e5e7eb] p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}>{badge}</span>
+                    <p className="text-[12.5px] font-semibold text-[#111827]">{lead.name}</p>
+                    <p className="text-[11.5px] text-[#6b7280]">{lead.email}</p>
+                    <p className="ml-auto text-[10.5px] text-[#9ca3af]">{new Date(lead.createdAt).toLocaleString("en-GB")}</p>
+                  </div>
+                  {(lead.company || lead.jobTitle || lead.role) && (
+                    <p className="mt-1 text-[11.5px] text-[#6b7280]">
+                      {[lead.company, lead.jobTitle, lead.role].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                  {lead.message && <p className="mt-2 whitespace-pre-wrap text-[12px] leading-5 text-[#374151]">{lead.message}</p>}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {lead.cvDownloadUrl && (
+                      <a
+                        href={lead.cvDownloadUrl}
+                        data-testid={`webmail-download-cv-${lead.id}`}
+                        className="rounded border border-[#d1d5db] px-2 py-1 text-[10.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
+                      >
+                        Download CV{lead.cvFileName ? ` · ${lead.cvFileName}` : ""}
+                      </a>
+                    )}
+                    {lead.coverLetterDownloadUrl && (
+                      <a
+                        href={lead.coverLetterDownloadUrl}
+                        data-testid={`webmail-download-cover-${lead.id}`}
+                        className="rounded border border-[#d1d5db] px-2 py-1 text-[10.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
+                      >
+                        Download Cover Letter{lead.coverLetterFileName ? ` · ${lead.coverLetterFileName}` : ""}
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      data-testid={`webmail-reply-${lead.id}`}
+                      className="rounded border border-[#5b4ee8] px-2 py-1 text-[10.5px] font-semibold text-[#5b4ee8] hover:bg-[#f5f3ff]"
+                      onClick={() => openLeadReply(lead)}
+                    >
+                      Reply by Email
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+            {leadSubmissions.length === 0 && <p className="text-[12px] text-[#9ca3af]">No submissions yet.</p>}
+          </div>
+        )}
+
+        {webmailTab === "imap" && (
+          <div className="mt-4" data-testid="super-admin-webmail-imap">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="super-admin-sync-imap"
+                className={cqaBtnPrimary}
+                disabled={imapBusy}
+                onClick={() => void syncImapInbox()}
+              >
+                {imapBusy ? "Syncing…" : "Sync Live IMAP Inbox"}
+              </button>
+              <a
+                href="https://mailserver.businessidentity.llc"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11.5px] font-semibold text-[#5b4ee8] hover:underline"
+              >
+                Open External Webmail (mailserver.businessidentity.llc) ↗
+              </a>
+            </div>
+            <div className="mt-3 space-y-2">
+              {imapMessages.map((message) => (
+                <article key={`${message.seq}-${message.subject}`} className="rounded-lg border border-[#e5e7eb] p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[12.5px] font-semibold text-[#111827]">{message.subject}</p>
+                    <p className="ml-auto text-[10.5px] text-[#9ca3af]">{message.date}</p>
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-[#6b7280]">{message.from}</p>
+                  <p className="mt-2 text-[12px] leading-5 text-[#374151]">{message.snippet || "No preview available."}</p>
+                  <button
+                    type="button"
+                    className="mt-2 rounded border border-[#5b4ee8] px-2 py-1 text-[10.5px] font-semibold text-[#5b4ee8] hover:bg-[#f5f3ff]"
+                    onClick={() => openImapReply(message)}
+                  >
+                    Compose / Reply
+                  </button>
+                </article>
+              ))}
+              {imapMessages.length === 0 && (
+                <p className="text-[12px] text-[#9ca3af]">
+                  No live IMAP messages loaded. Save the SMTP mailbox credentials, then click Sync Live IMAP Inbox.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {webmailTab === "sent" && (
+          <div className="mt-4 space-y-5" data-testid="super-admin-webmail-sent">
+            <div>
+              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Live delivery log</h3>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full min-w-[640px] border-collapse text-left text-[12px]">
+                  <thead>
+                    <tr className="border-b border-[#e5e7eb] text-[10.5px] uppercase tracking-wide text-[#6b7280]">
+                      <th className="px-2 py-2">Time</th>
+                      <th className="px-2 py-2">Recipient</th>
+                      <th className="px-2 py-2">Subject</th>
+                      <th className="px-2 py-2">Provider</th>
+                      <th className="px-2 py-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mailDeliveryLog.map((entry, index) => (
+                      <tr key={`${entry.at}-${index}`} className="border-b border-[#f0f1f3] text-[#374151]">
+                        <td className="px-2 py-2 text-[11.5px] text-[#6b7280]">{new Date(entry.at).toLocaleString("en-GB")}</td>
+                        <td className="px-2 py-2">{entry.to}</td>
+                        <td className="max-w-[260px] truncate px-2 py-2" title={entry.subject}>{entry.subject}</td>
+                        <td className="px-2 py-2">{entry.provider}</td>
+                        <td className="px-2 py-2">{entry.status}</td>
+                      </tr>
+                    ))}
+                    {mailDeliveryLog.length === 0 && (
+                      <tr>
+                        <td className="px-2 py-3 text-[12px] text-[#9ca3af]" colSpan={5}>No deliveries logged yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Recent EmailOutbox items</h3>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full min-w-[720px] border-collapse text-left text-[12px]" data-testid="super-admin-email-outbox">
+                  <thead>
+                    <tr className="border-b border-[#e5e7eb] text-[10.5px] uppercase tracking-wide text-[#6b7280]">
+                      <th className="px-2 py-2">Time</th>
+                      <th className="px-2 py-2">Recipient</th>
+                      <th className="px-2 py-2">Subject</th>
+                      <th className="px-2 py-2">Provider</th>
+                      <th className="px-2 py-2">Status</th>
+                      <th className="px-2 py-2">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {emailOutbox.map((entry) => (
+                      <tr key={entry.id} className="border-b border-[#f0f1f3] text-[#374151]">
+                        <td className="px-2 py-2 text-[11.5px] text-[#6b7280]">{new Date(entry.createdAt).toLocaleString("en-GB")}</td>
+                        <td className="px-2 py-2">{entry.to}</td>
+                        <td className="max-w-[240px] truncate px-2 py-2" title={entry.subject}>{entry.subject}</td>
+                        <td className="px-2 py-2">{entry.provider}</td>
+                        <td className="px-2 py-2">{entry.status}</td>
+                        <td className="max-w-[180px] truncate px-2 py-2 text-[11px] text-[#b42318]" title={entry.error ?? ""}>{entry.error || "—"}</td>
+                      </tr>
+                    ))}
+                    {emailOutbox.length === 0 && (
+                      <tr>
+                        <td className="px-2 py-3 text-[12px] text-[#9ca3af]" colSpan={6}>No outbox items yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className={`${cqaCard} p-5`} data-testid="super-admin-governance">
         <h2 className="text-[16px] font-semibold text-[#262626]">Tenant AI models &amp; platform skills governance</h2>
         <p className="mt-1 text-[12.5px] text-[#6b7280]">Assign the active AI model for any tenant and publish platform-wide agent skills.</p>
@@ -1164,6 +1510,52 @@ export function SuperAdminConsole() {
               SLA enabled
             </label>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(replyTarget)}
+        onClose={() => setReplyTarget(null)}
+        title={`Reply by email · ${replyTarget?.name ?? ""}`}
+        size="lg"
+        footer={
+          <>
+            <button type="button" className={cqaBtnSecondary} onClick={() => setReplyTarget(null)}>Cancel</button>
+            <button
+              type="button"
+              className={cqaBtnPrimary}
+              data-testid="super-admin-send-webmail-reply"
+              disabled={replyBusy || !replySubject.trim() || !replyMessage.trim()}
+              onClick={() => void sendWebmailReply()}
+            >
+              {replyBusy ? "Sending…" : "Send reply"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-[12.5px] text-[#6b7280]">
+            To <strong className="text-[#111827]">{replyTarget?.to}</strong> · {replyTarget?.label}
+          </p>
+          <label className="block">
+            <span className={cqaLabel}>Subject</span>
+            <input
+              data-testid="super-admin-webmail-reply-subject"
+              className={cqaInput}
+              value={replySubject}
+              onChange={(e) => setReplySubject(e.target.value)}
+            />
+          </label>
+          <label className="block">
+            <span className={cqaLabel}>Message</span>
+            <textarea
+              data-testid="super-admin-webmail-reply-message"
+              className={`${cqaInput} min-h-[160px]`}
+              value={replyMessage}
+              onChange={(e) => setReplyMessage(e.target.value)}
+              placeholder="Write your reply…"
+            />
+          </label>
         </div>
       </Modal>
     </section>

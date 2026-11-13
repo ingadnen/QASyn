@@ -50,6 +50,15 @@ jobs:
               cp "$REPO_DIR/.env" /opt/qasyn/.env
             fi
             touch /opt/qasyn/.env
+            sed -i 's/\r$//' /opt/qasyn/.env || true
+            if ! grep -q '^QASYN_SECRET=' /opt/qasyn/.env 2>/dev/null; then
+              if command -v openssl >/dev/null 2>&1; then
+                qasyn_secret=$(openssl rand -hex 32)
+              else
+                qasyn_secret=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
+              fi
+              printf 'QASYN_SECRET=%s\n' "$qasyn_secret" >> /opt/qasyn/.env
+            fi
 
             # Preserve Hostinger Docker Manager environment values by merging
             # BIVIA_API_KEY, BIVIA_API_URL, NEXT_PUBLIC_APP_URL and TZ only
@@ -82,7 +91,7 @@ jobs:
               -v /opt/qasyn/data:/app/prisma/data \
               -v /opt/qasyn/.qasyn-data:/app/.qasyn-data \
               --label "traefik.enable=true" \
-              --label "traefik.http.routers.qasyn.rule=Host(\`qasyn.com\`) || Host(\`www.qasyn.com\`) || Host(\`qasyn.io\`) || Host(\`www.qasyn.io\`)" \
+              --label "traefik.http.routers.qasyn.rule=Host(\`qasyn.com\`) || Host(\`www.qasyn.com\`) || Host(\`qasyn.io\`) || Host(\`www.qasyn.io\`) || Host(\`mail.qasyn.com\`) || Host(\`mail.qasyn.io\`)" \
               --label "traefik.http.routers.qasyn.entrypoints=websecure" \
               --label "traefik.http.routers.qasyn.tls.certresolver=letsencrypt" \
               --label "traefik.http.services.qasyn.loadbalancer.server.port=3000" \

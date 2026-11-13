@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
-import { sendLeadNotificationEmail } from "@/lib/mailer";
+import { dataUrlBase64, dataUrlMimeType, saveLeadAttachments, type LeadAttachmentFile } from "@/lib/lead-attachments";
+import { sendLeadConfirmationEmailToSender, sendLeadNotificationEmail } from "@/lib/mailer";
 import { clientKey, forwardedForIsExternal, rateLimit } from "@/lib/rate-limit";
 
 const PUBLIC_CONTACT_EMAIL = "info@qasyn.io";
+const attachmentDataUrl = z
+  .string()
+  .max(6_000_000)
+  .refine((value) => /^data:[^;]+;base64,/.test(value), "Invalid attachment data URL.");
 
 const schema = z.object({
   kind: z.enum(["demo", "contact", "career"]).optional(),
@@ -18,6 +23,12 @@ const schema = z.object({
   message: z.string().trim().max(5_000).optional(),
   source: z.string().trim().min(2).max(60).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  cvFileName: z.string().trim().max(255).optional(),
+  cvMimeType: z.string().trim().max(120).optional(),
+  cvDataUrl: attachmentDataUrl.optional(),
+  coverLetterFileName: z.string().trim().max(255).optional(),
+  coverLetterMimeType: z.string().trim().max(120).optional(),
+  coverLetterDataUrl: attachmentDataUrl.optional(),
 });
 
 /** POST /api/marketing/lead — demo, contact, career and legacy lead capture. */
@@ -47,6 +58,24 @@ export async function POST(request: Request) {
     return jsonError("The role applied for is required.", 400);
   }
 
+  const uploadedAt = new Date().toISOString();
+  const cv: LeadAttachmentFile | null = input.cvDataUrl
+    ? {
+        fileName: input.cvFileName?.trim() || "candidate-cv",
+        mimeType: input.cvMimeType?.trim() || dataUrlMimeType(input.cvDataUrl, "application/octet-stream"),
+        dataUrl: input.cvDataUrl,
+        uploadedAt,
+      }
+    : null;
+  const coverLetter: LeadAttachmentFile | null = input.coverLetterDataUrl
+    ? {
+        fileName: input.coverLetterFileName?.trim() || "cover-letter",
+        mimeType: input.coverLetterMimeType?.trim() || dataUrlMimeType(input.coverLetterDataUrl, "application/octet-stream"),
+        dataUrl: input.coverLetterDataUrl,
+        uploadedAt,
+      }
+    : null;
+
   const metadata = {
     ...(input.metadata ?? {}),
     kind: input.kind,
@@ -56,10 +85,12 @@ export async function POST(request: Request) {
     jobTitle: input.jobTitle,
     portfolioUrl: input.portfolioUrl,
     message: input.message,
+    ...(cv ? { cvFileName: cv.fileName, cvMimeType: cv.mimeType } : {}),
+    ...(coverLetter ? { coverLetterFileName: coverLetter.fileName, coverLetterMimeType: coverLetter.mimeType } : {}),
   };
   const source = input.source?.trim() || (input.kind ? `contact-us-${input.kind}` : "website");
 
-  await prisma.leadCapture.create({
+  const lead = await prisma.leadCapture.create({
     data: {
       email: input.email,
       source,
@@ -67,8 +98,26 @@ export async function POST(request: Request) {
     },
   });
 
+  if (cv || coverLetter) {
+    try {
+      await saveLeadAttachments(lead.id, {
+        ...(cv ? { cv } : {}),
+        ...(coverLetter ? { coverLetter } : {}),
+      });
+    } catch (error) {
+      console.warn("[marketing] lead attachment persistence failed", error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  const attachments = [
+    ...(cv ? [{ filename: cv.fileName, contentType: cv.mimeType, base64Content: dataUrlBase64(cv.dataUrl) }] : []),
+    ...(coverLetter
+      ? [{ filename: coverLetter.fileName, contentType: coverLetter.mimeType, base64Content: dataUrlBase64(coverLetter.dataUrl) }]
+      : []),
+  ];
+
   await sendLeadNotificationEmail({
-    kind: input.kind ?? "contact",
+    kind,
     name,
     email: input.email,
     company: input.company,
@@ -77,6 +126,19 @@ export async function POST(request: Request) {
     portfolioUrl: input.portfolioUrl,
     message: input.message,
     source,
+    attachments,
+  });
+
+  await sendLeadConfirmationEmailToSender({
+    kind,
+    name,
+    email: input.email,
+    company: input.company,
+    role: input.role,
+    jobTitle: input.jobTitle,
+    message: input.message,
+    hasCv: Boolean(cv),
+    hasCoverLetter: Boolean(coverLetter),
   });
 
   return NextResponse.json({ ok: true, recipient: PUBLIC_CONTACT_EMAIL });

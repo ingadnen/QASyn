@@ -13,6 +13,7 @@ import path from "node:path";
 import { parseAzureDevOpsUrl } from "../lib/azure-devops";
 import { normalizeGroundBox } from "../lib/bivia-box";
 import { getPlatformEmailRuntimeSecrets } from "../lib/email-config";
+import { readLeadAttachments } from "../lib/lead-attachments";
 import { PLAN_CREDITS, TEST_TYPES } from "../lib/constants";
 import { QuotaExceededError, spendCredits } from "../lib/tenant";
 import { resolveGroundingUrl } from "../lib/grounding-url";
@@ -6597,6 +6598,9 @@ async function main() {
 
   const p21DemoEmail = `p21-demo-${RUN_ID}@your-domain.com`;
   const p21CareerEmail = `p21-career-${RUN_ID}@your-domain.com`;
+  const p21ContactEmail = `p21-contact-${RUN_ID}@your-domain.com`;
+  const p21CvDataUrl = `data:application/pdf;base64,${Buffer.from("%PDF-1.4\nQASyn candidate CV\n%%EOF").toString("base64")}`;
+  const p21CoverDataUrl = `data:application/pdf;base64,${Buffer.from("%PDF-1.4\nQASyn cover letter\n%%EOF").toString("base64")}`;
   const p21Demo = await apiJson(p21Page, "/api/marketing/lead", "POST", {
     kind: "demo",
     name: "PART21 Demo Lead",
@@ -6614,7 +6618,26 @@ async function main() {
     portfolioUrl: "https://github.com/part21-candidate",
     message: "Built browser runtimes and Playwright grids for eight years.",
     source: "careers",
+    cvFileName: "candidate-cv.pdf",
+    cvMimeType: "application/pdf",
+    cvDataUrl: p21CvDataUrl,
+    coverLetterFileName: "candidate-cover-letter.pdf",
+    coverLetterMimeType: "application/pdf",
+    coverLetterDataUrl: p21CoverDataUrl,
   });
+  const p21ContactLead = await apiJson(p21Page, "/api/marketing/lead", "POST", {
+    kind: "contact",
+    name: "PART21 Contact Lead",
+    email: p21ContactEmail,
+    message: "I would like to discuss enterprise support.",
+    source: "contact-us-contact",
+  });
+  const p21CareerLead = await db.leadCapture.findFirst({
+    where: { email: p21CareerEmail },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  const p21CareerLeadId = p21CareerLead?.id ?? "";
   check(
     "PART 21 demo and career leads route to the production notification recipient",
     p21Demo.status === 200 &&
@@ -6639,6 +6662,59 @@ async function main() {
     `${p21Outbox.length} outbox row(s) · log ${p21MailLog.length} chars`,
   );
 
+  const p21CareerAttachments = p21CareerLeadId ? await readLeadAttachments(p21CareerLeadId) : null;
+  check(
+    "PART 21 career CV and cover letter attachments are persisted",
+    p21Career.status === 200 &&
+      p21CareerLeadId.length > 0 &&
+      p21CareerAttachments?.cv?.fileName === "candidate-cv.pdf" &&
+      p21CareerAttachments?.cv?.dataUrl === p21CvDataUrl &&
+      p21CareerAttachments?.coverLetter?.fileName === "candidate-cover-letter.pdf",
+    `${p21CareerLeadId || "missing lead"} · CV ${p21CareerAttachments?.cv?.fileName ?? "missing"}`,
+  );
+
+  check(
+    "PART 21 internal career notification includes the CV attachment",
+    p21OutboxText.includes("candidate-cv.pdf") && p21OutboxText.includes("candidate-cover-letter.pdf"),
+    `outbox ${p21Outbox.length} row(s)`,
+  );
+
+  const p21CareerConfirmation = await db.emailOutbox.findMany({
+    where: { to: p21CareerEmail },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+  const p21CareerConfirmationText = JSON.stringify(p21CareerConfirmation);
+  check(
+    "PART 21 career application sends the sender confirmation email",
+    p21CareerConfirmationText.includes("We received your application for") &&
+      p21CareerConfirmationText.includes("Our engineering and hiring team is reviewing your application"),
+    `${p21CareerConfirmation.length} confirmation row(s)`,
+  );
+
+  const p21DemoConfirmation = await db.emailOutbox.findMany({
+    where: { to: p21DemoEmail },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+  check(
+    "PART 21 demo request sends the sender confirmation email",
+    JSON.stringify(p21DemoConfirmation).includes("Your QASyn personalized demo request is confirmed"),
+    `${p21DemoConfirmation.length} confirmation row(s)`,
+  );
+
+  const p21ContactConfirmation = await db.emailOutbox.findMany({
+    where: { to: p21ContactEmail },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+  check(
+    "PART 21 contact request sends the sender confirmation email",
+    p21ContactLead.status === 200 &&
+      JSON.stringify(p21ContactConfirmation).includes("We received your message — QASyn Support & Sales"),
+    `${p21ContactConfirmation.length} confirmation row(s)`,
+  );
+
   await p21Page.goto(`${BASE}/careers`, { waitUntil: "domcontentloaded" });
   const p21CareersText = ((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
   const p21Apply = p21Page.locator('[data-testid="career-apply"]').first();
@@ -6656,8 +6732,10 @@ async function main() {
       p21CareersText.includes("Apply") &&
       p21AppliedRole === "Staff Systems Engineer — Browser Runtime" &&
       p21CareerModalText.includes("Staff Systems Engineer — Browser Runtime") &&
-      p21CareerModalText.includes("Submit application"),
-    `${p21AppliedRole || "missing"} · modal ${p21CareerModalText.length} chars`,
+      p21CareerModalText.includes("Submit application") &&
+      (await p21CareerModal.locator('[data-testid="career-cv-upload"]').count()) > 0 &&
+      (await p21CareerModal.locator('[data-testid="career-cover-letter-upload"]').count()) > 0,
+    `${p21AppliedRole || "missing"} · modal ${p21CareerModalText.length} chars · uploads present`,
   );
   await p21Page.keyboard.press("Escape").catch(() => undefined);
 
@@ -6762,6 +6840,42 @@ async function main() {
     `${p21DeployScript.length} chars`,
   );
 
+  const p28Crypto = fs.readFileSync(path.join(process.cwd(), "lib", "crypto.ts"), "utf8");
+  const p28Middleware = fs.readFileSync(path.join(process.cwd(), "middleware.ts"), "utf8");
+  const p28Mailer = fs.readFileSync(path.join(process.cwd(), "lib", "mailer.ts"), "utf8");
+  const p28Imap = fs.readFileSync(path.join(process.cwd(), "lib", "imap-client.ts"), "utf8");
+  const p28LeadRoute = fs.readFileSync(path.join(process.cwd(), "app", "api", "marketing", "lead", "route.ts"), "utf8");
+  const p28Ui = fs.readFileSync(path.join(process.cwd(), "components", "dashboard", "pages", "SuperAdminConsole.tsx"), "utf8");
+  check(
+    "PART 21 QASYN_SECRET fallback, mail routing and webmail surfaces are production-ready",
+    p28Crypto.includes("persistentFallbackSecret") &&
+      p28Crypto.includes(".qasyn-secret") &&
+      p21Deploy.includes("QASYN_SECRET=") &&
+      p21Deploy.includes("openssl rand -hex 32") &&
+      p21Deploy.includes("sed -i 's/\\r$//' /opt/qasyn/.env") &&
+      p21DeployScript.includes("QASYN_SECRET=") &&
+      p21Deploy.includes("mail.qasyn.com") &&
+      p21Deploy.includes("mail.qasyn.io") &&
+      p21DeployScript.includes("mail.qasyn.com") &&
+      p21DeployScript.includes("mail.qasyn.io") &&
+      p28Middleware.includes("mail.qasyn.com") &&
+      p28Middleware.includes("webmail-inbox") &&
+      p28Mailer.includes("multipart/mixed") &&
+      p28Mailer.includes("Content-Disposition: attachment") &&
+      p28Mailer.includes("sendLeadConfirmationEmailToSender") &&
+      p28Imap.includes("tls.connect") &&
+      p28Imap.includes("EXAMINE INBOX") &&
+      p28Imap.includes("BODY.PEEK[TEXT]") &&
+      p28LeadRoute.includes("cvDataUrl") &&
+      p28LeadRoute.includes("saveLeadAttachments") &&
+      p28Ui.includes("super-admin-webmail-inbox") &&
+      p28Ui.includes("super-admin-sync-imap") &&
+      p28Ui.includes("super-admin-send-webmail-reply") &&
+      p28Ui.includes("Launch Northwest Webmail") &&
+      p28Ui.includes("saveEmailConfig({ silent: true })"),
+    `crypto ${p28Crypto.length} · mailer ${p28Mailer.length} · imap ${p28Imap.length} · UI ${p28Ui.length}`,
+  );
+
   const p21Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
   const p21EmailSave = await apiJson(p21Super.page, "/api/dashboard/super-admin", "POST", {
     action: "update_email_config",
@@ -6799,6 +6913,30 @@ async function main() {
       !JSON.stringify(p21EmailGet.body).includes("phase27-secret") &&
       !JSON.stringify(p21EmailGet.body).includes("re_phase27_secret"),
     `${p21EmailSave.status} · ${p21EmailConfig?.smtpHost ?? "missing"}`,
+  );
+
+  const p21SuperLeads = (p21EmailGet.body as {
+    leadSubmissions?: Array<{ id?: string; email?: string; cvFileName?: string; cvDownloadUrl?: string; coverLetterDownloadUrl?: string }>;
+  }).leadSubmissions ?? [];
+  const p21CareerSubmission = p21SuperLeads.find((lead) => lead.email === p21CareerEmail);
+  check(
+    "PART 21 Super Admin exposes the career CV and cover letter downloads",
+    Boolean(p21CareerSubmission?.cvDownloadUrl) &&
+      Boolean(p21CareerSubmission?.coverLetterDownloadUrl) &&
+      p21CareerSubmission?.cvFileName === "candidate-cv.pdf",
+    `${p21SuperLeads.length} submission(s) · CV ${p21CareerSubmission?.cvFileName ?? "missing"}`,
+  );
+
+  const p21CvDownload = p21CareerSubmission?.cvDownloadUrl
+    ? await p21Super.page.request.get(`${BASE}${p21CareerSubmission.cvDownloadUrl}`)
+    : null;
+  const p21CvDownloadText = p21CvDownload ? await p21CvDownload.text() : "";
+  check(
+    "PART 21 Super Admin can download the exact CV attachment",
+    p21CvDownload?.status() === 200 &&
+      (p21CvDownload.headers()["content-type"] ?? "").includes("application/pdf") &&
+      p21CvDownloadText.includes("QASyn candidate CV"),
+    `${p21CvDownload?.status() ?? "missing"} · ${p21CvDownloadText.length} chars`,
   );
 
   const p21EmailPreserve = await apiJson(p21Super.page, "/api/dashboard/super-admin", "POST", {
@@ -6861,6 +6999,68 @@ async function main() {
     `${p21EmailHostInput || "missing"} · ${p21EmailRecipientInput || "missing"} · ${p21EmailCardText.slice(0, 80)}`,
   );
 
+  const p21WebmailCard = p21Super.page.locator('[data-testid="super-admin-webmail-inbox"]').first();
+  await p21WebmailCard.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+  const p21WebmailCvButton = p21CareerLeadId
+    ? p21Super.page.locator(`[data-testid="webmail-download-cv-${p21CareerLeadId}"]`).first()
+    : null;
+  const p21WebmailReplyButton = p21CareerLeadId
+    ? p21Super.page.locator(`[data-testid="webmail-reply-${p21CareerLeadId}"]`).first()
+    : null;
+  if (p21WebmailCvButton) {
+    await p21WebmailCvButton.waitFor({ state: "visible", timeout: 8_000 }).catch(async () => {
+      await p21Super.page.reload({ waitUntil: "domcontentloaded" });
+      await p21WebmailCvButton.waitFor({ state: "visible", timeout: 8_000 }).catch(() => undefined);
+    });
+  }
+  const p21WebmailText = ((await p21WebmailCard.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  check(
+    "PART 21 Super Admin renders the Webmail & Candidatures Inbox",
+    (await p21WebmailCard.count()) > 0 &&
+      p21WebmailText.includes("Webmail & Candidatures Inbox") &&
+      p21WebmailText.includes("Launch Northwest Webmail") &&
+      p21WebmailText.includes("PART21 Candidate") &&
+      (await p21Super.page.locator('[data-testid="super-admin-webmail-tab-submissions"]').count()) > 0 &&
+      (await p21Super.page.locator('[data-testid="super-admin-webmail-tab-imap"]').count()) > 0 &&
+      (await p21Super.page.locator('[data-testid="super-admin-webmail-tab-sent"]').count()) > 0 &&
+      Boolean(p21WebmailCvButton && (await p21WebmailCvButton.count()) > 0) &&
+      Boolean(p21WebmailReplyButton && (await p21WebmailReplyButton.count()) > 0),
+    `${p21WebmailText.slice(0, 100)} · CV ${p21WebmailCvButton ? "visible" : "missing"}`,
+  );
+
+  await p21Super.page.locator('[data-testid="super-admin-webmail-tab-imap"]').first().click().catch(() => undefined);
+  await p21Super.page.waitForTimeout(300);
+  check(
+    "PART 21 Webmail IMAP tab exposes live sync and external webmail",
+    (await p21Super.page.locator('[data-testid="super-admin-sync-imap"]').count()) > 0 &&
+      (await p21Super.page.locator('[data-testid="super-admin-webmail-imap"]').innerText().catch(() => "")).includes("Open External Webmail"),
+    "IMAP tab rendered",
+  );
+  await p21Super.page.locator('[data-testid="super-admin-webmail-tab-sent"]').first().click().catch(() => undefined);
+  await p21Super.page.waitForTimeout(300);
+  check(
+    "PART 21 Webmail Sent tab exposes the outbox log",
+    (await p21Super.page.locator('[data-testid="super-admin-webmail-sent"]').count()) > 0 &&
+      (await p21Super.page.locator('[data-testid="super-admin-email-outbox"]').count()) > 0,
+    "sent tab rendered",
+  );
+
+  const p21WebmailReply = await apiJson(p21Super.page, "/api/dashboard/super-admin", "POST", {
+    action: "send_webmail_reply",
+    to: p21CareerEmail,
+    subject: "Re: Your QASyn application",
+    message: "Thank you for applying. Our team will review your CV and follow up shortly.",
+  });
+  const p21WebmailReplyBody = p21WebmailReply.body as { status?: string; provider?: string; to?: string };
+  check(
+    "PART 21 Super Admin sends a webmail reply",
+    p21WebmailReply.status === 200 &&
+      p21WebmailReplyBody.to === p21CareerEmail &&
+      typeof p21WebmailReplyBody.status === "string" &&
+      typeof p21WebmailReplyBody.provider === "string",
+    `${p21WebmailReply.status} · ${p21WebmailReplyBody.provider ?? "missing"}/${p21WebmailReplyBody.status ?? "missing"}`,
+  );
+
   await db.emailOutbox.deleteMany({ where: { to: "phase27-leads@qasyn.io" } }).catch(() => undefined);
   if (p21EmailOrg) {
     if (p21ExistingEmailRow) {
@@ -6882,7 +7082,24 @@ async function main() {
   }
   await p21Super.context.close();
 
-  await db.leadCapture.deleteMany({ where: { email: { in: [p21DemoEmail, p21CareerEmail] } } }).catch(() => undefined);
+  await db.leadCapture.deleteMany({ where: { email: { in: [p21DemoEmail, p21CareerEmail, p21ContactEmail] } } }).catch(() => undefined);
+  await db.emailOutbox
+    .deleteMany({
+      where: {
+        OR: [
+          { to: { in: [p21DemoEmail, p21CareerEmail, p21ContactEmail] } },
+          { to: { contains: "p21-" } },
+          { subject: { contains: "PART21" } },
+          { html: { contains: p21DemoEmail } },
+          { html: { contains: p21CareerEmail } },
+          { html: { contains: p21ContactEmail } },
+        ],
+      },
+    })
+    .catch(() => undefined);
+  if (p21CareerLeadId) {
+    fs.rmSync(path.join(process.cwd(), ".qasyn-data", "lead-attachments", `${p21CareerLeadId}.json`), { force: true });
+  }
   check("PART 21 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));
   await shot(p21Page, "part21-production");
   await p21Anon.close();

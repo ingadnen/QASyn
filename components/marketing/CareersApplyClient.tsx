@@ -10,6 +10,43 @@ interface Role {
   description: string;
 }
 
+interface UploadedAttachment {
+  fileName: string;
+  mimeType: string;
+  dataUrl: string;
+}
+
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+const ACCEPTED_ATTACHMENT_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+function readAttachment(file: File): Promise<UploadedAttachment> {
+  return new Promise((resolve, reject) => {
+    const extensionOk = /\.(pdf|doc|docx)$/i.test(file.name);
+    if (!ACCEPTED_ATTACHMENT_TYPES.has(file.type) && !extensionOk) {
+      reject(new Error("Please upload a PDF, DOC or DOCX file."));
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      reject(new Error("Each attachment must be 4 MB or smaller."));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("The selected file could not be read."));
+        return;
+      }
+      resolve({ fileName: file.name, mimeType: file.type || "application/octet-stream", dataUrl: reader.result });
+    };
+    reader.onerror = () => reject(new Error("The selected file could not be read."));
+    reader.readAsDataURL(file);
+  });
+}
+
 const ROLES: Role[] = [
   {
     title: "Staff Systems Engineer — Browser Runtime",
@@ -47,6 +84,9 @@ export function CareersApplyClient() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
+  const [cvFile, setCvFile] = useState<UploadedAttachment | null>(null);
+  const [coverLetterFile, setCoverLetterFile] = useState<UploadedAttachment | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -60,6 +100,28 @@ export function CareersApplyClient() {
     setRole(next);
     setSent(false);
     setError(null);
+    setAttachmentError(null);
+    setCvFile(null);
+    setCoverLetterFile(null);
+  }
+
+  async function chooseAttachment(
+    file: File | undefined,
+    setter: (value: UploadedAttachment | null) => void,
+    input: HTMLInputElement,
+  ) {
+    if (!file) {
+      setter(null);
+      return;
+    }
+    try {
+      setter(await readAttachment(file));
+      setAttachmentError(null);
+    } catch (caught) {
+      setter(null);
+      input.value = "";
+      setAttachmentError(caught instanceof Error ? caught.message : "The selected file could not be read.");
+    }
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -83,6 +145,12 @@ export function CareersApplyClient() {
           portfolioUrl,
           message,
           source: "careers",
+          cvFileName: cvFile?.fileName,
+          cvMimeType: cvFile?.mimeType,
+          cvDataUrl: cvFile?.dataUrl,
+          coverLetterFileName: coverLetterFile?.fileName,
+          coverLetterMimeType: coverLetterFile?.mimeType,
+          coverLetterDataUrl: coverLetterFile?.dataUrl,
         },
       });
       setSentEmail(email.trim());
@@ -91,6 +159,8 @@ export function CareersApplyClient() {
       setEmail("");
       setPortfolioUrl("");
       setMessage("");
+      setCvFile(null);
+      setCoverLetterFile(null);
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -153,6 +223,33 @@ export function CareersApplyClient() {
                   <span className="mb-1 block text-xs font-medium text-slate-600">Cover note / experience summary *</span>
                   <textarea className="min-h-[130px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-quantum-400 focus:ring-2 focus:ring-quantum-100" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tell us about the systems you have built and why this role fits." required />
                 </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
+                    <span className="block text-xs font-medium text-slate-700">CV / Resume</span>
+                    <span className="mt-0.5 block text-[10.5px] text-slate-500">PDF, DOC or DOCX · up to 4 MB</span>
+                    <input
+                      data-testid="career-cv-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="mt-2 block w-full text-[11px] text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-quantum-600 file:px-2 file:py-1 file:text-[11px] file:font-semibold file:text-white"
+                      onChange={(e) => void chooseAttachment(e.target.files?.[0], setCvFile, e.currentTarget)}
+                    />
+                    {cvFile && <span className="mt-1 block truncate text-[10.5px] font-medium text-emerald-700">{cvFile.fileName}</span>}
+                  </label>
+                  <label className="block rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
+                    <span className="block text-xs font-medium text-slate-700">Cover Letter Document</span>
+                    <span className="mt-0.5 block text-[10.5px] text-slate-500">Optional · PDF, DOC or DOCX · up to 4 MB</span>
+                    <input
+                      data-testid="career-cover-letter-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="mt-2 block w-full text-[11px] text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-quantum-600 file:px-2 file:py-1 file:text-[11px] file:font-semibold file:text-white"
+                      onChange={(e) => void chooseAttachment(e.target.files?.[0], setCoverLetterFile, e.currentTarget)}
+                    />
+                    {coverLetterFile && <span className="mt-1 block truncate text-[10.5px] font-medium text-emerald-700">{coverLetterFile.fileName}</span>}
+                  </label>
+                </div>
+                {attachmentError && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{attachmentError}</p>}
                 {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] text-slate-500">Application is sent securely to the QASyn hiring team.</p>

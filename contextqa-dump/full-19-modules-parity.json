@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-13T17:07:28.278Z",
+  "generatedAt": "2026-11-13T18:41:43.178Z",
   "base": "http://localhost:3000",
   "failures": 0,
   "modules": [
@@ -399,12 +399,12 @@
         {
           "check": "PR drawer computes a verdict",
           "ok": true,
-          "detail": "PR IMPACT ANALYSIS #755 Add wallet payments to checkout feat/wallet-payments → main · @priya close Passed baseline Low risk AZURE_DEVOPS · ai-test-automations/AI Test Automation Op"
+          "detail": "PR IMPACT ANALYSIS #755 Add wallet payments to checkout feat/wallet-payments → main · @priya close 1 regression caught Low risk AZURE_DEVOPS · ai-test-automations/AI Test Automatio"
         },
         {
           "check": "PR drawer posts a provider comment automatically",
           "ok": true,
-          "detail": "ion.ts` - `src/api/payments/route.ts` - `src/billing/invoice.ts` - `src/ui/components/WalletButton.tsx` ### Impacted test cases - ✅ Pay with a wallet _Posted automatically by QASyn for CGI._ refresh Re-run analysis gavel 📋 Generate CI/CD PR Gate Comment Close"
+          "detail": "ion.ts` - `src/api/payments/route.ts` - `src/billing/invoice.ts` - `src/ui/components/WalletButton.tsx` ### Impacted test cases - ❌ Pay with a wallet _Posted automatically by QASyn for CGI._ refresh Re-run analysis gavel 📋 Generate CI/CD PR Gate Comment Close"
         },
         {
           "check": "Pull requests shows no raw JSON",
@@ -950,12 +950,12 @@
         {
           "check": "UI-created test case uses the entered Target URL in steps",
           "ok": true,
-          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-79453\",\"value\":\"\",\"selector\":\"\",\"expectedResult\":\"Target URL loads with HTTP 20"
+          "detail": "[{\"id\":\"s1\",\"action\":\"Navigate\",\"target\":\"Navigate to https://www.cgi.com/parity-42986\",\"value\":\"\",\"selector\":\"\",\"expectedResult\":\"Target URL loads with HTTP 20"
         },
         {
           "check": "UI-created test case stores the Target URL variable",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-79453\",\"_testType\":\"Functional\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-42986\",\"_testType\":\"Functional\"}"
         },
         {
           "check": "AI-created test case uses the entered Target URL",
@@ -970,7 +970,7 @@
         {
           "check": "Record & Play opens with the entered Target URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-79453"
+          "detail": "https://www.cgi.com/parity-42986"
         },
         {
           "check": "Test Cases no example.com in API",
@@ -2031,7 +2031,7 @@
         {
           "check": "Install command dialog shows powershell",
           "ok": true,
-          "detail": "Install command for par1pb1g close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it"
+          "detail": "Install command for parx62m close Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it "
         },
         {
           "check": "Install command one-time token",
@@ -2330,7 +2330,7 @@
         {
           "check": "Figma config persisted in SQLite",
           "ok": true,
-          "detail": "{\"accessToken\":\"figd_parity_79453\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
+          "detail": "{\"accessToken\":\"figd_parity_42986\",\"fileUrl\":\"https://www.figma.com/file/AbC123/Digital-Portal\",\"fileKey\":\"\"}"
         },
         {
           "check": "Figma Disconnect removes the connection",
@@ -2548,7 +2548,7 @@
         {
           "check": "MCP generates a real cqa_ token",
           "ok": true,
-          "detail": "cqa_xwIPzf3I"
+          "detail": "cqa_l5IJoGcj"
         },
         {
           "check": "MCP snippet embeds the generated token",
@@ -2583,7 +2583,7 @@
         {
           "check": "MCP qasyn_bivia_decide returns a calibrated QASyn Vision AI response",
           "ok": true,
-          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 555, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Verified by QASyn Vision AI\", \"calibratedPro"
+          "detail": "{ \"status\": \"answered\", \"value\": \"visible\", \"optionIndex\": 0, \"probability\": 0.755, \"latencyMs\": 232, \"provider\": \"bivia-api\", \"mode\": \"decide\", \"badge\": \"🧠 Verified by QASyn Vision AI\", \"calibratedPro"
         },
         {
           "check": "MCP role guide \"Admin\"",
@@ -2653,7 +2653,7 @@
         {
           "check": "MCP tool \"qasyn_get_quality_summary\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"testCases\": 130, \"passRate\": 54, \"bugsReproduced\": 48, \"regressionsCaught\": 1365, \"cost"
+          "detail": "200 { \"testCases\": 130, \"passRate\": 52, \"bugsReproduced\": 50, \"regressionsCaught\": 1431, \"cost"
         },
         {
           "check": "MCP tool selector \"qasyn_list_test_cases\"",
@@ -2683,7 +2683,7 @@
         {
           "check": "MCP tool \"qasyn_start_crawl\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 { \"id\": \"cmwf84wa8006gx98skuglqgjl\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
+          "detail": "200 { \"id\": \"cmwfbi8qo018gx9t86rcmf7w3\", \"organisationId\": \"cmwayzzrj00b6x9ukmp3jjj92\", \"projectId"
         },
         {
           "check": "MCP tool selector \"qasyn_analyze_pr\"",
@@ -2703,7 +2703,7 @@
         {
           "check": "MCP tool \"qasyn_list_bugs\" returns a real JSON-RPC result",
           "ok": true,
-          "detail": "200 [ { \"id\": \"cmwez65ro00ozx900b9dvrb9r\", \"title\": \"Navigate Global Journey from www.cgi.com "
+          "detail": "200 [ { \"id\": \"cmwfbdrlp012kx9t88mazybdd\", \"title\": \"Pay with a wallet fails\", \"severity\":"
         },
         {
           "check": "MCP no page errors",
@@ -3845,7 +3845,7 @@
         {
           "check": "PART 4 disposable crawl created through the API",
           "ok": true,
-          "detail": "status 201 · cmwf85z9x0078x98s5nbyuu0o"
+          "detail": "status 201 · cmwfbjbtf0198x9t8opsnznvg"
         },
         {
           "check": "PART 4 disposable crawl completed with generated cases",
@@ -3950,7 +3950,7 @@
         {
           "check": "PART 4 Delete dialog names the crawl and the database",
           "ok": true,
-          "detail": "Delete crawl close Delete PARITY CRAWL 79453? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
+          "detail": "Delete crawl close Delete PARITY CRAWL 42986? The crawl session is removed from the table and the database. Test cases already generated from it are preserved. Cancel Delete crawl"
         },
         {
           "check": "PART 4 Delete row action returns API 200",
@@ -4204,7 +4204,7 @@
         {
           "check": "Plan run from list executes every linked case",
           "ok": true,
-          "detail": "total 130 · counted 130 · passed 69 · failed 12 · not executed 49"
+          "detail": "total 130 · counted 130 · passed 67 · failed 14 · not executed 49"
         },
         {
           "check": "Plan run from list returns a viewport",
@@ -4219,12 +4219,12 @@
         {
           "check": "Plan run from list persists an execution",
           "ok": true,
-          "detail": "102 → 103"
+          "detail": "106 → 107"
         },
         {
           "check": "Plan run from list persists a TestRun",
           "ok": true,
-          "detail": "502 → 503"
+          "detail": "524 → 525"
         },
         {
           "check": "Plan detail lists every linked suite",
@@ -4244,42 +4244,42 @@
         {
           "check": "Plan run from detail executes every linked case",
           "ok": true,
-          "detail": "total 130 · passed 69 · failed 12"
+          "detail": "total 130 · passed 67 · failed 14"
         },
         {
           "check": "Plan run from detail persists an execution",
           "ok": true,
-          "detail": "103 → 104"
+          "detail": "107 → 108"
         },
         {
           "check": "Plan run from detail persists a TestRun",
           "ok": true,
-          "detail": "503 → 504"
+          "detail": "525 → 526"
         },
         {
           "check": "Plan execution has START and END",
           "ok": true,
-          "detail": "FAILED · 2026-11-13T17:03:44.592Z"
+          "detail": "FAILED · 2026-11-13T18:38:04.943Z"
         },
         {
           "check": "Plan execution persists the viewport",
           "ok": true,
-          "detail": "{\"total\":130,\"passed\":69,\"failed\":12,\"notExecuted\":49,\"autoFixed\":93,\"durationMs\":136203,\"viewport\":\"1440×900 · Chromium"
+          "detail": "{\"total\":130,\"passed\":67,\"failed\":14,\"notExecuted\":49,\"autoFixed\":171,\"durationMs\":136203,\"viewport\":\"1440×900 · Chromiu"
         },
         {
           "check": "Plan counters refreshed after the run",
           "ok": true,
-          "detail": "lastRunAt 2026-11-13T17:03:44.592Z · passRate 85.2"
+          "detail": "lastRunAt 2026-11-13T18:38:04.943Z · passRate 82.7"
         },
         {
           "check": "Plan detail START card is populated",
           "ok": true,
-          "detail": "START Nov 13, 2026, 12:03 PM Latest run"
+          "detail": "START Nov 13, 2026, 1:38 PM Latest run"
         },
         {
           "check": "Plan detail END card is populated",
           "ok": true,
-          "detail": "END Nov 13, 2026, 12:03 PM Latest run"
+          "detail": "END Nov 13, 2026, 1:38 PM Latest run"
         },
         {
           "check": "Plan detail shows the latest viewport",
@@ -4379,7 +4379,7 @@
         {
           "check": "Tunnel connect persists connectedAt",
           "ok": true,
-          "detail": "2026-11-13T17:03:46.720Z"
+          "detail": "2026-11-13T18:38:07.043Z"
         },
         {
           "check": "Super Admin account exists",
@@ -4678,22 +4678,22 @@
         {
           "check": "PART 7 Run History card shows #run and Passed/Failed",
           "ok": true,
-          "detail": "check_circle #78 Passed ⚙ Automated · 👤 cgi@cgi.com 12:03:44 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
+          "detail": "check_circle #88 Passed ⚙ Automated · 👤 cgi@cgi.com 01:38:04 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows automated trigger and author",
           "ok": true,
-          "detail": "check_circle #78 Passed ⚙ Automated · 👤 cgi@cgi.com 12:03:44 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
+          "detail": "check_circle #88 Passed ⚙ Automated · 👤 cgi@cgi.com 01:38:04 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows time and duration",
           "ok": true,
-          "detail": "check_circle #78 Passed ⚙ Automated · 👤 cgi@cgi.com 12:03:44 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
+          "detail": "check_circle #88 Passed ⚙ Automated · 👤 cgi@cgi.com 01:38:04 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History card shows Standalone Run or plan pill",
           "ok": true,
-          "detail": "Release 2.8 sign-off · check_circle #78 Passed ⚙ Automated · 👤 cgi@cgi.com 12:03:44 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
+          "detail": "Release 2.8 sign-off · check_circle #88 Passed ⚙ Automated · 👤 cgi@cgi.com 01:38:04 PM Nov 13 ⏳ 00:01.12 Release 2.8 sign-off"
         },
         {
           "check": "PART 7 Run History exposes Auto-fix rerun when applicable",
@@ -4783,7 +4783,7 @@
         {
           "check": "PART 7 MCP tool runner returns a live JSON-RPC 200",
           "ok": true,
-          "detail": "{ \"status\": 200, \"elapsedMs\": 13, \"jsonrpc\": \"2.0\", \"id\": 1794589442519, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 130,\\n \\\"passRate\\\": 53,\\n \\\"bugsRep"
+          "detail": "{ \"status\": 200, \"elapsedMs\": 15, \"jsonrpc\": \"2.0\", \"id\": 1794595103006, \"result\": { \"content\": [ { \"type\": \"text\", \"text\": \"{\\n \\\"testCases\\\": 130,\\n \\\"passRate\\\": 52,\\n \\\"bugsRep"
         },
         {
           "check": "PART 7 Agent Skills export writes .claude/CLAUDE.md",
@@ -4952,7 +4952,7 @@
         {
           "check": "PART 8 self-heal run number is scoped to its test case",
           "ok": true,
-          "detail": "run #79 · case max #79"
+          "detail": "run #89 · case max #89"
         },
         {
           "check": "PART 8 Version History documents the old → new selector",
@@ -5087,7 +5087,7 @@
         {
           "check": "PART 8 Crawl table shows the Autopilot linked test cases",
           "ok": true,
-          "detail": " REQ-589 13-Nov-2026-5-04-23-PM_crawl Auto Crawl language Crawl - Completed 7 Linked Claire Girard 13 Nov 2026, 12:04 more_horiz"
+          "detail": " REQ-597 13-Nov-2026-6-38-42-PM_crawl Auto Crawl language Crawl - Completed 7 Linked Claire Girard 13 Nov 2026, 13:38 more_horiz"
         },
         {
           "check": "PART 8 PR Gate API returns a calibrated Markdown report",
@@ -5112,7 +5112,7 @@
         {
           "check": "PART 8 PR list shows the gate pull request",
           "ok": true,
-          "detail": "#906478"
+          "detail": "#986157"
         },
         {
           "check": "PART 8 PR drawer exposes 📋 Generate CI/CD PR Gate Comment",
@@ -5127,27 +5127,27 @@
         {
           "check": "PART 8 PR gate modal renders the generated Markdown",
           "ok": true,
-          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #906478 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
+          "detail": "## QASyn CI/CD PR Gate — 🛑 BLOCKED — HIGH BLAST RADIUS **Pull request:** #986157 Auth + checkout migration gate **Repository:** cgi/digital-portal **Branch:** `feature/auth-checko"
         },
         {
           "check": "PART 8 QASyn AI telemetry ledger meters boolean/choice/ground/score/set",
           "ok": true,
-          "detail": "2851 entry(ies) · score, set, boolean, choice, ground"
+          "detail": "3007 entry(ies) · score, set, boolean, choice, ground"
         },
         {
           "check": "PART 8 telemetry compaction is atomic and leaves no partial ledger",
           "ok": true,
-          "detail": "2855 NDJSON line(s) · 0 temp file(s)"
+          "detail": "3011 NDJSON line(s) · 0 temp file(s)"
         },
         {
           "check": "PART 8 billing usage renders QASyn Autonomous AI telemetry",
           "ok": true,
-          "detail": "✨ QASyn Autonomous AI Execution & Calibration Telemetry Every visual verification, calibrated decision and self-healed selector is measured in real time. Live telemetry visibility AI VISUAL VERIFICATIONS RUN 2,851 passed, failed and abstain"
+          "detail": "✨ QASyn Autonomous AI Execution & Calibration Telemetry Every visual verification, calibrated decision and self-healed selector is measured in real time. Live telemetry visibility AI VISUAL VERIFICATIONS RUN 3,007 passed, failed and abstain"
         },
         {
           "check": "PART 8 customer telemetry hides internal token-grant branding",
           "ok": true,
-          "detail": "s 741 my_location Locator grounding 168 speed Risk scoring 182 checklist Test selection 182 Derived from QASyn's persistent AI decision ledger. No prompt text, screenshots or credentials are stored. Last AI decision 11/13/2026, 12:04:36 PM."
+          "detail": "es 773 my_location Locator grounding 174 speed Risk scoring 192 checklist Test selection 192 Derived from QASyn's persistent AI decision ledger. No prompt text, screenshots or credentials are stored. Last AI decision 11/13/2026, 1:38:56 PM."
         },
         {
           "check": "PART 8 Integrations card embeds QASyn Autonomous AI telemetry",
@@ -5176,7 +5176,7 @@
         {
           "check": "PART 9 a disposable test case is available for screenshot evidence",
           "ok": true,
-          "detail": "status 201 · cmwf88poh00pxx98s15avrapq"
+          "detail": "status 201 · cmwfbm0n301rxx9t8c0hialr9"
         },
         {
           "check": "PART 9 failed and skipped steps persist screenshot evidence in the run response",
@@ -5196,7 +5196,7 @@
         {
           "check": "PART 9 self-heal captures a screenshot and grounds the test case URL",
           "ok": true,
-          "detail": "https://www.cgi.com/parity-evidence-79453 · image/png"
+          "detail": "https://www.cgi.com/parity-evidence-42986 · image/png"
         },
         {
           "check": "PART 9 Studio renders the executed steps",
@@ -5301,7 +5301,7 @@
         {
           "check": "PART 9 the selected test type persists in variablesJson._testType",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-79453\",\"_testType\":\"Penetration\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-42986\",\"_testType\":\"Penetration\"}"
         },
         {
           "check": "PART 9 the Type column displays the exact selected type",
@@ -5311,7 +5311,7 @@
         {
           "check": "PART 9 editing a test type persists the new value",
           "ok": true,
-          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-79453\",\"_testType\":\"Accessibility\"}"
+          "detail": "{\"url\":\"https://www.cgi.com/parity-evidence-42986\",\"_testType\":\"Accessibility\"}"
         },
         {
           "check": "PART 9 the Type column follows the edited type",
@@ -5326,7 +5326,7 @@
         {
           "check": "PART 9 PR auto-regression creates PR-specific Smoke and Regression cases",
           "ok": true,
-          "detail": "Smoke:PR #982180 · Smoke check on Staging | Regression:PR #982180 · Regression flow"
+          "detail": "Smoke:PR #957304 · Smoke check on Staging | Regression:PR #957304 · Regression flow"
         },
         {
           "check": "PART 9 PR auto-regression runs against the selected deployed environment",
@@ -5346,7 +5346,7 @@
         {
           "check": "PART 9 PR-specific cases persist their test type and target URL",
           "ok": true,
-          "detail": "PR #982180 · Smoke check on Staging | PR #982180 · Regression flow"
+          "detail": "PR #957304 · Smoke check on Staging | PR #957304 · Regression flow"
         },
         {
           "check": "PART 9 PR-specific case runs store screenshots in TestCaseRun.logJson",
@@ -5356,7 +5356,7 @@
         {
           "check": "PART 9 the pull-request list shows the auto-regression PR",
           "ok": true,
-          "detail": "#982180"
+          "detail": "#957304"
         },
         {
           "check": "PART 9 PR drawer exposes auto-regression with an environment selector",
@@ -5376,7 +5376,7 @@
         {
           "check": "PART 9 Super Admin provisions an enterprise tenant",
           "ok": true,
-          "detail": "PART9 Enterprise 79453 · enterprise · 250000 credits"
+          "detail": "PART9 Enterprise 42986 · enterprise · 250000 credits"
         },
         {
           "check": "PART 9 provisioning seeds Production + Staging environments, a credit ledger and an admin",
@@ -5421,7 +5421,7 @@
         {
           "check": "PART 9 the Configure modal exposes plan, seats, SSO/SLA and default environment",
           "ok": true,
-          "detail": "Configure enterprise · PART9 Enterprise 79453 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free sta"
+          "detail": "Configure enterprise · PART9 Enterprise 42986 close Update the enterprise plan, grant credits to the ledger, and bind the tenant's default deployed environment. Plan trial free sta"
         },
         {
           "check": "PART 9 README documents architecture, modules, test types, QASyn Vision AI, PR gate, Super Admin and operations",
@@ -5475,7 +5475,7 @@
         {
           "check": "PART 10 a 6-step Regression case is available",
           "ok": true,
-          "detail": "status 201 · cmwf89n6v00s6x98s0nqd8ptb"
+          "detail": "status 201 · cmwfbmum101u6x9t8dfr35wbs"
         },
         {
           "check": "PART 10 buildStepsJson emits exactly 6 steps for stepsCount 6",
@@ -5525,12 +5525,12 @@
         {
           "check": "PART 10 the CI/CD webhook returns a verdict, PR-specific tests and a Markdown report",
           "ok": true,
-          "detail": "200 · APPROVED · Smoke:4/Regression:6 · 1855 chars"
+          "detail": "200 · BLOCKED · Smoke:4/Regression:6 · 1865 chars"
         },
         {
           "check": "PART 10 the webhook persists the gate result on PullRequestCheck",
           "ok": true,
-          "detail": "passed_baseline · 8 run · 0 regression(s)"
+          "detail": "regression_caught · 8 run · 1 regression(s)"
         },
         {
           "check": "PART 10 webhook PR cases store 6/6 screenshot lines (Smoke 4 + Regression 6)",
@@ -5629,7 +5629,7 @@
         {
           "check": "PART 11 POST /api/webhooks/ci-pr honours failOnRegression with HTTP 422 and ok:false",
           "ok": true,
-          "detail": "422 · BLOCKED · 1 regression(s)"
+          "detail": "422 · BLOCKED · 2 regression(s)"
         },
         {
           "check": "PART 11 the PR drawer webhook snippet uses the dynamic browser origin",
@@ -5653,7 +5653,7 @@
         {
           "check": "PART 12 zero UTF-8 mojibake remains in app/, components/ and lib/",
           "ok": true,
-          "detail": "485 file(s) clean"
+          "detail": "488 file(s) clean"
         },
         {
           "check": "PART 12 no accidental derniers-commits.txt in the repository root",
@@ -5727,7 +5727,7 @@
         {
           "check": "PART 13 the Visual Evidence Lightbox badge reads PNG Live Capture",
           "ok": true,
-          "detail": "🕰 Visual Evidence Lightbox Navigate · Navigate to https://www.cgi.com · 13/11/2026, 12:06:07 ✓ Expected: Target URL loads with HTTP 200 OK and renders the prim"
+          "detail": "🕰 Visual Evidence Lightbox Navigate · Navigate to https://www.cgi.com · 13/11/2026, 13:40:21 ✓ Expected: Target URL loads with HTTP 200 OK and renders the prim"
         },
         {
           "check": "PART 13 small-batch runTestCases (CI webhook) persists real PNG evidence",
@@ -6067,12 +6067,12 @@
         {
           "check": "PART 18 team invitation API returns a signed /invite link",
           "ok": true,
-          "detail": "201 · http://localhost:3000/invite/Tf0yErYPGopyKZYCIY5imrxKdFQn5_DZ"
+          "detail": "201 · http://localhost:3000/invite/Mp0DBtt7zgNzRKgb6ayLWIKoXwAdmzMb"
         },
         {
           "check": "PART 18 /invite/[token] renders the workspace join form",
           "ok": true,
-          "detail": "HTTP 200 · QASYN TEAM INVITATION Join CGI You're joining CGI as Engineer · p18-invite-79453@your-domain.com Full name Password Accept invitation & join"
+          "detail": "HTTP 200 · QASYN TEAM INVITATION Join CGI You're joining CGI as Engineer · p18-invite-42986@your-domain.com Full name Password Accept invitation & join"
         },
         {
           "check": "PART 18 onboarding step 3/4 integrations verify and persist",
@@ -6087,12 +6087,12 @@
         {
           "check": "PART 18 custom AI model CRUD persists in workspace settings",
           "ok": true,
-          "detail": "017add46-0a57-4a38-a688-9c36e572dfb6"
+          "detail": "a7f2cd5c-3fd6-4ba8-adc5-100dfae3cfdb"
         },
         {
           "check": "PART 18 custom agent skill CRUD persists in SQLite settings",
           "ok": true,
-          "detail": "ca2e4f81-3dcb-4c10-9734-f046abf20e62"
+          "detail": "4bfa991c-039c-44ba-a0d7-62b2f5524060"
         },
         {
           "check": "PART 18 Super Admin lists tenants, integrations and manages models/skills",
@@ -6102,7 +6102,7 @@
         {
           "check": "PART 18 Super Admin allocates user credits and records a credit ledger entry",
           "ok": true,
-          "detail": "status 200 · ledger 112 → 113"
+          "detail": "status 200 · ledger 120 → 121"
         },
         {
           "check": "PART 18 has no page errors",
@@ -6175,7 +6175,7 @@
         {
           "check": "PART 20 plan checkout preserves purchased credits",
           "ok": true,
-          "detail": "status 200 · 2761000 + 2000 = 2763000"
+          "detail": "status 200 · 3263000 + 2000 = 3265000"
         },
         {
           "check": "PART 20 spendCredits increments and blocks at the user quota",
@@ -6254,12 +6254,37 @@
         {
           "check": "PART 21 lead notifications are persisted to the outbox and mail log",
           "ok": true,
-          "detail": "10 outbox row(s) · log 3823 chars"
+          "detail": "7 outbox row(s) · log 6597 chars"
+        },
+        {
+          "check": "PART 21 career CV and cover letter attachments are persisted",
+          "ok": true,
+          "detail": "cmwfbpcrd022tx9t832atf5us · CV candidate-cv.pdf"
+        },
+        {
+          "check": "PART 21 internal career notification includes the CV attachment",
+          "ok": true,
+          "detail": "outbox 7 row(s)"
+        },
+        {
+          "check": "PART 21 career application sends the sender confirmation email",
+          "ok": true,
+          "detail": "1 confirmation row(s)"
+        },
+        {
+          "check": "PART 21 demo request sends the sender confirmation email",
+          "ok": true,
+          "detail": "1 confirmation row(s)"
+        },
+        {
+          "check": "PART 21 contact request sends the sender confirmation email",
+          "ok": true,
+          "detail": "1 confirmation row(s)"
         },
         {
           "check": "PART 21 careers page opens the job application modal for the selected role",
           "ok": true,
-          "detail": "Staff Systems Engineer — Browser Runtime · modal 255 chars"
+          "detail": "Staff Systems Engineer — Browser Runtime · modal 360 chars · uploads present"
         },
         {
           "check": "PART 21 password-reset contact link preselects support, message and typed email",
@@ -6269,7 +6294,7 @@
         {
           "check": "PART 21 Docker and deploy workflow persist SQLite and telemetry volumes",
           "ok": true,
-          "detail": "docker 732 chars · deploy 6241 chars · mailer 12610 chars"
+          "detail": "docker 732 chars · deploy 6747 chars · mailer 18655 chars"
         },
         {
           "check": "PART 21 legal pages remove prototype disclaimers and publish the official contact",
@@ -6284,12 +6309,27 @@
         {
           "check": "PART 21 deploy-qasyn template preserves Traefik labels, networks and compose env",
           "ok": true,
-          "detail": "2979 chars"
+          "detail": "3377 chars"
+        },
+        {
+          "check": "PART 21 QASYN_SECRET fallback, mail routing and webmail surfaces are production-ready",
+          "ok": true,
+          "detail": "crypto 4343 · mailer 18655 · imap 9092 · UI 75783"
         },
         {
           "check": "PART 21 Super Admin email configuration saves with encrypted, masked secrets",
           "ok": true,
           "detail": "200 · smtp.phase27.test"
+        },
+        {
+          "check": "PART 21 Super Admin exposes the career CV and cover letter downloads",
+          "ok": true,
+          "detail": "3 submission(s) · CV candidate-cv.pdf"
+        },
+        {
+          "check": "PART 21 Super Admin can download the exact CV attachment",
+          "ok": true,
+          "detail": "200 · 33 chars"
         },
         {
           "check": "PART 21 blank email secrets preserve the stored encrypted credentials",
@@ -6304,12 +6344,32 @@
         {
           "check": "PART 21 Super Admin delivery log records the test email",
           "ok": true,
-          "detail": "8 log row(s)"
+          "detail": "10 log row(s)"
         },
         {
           "check": "PART 21 Super Admin renders the outbound email card, masked secrets and live delivery log",
           "ok": true,
           "detail": "smtp.phase27.test · phase27-leads@qasyn.io · ✉️ Outbound Email & SMTP Configuration (qasyn.com / qasyn.io) Configure the plat"
+        },
+        {
+          "check": "PART 21 Super Admin renders the Webmail & Candidatures Inbox",
+          "ok": true,
+          "detail": "📬 Webmail & Candidatures Inbox Leads, demo requests, job applications, CV downloads, live IMAP mail · CV visible"
+        },
+        {
+          "check": "PART 21 Webmail IMAP tab exposes live sync and external webmail",
+          "ok": true,
+          "detail": "IMAP tab rendered"
+        },
+        {
+          "check": "PART 21 Webmail Sent tab exposes the outbox log",
+          "ok": true,
+          "detail": "sent tab rendered"
+        },
+        {
+          "check": "PART 21 Super Admin sends a webmail reply",
+          "ok": true,
+          "detail": "200 · outbox/queued"
         },
         {
           "check": "PART 21 has no page errors",
@@ -6341,5 +6401,5 @@
       "ok": true
     }
   ],
-  "totalChecks": 1199
+  "totalChecks": 1211
 }
