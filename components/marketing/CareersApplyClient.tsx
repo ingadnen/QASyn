@@ -46,6 +46,7 @@ export function CareersApplyClient() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -84,6 +85,7 @@ export function CareersApplyClient() {
           source: "careers",
         },
       });
+      setSentEmail(email.trim());
       setSent(true);
       setName("");
       setEmail("");
@@ -128,7 +130,7 @@ export function CareersApplyClient() {
             {sent ? (
               <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900" data-testid="career-application-success">
                 <p className="font-semibold">Application received.</p>
-                <p className="mt-1">Your application for <strong>{role.title}</strong> was sent to <strong>adnen.rebhi@qasyn.com</strong>. We review every application and reply within five business days.</p>
+                <p className="mt-1">Your application for <strong>{role.title}</strong> has been sent to the QASyn hiring team. We&apos;ll reply to <strong>{sentEmail}</strong> after engineering review.</p>
                 <button type="button" onClick={() => setRole(null)} className="mt-3 text-xs font-semibold text-emerald-700 hover:underline">Close</button>
               </div>
             ) : (
@@ -153,7 +155,7 @@ export function CareersApplyClient() {
                 </label>
                 {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] text-slate-500">Application is emailed to adnen.rebhi@qasyn.com.</p>
+                  <p className="text-[11px] text-slate-500">Application is sent securely to the QASyn hiring team.</p>
                   <button type="submit" data-testid="career-application-submit" disabled={pending} className="inline-flex h-10 items-center justify-center rounded-lg bg-quantum-600 px-4 text-sm font-semibold text-white hover:bg-quantum-500 disabled:opacity-50">
                     {pending ? "Sending…" : "Submit application"}
                   </button>

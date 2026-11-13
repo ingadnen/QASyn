@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Data Privacy & AI Safety Policy" };
 
@@ -38,7 +39,7 @@ export default function Page() {
           required by applicable law.
         </p>
         <p>
-          <strong>Contact.</strong> Security and AI-safety questions: <a className="text-brand-600 hover:underline" href="mailto:adnen.rebhi@qasyn.com">adnen.rebhi@qasyn.com</a>.
+          <strong>Contact.</strong> Security and AI-safety questions: <a className="text-brand-600 hover:underline" href="mailto:info@qasyn.io">info@qasyn.io</a> or <Link className="text-brand-600 hover:underline" href="/contact-us">contact us</Link>.
         </p>
       </div>
     </div>

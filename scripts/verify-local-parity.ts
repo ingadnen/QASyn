@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseAzureDevOpsUrl } from "../lib/azure-devops";
 import { normalizeGroundBox } from "../lib/bivia-box";
+import { getPlatformEmailRuntimeSecrets } from "../lib/email-config";
 import { PLAN_CREDITS, TEST_TYPES } from "../lib/constants";
 import { QuotaExceededError, spendCredits } from "../lib/tenant";
 import { resolveGroundingUrl } from "../lib/grounding-url";
@@ -6543,7 +6544,20 @@ async function main() {
   moduleErrors = [];
   mod("part21-production", "Phase 23 - Production disclaimers, authenticated SSO UX, lead/career routing and persistent deployment", "/careers");
 
-  const p21Contact = "adnen.rebhi@qasyn.com";
+  const p21PublicContact = "info@qasyn.io";
+  const p21PersonalEmail = "adnen.rebhi@qasyn.com";
+  const p21EmailOrg = await db.organisation.findUnique({ where: { slug: "qasyn-hq" }, select: { id: true } });
+  let p21ExistingEmailRow = p21EmailOrg
+    ? await db.integration.findUnique({
+        where: { organisationId_provider: { organisationId: p21EmailOrg.id, provider: "PLATFORM_EMAIL" } },
+      })
+    : null;
+  if (p21ExistingEmailRow?.configJson.includes("smtp.phase27.test")) {
+    await db.integration.delete({ where: { id: p21ExistingEmailRow.id } }).catch(() => undefined);
+    p21ExistingEmailRow = null;
+  }
+  const p21RuntimeEmail = await getPlatformEmailRuntimeSecrets();
+  const p21InternalRecipient = p21RuntimeEmail.contactRecipientEmail;
   const p21Anon = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const p21Page = await p21Anon.newPage();
 
@@ -6572,8 +6586,9 @@ async function main() {
   await p21Page.goto(`${BASE}/contact-us`, { waitUntil: "domcontentloaded" });
   const p21ContactText = ((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " ");
   check(
-    "PART 21 contact page exposes the production recipient and demo/contact toggles",
-    p21ContactText.includes(p21Contact) &&
+    "PART 21 contact page exposes the official public recipient and demo/contact toggles",
+    p21ContactText.includes(p21PublicContact) &&
+      !p21ContactText.includes(p21PersonalEmail) &&
       p21ContactText.includes("Book a personalized demo") &&
       p21ContactText.includes("Contact sales / support") &&
       (await p21Page.locator('[data-testid="contact-lead-form"]').count()) > 0,
@@ -6604,13 +6619,13 @@ async function main() {
     "PART 21 demo and career leads route to the production notification recipient",
     p21Demo.status === 200 &&
       p21Career.status === 200 &&
-      (p21Demo.body as { recipient?: string }).recipient === p21Contact &&
-      (p21Career.body as { recipient?: string }).recipient === p21Contact,
+      (p21Demo.body as { recipient?: string }).recipient === p21PublicContact &&
+      (p21Career.body as { recipient?: string }).recipient === p21PublicContact,
     `demo ${p21Demo.status} · career ${p21Career.status}`,
   );
 
   const p21Outbox = await db.emailOutbox.findMany({
-    where: { to: p21Contact },
+    where: { to: p21InternalRecipient },
     orderBy: { createdAt: "desc" },
     take: 10,
   });
@@ -6677,6 +6692,18 @@ async function main() {
       p21Deploy.includes("-v /opt/qasyn/data:/app/prisma/data") &&
       p21Deploy.includes("-v /opt/qasyn/.qasyn-data:/app/.qasyn-data") &&
       p21Deploy.includes("docker rm -f qasyn-qasyn-1") &&
+      p21Deploy.includes("traefik.enable=true") &&
+      p21Deploy.includes("traefik.http.routers.qasyn.rule=Host(") &&
+      p21Deploy.includes("traefik.http.routers.qasyn.entrypoints=websecure") &&
+      p21Deploy.includes("traefik.http.routers.qasyn.tls.certresolver=letsencrypt") &&
+      p21Deploy.includes("traefik.http.services.qasyn.loadbalancer.server.port=3000") &&
+      p21Deploy.includes("docker network connect") &&
+      p21Deploy.includes("traefik|qasyn|root_default") &&
+      p21Deploy.includes("BIVIA_API_KEY") &&
+      p21Deploy.includes("BIVIA_API_URL") &&
+      p21Deploy.includes("NEXT_PUBLIC_APP_URL") &&
+      p21Deploy.includes("/docker/qasyn/docker-compose.yml") &&
+      p21Deploy.includes("scripts/deploy-qasyn.sh") &&
       p21Mailer.includes("AUTH PLAIN") &&
       p21Mailer.includes("AUTH LOGIN"),
     `docker ${p21Dockerfile.length} chars · deploy ${p21Deploy.length} chars · mailer ${p21Mailer.length} chars`,
@@ -6694,10 +6721,166 @@ async function main() {
   check(
     "PART 21 legal pages remove prototype disclaimers and publish the official contact",
     !/\b(?:prototype|fictional|demo)\b/i.test(p21LegalText) &&
-      p21LegalPages.every((file) => fs.readFileSync(file, "utf8").includes(p21Contact)) &&
+      p21LegalPages.every((file) => {
+        const text = fs.readFileSync(file, "utf8");
+        return text.includes(p21PublicContact) && !text.includes(p21PersonalEmail);
+      }) &&
       !/\b(?:prototype|fictional|demo)\b/i.test(p21Marketing),
     `legal ${p21LegalText.length} chars · marketing ${p21Marketing.length} chars`,
   );
+
+  const p21LegalRoutes = [
+    "/terms-of-service",
+    "/privacy-policy",
+    "/data-privacy-policy",
+    "/data-processing-agreement",
+    "/cookie-policy",
+  ];
+  const p21RenderedLegal: string[] = [];
+  for (const route of p21LegalRoutes) {
+    await p21Page.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded" });
+    p21RenderedLegal.push(((await p21Page.locator("body").innerText().catch(() => "")) || "").replace(/\s+/g, " "));
+  }
+  check(
+    "PART 21 public legal, contact and careers pages never expose the personal email",
+    p21RenderedLegal.every((text) => text.includes(p21PublicContact) && !text.includes(p21PersonalEmail)) &&
+      !p21FooterText.includes(p21PersonalEmail) &&
+      !p21ContactText.includes(p21PersonalEmail) &&
+      !p21CareersText.includes(p21PersonalEmail),
+    `legal ${p21RenderedLegal.length} page(s) · personal email hidden`,
+  );
+
+  const p21DeployScript = fs.readFileSync(path.join(process.cwd(), "scripts", "deploy-qasyn.sh"), "utf8");
+  check(
+    "PART 21 deploy-qasyn template preserves Traefik labels, networks and compose env",
+    p21DeployScript.includes("traefik.enable=true") &&
+      p21DeployScript.includes("traefik.http.routers.qasyn.rule=Host(") &&
+      p21DeployScript.includes("docker network connect") &&
+      p21DeployScript.includes("BIVIA_API_KEY") &&
+      p21DeployScript.includes("/docker/qasyn/docker-compose.yml") &&
+      p21DeployScript.includes("env_file: /opt/qasyn/.env"),
+    `${p21DeployScript.length} chars`,
+  );
+
+  const p21Super = await loginAs(browser, "admin@qasyn.com", "QASynMaster2026!");
+  const p21EmailSave = await apiJson(p21Super.page, "/api/dashboard/super-admin", "POST", {
+    action: "update_email_config",
+    enabled: false,
+    provider: "smtp",
+    smtpHost: "smtp.phase27.test",
+    smtpPort: 465,
+    smtpUser: "phase27@qasyn.io",
+    smtpPass: "phase27-secret",
+    fromAddress: "QASyn <info@qasyn.io>",
+    contactRecipientEmail: "phase27-leads@qasyn.io",
+    resendApiKey: "re_phase27_secret",
+  });
+  const p21EmailGet = await apiJson(p21Super.page, "/api/dashboard/super-admin", "GET");
+  const p21EmailConfig = (p21EmailGet.body as {
+    emailConfig?: {
+      smtpHost?: string;
+      smtpPassConfigured?: boolean;
+      smtpPassMasked?: string;
+      resendApiKeyConfigured?: boolean;
+      resendApiKeyMasked?: string;
+      contactRecipientEmail?: string;
+    };
+  }).emailConfig;
+  check(
+    "PART 21 Super Admin email configuration saves with encrypted, masked secrets",
+    p21EmailSave.status === 200 &&
+      p21EmailGet.status === 200 &&
+      p21EmailConfig?.smtpHost === "smtp.phase27.test" &&
+      p21EmailConfig?.contactRecipientEmail === "phase27-leads@qasyn.io" &&
+      p21EmailConfig?.smtpPassConfigured === true &&
+      Boolean(p21EmailConfig?.smtpPassMasked?.includes("••••")) &&
+      p21EmailConfig?.resendApiKeyConfigured === true &&
+      Boolean(p21EmailConfig?.resendApiKeyMasked?.includes("••••")) &&
+      !JSON.stringify(p21EmailGet.body).includes("phase27-secret") &&
+      !JSON.stringify(p21EmailGet.body).includes("re_phase27_secret"),
+    `${p21EmailSave.status} · ${p21EmailConfig?.smtpHost ?? "missing"}`,
+  );
+
+  const p21EmailPreserve = await apiJson(p21Super.page, "/api/dashboard/super-admin", "POST", {
+    action: "update_email_config",
+    smtpPass: "",
+    resendApiKey: "",
+  });
+  const p21EmailGetAfterBlank = await apiJson(p21Super.page, "/api/dashboard/super-admin", "GET");
+  const p21EmailConfigAfterBlank = (p21EmailGetAfterBlank.body as {
+    emailConfig?: { smtpPassConfigured?: boolean; resendApiKeyConfigured?: boolean };
+  }).emailConfig;
+  check(
+    "PART 21 blank email secrets preserve the stored encrypted credentials",
+    p21EmailPreserve.status === 200 &&
+      p21EmailConfigAfterBlank?.smtpPassConfigured === true &&
+      p21EmailConfigAfterBlank?.resendApiKeyConfigured === true,
+    `${p21EmailPreserve.status}`,
+  );
+
+  const p21EmailTest = await apiJson(p21Super.page, "/api/dashboard/super-admin", "POST", {
+    action: "test_email_config",
+  });
+  const p21EmailTestBody = p21EmailTest.body as { provider?: string; status?: string; recipient?: string };
+  check(
+    "PART 21 Super Admin sends a test email through the saved configuration",
+    p21EmailTest.status === 200 &&
+      p21EmailTestBody.recipient === "phase27-leads@qasyn.io" &&
+      typeof p21EmailTestBody.provider === "string" &&
+      typeof p21EmailTestBody.status === "string",
+    `${p21EmailTest.status} · ${p21EmailTestBody.provider ?? "missing"}/${p21EmailTestBody.status ?? "missing"}`,
+  );
+
+  const p21EmailGetWithLog = await apiJson(p21Super.page, "/api/dashboard/super-admin", "GET");
+  const p21DeliveryLog = (p21EmailGetWithLog.body as { mailDeliveryLog?: Array<{ to?: string; status?: string }> }).mailDeliveryLog ?? [];
+  check(
+    "PART 21 Super Admin delivery log records the test email",
+    p21DeliveryLog.some((entry) => entry.to === "phase27-leads@qasyn.io"),
+    `${p21DeliveryLog.length} log row(s)`,
+  );
+
+  await p21Super.page.goto(`${BASE}/dashboard/super-admin`, { waitUntil: "domcontentloaded" });
+  const p21EmailCard = p21Super.page.locator('[data-testid="super-admin-email-config"]').first();
+  await p21EmailCard.waitFor({ state: "visible", timeout: 12_000 }).catch(() => undefined);
+  const p21EmailCardText = ((await p21EmailCard.innerText().catch(() => "")) || "").replace(/\s+/g, " ");
+  const p21EmailHostInput = await p21Super.page.locator('[data-testid="super-admin-email-smtp-host"]').first().inputValue().catch(() => "");
+  const p21EmailRecipientInput = await p21Super.page.locator('[data-testid="super-admin-email-recipient"]').first().inputValue().catch(() => "");
+  const p21EmailPassPlaceholder = await p21Super.page.locator('[data-testid="super-admin-email-smtp-pass"]').first().getAttribute("placeholder").catch(() => "");
+  const p21EmailResendPlaceholder = await p21Super.page.locator('[data-testid="super-admin-email-resend-key"]').first().getAttribute("placeholder").catch(() => "");
+  check(
+    "PART 21 Super Admin renders the outbound email card, masked secrets and live delivery log",
+    (await p21EmailCard.count()) > 0 &&
+      p21EmailCardText.includes("Outbound Email & SMTP Configuration") &&
+      p21EmailHostInput === "smtp.phase27.test" &&
+      p21EmailRecipientInput === "phase27-leads@qasyn.io" &&
+      Boolean(p21EmailPassPlaceholder?.includes("••••")) &&
+      Boolean(p21EmailResendPlaceholder?.includes("••••")) &&
+      (await p21Super.page.locator('[data-testid="super-admin-save-email-config"]').count()) > 0 &&
+      (await p21Super.page.locator('[data-testid="super-admin-test-email"]').count()) > 0 &&
+      (await p21Super.page.locator('[data-testid="super-admin-mail-delivery-log"]').count()) > 0,
+    `${p21EmailHostInput || "missing"} · ${p21EmailRecipientInput || "missing"} · ${p21EmailCardText.slice(0, 80)}`,
+  );
+
+  await db.emailOutbox.deleteMany({ where: { to: "phase27-leads@qasyn.io" } }).catch(() => undefined);
+  if (p21EmailOrg) {
+    if (p21ExistingEmailRow) {
+      await db.integration
+        .update({
+          where: { id: p21ExistingEmailRow.id },
+          data: {
+            configJson: p21ExistingEmailRow.configJson,
+            status: p21ExistingEmailRow.status,
+            detail: p21ExistingEmailRow.detail,
+          },
+        })
+        .catch(() => undefined);
+    } else {
+      await db.integration
+        .deleteMany({ where: { organisationId: p21EmailOrg.id, provider: "PLATFORM_EMAIL" } })
+        .catch(() => undefined);
+    }
+  }
+  await p21Super.context.close();
 
   await db.leadCapture.deleteMany({ where: { email: { in: [p21DemoEmail, p21CareerEmail] } } }).catch(() => undefined);
   check("PART 21 has no page errors", moduleErrors.length === 0, moduleErrors.slice(0, 2).join(" | "));

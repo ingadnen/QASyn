@@ -32,6 +32,6 @@ export async function POST(request: Request) {
   const code = await issueVerificationCode(user.id);
   await sendVerificationEmail(email, code);
   const headers: Record<string, string> = {};
-  if (otpPreviewAllowed(request)) headers["x-qasyn-otp-preview"] = code;
+  if (await otpPreviewAllowed(request)) headers["x-qasyn-otp-preview"] = code;
   return NextResponse.json({ next: "/signup/verify", emailSent: true }, { headers });
 }

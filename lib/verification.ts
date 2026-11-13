@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { sha256, verificationCode } from "./crypto";
+import { getPlatformEmailRuntimeSecrets } from "./email-config";
 import { forwardedForIsExternal } from "./rate-limit";
 
 const CODE_TTL_MS = 15 * 60 * 1000;
@@ -26,7 +27,7 @@ export const devInbox = (code: string) => (process.env.QASYN_DISABLE_DEV_INBOX =
  * does not arrive through a proxy, and can always be hard-disabled with
  * QASYN_OTP_PREVIEW=0.
  */
-export function otpPreviewAllowed(request: Request): boolean {
+export async function otpPreviewAllowed(request: Request): Promise<boolean> {
   if (process.env.QASYN_OTP_PREVIEW === "0") return false;
   const forwardedHost = (request.headers.get("x-forwarded-host") || request.headers.get("host") || new URL(request.url).hostname)
     .split(":")[0]
@@ -36,6 +37,8 @@ export function otpPreviewAllowed(request: Request): boolean {
   const local =
     (forwardedHost === "localhost" || forwardedHost === "127.0.0.1" || forwardedHost === "::1") &&
     (!hasForwardedFor || !forwardedForIsExternal(request));
-  const smtpConfigured = Boolean(process.env.SMTP_HOST?.trim() && process.env.SMTP_PASS?.trim());
+  const runtime = await getPlatformEmailRuntimeSecrets();
+  const smtpConfigured =
+    runtime.enabled && Boolean((runtime.smtpHost && runtime.smtpPass) || runtime.resendApiKey);
   return local || !smtpConfigured;
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Cookie Policy" };
 
@@ -27,7 +28,7 @@ export default function Page() {
           Settings › Organisation.
         </p>
         <p>
-          <strong>Contact.</strong> Questions about cookies or privacy: <a className="text-brand-600 hover:underline" href="mailto:adnen.rebhi@qasyn.com">adnen.rebhi@qasyn.com</a>.
+          <strong>Contact.</strong> Questions about cookies or privacy: <a className="text-brand-600 hover:underline" href="mailto:info@qasyn.io">info@qasyn.io</a> or <Link className="text-brand-600 hover:underline" href="/contact-us">contact us</Link>.
         </p>
       </div>
     </div>

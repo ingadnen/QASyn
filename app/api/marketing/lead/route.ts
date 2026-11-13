@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma, ensureWal } from "@/lib/db";
 import { jsonError, readJson, validationError } from "@/lib/http";
-import { CONTACT_RECIPIENT_EMAIL, sendLeadNotificationEmail } from "@/lib/mailer";
+import { sendLeadNotificationEmail } from "@/lib/mailer";
 import { clientKey, forwardedForIsExternal, rateLimit } from "@/lib/rate-limit";
+
+const PUBLIC_CONTACT_EMAIL = "info@qasyn.io";
 
 const schema = z.object({
   kind: z.enum(["demo", "contact", "career"]).optional(),
@@ -77,5 +79,5 @@ export async function POST(request: Request) {
     source,
   });
 
-  return NextResponse.json({ ok: true, recipient: CONTACT_RECIPIENT_EMAIL });
+  return NextResponse.json({ ok: true, recipient: PUBLIC_CONTACT_EMAIL });
 }

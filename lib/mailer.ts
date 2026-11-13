@@ -3,8 +3,14 @@ import path from "node:path";
 import tls from "node:tls";
 import { appendFile, mkdir } from "node:fs/promises";
 import { prisma } from "./db";
+import {
+  appendMailDeliveryLog,
+  DEFAULT_CONTACT_RECIPIENT_EMAIL,
+  getPlatformEmailRuntimeSecrets,
+  type PlatformEmailRuntimeSecrets,
+} from "./email-config";
 
-export const CONTACT_RECIPIENT_EMAIL = process.env.CONTACT_RECIPIENT_EMAIL || "adnen.rebhi@qasyn.com";
+export const CONTACT_RECIPIENT_EMAIL = DEFAULT_CONTACT_RECIPIENT_EMAIL;
 
 type MailInput = {
   to: string;
@@ -46,15 +52,15 @@ async function smtpCommand(socket: net.Socket, command: string): Promise<SmtpRes
   return readSmtpResponse(socket);
 }
 
-async function sendSmtp(input: MailInput): Promise<void> {
-  const host = String(process.env.SMTP_HOST ?? "").trim();
-  const port = Number(process.env.SMTP_PORT ?? 587);
-  const user = String(process.env.SMTP_USER ?? "").trim();
-  const pass = String(process.env.SMTP_PASS ?? "").trim();
-  const from = String(process.env.SMTP_FROM ?? "QASyn <no-reply@qasyn.com>").trim();
+async function sendSmtp(input: MailInput, runtime: PlatformEmailRuntimeSecrets): Promise<void> {
+  const host = runtime.smtpHost;
+  const port = runtime.smtpPort;
+  const user = runtime.smtpUser;
+  const pass = runtime.smtpPass;
+  const from = runtime.fromAddress || "QASyn <no-reply@qasyn.com>";
   if (!host) throw new Error("SMTP_HOST is not configured.");
 
-  const secure = port === 465 || String(process.env.SMTP_SECURE ?? "").toLowerCase() === "true";
+  const secure = runtime.smtpSecure;
   let socket: net.Socket = secure
     ? tls.connect({ host, port, servername: host })
     : net.connect({ host, port });
@@ -128,11 +134,11 @@ async function sendSmtp(input: MailInput): Promise<void> {
   }
 }
 
-async function sendResend(input: MailInput): Promise<void> {
-  const key = String(process.env.RESEND_API_KEY ?? "").trim();
+async function sendResend(input: MailInput, runtime: PlatformEmailRuntimeSecrets): Promise<void> {
+  const key = runtime.resendApiKey;
   if (!key) throw new Error("RESEND_API_KEY is not configured.");
   const clean = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
-  const from = clean(String(process.env.RESEND_FROM ?? "QASyn <no-reply@qasyn.com>").trim());
+  const from = clean(runtime.fromAddress || "QASyn <no-reply@qasyn.com>");
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -153,19 +159,27 @@ async function sendResend(input: MailInput): Promise<void> {
 }
 
 /** Sends an email via SMTP, Resend, or the persistent SQLite outbox fallback. */
-export async function sendMail(input: MailInput): Promise<{ provider: "smtp" | "resend" | "outbox"; status: "sent" | "queued" | "failed" }> {
+export async function sendMail(
+  input: MailInput,
+  runtime?: PlatformEmailRuntimeSecrets,
+): Promise<{ provider: "smtp" | "resend" | "outbox"; status: "sent" | "queued" | "failed" }> {
+  const config = runtime ?? (await getPlatformEmailRuntimeSecrets());
   const text = input.text ?? input.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   let provider: "smtp" | "resend" | "outbox" = "outbox";
   let status: "sent" | "queued" | "failed" = "queued";
   let error: string | null = null;
   try {
-    if (process.env.SMTP_HOST) {
-      provider = "smtp";
-      await sendSmtp(input);
-      status = "sent";
-    } else if (process.env.RESEND_API_KEY) {
+    if (config.enabled && config.provider === "resend" && config.resendApiKey) {
       provider = "resend";
-      await sendResend(input);
+      await sendResend(input, config);
+      status = "sent";
+    } else if (config.enabled && config.smtpHost) {
+      provider = "smtp";
+      await sendSmtp(input, config);
+      status = "sent";
+    } else if (config.enabled && config.resendApiKey) {
+      provider = "resend";
+      await sendResend(input, config);
       status = "sent";
     }
   } catch (caught) {
@@ -179,6 +193,14 @@ export async function sendMail(input: MailInput): Promise<{ provider: "smtp" | "
   } catch (caught) {
     console.warn("[mailer] outbox persistence failed", caught instanceof Error ? caught.message : String(caught));
   }
+  await appendMailDeliveryLog({
+    at: new Date().toISOString(),
+    to: input.to,
+    subject: input.subject,
+    provider,
+    status,
+    error,
+  });
   return { provider, status };
 }
 
@@ -202,6 +224,8 @@ export async function sendLeadNotificationEmail(input: {
   message?: string;
   source?: string;
 }): Promise<{ provider: "smtp" | "resend" | "outbox"; status: "sent" | "queued" | "failed" }> {
+  const runtime = await getPlatformEmailRuntimeSecrets();
+  const recipient = runtime.contactRecipientEmail;
   const label = input.kind === "demo" ? "Demo request" : input.kind === "career" ? "Job application" : "Contact request";
   const rows: Array<[string, string]> = [
     ["Type", label],
@@ -218,23 +242,26 @@ export async function sendLeadNotificationEmail(input: {
     value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:auto;padding:24px"><h2>QASyn ${escapeHtml(label)}</h2><table style="border-collapse:collapse;width:100%">${rows
     .map(([key, value]) => `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top">${escapeHtml(key)}</td><td style="padding:6px 0;color:#111827;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`)
-    .join("")}</table><p style="color:#6b7280;font-size:12px;margin-top:24px">Sent to ${escapeHtml(CONTACT_RECIPIENT_EMAIL)} by the QASyn marketing site.</p></div>`;
-  const text = [`QASyn ${label}`, ...rows.map(([key, value]) => `${key}: ${value}`), `Recipient: ${CONTACT_RECIPIENT_EMAIL}`].join("\n");
+    .join("")}</table><p style="color:#6b7280;font-size:12px;margin-top:24px">Sent to ${escapeHtml(recipient)} by the QASyn marketing site.</p></div>`;
+  const text = [`QASyn ${label}`, ...rows.map(([key, value]) => `${key}: ${value}`), `Recipient: ${recipient}`].join("\n");
   const safeName = input.name.replace(/["\\\r\n]+/g, " ").trim() || "QASyn Lead";
   const subjectSuffix = input.kind === "contact" && input.source ? ` · ${input.source}` : "";
-  const result = await sendMail({
-    to: CONTACT_RECIPIENT_EMAIL,
-    subject: `QASyn ${label}: ${input.name}${subjectSuffix}`,
-    html,
-    text,
-    replyTo: `"${safeName}" <${input.email}>`,
-  });
+  const result = await sendMail(
+    {
+      to: recipient,
+      subject: `QASyn ${label}: ${input.name}${subjectSuffix}`,
+      html,
+      text,
+      replyTo: `"${safeName}" <${input.email}>`,
+    },
+    runtime,
+  );
   try {
     const logDir = path.join(process.cwd(), ".qasyn-data");
     await mkdir(logDir, { recursive: true });
     await appendFile(
       path.join(logDir, "mail.log"),
-      `${JSON.stringify({ at: new Date().toISOString(), kind: input.kind, name: input.name, email: input.email, to: CONTACT_RECIPIENT_EMAIL, provider: result.provider, status: result.status })}\n`,
+      `${JSON.stringify({ at: new Date().toISOString(), kind: input.kind, name: input.name, email: input.email, to: recipient, provider: result.provider, status: result.status })}\n`,
       "utf8",
     );
   } catch (error) {

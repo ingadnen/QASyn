@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Terms of Service" };
 
@@ -50,7 +51,7 @@ export default function Page() {
           retention window described in the Privacy Policy.
         </p>
         <p>
-          <strong>8. Contact.</strong> Legal and contractual questions: <a className="text-brand-600 hover:underline" href="mailto:adnen.rebhi@qasyn.com">adnen.rebhi@qasyn.com</a>.
+          <strong>8. Contact.</strong> Legal and contractual questions: <a className="text-brand-600 hover:underline" href="mailto:info@qasyn.io">info@qasyn.io</a> or <Link className="text-brand-600 hover:underline" href="/contact-us">contact us</Link>.
         </p>
       </div>
     </div>

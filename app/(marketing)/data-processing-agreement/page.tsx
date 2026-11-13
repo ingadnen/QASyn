@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Data Processing Agreement (GDPR/CCPA)" };
 
@@ -54,7 +55,7 @@ export default function Page() {
           longer meet these obligations.
         </p>
         <p>
-          <strong>Contact.</strong> Data-processing and DPA requests: <a className="text-brand-600 hover:underline" href="mailto:adnen.rebhi@qasyn.com">adnen.rebhi@qasyn.com</a>.
+          <strong>Contact.</strong> Data-processing and DPA requests: <a className="text-brand-600 hover:underline" href="mailto:info@qasyn.io">info@qasyn.io</a> or <Link className="text-brand-600 hover:underline" href="/contact-us">contact us</Link>.
         </p>
       </div>
     </div>

@@ -9,6 +9,13 @@ import { guardPermission } from "@/lib/rbac-server";
 import { ETERNAL_TRIAL_CREDITS, SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
 import { invalidateTenantModelCache } from "@/lib/model-router";
 import { getPaymentConfig, toSuperAdminPaymentConfig, updatePaymentConfig } from "@/lib/payment-config";
+import {
+  getPlatformEmailConfig,
+  getPlatformEmailRuntimeSecrets,
+  readMailDeliveryLog,
+  updatePlatformEmailConfig,
+} from "@/lib/email-config";
+import { sendMail } from "@/lib/mailer";
 import { PLANS, USER_ROLES } from "@/lib/types";
 import { normalizeWebsite } from "@/lib/utils";
 
@@ -98,6 +105,19 @@ const enterpriseSchema = z.discriminatedUnion("action", [
     ssoEnabled: z.boolean().optional(),
     slaEnabled: z.boolean().optional(),
   }),
+  z.object({
+    action: z.literal("update_email_config"),
+    enabled: z.boolean().optional(),
+    provider: z.enum(["smtp", "resend"]).optional(),
+    smtpHost: z.string().trim().max(300).optional(),
+    smtpPort: z.number().int().min(1).max(65_535).optional(),
+    smtpUser: z.string().trim().max(300).optional(),
+    smtpPass: z.string().trim().max(1_000).optional(),
+    fromAddress: z.string().trim().max(300).optional(),
+    contactRecipientEmail: z.union([z.string().trim().email().max(160), z.literal("")]).optional(),
+    resendApiKey: z.string().trim().max(1_000).optional(),
+  }),
+  z.object({ action: z.literal("test_email_config") }),
 ]);
 
 /** URL-safe slug used for enterprise tenant provisioning. */
@@ -133,7 +153,7 @@ export async function GET() {
   const guard = await requireSuperAdmin();
   if (!guard.ok) return guard.response;
 
-  const [organisations, users, platformSkills, paymentConfig] = await Promise.all([
+  const [organisations, users, platformSkills, paymentConfig, emailConfig, mailDeliveryLog] = await Promise.all([
     prisma.organisation.findMany({
       select: {
         id: true,
@@ -155,6 +175,8 @@ export async function GET() {
     }),
     prisma.platformSkill.findMany({ orderBy: { createdAt: "asc" } }),
     getPaymentConfig(),
+    getPlatformEmailConfig(),
+    readMailDeliveryLog(10),
   ]);
 
   return NextResponse.json({
@@ -171,6 +193,8 @@ export async function GET() {
     users: users.map(({ organisation, ...user }) => ({ ...user, organisationName: organisation?.name ?? "—" })),
     platformSkills,
     paymentConfig: toSuperAdminPaymentConfig(paymentConfig),
+    emailConfig,
+    mailDeliveryLog,
     roles: USER_ROLES,
     plans: PLANS,
     eternalCredits: ETERNAL_TRIAL_CREDITS,
@@ -186,6 +210,49 @@ export async function POST(request: Request) {
   const parsed = enterpriseSchema.safeParse(await readJson(request));
   if (!parsed.success) return validationError(parsed.error);
   const input = parsed.data;
+
+  if (input.action === "update_email_config") {
+    const patch = Object.fromEntries(Object.entries(input).filter(([key]) => key !== "action")) as Parameters<
+      typeof updatePlatformEmailConfig
+    >[0];
+    const updated = await updatePlatformEmailConfig(patch, ctx.user.email);
+    await prisma.systemAuditLog.create({
+      data: {
+        organisationId: ctx.org.id,
+        actorEmail: ctx.user.email,
+        action: "super_admin.email_config_updated",
+        target:
+          `Email ${updated.enabled ? "enabled" : "disabled"} · ${updated.provider} · ${updated.smtpHost || "no SMTP host"} · recipient ${updated.contactRecipientEmail}`.slice(
+            0,
+            200,
+          ),
+      },
+    });
+    return NextResponse.json({ ok: true, emailConfig: updated });
+  }
+
+  if (input.action === "test_email_config") {
+    const runtime = await getPlatformEmailRuntimeSecrets();
+    const recipient = runtime.contactRecipientEmail;
+    const result = await sendMail(
+      {
+        to: recipient,
+        subject: "QASyn email configuration test",
+        html: `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px"><h2>QASyn email configuration test</h2><p>This message confirms that the platform outbound email configuration is active.</p><p style="color:#6b7280;font-size:12px">Provider: ${runtime.provider} · From: ${runtime.fromAddress}</p></div>`,
+        text: `QASyn email configuration test. Provider: ${runtime.provider}. From: ${runtime.fromAddress}.`,
+      },
+      runtime,
+    );
+    await prisma.systemAuditLog.create({
+      data: {
+        organisationId: ctx.org.id,
+        actorEmail: ctx.user.email,
+        action: "super_admin.email_config_tested",
+        target: `Test email ${result.status} via ${result.provider} → ${recipient}`.slice(0, 200),
+      },
+    });
+    return NextResponse.json({ ok: result.status === "sent", provider: result.provider, status: result.status, recipient });
+  }
 
   if (input.action === "create_enterprise_tenant") {
     const email = input.adminEmail.toLowerCase();

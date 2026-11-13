@@ -50,11 +50,38 @@ interface PaymentConfigView {
   mode: string;
 }
 
+interface EmailConfigView {
+  enabled: boolean;
+  provider: "smtp" | "resend";
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassConfigured: boolean;
+  smtpPassMasked: string;
+  fromAddress: string;
+  contactRecipientEmail: string;
+  resendApiKeyConfigured: boolean;
+  resendApiKeyMasked: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+interface MailDeliveryLogEntry {
+  at: string;
+  to: string;
+  subject: string;
+  provider: string;
+  status: string;
+  error?: string | null;
+}
+
 interface ConsolePayload {
   organisations: ConsoleOrg[];
   users: ConsoleUser[];
   platformSkills?: Array<{ id: string; name: string; trigger: string; systemPrompt: string; model: string; enabled: boolean }>;
   paymentConfig?: PaymentConfigView;
+  emailConfig?: EmailConfigView;
+  mailDeliveryLog?: MailDeliveryLogEntry[];
   roles: string[];
   plans: string[];
 }
@@ -105,6 +132,12 @@ export function SuperAdminConsole() {
   const [governanceBusy, setGovernanceBusy] = useState(false);
   const [paymentDraft, setPaymentDraft] = useState<PaymentConfigView | null>(null);
   const [paymentBusy, setPaymentBusy] = useState(false);
+  const [emailDraft, setEmailDraft] = useState<EmailConfigView | null>(null);
+  const [emailPass, setEmailPass] = useState("");
+  const [emailResendKey, setEmailResendKey] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailTestBusy, setEmailTestBusy] = useState(false);
+  const [mailDeliveryLog, setMailDeliveryLog] = useState<MailDeliveryLogEntry[]>([]);
 
   const organisations = useMemo(
     () =>
@@ -142,6 +175,8 @@ export function SuperAdminConsole() {
         if (!active) return;
         setData(payload);
         setPaymentDraft(payload.paymentConfig ?? null);
+        setEmailDraft(payload.emailConfig ?? null);
+        setMailDeliveryLog(payload.mailDeliveryLog ?? []);
         setModelOrg(payload.organisations[0]?.id ?? "");
         setDrafts(
           Object.fromEntries(
@@ -253,6 +288,58 @@ export function SuperAdminConsole() {
       toast(errorMessage(e), "error");
     } finally {
       setPaymentBusy(false);
+    }
+  }
+
+  function patchEmailDraft(patch: Partial<EmailConfigView>) {
+    setEmailDraft((current) => (current ? { ...current, ...patch } : current));
+  }
+
+  async function saveEmailConfig() {
+    if (!emailDraft) return;
+    setEmailBusy(true);
+    try {
+      const result = await apiFetch<{ emailConfig: EmailConfigView }>("/api/dashboard/super-admin", {
+        method: "POST",
+        json: {
+          action: "update_email_config",
+          enabled: emailDraft.enabled,
+          provider: emailDraft.provider,
+          smtpHost: emailDraft.smtpHost,
+          smtpPort: Number(emailDraft.smtpPort) || 465,
+          smtpUser: emailDraft.smtpUser,
+          smtpPass: emailPass,
+          fromAddress: emailDraft.fromAddress,
+          contactRecipientEmail: emailDraft.contactRecipientEmail,
+          resendApiKey: emailResendKey,
+        },
+      });
+      setEmailDraft(result.emailConfig);
+      setEmailPass("");
+      setEmailResendKey("");
+      toast("Outbound email configuration saved.", "success");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
+  async function testEmailConfig() {
+    setEmailTestBusy(true);
+    try {
+      const result = await apiFetch<{ ok: boolean; provider: string; status: string; recipient: string }>(
+        "/api/dashboard/super-admin",
+        { method: "POST", json: { action: "test_email_config" } },
+      );
+      const refreshed = await apiFetch<ConsolePayload>("/api/dashboard/super-admin", { method: "GET" });
+      setEmailDraft(refreshed.emailConfig ?? null);
+      setMailDeliveryLog(refreshed.mailDeliveryLog ?? []);
+      toast(`Test email ${result.status} via ${result.provider} → ${result.recipient}`, result.status === "sent" ? "success" : "info");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setEmailTestBusy(false);
     }
   }
 
@@ -784,6 +871,190 @@ export function SuperAdminConsole() {
           </div>
         ) : (
           <p className="mt-4 text-[12.5px] text-[#6b7280]">Loading payment configuration…</p>
+        )}
+      </div>
+
+      <div className={`${cqaCard} p-5`} data-testid="super-admin-email-config">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-[16px] font-semibold text-[#262626]">✉️ Outbound Email &amp; SMTP Configuration (qasyn.com / qasyn.io)</h2>
+            <p className="mt-1 text-[12.5px] text-[#6b7280]">
+              Configure the platform mailer used for verification codes, contact requests, demo requests and careers notifications. Secrets are encrypted at rest.
+            </p>
+          </div>
+          <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700">
+            {emailDraft?.enabled ? "Enabled" : "Disabled"} · {emailDraft?.provider ?? "smtp"}
+          </span>
+        </div>
+
+        {emailDraft ? (
+          <div className="mt-4 space-y-5">
+            <label className="inline-flex items-center gap-2 text-[12px] text-[#374151]">
+              <input
+                type="checkbox"
+                checked={emailDraft.enabled}
+                onChange={(e) => patchEmailDraft({ enabled: e.target.checked })}
+              />
+              Outbound email enabled
+            </label>
+
+            <div className="grid gap-3 lg:grid-cols-3">
+              <label className="block">
+                <span className={cqaLabel}>Provider</span>
+                <select
+                  data-testid="super-admin-email-provider"
+                  className={cqaInput}
+                  value={emailDraft.provider}
+                  onChange={(e) => patchEmailDraft({ provider: e.target.value as "smtp" | "resend" })}
+                >
+                  <option value="smtp">SMTP</option>
+                  <option value="resend">Resend</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>SMTP Host</span>
+                <input
+                  data-testid="super-admin-email-smtp-host"
+                  className={cqaInput}
+                  value={emailDraft.smtpHost}
+                  onChange={(e) => patchEmailDraft({ smtpHost: e.target.value })}
+                  placeholder="mailserver.businessidentity.llc"
+                />
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>SMTP Port</span>
+                <input
+                  data-testid="super-admin-email-smtp-port"
+                  className={cqaInput}
+                  type="number"
+                  min={1}
+                  max={65_535}
+                  value={emailDraft.smtpPort}
+                  onChange={(e) => patchEmailDraft({ smtpPort: Number(e.target.value) || 465 })}
+                />
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>SMTP Username</span>
+                <input
+                  data-testid="super-admin-email-smtp-user"
+                  className={cqaInput}
+                  value={emailDraft.smtpUser}
+                  onChange={(e) => patchEmailDraft({ smtpUser: e.target.value })}
+                  placeholder="info@qasyn.io"
+                />
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>SMTP Password (masked when saved)</span>
+                <input
+                  data-testid="super-admin-email-smtp-pass"
+                  className={cqaInput}
+                  type="password"
+                  value={emailPass}
+                  onChange={(e) => setEmailPass(e.target.value)}
+                  placeholder={emailDraft.smtpPassConfigured ? emailDraft.smtpPassMasked : "Enter SMTP password"}
+                />
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>From Address</span>
+                <input
+                  data-testid="super-admin-email-from"
+                  className={cqaInput}
+                  value={emailDraft.fromAddress}
+                  onChange={(e) => patchEmailDraft({ fromAddress: e.target.value })}
+                  placeholder="QASyn <info@qasyn.io>"
+                />
+              </label>
+              <label className="block lg:col-span-2">
+                <span className={cqaLabel}>Internal Lead &amp; Careers Notification Recipient</span>
+                <input
+                  data-testid="super-admin-email-recipient"
+                  className={cqaInput}
+                  type="email"
+                  value={emailDraft.contactRecipientEmail}
+                  onChange={(e) => patchEmailDraft({ contactRecipientEmail: e.target.value })}
+                  placeholder="leads@qasyn.io"
+                />
+              </label>
+              <label className="block">
+                <span className={cqaLabel}>Resend API Key (masked when saved)</span>
+                <input
+                  data-testid="super-admin-email-resend-key"
+                  className={cqaInput}
+                  type="password"
+                  value={emailResendKey}
+                  onChange={(e) => setEmailResendKey(e.target.value)}
+                  placeholder={emailDraft.resendApiKeyConfigured ? emailDraft.resendApiKeyMasked : "re_..."}
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="super-admin-save-email-config"
+                className={cqaBtnPrimary}
+                disabled={emailBusy}
+                onClick={() => void saveEmailConfig()}
+              >
+                {emailBusy ? "Saving…" : "Save Email Configuration"}
+              </button>
+              <button
+                type="button"
+                data-testid="super-admin-test-email"
+                className={cqaBtnSecondary}
+                disabled={emailTestBusy}
+                onClick={() => void testEmailConfig()}
+              >
+                {emailTestBusy ? "Sending…" : "Send Test Email"}
+              </button>
+              <p className="text-[11px] text-[#6b7280]">
+                Leave the password or Resend key blank to preserve the stored secret.
+                {emailDraft.updatedAt ? ` Last updated ${new Date(emailDraft.updatedAt).toLocaleString("en-GB")}${emailDraft.updatedBy ? ` by ${emailDraft.updatedBy}` : ""}.` : ""}
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Live delivery log</h3>
+              <div className="mt-2 overflow-x-auto">
+                <table
+                  className="w-full min-w-[640px] border-collapse text-left text-[12px]"
+                  data-testid="super-admin-mail-delivery-log"
+                >
+                  <thead>
+                    <tr className="border-b border-[#e5e7eb] text-[10.5px] uppercase tracking-wide text-[#6b7280]">
+                      <th className="px-2 py-2">Time</th>
+                      <th className="px-2 py-2">Recipient</th>
+                      <th className="px-2 py-2">Subject</th>
+                      <th className="px-2 py-2">Provider</th>
+                      <th className="px-2 py-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mailDeliveryLog.map((entry, index) => (
+                      <tr key={`${entry.at}-${index}`} className="border-b border-[#f0f1f3] text-[#374151]">
+                        <td className="px-2 py-2 text-[11.5px] text-[#6b7280]">{new Date(entry.at).toLocaleString("en-GB")}</td>
+                        <td className="px-2 py-2">{entry.to}</td>
+                        <td className="max-w-[260px] truncate px-2 py-2" title={entry.subject}>{entry.subject}</td>
+                        <td className="px-2 py-2">{entry.provider}</td>
+                        <td className="px-2 py-2">
+                          <span className={entry.status === "sent" ? "rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700" : entry.status === "failed" ? "rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700" : "rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700"}>
+                            {entry.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {mailDeliveryLog.length === 0 && (
+                      <tr>
+                        <td className="px-2 py-3 text-[12px] text-[#9ca3af]" colSpan={5}>No deliveries logged yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-4 text-[12.5px] text-[#6b7280]">Loading email configuration…</p>
         )}
       </div>
 

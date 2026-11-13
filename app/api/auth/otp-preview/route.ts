@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getPlatformEmailRuntimeSecrets } from "@/lib/email-config";
 import { jsonError } from "@/lib/http";
 import { forwardedForIsExternal } from "@/lib/rate-limit";
 
@@ -23,7 +24,9 @@ export async function GET(request: Request) {
   const localRequest =
     (forwardedHost === "localhost" || forwardedHost === "127.0.0.1" || forwardedHost === "::1") &&
     (!hasForwardedFor || !forwardedForIsExternal(request));
-  const smtpConfigured = Boolean(process.env.SMTP_HOST?.trim() && process.env.SMTP_PASS?.trim());
+  const runtime = await getPlatformEmailRuntimeSecrets();
+  const smtpConfigured =
+    runtime.enabled && Boolean((runtime.smtpHost && runtime.smtpPass) || runtime.resendApiKey);
   const allowPreview = localRequest || !smtpConfigured;
   if (!allowPreview) return NextResponse.json({ code: null }, { headers: { "Cache-Control": "no-store" } });
   if (request.headers.get("x-qasyn-otp-preview") !== "1") {

@@ -15,6 +15,7 @@ export function ContactSalesForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,6 +49,7 @@ export function ContactSalesForm() {
           source: `contact-us-${kind}`,
         },
       });
+      setSentEmail(email.trim());
       setSent(true);
       setName("");
       setEmail("");
@@ -90,7 +92,7 @@ export function ContactSalesForm() {
         <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900" data-testid="contact-lead-success">
           <p className="font-semibold">Request received.</p>
           <p className="mt-1">
-            Your {kind === "demo" ? "demo request" : "message"} was sent to <strong>adnen.rebhi@qasyn.com</strong>. We reply within one business day.
+            Sent to the QASyn team. Our team will reply to <strong>{sentEmail}</strong> within one business day.
           </p>
           <button type="button" onClick={() => setSent(false)} className="mt-3 text-xs font-semibold text-emerald-700 hover:underline">
             Send another request

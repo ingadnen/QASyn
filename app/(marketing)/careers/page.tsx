@@ -12,7 +12,7 @@ export default function CareersPage() {
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-quantum-300">CAREERS</p>
           <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">Build the autonomous quality engineering platform.</h1>
           <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-400">
-            We are a remote-first team of systems engineers, AI researchers and QA architects. Apply to any open role below and your application is sent directly to <strong className="text-slate-200">adnen.rebhi@qasyn.com</strong>.
+            We are a remote-first team of systems engineers, AI researchers and QA architects. Apply to any open role below and your application is sent directly to the <strong className="text-slate-200">QASyn hiring team</strong>.
           </p>
         </div>
       </section>

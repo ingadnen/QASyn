@@ -4,9 +4,9 @@ import { ContactSalesForm } from "@/components/marketing/ContactSalesForm";
 export const metadata: Metadata = { title: "Contact Us" };
 
 const CONTACTS = [
-  { label: "Sales & Demos", email: "adnen.rebhi@qasyn.com", detail: "Book a personalized walkthrough of crawl, AI authoring, Vision AI and PR gates." },
-  { label: "General Inquiries", email: "adnen.rebhi@qasyn.com", detail: "Partnerships, press, security reviews and procurement questions." },
-  { label: "Enterprise Support", email: "adnen.rebhi@qasyn.com", detail: "Existing customers can reach the on-call quality engineering team." },
+  { label: "Sales & Demos", email: "info@qasyn.io", detail: "Book a personalized walkthrough of crawl, AI authoring, Vision AI and PR gates." },
+  { label: "General Inquiries", email: "info@qasyn.io", detail: "Partnerships, press, security reviews and procurement questions." },
+  { label: "Enterprise Support", email: "info@qasyn.io", detail: "Existing customers can reach the on-call quality engineering team." },
 ];
 
 export default function ContactPage() {
@@ -18,7 +18,7 @@ export default function ContactPage() {
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-quantum-300">CONTACT QASYN</p>
           <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">Book a demo or talk to our quality engineering team.</h1>
           <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-400">
-            Tell us about your stack, release process and coverage goals. A solutions architect will reply from <strong className="text-slate-200">adnen.rebhi@qasyn.com</strong> within one business day.
+            Tell us about your stack, release process and coverage goals. A solutions architect will reply from <strong className="text-slate-200">info@qasyn.io</strong> within one business day.
           </p>
         </div>
       </section>
