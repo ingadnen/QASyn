@@ -24,7 +24,8 @@ export interface PrImpact {
   modules?: string[];
   blastRadius?: string;
   impacted?: Array<{ id: string; title: string; module: string; criticality: string; status: string }>;
-  executed?: Array<{ id: string; title: string; status: string }>;
+  executed?: Array<{ id: string; title: string; status: string; aiDrafted?: boolean }>;
+  draft?: { provider: string; modelId: string | null; mode: "ai-model" | "calibrated"; count: number } | null;
   passed?: number;
   failed?: number;
   total?: number;
@@ -355,7 +356,14 @@ function PrDetailDrawer({
               {executed.length === 0 && <li className="text-[12px] text-[#9ca3af]">No impacted test was executed.</li>}
               {executed.map((test) => (
                 <li key={test.id} className="flex items-center justify-between gap-2 rounded-lg border border-[#eef0f3] px-3 py-1.5">
-                  <span className="min-w-0 truncate text-[12px] text-[#374151]">{test.title}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="min-w-0 truncate text-[12px] text-[#374151]">{test.title}</span>
+                    {test.aiDrafted && (
+                      <span className="shrink-0 rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10px] font-medium text-[#4338ca]">
+                        AI-drafted for this PR
+                      </span>
+                    )}
+                  </span>
                   <StatusPill value={test.status === "passing" ? "passing" : "failing"} label={test.status === "passing" ? "Passed" : "Failed"} />
                 </li>
               ))}

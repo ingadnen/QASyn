@@ -1,14 +1,16 @@
 import type { PullRequestCheck } from "@prisma/client";
 import { biviaScoreAndSet } from "./bivia";
 import { prisma } from "./db";
-import { runTestCases } from "./engine";
+import { buildStepsJson, runTestCases } from "./engine";
 import {
   blastRadius,
   buildProviderComment,
   impactedModules,
   type ImpactSummary,
 } from "./pr-catalog";
+import { generatePrTests, prCaseTitlePrefix } from "./pr-test-gen";
 import { readSettings, type OrgContext } from "./tenant";
+import { normalizeWebsite } from "./utils";
 
 type Actor = Pick<OrgContext, "org" | "user">;
 
@@ -77,21 +79,101 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
     };
   }
 
-  const execution = selected.length > 0
-    ? await runTestCases(prisma, actor, await prisma.testCase.findMany({ where: { id: { in: selected.map((test) => test.id) } } }))
-    : { passed: 0, failed: 0, total: 0 };
+  // PR-specific test drafting. The workspace model (PR Review role) — or the
+  // calibrated local engine when no model is configured — drafts test cases
+  // from THIS PR's title and changed-file list. Drafts persist, so re-runs
+  // reuse them instead of duplicating.
+  const titlePrefix = prCaseTitlePrefix(pr.prNumber);
+  let drafted = await prisma.testCase.findMany({
+    where: { organisationId: actor.org.id, title: { startsWith: titlePrefix } },
+  });
+  let draftMeta: { provider: string; modelId: string | null; mode: "ai-model" | "calibrated"; count: number } | null =
+    null;
+  if (drafted.length === 0) {
+    const generated = await generatePrTests({
+      organisationId: actor.org.id,
+      prNumber: pr.prNumber,
+      prTitle: pr.title,
+      branch: pr.branch,
+      changedFiles: files,
+      modules,
+    });
+    const targetUrl = normalizeWebsite(pr.externalUrl ?? "") ?? normalizeWebsite(actor.org.website ?? "") ?? "";
+    const created = [];
+    for (const definition of generated.definitions) {
+      created.push(
+        await prisma.testCase.create({
+          data: {
+            organisationId: actor.org.id,
+            title: definition.prefixedTitle,
+            module: definition.module,
+            criticality: definition.criticality,
+            status: "draft",
+            stepsCount: definition.stepsCount,
+            source: "ai-drafted",
+            stepsJson: buildStepsJson(
+              targetUrl,
+              definition.stepsCount,
+              definition.module,
+              definition.prefixedTitle,
+              definition.testType,
+            ),
+            variablesJson: JSON.stringify({
+              _prId: pr.id,
+              _prNumber: pr.prNumber,
+              _provider: generated.provider,
+              _aiMode: generated.mode,
+              description: definition.description,
+            }),
+          },
+        }),
+      );
+    }
+    drafted = created;
+    draftMeta = {
+      provider: generated.provider,
+      modelId: generated.modelId,
+      mode: generated.mode,
+      count: created.length,
+    };
+  } else {
+    try {
+      const stored = JSON.parse(drafted[0]?.variablesJson || "{}") as { _provider?: string; _aiMode?: string };
+      draftMeta = {
+        provider: stored._provider ?? "QASyn Vision AI",
+        modelId: null,
+        mode: stored._aiMode === "ai-model" ? "ai-model" : "calibrated",
+        count: drafted.length,
+      };
+    } catch {
+      draftMeta = { provider: "QASyn Vision AI", modelId: null, mode: "calibrated", count: drafted.length };
+    }
+  }
 
-  const executedMap = new Map(
-    (await prisma.testCase.findMany({
-      where: { id: { in: selected.map((test) => test.id) } },
-      select: { id: true, title: true, status: true },
-    })).map((test) => [test.id, test.status]),
-  );
-  const executed = selected.map((test) => ({
-    id: test.id,
-    title: test.title,
-    status: executedMap.get(test.id) === "passing" ? "passing" : executedMap.get(test.id) ?? test.status,
+  const executionInputIds = [...selected.map((test) => test.id), ...drafted.map((testCase) => testCase.id)];
+  const execution =
+    executionInputIds.length > 0
+      ? await runTestCases(
+          prisma,
+          actor,
+          await prisma.testCase.findMany({ where: { id: { in: executionInputIds } } }),
+        )
+      : { passed: 0, failed: 0, total: 0, results: [] };
+
+  const draftedIds = new Set(drafted.map((testCase) => testCase.id));
+  const executed = (execution.results ?? []).map((result) => ({
+    id: result.id,
+    title: result.title,
+    status: result.status,
+    aiDrafted: draftedIds.has(result.id),
   }));
+  const executedIds = new Set(executed.map((test) => test.id));
+  for (const test of selected) {
+    if (!executedIds.has(test.id)) {
+      executed.push({ id: test.id, title: test.title, status: test.status, aiDrafted: false });
+      executedIds.add(test.id);
+    }
+  }
 
   const failed = executed.filter((test) => test.status === "failing").length;
   const passed = executed.length - failed;
@@ -111,6 +193,7 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
       status: test.status,
     })),
     executed,
+    draft: draftMeta,
     passed,
     failed,
     total: executed.length,

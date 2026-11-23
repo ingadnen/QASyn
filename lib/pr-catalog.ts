@@ -342,7 +342,8 @@ export interface ImpactSummary {
   modules: string[];
   blastRadius: "contained" | "moderate" | "wide";
   impacted: Array<{ id: string; title: string; module: string; criticality: string; status: string }>;
-  executed: Array<{ id: string; title: string; status: string }>;
+  executed: Array<{ id: string; title: string; status: string; aiDrafted?: boolean }>;
+  draft?: { provider: string; modelId: string | null; mode: "ai-model" | "calibrated"; count: number } | null;
   passed: number;
   failed: number;
   total: number;

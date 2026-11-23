@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { buildStepsJson, runTestCases } from "@/lib/engine";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { guardPermission } from "@/lib/rbac-server";
+import { generatePrTests } from "@/lib/pr-test-gen";
 import { audit, quotaErrorResponse } from "@/lib/tenant";
 import { normalizeWebsite } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ function parseJson<T>(value: string | null | undefined, fallback: T): T {
 
 interface ImpactShape {
   modules?: string[];
+  files?: string[];
   impacted?: Array<{ id: string; title: string; module: string; criticality?: string; status?: string }>;
   [key: string]: unknown;
 }
@@ -92,44 +94,52 @@ export async function POST(request: Request) {
     orderBy: { createdAt: "asc" },
   });
 
-  const createdTestCases: Array<{ id: string; title: string; testType: string }> = [];
+  const createdTestCases: Array<{ id: string; title: string; testType: string; aiMode: string }> = [];
   if (input.createTests !== false && existingPrCases.length === 0) {
-    const module = modules[0] || existingByModule[0]?.module || "Regression";
-    const definitions = [
-      {
-        title: `${titlePrefix} Smoke check on ${environment?.name ?? "deployed environment"}`,
-        testType: "Smoke",
-        criticality: "high",
-        stepsCount: 4,
-      },
-      {
-        title: `${titlePrefix} Regression flow`,
-        testType: "Regression",
-        criticality: "high",
-        stepsCount: 6,
-      },
-    ];
-    for (const definition of definitions) {
+    const changedFiles = [...new Set((impact.files ?? []).filter(Boolean).map(String))];
+    const generated = await generatePrTests({
+      organisationId: ctx.org.id,
+      prNumber: pr.prNumber,
+      prTitle: pr.title,
+      branch: pr.branch,
+      changedFiles,
+      modules,
+    });
+    for (const definition of generated.definitions) {
       const created = await prisma.testCase.create({
         data: {
           organisationId: ctx.org.id,
-          title: definition.title,
-          module,
+          title: definition.prefixedTitle,
+          module: definition.module,
           criticality: definition.criticality,
           status: "passing",
           stepsCount: definition.stepsCount,
-          source: "manual",
-          stepsJson: buildStepsJson(targetUrl, definition.stepsCount, module, definition.title, definition.testType),
+          source: "ai-drafted",
+          stepsJson: buildStepsJson(
+            targetUrl,
+            definition.stepsCount,
+            definition.module,
+            definition.prefixedTitle,
+            definition.testType,
+          ),
           variablesJson: JSON.stringify({
             url: targetUrl,
             _testType: definition.testType,
             _prId: pr.id,
             _prNumber: pr.prNumber,
             _environmentId: environment?.id ?? null,
+            _provider: generated.provider,
+            _aiMode: generated.mode,
+            description: definition.description,
           }),
         },
       });
-      createdTestCases.push({ id: created.id, title: created.title, testType: definition.testType });
+      createdTestCases.push({
+        id: created.id,
+        title: created.title,
+        testType: definition.testType,
+        aiMode: generated.mode,
+      });
     }
   }
 
