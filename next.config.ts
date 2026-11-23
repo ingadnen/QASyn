@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["*.vercel.run"],
+  allowedDevOrigins: ["*.vercel.run", "vercel.run", "127.0.0.1", "localhost"],
   reactStrictMode: true,
   poweredByHeader: false,
   async redirects() {
