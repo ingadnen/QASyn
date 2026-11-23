@@ -181,9 +181,9 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
               if (!expanded) setExpanded(true);
             }}
             className={cn(
-              "group flex w-full items-center gap-3 rounded-lg py-1.5 text-[13px] transition",
+              "group flex w-full items-center gap-3 rounded-full py-1.5 text-[13px] transition",
               expanded ? "px-3" : "justify-center px-0",
-              parentActive ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
+              parentActive ? "bg-[#5b4ee8]/25 text-white ring-1 ring-inset ring-[#8b80ff]/40" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
             )}
           >
             <SymbolIcon name={nav.icon} className={cn("text-[22px]", parentActive && "text-[#8b80ff]")} />
@@ -201,9 +201,9 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
                   key={c.href + c.label}
                   href={c.href}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-md py-1.5 pl-8 pr-3 text-[12.5px] transition",
+                    "flex items-center gap-2.5 rounded-full py-1.5 pl-8 pr-3 text-[12.5px] transition",
                     active(c.href.split("?")[0]) && pathname === c.href.split("?")[0]
-                      ? "bg-[#5b4ee8]/15 text-white"
+                      ? "bg-[#5b4ee8]/25 text-white ring-1 ring-inset ring-[#8b80ff]/40"
                       : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
                   )}
                 >
@@ -223,9 +223,9 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
         aria-label={nav.label}
         aria-current={active(nav.href) ? "page" : undefined}
         className={cn(
-          "group flex items-center gap-3 rounded-lg py-1.5 text-[13px] transition",
+          "group flex items-center gap-3 rounded-full py-1.5 text-[13px] transition",
           expanded ? "px-3" : "justify-center px-0",
-          active(nav.href) ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
+          active(nav.href) ? "bg-[#5b4ee8]/25 text-white ring-1 ring-inset ring-[#8b80ff]/40" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
         )}
       >
         <SymbolIcon name={nav.icon} className={cn("text-[22px]", active(nav.href) && "text-[#8b80ff]")} />
@@ -313,9 +313,11 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
               if (!expanded) setExpanded(true);
             }}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg py-1.5 text-[13px] transition",
+              "flex w-full items-center gap-3 rounded-full py-1.5 text-[13px] transition",
               expanded ? "px-3" : "justify-center px-0",
-              pathname.startsWith("/dashboard/settings") ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
+              pathname.startsWith("/dashboard/settings")
+                ? "bg-[#5b4ee8]/25 text-white ring-1 ring-inset ring-[#8b80ff]/40"
+                : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
             )}
           >
             <SymbolIcon name="settings" className="text-[22px]" />
@@ -333,8 +335,10 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
                   key={s.href}
                   href={s.href}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-md py-1.5 pl-8 pr-3 text-[12.5px] transition",
-                    pathname === s.href ? "bg-[#5b4ee8]/15 text-white" : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
+                    "flex items-center gap-2.5 rounded-full py-1.5 pl-8 pr-3 text-[12.5px] transition",
+                    pathname === s.href
+                      ? "bg-[#5b4ee8]/25 text-white ring-1 ring-inset ring-[#8b80ff]/40"
+                      : "text-[#98a2b3] hover:bg-white/5 hover:text-white",
                   )}
                 >
                   <span className="truncate">{s.label}</span>
@@ -352,7 +356,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           onClick={() => setHelpOpen(true)}
           title={expanded ? undefined : "Help & docs"}
           aria-label="Help & docs"
-          className={cn("flex w-full items-center gap-3 rounded-lg py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
+          className={cn("flex w-full items-center gap-3 rounded-full py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
         >
           <SymbolIcon name="help" className="text-[20px]" />
           {expanded && <span>Help &amp; docs</span>}
@@ -361,7 +365,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           href="/guide"
           title={expanded ? undefined : "User guide"}
           aria-label="User guide"
-          className={cn("flex w-full items-center gap-3 rounded-lg py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
+          className={cn("flex w-full items-center gap-3 rounded-full py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
         >
           <SymbolIcon name="menu_book" className="text-[20px]" />
           {expanded && <span>User guide</span>}
@@ -371,7 +375,7 @@ export function DashboardSidebar({ orgName, logoUrl, isDemo, readOnly, trialDays
           onClick={() => window.dispatchEvent(new Event(OPEN_CHAT_EVENT))}
           title={expanded ? undefined : "Live chat"}
           aria-label="Live chat"
-          className={cn("flex w-full items-center gap-3 rounded-lg py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
+          className={cn("flex w-full items-center gap-3 rounded-full py-1.5 text-[12.5px] text-[#98a2b3] hover:bg-white/5 hover:text-white", expanded ? "px-3" : "justify-center px-0")}
         >
           <SymbolIcon name="chat" className="text-[20px]" />
           {expanded && <span>Live chat</span>}

@@ -84,6 +84,21 @@
   --color-term-dim: #758297;
   --color-term-mint: #86dda8;
 
+  /* Phase 30 — Google Stitch surface hierarchy */
+  --color-stitch-surface: #ffffff;
+  --color-stitch-surface-low: #f8f9fb;
+  --color-stitch-surface-container: #f1f2f6;
+  --color-stitch-surface-high: #e9ebf1;
+  --color-stitch-surface-highest: #e2e5ec;
+  --color-stitch-outline: #dadde5;
+  --color-stitch-outline-variant: #e7e9ef;
+  --color-stitch-primary: #3d2ee0;
+  --color-stitch-primary-hover: #5b4ee8;
+  --color-stitch-primary-container: #e9e6fd;
+  --color-stitch-on-primary-container: #2a1e9b;
+  --color-stitch-ink: #14161f;
+  --color-stitch-muted: #63677a;
+
   --radius-card: 10px;
 
   --animate-shimmer: shimmer 1.4s linear infinite;
@@ -126,6 +141,34 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
     }
+  }
+}
+
+/* Phase 30 — Google Stitch surface & telemetry utilities */
+.stitch-nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.stitch-card {
+  background: var(--color-stitch-surface);
+  border: 1px solid var(--color-stitch-outline-variant);
+  box-shadow:
+    0 1px 2px rgba(20, 22, 31, 0.05),
+    0 0 0 0.5px rgba(20, 22, 31, 0.02);
+}
+.stitch-focus:focus-visible {
+  outline: 2px solid var(--color-stitch-primary);
+  outline-offset: 2px;
+}
+:where(button, a, [role="button"], [role="switch"], [role="menuitem"], select, input, textarea):focus-visible {
+  outline: 2px solid var(--color-stitch-primary);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  button, a, [role="switch"] {
+    transition-property: background-color, border-color, color, box-shadow, outline-offset;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 

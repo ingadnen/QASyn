@@ -41,7 +41,7 @@ export function OverviewTerminal({
           <button type="button" className="ml-auto text-emerald-500" onClick={() => setNotice(null)} aria-label="Dismiss">✕</button>
         </div>
       )}
-    <section id="terminal" className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <section id="terminal" className="stitch-card overflow-hidden rounded-xl">
       <header className="flex items-center justify-between gap-3 px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2 text-sm">
           <span className={cn("size-2 rounded-full", live ? "animate-pulse bg-emerald-500" : "bg-slate-300")} />
@@ -151,10 +151,10 @@ export function CoverageTabs({ modules, criticality }: { modules: ModuleCoverage
   const [tab, setTab] = useState<"module" | "criticality">("module");
   const rows = tab === "module" ? modules : criticality;
   return (
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
+    <section className="stitch-card rounded-xl">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e7e9ef] px-5 py-3">
         <h2 className="text-sm font-semibold text-slate-900">Modules mapped &amp; coverage</h2>
-        <div role="tablist" className="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs">
+        <div role="tablist" className="inline-flex rounded-full bg-[#f1f2f6] p-0.5 text-xs">
           {(["module", "criticality"] as const).map((t) => (
             <button
               key={t}
@@ -162,7 +162,7 @@ export function CoverageTabs({ modules, criticality }: { modules: ModuleCoverage
               type="button"
               aria-selected={tab === t}
               onClick={() => setTab(t)}
-              className={cn("rounded-md px-3 py-1 font-medium", tab === t ? "bg-white text-slate-900 shadow-sm" : "text-slate-500")}
+              className={cn("stitch-focus rounded-full px-3 py-1 font-medium", tab === t ? "bg-white text-[#14161f] shadow-sm" : "text-[#63677a] hover:text-[#14161f]")}
             >
               By {t}
             </button>
@@ -217,7 +217,7 @@ export function FinishCard({
 }) {
   const { run, pending, error } = useAction();
   return (
-    <div className="flex flex-col rounded-xl border border-dashed border-slate-300 bg-white p-4">
+    <div className="flex flex-col rounded-xl border border-dashed border-[#dadde5] bg-white p-4">
       <p className="text-sm font-semibold text-slate-900">{title}</p>
       <p className="mt-1 flex-1 text-xs text-slate-500">{description}</p>
       <div className="mt-3 flex items-center gap-2">

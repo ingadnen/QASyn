@@ -57,17 +57,18 @@ export const cqa = {
   headText: "#6b7280",
 };
 
+/* Phase 30 — Google Stitch: pill-segmented buttons, hairline tonal surfaces */
 export const cqaBtnPrimary =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#5b4ee8] px-3.5 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#6d61ff] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#3d2ee0] px-4 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#5b4ee8] disabled:cursor-not-allowed disabled:opacity-50";
 export const cqaBtnSecondary =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[13px] font-medium text-[#374151] transition hover:bg-[#f9fafb] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#dadde5] bg-white px-3.5 text-[13px] font-medium text-[#374151] transition hover:bg-[#f1f2f6] disabled:cursor-not-allowed disabled:opacity-50";
 export const cqaBtnGhost =
-  "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-[12.5px] font-medium text-[#6b7280] transition hover:bg-[#f3f4f6] hover:text-[#111827]";
+  "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-medium text-[#6b7280] transition hover:bg-[#f1f2f6] hover:text-[#111827]";
 export const cqaIconBtn =
-  "inline-flex size-8 items-center justify-center rounded-md text-[#6b7280] transition hover:bg-[#f3f4f6] hover:text-[#111827]";
-export const cqaCard = "rounded-[11px] border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
+  "inline-flex size-8 items-center justify-center rounded-full text-[#6b7280] transition hover:bg-[#f1f2f6] hover:text-[#111827]";
+export const cqaCard = "stitch-card rounded-xl";
 export const cqaInput =
-  "h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]";
+  "h-9 w-full rounded-lg border border-[#dadde5] bg-white px-3 text-[13px] text-[#14161f] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e9e6fd]";
 export const cqaLabel = "mb-1.5 block text-[12.5px] font-medium text-[#374151]";
 
 export function CqaIcon({ name, className, filled }: { name: string; className?: string; filled?: boolean }) {
@@ -108,8 +109,8 @@ export function Card({ className, children, title, actions }: { className?: stri
   return (
     <section className={cn(cqaCard, className)}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-3 border-b border-[#f0f1f3] px-4 py-3">
-          <h2 className="text-[14px] font-semibold text-[#111827]">{title}</h2>
+        <header className="flex items-center justify-between gap-3 border-b border-[#e7e9ef] px-4 py-3">
+          <h2 className="text-[14px] font-semibold tracking-[-0.01em] text-[#14161f]">{title}</h2>
           {actions}
         </header>
       )}
@@ -165,7 +166,7 @@ export function StatusPill({ value, label }: { value: string; label?: string }) 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-[2px] text-[12px] font-medium leading-[17px]",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-[2px] text-[12px] font-medium leading-[17px]",
         TONE[toneFor(label ?? value)],
       )}
     >
