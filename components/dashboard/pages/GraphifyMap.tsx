@@ -73,7 +73,7 @@ export function GraphifyMapView({ data, compact = false }: { data: GraphifyMap; 
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0f1f3] px-4 py-3">
         <div>
           <h3 className="flex items-center gap-1.5 text-[14px] font-semibold text-[#111827]">
-            <CqaIcon name="hub" className="text-[18px] text-[#5b4ee8]" /> Graphify Map
+            <CqaIcon name="hub" className="text-[18px] text-[#0F6B5C]" /> Graphify Map
           </h3>
           <p className="mt-0.5 text-[11.5px] text-[#6b7280]">
             {data.nodes.length} nodes · {data.edges.length} edges · crawled URLs, DOM, requirements, tests and PRs

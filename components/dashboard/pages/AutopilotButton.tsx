@@ -134,7 +134,7 @@ export function AutopilotButton({
               </span>
             )}
             {result && (
-              <Link href={result.links.graphify} className="text-[11.5px] font-semibold text-[#5b4ee8] hover:underline">
+              <Link href={result.links.graphify} className="text-[11.5px] font-semibold text-[#0F6B5C] hover:underline">
                 Open Graphify map
               </Link>
             )}
@@ -178,13 +178,13 @@ export function AutopilotButton({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#111827]">
-                        <CqaIcon name={definition.icon} className="text-[14px] text-[#5b4ee8]" /> {definition.label}
+                        <CqaIcon name={definition.icon} className="text-[14px] text-[#0F6B5C]" /> {definition.label}
                       </span>
                       <span className="text-[10.5px] font-medium text-[#9ca3af]">
                         {pending && !result ? (running ? "running…" : "queued") : phase ? phase.metric : "waiting"}
                       </span>
                       {phase?.href && (
-                        <Link href={phase.href} className="text-[10.5px] font-semibold text-[#5b4ee8] hover:underline">
+                        <Link href={phase.href} className="text-[10.5px] font-semibold text-[#0F6B5C] hover:underline">
                           Open
                         </Link>
                       )}
@@ -214,7 +214,7 @@ export function AutopilotButton({
                     }
                   })())}`}
                   data-testid="autopilot-view-all"
-                  className="text-[11px] font-semibold text-[#5b4ee8] hover:underline"
+                  className="text-[11px] font-semibold text-[#0F6B5C] hover:underline"
                 >
                   View All in Test Cases →
                 </Link>

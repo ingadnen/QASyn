@@ -123,7 +123,7 @@ export function AgentSkillsPanel({
                     aria-label={`${on ? "Disable" : "Enable"} ${skill.title}`}
                     disabled={readOnly || pending === skill.id}
                     onClick={() => void toggle(skill)}
-                    className={cn("relative h-5 w-9 shrink-0 rounded-full transition disabled:opacity-50", on ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+                    className={cn("relative h-5 w-9 shrink-0 rounded-full transition disabled:opacity-50", on ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
                   >
                     <span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", on ? "left-[18px]" : "left-0.5")} />
                   </button>
@@ -151,7 +151,7 @@ export function AgentSkillsPanel({
           </p>
           <div className="flex flex-wrap gap-1.5">
             <input
-              className="h-9 min-w-[220px] flex-1 rounded-lg border border-[#e5e7eb] px-3 text-[12.5px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+              className="h-9 min-w-[220px] flex-1 rounded-lg border border-[#e5e7eb] px-3 text-[12.5px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               aria-label="QASyn Framework Intelligence query"
@@ -186,7 +186,7 @@ export function AgentSkillsPanel({
               <ul className="mt-1 list-disc space-y-1 pl-4 text-[11px] leading-4 text-[#4b5563]">
                 {result.rules.map((rule) => <li key={rule}>{rule}</li>)}
               </ul>
-              <a href={result.library.docsUrl} target="_blank" rel="noreferrer" className="mt-1.5 inline-block text-[10.5px] font-medium text-[#5b4ee8] hover:underline">
+              <a href={result.library.docsUrl} target="_blank" rel="noreferrer" className="mt-1.5 inline-block text-[10.5px] font-medium text-[#0F6B5C] hover:underline">
                 {result.source}
               </a>
             </div>

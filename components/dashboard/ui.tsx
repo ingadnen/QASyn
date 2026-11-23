@@ -46,8 +46,8 @@ export function useAction() {
  * ------------------------------------------------------------------------- */
 
 export const cqa = {
-  primary: "#5b4ee8",
-  primaryHover: "#6d61ff",
+  primary: "#0F6B5C",
+  primaryHover: "#0c5a4d",
   ink: "#111827",
   muted: "#6b7280",
   line: "#e5e7eb",
@@ -59,7 +59,7 @@ export const cqa = {
 
 /* Phase 30 — Google Stitch: pill-segmented buttons, hairline tonal surfaces */
 export const cqaBtnPrimary =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#3d2ee0] px-4 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#5b4ee8] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-pw-accent px-4 text-[13px] font-medium text-white shadow-sm transition hover:bg-pw-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
 export const cqaBtnSecondary =
   "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#dadde5] bg-white px-3.5 text-[13px] font-medium text-[#374151] transition hover:bg-[#f1f2f6] disabled:cursor-not-allowed disabled:opacity-50";
 export const cqaBtnGhost =
@@ -68,7 +68,7 @@ export const cqaIconBtn =
   "inline-flex size-8 items-center justify-center rounded-full text-[#6b7280] transition hover:bg-[#f1f2f6] hover:text-[#111827]";
 export const cqaCard = "stitch-card rounded-xl";
 export const cqaInput =
-  "h-9 w-full rounded-lg border border-[#dadde5] bg-white px-3 text-[13px] text-[#14161f] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e9e6fd]";
+  "h-9 w-full rounded-lg border border-[#dadde5] bg-white px-3 text-[13px] text-[#14161f] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#0F6B5C]/15";
 export const cqaLabel = "mb-1.5 block text-[12.5px] font-medium text-[#374151]";
 
 export function CqaIcon({ name, className, filled }: { name: string; className?: string; filled?: boolean }) {
@@ -147,7 +147,7 @@ const TONE: Record<string, string> = {
   amber: "bg-[#fffbeb] text-[#d97706] border-[#fde68a]",
   blue: "bg-[#eff6ff] text-[#2563eb] border-[#bfdbfe]",
   gray: "bg-[#f9fafb] text-[#6b7280] border-[#e5e7eb]",
-  purple: "bg-[#f5f3ff] text-[#5b4ee8] border-[#ddd6fe]",
+  purple: "bg-pw-accent-soft text-pw-accent border-[#0F6B5C]/20",
 };
 
 function toneFor(value: string): keyof typeof TONE {
@@ -268,7 +268,7 @@ export function Toggle({ checked, onChange, label, description }: { checked: boo
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+        className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
       >
         <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", checked ? "left-[21px]" : "left-[3px]")} />
       </button>

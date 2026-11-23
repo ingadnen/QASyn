@@ -12,13 +12,13 @@ const CONTACTS = [
 export default function ContactPage() {
   return (
     <div>
-      <section className="obsidian-spotlight relative overflow-hidden border-b border-white/5 bg-[#06080f]">
+      <section className="obsidian-spotlight relative overflow-hidden border-b border-pw-line">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
         <div className="relative mx-auto max-w-[1440px] px-6 py-16 sm:px-8 lg:px-12">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-quantum-300">CONTACT QASYN</p>
-          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">Book a demo or talk to our quality engineering team.</h1>
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-400">
-            Tell us about your stack, release process and coverage goals. A solutions architect will reply from <strong className="text-slate-200">info@qasyn.io</strong> within one business day.
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-brand-600">CONTACT QASYN</p>
+          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-pw-heading sm:text-4xl">Book a demo or talk to our quality engineering team.</h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-pw-muted">
+            Tell us about your stack, release process and coverage goals. A solutions architect will reply from <strong className="text-pw-heading">info@qasyn.io</strong> within one business day.
           </p>
         </div>
       </section>

@@ -148,11 +148,11 @@ export function CreateFolderButton({ readOnly }: { readOnly: boolean }) {
           <div className="rounded-lg border border-[#f0f1f3] bg-[#fafafa] px-3 py-2.5">
             <p className="text-[12.5px] font-medium text-[#111827]">File Settings</p>
             <label className="mt-2 flex items-center gap-2 text-[12.5px] text-[#374151]">
-              <input type="checkbox" checked={versioning} onChange={(e) => setVersioning(e.target.checked)} className="size-3.5 accent-[#5b4ee8]" /> Versioning
+              <input type="checkbox" checked={versioning} onChange={(e) => setVersioning(e.target.checked)} className="size-3.5 accent-[#0F6B5C]" /> Versioning
             </label>
             <p className="ml-6 text-[11.5px] text-[#9ca3af]">New uploads create versions</p>
             <label className="mt-2 flex items-center gap-2 text-[12.5px] text-[#374151]">
-              <input type="checkbox" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} className="size-3.5 accent-[#5b4ee8]" /> Overwrite existing file
+              <input type="checkbox" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} className="size-3.5 accent-[#0F6B5C]" /> Overwrite existing file
             </label>
             <p className="ml-6 text-[11.5px] text-[#9ca3af]">Same-name uploads replace existing file</p>
           </div>

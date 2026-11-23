@@ -14,7 +14,7 @@ interface Props {
 }
 
 const inputCls =
-  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#8b80ff] focus:ring-2 focus:ring-[#e4e1fd]";
+  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]";
 const areaCls = cn(inputCls, "h-auto min-h-[92px] resize-y py-2.5 font-mono text-[13px]");
 const labelCls = "mb-2 block text-[14px] font-medium text-[#374151]";
 const helpCls = "mt-1.5 block text-[12.5px] leading-5 text-[#6b7280]";
@@ -40,7 +40,7 @@ function Switch({
       onClick={() => onChange(!checked)}
       className={cn(
         "relative h-[22px] w-[40px] shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60",
-        checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]",
+        checked ? "bg-[#0F6B5C]" : "bg-[#d1d5db]",
       )}
     >
       <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", checked ? "left-[21px]" : "left-[3px]")} />
@@ -113,12 +113,12 @@ export function AnalysisSettings({ readOnly, initial, environments }: Props) {
                 onClick={() => set("runMode", mode.value)}
                 className={cn(
                   "rounded-lg border p-4 text-left transition",
-                  form.runMode === mode.value ? "border-[#5b4ee8] bg-[#f7f5ff] ring-1 ring-[#dcd7ff]" : "border-[#e5e7eb] bg-white hover:border-[#c4bdfa]",
+                  form.runMode === mode.value ? "border-[#0F6B5C] bg-[#f7f5ff] ring-1 ring-[#dcd7ff]" : "border-[#e5e7eb] bg-white hover:border-[#c4bdfa]",
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <span className={cn("flex size-4 items-center justify-center rounded-full border", form.runMode === mode.value ? "border-[#5b4ee8]" : "border-[#d1d5db]")}>
-                    {form.runMode === mode.value && <span className="size-2 rounded-full bg-[#5b4ee8]" />}
+                  <span className={cn("flex size-4 items-center justify-center rounded-full border", form.runMode === mode.value ? "border-[#0F6B5C]" : "border-[#d1d5db]")}>
+                    {form.runMode === mode.value && <span className="size-2 rounded-full bg-[#0F6B5C]" />}
                   </span>
                   <span className={cn("text-[14px] font-medium", form.runMode === mode.value ? "text-[#4f46e5]" : "text-[#374151]")}>{mode.title}</span>
                 </span>
@@ -160,7 +160,7 @@ export function AnalysisSettings({ readOnly, initial, environments }: Props) {
             <span className="rounded-full border border-[#ddd6fe] bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#4f46e5]">
               Enterprise AI verification included
             </span>
-            <a href="/dashboard/integrations" className="text-[11.5px] font-semibold text-[#5b4ee8] hover:underline">
+            <a href="/dashboard/integrations" className="text-[11.5px] font-semibold text-[#0F6B5C] hover:underline">
               Manage QASyn Vision AI credentials →
             </a>
           </div>

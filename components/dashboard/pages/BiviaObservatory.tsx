@@ -18,7 +18,7 @@ function Metric({
   return (
     <div className="rounded-lg border border-[#eef0f3] bg-[#fcfcfd] px-3 py-2.5">
       <p className="flex items-center gap-1 text-[10.5px] font-medium uppercase tracking-[0.05em] text-[#9ca3af]">
-        {icon && <CqaIcon name={icon} className="text-[13px] text-[#5b4ee8]" />}
+        {icon && <CqaIcon name={icon} className="text-[13px] text-[#0F6B5C]" />}
         {label}
       </p>
       <p data-testid={testId} className="mt-1 text-[17px] font-semibold leading-6 text-[#111827]">
@@ -115,7 +115,7 @@ export function BiviaObservatory({
               data-testid={`bivia-kind-${kind.key}`}
               className="inline-flex items-center gap-1 rounded-md border border-[#eef0f3] bg-[#fafafa] px-2 py-1 text-[10.5px] font-medium text-[#4b5563]"
             >
-              <CqaIcon name={kind.icon} className="text-[13px] text-[#5b4ee8]" />
+              <CqaIcon name={kind.icon} className="text-[13px] text-[#0F6B5C]" />
               {kind.label} <span className="font-semibold text-[#111827]">{summary.counts[kind.key].toLocaleString("en-US")}</span>
             </span>
           ))}

@@ -72,7 +72,7 @@ export function CustomSkillsPanel({ readOnly }: { readOnly: boolean }) {
               <span className={skill.enabled ? "size-2 rounded-full bg-emerald-500" : "size-2 rounded-full bg-slate-300"} />
               <span className="font-semibold text-[#111827]">{skill.name}</span>
               <span className="truncate text-[#6b7280]">{skill.trigger || "manual trigger"} · {skill.model}</span>
-              <button type="button" disabled={readOnly || pending} onClick={() => { setEditing(skill.id); setForm({ name: skill.name, trigger: skill.trigger, systemPrompt: skill.systemPrompt, model: skill.model, enabled: skill.enabled }); }} className="ml-auto text-[11px] font-semibold text-[#5b4ee8] hover:underline">Edit</button>
+              <button type="button" disabled={readOnly || pending} onClick={() => { setEditing(skill.id); setForm({ name: skill.name, trigger: skill.trigger, systemPrompt: skill.systemPrompt, model: skill.model, enabled: skill.enabled }); }} className="ml-auto text-[11px] font-semibold text-[#0F6B5C] hover:underline">Edit</button>
               <button type="button" disabled={readOnly || pending} onClick={() => void remove(skill.id)} className="text-[11px] font-semibold text-[#b42318] hover:underline">Delete</button>
             </li>
           ))}

@@ -113,7 +113,7 @@ const TAB_LABELS: Record<Tab, string> = {
 };
 
 const inputCls =
-  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#8b80ff] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
+  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
 const labelCls = "mb-2 block text-[14px] font-medium text-[#374151]";
 const upperLabelCls = "mb-2 block text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6b7280]";
 
@@ -153,7 +153,7 @@ function Switch({ checked, onChange, label, disabled }: { checked: boolean; onCh
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition disabled:opacity-50", checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+      className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition disabled:opacity-50", checked ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
     >
       <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", checked ? "left-[21px]" : "left-[3px]")} />
     </button>
@@ -433,7 +433,7 @@ export function TestPlanDetail({
             onClick={() => setTab(t)}
             className={cn(
               "whitespace-nowrap border-b-2 pb-2.5 pt-1 text-[13.5px] transition",
-              tab === t ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+              tab === t ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
             )}
           >
             {TAB_LABELS[t]}
@@ -501,7 +501,7 @@ export function TestPlanDetail({
                         <td className="px-4 py-3">
                           <div className="flex items-start gap-2">
                             <span className="mt-0.5 text-[10.5px] font-medium text-[#9ca3af]">{s.code}</span>
-                            <Link href={`/dashboard/plans/suites/${s.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{s.name}</Link>
+                            <Link href={`/dashboard/plans/suites/${s.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{s.name}</Link>
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-[#4a5565]">{s.casesCount} cases</td>
@@ -509,7 +509,7 @@ export function TestPlanDetail({
                         <td className="whitespace-nowrap px-4 py-3">
                           <div className="flex items-center gap-3">
                             <CqaIcon name="schedule" className="text-[17px] text-[#9ca3af]" />
-                            <Link href={`/dashboard/plans/suites/${s.id}`} className="font-medium text-[#5b4ee8] hover:underline">View Test Cases</Link>
+                            <Link href={`/dashboard/plans/suites/${s.id}`} className="font-medium text-[#0F6B5C] hover:underline">View Test Cases</Link>
                           </div>
                         </td>
                       </tr>
@@ -531,7 +531,7 @@ export function TestPlanDetail({
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <div className="relative min-w-[220px] flex-1">
               <CqaIcon name="search" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9ca3af]" />
-              <input type="search" value={runQuery} onChange={(e) => setRunQuery(e.target.value)} placeholder="Search" aria-label="Search runs" className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]" />
+              <input type="search" value={runQuery} onChange={(e) => setRunQuery(e.target.value)} placeholder="Search" aria-label="Search runs" className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]" />
             </div>
             <button type="button" onClick={() => router.refresh()} aria-label="Refresh" className={cn(cqaIconBtn, "size-9 border border-[#e5e7eb] bg-white")}><CqaIcon name="refresh" className="text-[18px]" /></button>
           </div>
@@ -579,7 +579,7 @@ export function TestPlanDetail({
                 className={cn(
                   cqaIconBtn,
                   "size-9 border bg-white",
-                  reportStatus !== "all" ? "border-[#c4bdfa] text-[#5b4ee8]" : "border-[#e5e7eb]",
+                  reportStatus !== "all" ? "border-[#c4bdfa] text-[#0F6B5C]" : "border-[#e5e7eb]",
                 )}
               >
                 <CqaIcon name="filter_list" className="text-[18px]" />
@@ -603,7 +603,7 @@ export function TestPlanDetail({
                         }}
                         className={cn(
                           "flex w-full items-center justify-between px-3 py-2 text-left text-[12.5px] hover:bg-[#f9fafb]",
-                          reportStatus === value ? "font-medium text-[#5b4ee8]" : "text-[#374151]",
+                          reportStatus === value ? "font-medium text-[#0F6B5C]" : "text-[#374151]",
                         )}
                       >
                         {label}
@@ -620,7 +620,7 @@ export function TestPlanDetail({
             <span>
               Select 2 runs to compare
               {selectedRuns.length > 0 && (
-                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[11.5px] font-medium text-[#5b4ee8]">
+                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[11.5px] font-medium text-[#0F6B5C]">
                   {selectedRuns.length} selected
                   <button type="button" aria-label="Clear run selection" onClick={() => setSelectedRuns([])} className="hover:text-[#111827]">
                     <CqaIcon name="close" className="text-[13px]" />
@@ -674,7 +674,7 @@ export function TestPlanDetail({
                               aria-label={`Select run ${index} for comparison`}
                               checked={selectedRuns.includes(e.id)}
                               onChange={() => toggleCompareRun(e.id)}
-                              className="size-3.5 accent-[#5b4ee8]"
+                              className="size-3.5 accent-[#0F6B5C]"
                             />
                             Compare
                           </label>
@@ -698,7 +698,7 @@ export function TestPlanDetail({
                           <CqaIcon name="chevron_right" className="text-[17px] text-[#9ca3af]" />
                         </div>
                         <div className="mt-3 rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-3 py-2.5">
-                          <p className="flex items-center gap-2 text-[12.5px] font-medium text-[#374151]"><CqaIcon name="auto_fix_high" className="text-[16px] text-[#5b4ee8]" /> Auto-fix <span className="font-normal text-[#6b7280]">{e.autoFixed} of {e.failed} recovered</span></p>
+                          <p className="flex items-center gap-2 text-[12.5px] font-medium text-[#374151]"><CqaIcon name="auto_fix_high" className="text-[16px] text-[#0F6B5C]" /> Auto-fix <span className="font-normal text-[#6b7280]">{e.autoFixed} of {e.failed} recovered</span></p>
                           <p className="mt-1 text-[11.5px] leading-5 text-[#6b7280]">Auto-fix finished · Analysed {e.failed} failed cases · {e.autoFixed} recovered by auto-fix · the other {Math.max(e.failed - e.autoFixed, 0)} need a person or the application team.</p>
                         </div>
                       </div>
@@ -728,7 +728,7 @@ export function TestPlanDetail({
                                 <tr key={c.id} className="border-b border-[#f3f4f6] last:border-0">
                                   <td className="px-4 py-2">
                                     <span className="mr-2 text-[10px] font-medium text-[#9ca3af]">{c.code}</span>
-                                    <Link href={`/dashboard/test-studio/${c.id}`} className="hover:text-[#5b4ee8]">{c.title}</Link>
+                                    <Link href={`/dashboard/test-studio/${c.id}`} className="hover:text-[#0F6B5C]">{c.title}</Link>
                                   </td>
                                   <td className="px-4 py-2">
                                     <span className={cn("inline-flex items-center gap-1.5", status === "passed" ? "text-[#00a63e]" : status === "failed" ? "text-[#dc2626]" : "text-[#9ca3af]")}>
@@ -771,7 +771,7 @@ export function TestPlanDetail({
                   <div className={cn(cqaCard, "p-4")}>
                     <p className="text-[12px] text-[#6b7280]">Total Test Cases Count</p>
                     <p className="text-[20px] font-bold text-[#111827]">{latest.total}</p>
-                    <p className="mt-2 flex items-center gap-1.5 text-[12.5px] font-medium text-[#374151]"><CqaIcon name="auto_fix_high" className="text-[16px] text-[#5b4ee8]" /> Auto-fixed <strong className="ml-auto text-[#111827]">{latest.autoFixed}</strong></p>
+                    <p className="mt-2 flex items-center gap-1.5 text-[12.5px] font-medium text-[#374151]"><CqaIcon name="auto_fix_high" className="text-[16px] text-[#0F6B5C]" /> Auto-fixed <strong className="ml-auto text-[#111827]">{latest.autoFixed}</strong></p>
                     <h3 className="mt-4 text-[13px] font-semibold text-[#262626]">Failure Analysis<span className="ml-1 font-normal text-[#6b7280]">Latest outcomes</span></h3>
                     <div className="mt-2 divide-y divide-[#f3f4f6] text-[12.5px]">
                       {[["Test Needs Update", Math.max(latest.failed - 4, 0)], ["Test Data Issue", 3], ["App Bug", 1]].map(([label, count]) => (
@@ -824,7 +824,7 @@ export function TestPlanDetail({
                   placeholder="Search"
                   value={scheduleQuery}
                   onChange={(event) => setScheduleQuery(event.target.value)}
-                  className="h-8 w-full rounded-lg border border-[#e5e7eb] pl-8 pr-3 text-[12.5px] outline-none focus:border-[#a9a1f7]"
+                  className="h-8 w-full rounded-lg border border-[#e5e7eb] pl-8 pr-3 text-[12.5px] outline-none focus:border-[#0F6B5C]"
                 />
               </div>
               <button type="button" aria-label="Add schedule" onClick={() => setScheduleOpen(true)} className={cn(cqaIconBtn, "size-8 border border-[#e5e7eb] bg-white")}><CqaIcon name="add" className="text-[17px]" /></button>
@@ -839,7 +839,7 @@ export function TestPlanDetail({
               <ul className="divide-y divide-[#f0f1f3]">
                 {filteredSchedules.map((s) => (
                   <li key={s.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                    <CqaIcon name="schedule" className="text-[18px] text-[#5b4ee8]" />
+                    <CqaIcon name="schedule" className="text-[18px] text-[#0F6B5C]" />
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium text-[#1f2937]">{s.name}</p>
                       <p className="mt-0.5 text-[11.5px] text-[#6b7280]">{s.cronExpression} · {s.timezone} · next {s.nextFireAt ? fmtFull(s.nextFireAt) : "—"}</p>
@@ -900,7 +900,7 @@ export function TestPlanDetail({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
-              <span className="inline-flex items-center gap-1.5 text-[12.5px] text-[#374151]"><CqaIcon name="event" className="text-[16px] text-[#5b4ee8]" /> {monthLabel}</span>
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] text-[#374151]"><CqaIcon name="event" className="text-[16px] text-[#0F6B5C]" /> {monthLabel}</span>
               <span className="ml-auto flex items-center gap-1">
                 {([["calendar_view_month", "Month", "month"], ["calendar_view_week", "Week", "week"], ["calendar_view_day", "Day", "day"]] as const).map(([icon, label, value]) => (
                   <button
@@ -910,7 +910,7 @@ export function TestPlanDetail({
                     onClick={() => setCalendarView(value)}
                     className={cn(
                       "inline-flex h-8 items-center gap-1 rounded border px-2 text-[11.5px]",
-                      calendarView === value ? "border-[#c4bdfa] bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "border-[#e5e7eb] bg-white text-[#4a5565] hover:bg-[#f9fafb]",
+                      calendarView === value ? "border-[#c4bdfa] bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "border-[#e5e7eb] bg-white text-[#4a5565] hover:bg-[#f9fafb]",
                     )}
                   >
                     <CqaIcon name={icon} className="text-[15px]" /> {label}
@@ -929,7 +929,7 @@ export function TestPlanDetail({
                   <ul className="mt-3 space-y-2">
                     {focusSchedules.map((s) => (
                       <li key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-3 py-2 text-[12.5px]">
-                        <CqaIcon name="schedule" className="text-[16px] text-[#5b4ee8]" />
+                        <CqaIcon name="schedule" className="text-[16px] text-[#0F6B5C]" />
                         <span className="font-medium text-[#1f2937]">{s.name}</span>
                         <span className="text-[#6b7280]">{s.nextFireAt ? new Date(s.nextFireAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "—"}</span>
                         <StatusPill value={s.enabled ? "active" : "off"} label={s.enabled ? "Enabled" : "Disabled"} />
@@ -954,8 +954,8 @@ export function TestPlanDetail({
                           cell.day === now.getDate();
                     return (
                       <div key={i} className={cn("min-h-[76px] border-b border-r border-[#f0f1f3] px-2 py-1.5 text-[12px] last:border-r-0", cell.muted ? "bg-[#fcfcfd] text-[#d1d5db]" : "bg-white text-[#374151]")}>
-                        <span className={cn(todayCell ? "flex size-6 items-center justify-center rounded-full bg-[#5b4ee8] text-white" : "")}>{cell.day}</span>
-                        {cell.current && scheduleDays.has(cell.day) && <span className="mt-1 block rounded bg-[#f5f3ff] px-1 py-0.5 text-[10px] text-[#5b4ee8]">Schedule</span>}
+                        <span className={cn(todayCell ? "flex size-6 items-center justify-center rounded-full bg-[#0F6B5C] text-white" : "")}>{cell.day}</span>
+                        {cell.current && scheduleDays.has(cell.day) && <span className="mt-1 block rounded bg-[#f5f3ff] px-1 py-0.5 text-[10px] text-[#0F6B5C]">Schedule</span>}
                       </div>
                     );
                   })}
@@ -972,10 +972,10 @@ export function TestPlanDetail({
             <h2 className="text-[17px] font-semibold text-[#262626]">Trigger this plan from your pipeline</h2>
             <p className="mt-2 text-[13.5px] leading-5 text-[#6b7280]">Pipelines run this plan through the QASyn CI integration. Setup steps for every CI are in its repository.</p>
             <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-[#f0f1f3] bg-[#fcfcfd] px-4 py-3">
-              <CqaIcon name="terminal" className="text-[18px] text-[#5b4ee8]" />
+              <CqaIcon name="terminal" className="text-[18px] text-[#0F6B5C]" />
               <span className="font-mono text-[13px] text-[#111827]">indivatools/qasyn-ci</span>
               <span className="text-[12px] text-[#6b7280]">Setup for GitHub Actions, GitLab, Jenkins, Azure Pipelines, CircleCI, Bitbucket, or any CI through the CLI</span>
-              <a href="https://github.com/indivatools/qasyn-ci" target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[12.5px] font-medium text-[#5b4ee8] hover:underline">Open setup guide <CqaIcon name="open_in_new" className="text-[15px]" /></a>
+              <a href="https://github.com/indivatools/qasyn-ci" target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[12.5px] font-medium text-[#0F6B5C] hover:underline">Open setup guide <CqaIcon name="open_in_new" className="text-[15px]" /></a>
             </div>
             <div className="mt-4 rounded-lg border border-[#f0f1f3] px-4 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9ca3af]">Test plan ID</p>
@@ -989,7 +989,7 @@ export function TestPlanDetail({
 
           <div className={cn(cqaCard, "p-5")}>
             <div className="flex flex-wrap items-center gap-2">
-              <CqaIcon name="admin_panel_settings" className="text-[19px] text-[#5b4ee8]" />
+              <CqaIcon name="admin_panel_settings" className="text-[19px] text-[#0F6B5C]" />
               <h3 className="text-[16px] font-semibold text-[#262626]">QASyn token</h3>
               <span className="ml-auto rounded border border-[#fde68a] bg-[#fffbeb] px-2 py-[2px] text-[10.5px] font-medium text-[#92400e]">Admin only</span>
             </div>
@@ -1011,7 +1011,7 @@ export function TestPlanDetail({
         <div className="mt-5 max-w-5xl space-y-5">
           <div className={cn(cqaCard, "p-5")}>
             <div className="flex items-center gap-2">
-              <CqaIcon name="settings" className="text-[19px] text-[#5b4ee8]" />
+              <CqaIcon name="settings" className="text-[19px] text-[#0F6B5C]" />
               <h2 className="text-[16px] font-semibold text-[#262626]">Execution Settings</h2>
             </div>
             <div className="mt-5 grid gap-x-8 gap-y-5 lg:grid-cols-2">
@@ -1074,7 +1074,7 @@ export function TestPlanDetail({
 
           <div className={cn(cqaCard, "p-5")}>
             <button type="button" onClick={() => setProxyOpen((v) => !v)} className="flex w-full items-center gap-2 text-left">
-              <CqaIcon name="tune" className="text-[19px] text-[#5b4ee8]" />
+              <CqaIcon name="tune" className="text-[19px] text-[#0F6B5C]" />
               <span>
                 <span className="block text-[15px] font-semibold text-[#262626]">Proxy &amp; Remote Browser Settings</span>
                 <span className="mt-0.5 block text-[12.5px] text-[#6b7280]">Route execution through a proxy or an external browser endpoint</span>
@@ -1103,7 +1103,7 @@ export function TestPlanDetail({
 
           <div className={cn(cqaCard, "p-5")}>
             <div className="flex items-center gap-2">
-              <CqaIcon name="notifications_none" className="text-[19px] text-[#5b4ee8]" />
+              <CqaIcon name="notifications_none" className="text-[19px] text-[#0F6B5C]" />
               <h2 className="text-[16px] font-semibold text-[#262626]">Notifications</h2>
             </div>
             <div className="mt-3 divide-y divide-[#f0f1f3]">
@@ -1157,7 +1157,7 @@ export function TestPlanDetail({
                   <div className="space-y-1.5">
                     {options.map(([value, copy]) => (
                       <label key={value} className="flex cursor-pointer items-center gap-2 text-[13px] text-[#4a5565]">
-                        <input type="radio" name={key} className="size-4 accent-[#5b4ee8]" checked={settings.recovery[key] === value} onChange={() => setRecovery(key, value)} disabled={readOnly} />
+                        <input type="radio" name={key} className="size-4 accent-[#0F6B5C]" checked={settings.recovery[key] === value} onChange={() => setRecovery(key, value)} disabled={readOnly} />
                         {copy}
                       </label>
                     ))}
@@ -1190,8 +1190,8 @@ export function TestPlanDetail({
           </div>
 
           <div className="mt-4 flex items-center gap-5 border-b border-[#e5e7eb]">
-            <button type="button" onClick={() => setMatrixMode("matrix")} className={cn("border-b-2 pb-2.5 text-[13.5px]", matrixMode === "matrix" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]")}>Test case matrix</button>
-            <button type="button" onClick={() => setMatrixMode("summary")} className={cn("border-b-2 pb-2.5 text-[13.5px]", matrixMode === "summary" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]")}>Plan summary</button>
+            <button type="button" onClick={() => setMatrixMode("matrix")} className={cn("border-b-2 pb-2.5 text-[13.5px]", matrixMode === "matrix" ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280]")}>Test case matrix</button>
+            <button type="button" onClick={() => setMatrixMode("summary")} className={cn("border-b-2 pb-2.5 text-[13.5px]", matrixMode === "summary" ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280]")}>Plan summary</button>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -1317,7 +1317,7 @@ export function TestPlanDetail({
           <div className="max-h-[360px] divide-y divide-[#f0f1f3] overflow-y-auto rounded-lg border border-[#e5e7eb]">
             {filteredAllSuites.map((s) => (
               <label key={s.id} className="flex cursor-pointer items-start gap-2.5 px-3 py-2.5 hover:bg-[#fafafa]">
-                <input type="checkbox" className="mt-1 size-4 accent-[#5b4ee8]" checked={suiteIds.includes(s.id)} onChange={() => setSuiteIds((prev) => (prev.includes(s.id) ? prev.filter((v) => v !== s.id) : [...prev, s.id]))} />
+                <input type="checkbox" className="mt-1 size-4 accent-[#0F6B5C]" checked={suiteIds.includes(s.id)} onChange={() => setSuiteIds((prev) => (prev.includes(s.id) ? prev.filter((v) => v !== s.id) : [...prev, s.id]))} />
                 <span>
                   <span className="flex items-center gap-2 text-[13px] font-medium text-[#1f2937]"><span className="text-[10.5px] text-[#9ca3af]">{s.code}</span>{s.name}</span>
                   <span className="mt-0.5 block text-[11.5px] text-[#6b7280]">{s.casesCount} cases · {s.platform}</span>

@@ -140,7 +140,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
         placeholder="Search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+        className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
       />
     </div>
   );
@@ -355,7 +355,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
             aria-selected={tab === t.value}
             className={cn(
               "-mb-px inline-flex items-center gap-1.5 border-b-2 pb-2.5 pt-1 text-[13px] transition",
-              tab === t.value ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+              tab === t.value ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
             )}
           >
             <CqaIcon name={t.icon} className="text-[17px]" />
@@ -375,7 +375,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                 type="button"
                 onClick={() => setView("grid")}
                 aria-pressed={view === "grid"}
-                className={cn("inline-flex h-9 items-center gap-1.5 px-3 text-[12.5px]", view === "grid" ? "bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "text-[#4b5563] hover:bg-[#f9fafb]")}
+                className={cn("inline-flex h-9 items-center gap-1.5 px-3 text-[12.5px]", view === "grid" ? "bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "text-[#4b5563] hover:bg-[#f9fafb]")}
               >
                 <CqaIcon name="grid_view" className="text-[17px]" /> Grid
               </button>
@@ -383,7 +383,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                 type="button"
                 onClick={() => setView("list")}
                 aria-pressed={view === "list"}
-                className={cn("inline-flex h-9 items-center gap-1.5 border-l border-[#e5e7eb] px-3 text-[12.5px]", view === "list" ? "bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "text-[#4b5563] hover:bg-[#f9fafb]")}
+                className={cn("inline-flex h-9 items-center gap-1.5 border-l border-[#e5e7eb] px-3 text-[12.5px]", view === "list" ? "bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "text-[#4b5563] hover:bg-[#f9fafb]")}
               >
                 <CqaIcon name="view_list" className="text-[17px]" /> List
               </button>
@@ -429,7 +429,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                   type="button"
                   disabled={readOnly}
                   onClick={() => setEnvModal({ mode: "create" })}
-                  className="flex min-h-[186px] flex-col items-center justify-center gap-2 rounded-[11px] border border-dashed border-[#d1d5db] bg-[#fafafa] px-4 py-6 text-[13px] font-medium text-[#6b7280] transition hover:border-[#a9a1f7] hover:bg-[#f5f3ff] hover:text-[#5b4ee8] disabled:opacity-60"
+                  className="flex min-h-[186px] flex-col items-center justify-center gap-2 rounded-[11px] border border-dashed border-[#d1d5db] bg-[#fafafa] px-4 py-6 text-[13px] font-medium text-[#6b7280] transition hover:border-[#0F6B5C] hover:bg-[#f5f3ff] hover:text-[#0F6B5C] disabled:opacity-60"
                 >
                   <CqaIcon name="add_circle" className="text-[26px]" />
                   New environment
@@ -456,7 +456,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                           <div className="flex items-center gap-2.5">
                             <span className="flex size-7 items-center justify-center rounded-md text-[10.5px] font-bold text-white" style={{ backgroundColor: env.accent }}>{initialsOf(env.name)}</span>
                             <span className="font-medium text-[#1f2937]">{env.name}</span>
-                            {env.isDefault && <span className="rounded bg-[#eef2ff] px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-[#5b4ee8]">DEFAULT</span>}
+                            {env.isDefault && <span className="rounded bg-[#eef2ff] px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-[#0F6B5C]">DEFAULT</span>}
                           </div>
                         </td>
                         <td className="max-w-[280px] truncate px-4 py-3 text-[12.5px] text-[#6b7280]">{env.description || "-"}</td>
@@ -624,7 +624,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                       type="checkbox"
                       checked={globalColumns[c]}
                       onChange={(event) => setGlobalColumns((prev) => ({ ...prev, [c]: event.target.checked }))}
-                      className="size-3.5 accent-[#5b4ee8]"
+                      className="size-3.5 accent-[#0F6B5C]"
                     />
                     {c}
                   </label>
@@ -671,7 +671,7 @@ export function EnvironmentData(props: EnvironmentDataProps) {
                         {globalColumns.Value && <td className="max-w-[220px] truncate px-4 py-3 font-mono text-[11.5px] text-[#6b7280]">{g.type === "Secret" ? "••••••••" : g.value || "-"}</td>}
                         {globalColumns.Tags && <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
-                            {g.tags.length === 0 ? <span className="text-[12px] text-[#9ca3af]">-</span> : g.tags.map((t) => <span key={t} className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10.5px] font-medium text-[#5b4ee8]">{t}</span>)}
+                            {g.tags.length === 0 ? <span className="text-[12px] text-[#9ca3af]">-</span> : g.tags.map((t) => <span key={t} className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10.5px] font-medium text-[#0F6B5C]">{t}</span>)}
                           </div>
                         </td>}
                         {globalColumns.Description && <td className="max-w-[260px] truncate px-4 py-3 text-[12.5px] text-[#6b7280]">{g.description || "-"}</td>}
@@ -873,7 +873,7 @@ function EnvironmentCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="truncate text-[13.5px] font-semibold text-[#1f2937]">{env.name}</p>
-            {env.isDefault && <span className="rounded bg-[#eef2ff] px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-[#5b4ee8]">DEFAULT</span>}
+            {env.isDefault && <span className="rounded bg-[#eef2ff] px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-[#0F6B5C]">DEFAULT</span>}
           </div>
           <p className="mt-0.5 text-[11px] text-[#9ca3af]">Updated {fmtDate(env.updatedAt)}</p>
         </div>
@@ -902,16 +902,16 @@ function EnvironmentCard({
         </div>
       </div>
       <div className="flex items-center justify-between gap-2">
-        <button type="button" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#5b4ee8] hover:underline" onClick={onEdit} disabled={readOnly}>
+        <button type="button" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#0F6B5C] hover:underline" onClick={onEdit} disabled={readOnly}>
           <CqaIcon name="edit" className="text-[15px]" /> Edit
         </button>
         <div className="flex items-center gap-2">
           {!env.isDefault && (
-            <button type="button" className="inline-flex items-center gap-1 text-[11.5px] text-[#6b7280] hover:text-[#5b4ee8]" onClick={onDefault} disabled={readOnly} title="Make this the default environment">
+            <button type="button" className="inline-flex items-center gap-1 text-[11.5px] text-[#6b7280] hover:text-[#0F6B5C]" onClick={onDefault} disabled={readOnly} title="Make this the default environment">
               <CqaIcon name="star" className="text-[15px]" /> Set default
             </button>
           )}
-          <button type="button" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#5b4ee8] hover:underline" onClick={onVariables} disabled={readOnly}>
+          <button type="button" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#0F6B5C] hover:underline" onClick={onVariables} disabled={readOnly}>
             <CqaIcon name="add_circle" className="text-[15px]" /> Variables
           </button>
         </div>
@@ -920,7 +920,7 @@ function EnvironmentCard({
   );
 }
 
-const ACCENTS = ["#5b4ee8", "#0891b2", "#059669", "#d97706", "#dc2626", "#7c3aed", "#475569"];
+const ACCENTS = ["#0F6B5C", "#0891b2", "#059669", "#d97706", "#dc2626", "#7c3aed", "#475569"];
 
 function EnvironmentModal({
   open,
@@ -1034,7 +1034,7 @@ function EnvironmentModal({
           </div>
           <textarea
             ref={descriptionRef}
-            className="min-h-[86px] w-full rounded-b-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+            className="min-h-[86px] w-full rounded-b-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What is this environment for?"
@@ -1074,7 +1074,7 @@ function EnvironmentModal({
               aria-checked={isDefault}
               aria-label="Make this the default environment"
               onClick={() => setIsDefault((v) => !v)}
-              className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", isDefault ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+              className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", isDefault ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
             >
               <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", isDefault ? "left-[21px]" : "left-[3px]")} />
             </button>
@@ -1176,7 +1176,7 @@ function VariablesModal({
           </div>
           <div className="flex items-center justify-between gap-3">
             <label className="flex items-center gap-2 text-[12px] text-[#374151]">
-              <input type="checkbox" checked={isSecret} onChange={(e) => setIsSecret(e.target.checked)} className="size-3.5 accent-[#5b4ee8]" />
+              <input type="checkbox" checked={isSecret} onChange={(e) => setIsSecret(e.target.checked)} className="size-3.5 accent-[#0F6B5C]" />
               Secret value
             </label>
             <button type="submit" className={cqaBtnPrimary} disabled={readOnly || pending === "var" || !key.trim()}>
@@ -1205,7 +1205,7 @@ function PermissionPicker({ value, onChange }: { value: string; onChange: (v: st
           onClick={() => onChange(o.value)}
           className={cn(
             "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-[12.5px] transition",
-            value === o.value ? "border-[#5b4ee8] bg-[#f5f3ff] text-[#4338ca]" : "border-[#e5e7eb] text-[#4b5563] hover:border-[#cbc6fb]",
+            value === o.value ? "border-[#0F6B5C] bg-[#f5f3ff] text-[#4338ca]" : "border-[#e5e7eb] text-[#4b5563] hover:border-[#cbc6fb]",
           )}
         >
           <CqaIcon name={o.icon} className="text-[16px]" />
@@ -1289,7 +1289,7 @@ function DataProfileModal({
         </div>
         <label className="block">
           <span className={cqaLabel}>Description</span>
-          <textarea className="min-h-[70px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What data lives in this profile?" />
+          <textarea className="min-h-[70px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What data lives in this profile?" />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
@@ -1319,7 +1319,7 @@ function DataProfileModal({
                       type="checkbox"
                       checked={environmentIds.includes(env.id)}
                       onChange={(e) => setEnvironmentIds((prev) => (e.target.checked ? [...prev, env.id] : prev.filter((id) => id !== env.id)))}
-                      className="size-3.5 accent-[#5b4ee8]"
+                      className="size-3.5 accent-[#0F6B5C]"
                     />
                     {env.name}
                   </label>
@@ -1463,7 +1463,7 @@ function GlobalVariableModal({
         </div>
         <label className="block">
           <span className={cqaLabel}>Description</span>
-          <textarea className="min-h-[70px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What is this variable used for?" />
+          <textarea className="min-h-[70px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What is this variable used for?" />
         </label>
         {error && <p role="alert" className="text-[12px] text-red-600">{error}</p>}
       </form>
@@ -1591,7 +1591,7 @@ function AuthProfileModal({
               aria-checked={autoSignIn}
               aria-label="Sign in again automatically when the session expires"
               onClick={() => setAutoSignIn((v) => !v)}
-              className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", autoSignIn ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+              className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", autoSignIn ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
             >
               <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", autoSignIn ? "left-[21px]" : "left-[3px]")} />
             </button>
@@ -1695,7 +1695,7 @@ function ProxyModal({ open, readOnly, onClose }: { open: boolean; readOnly: bool
           </label>
         </div>
         <label className="flex items-center gap-2 text-[12.5px] text-[#374151]">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="size-3.5 accent-[#5b4ee8]" /> Enabled
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="size-3.5 accent-[#0F6B5C]" /> Enabled
         </label>
         {error && <p role="alert" className="text-[12px] text-red-600">{error}</p>}
       </form>
@@ -1923,7 +1923,7 @@ function ImportModal({
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#d1d5db] bg-[#fafafa] px-4 py-8 text-center transition hover:border-[#a9a1f7] hover:bg-[#f5f3ff]"
+          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#d1d5db] bg-[#fafafa] px-4 py-8 text-center transition hover:border-[#0F6B5C] hover:bg-[#f5f3ff]"
         >
           <CqaIcon name="cloud_upload" className="text-[28px] text-[#9ca3af]" />
           <span className="text-[13px] font-medium text-[#374151]">{fileName || "Click to choose a file"}</span>

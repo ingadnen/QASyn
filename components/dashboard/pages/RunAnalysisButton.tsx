@@ -17,7 +17,7 @@ export function RunAnalysisButton({ disabled, label = "Run analysis", compact }:
           await run("a", "/api/dashboard/code-analysis");
           router.refresh();
         }}
-        className={compact ? "inline-flex size-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#5b4ee8] hover:bg-[#f9fafb] disabled:opacity-50" : cqaBtnSecondary}
+        className={compact ? "inline-flex size-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#0F6B5C] hover:bg-[#f9fafb] disabled:opacity-50" : cqaBtnSecondary}
         aria-label={label}
       >
         <CqaIcon name="add" className="text-[16px]" />

@@ -55,7 +55,7 @@ const TABS = [
 ];
 
 const inputCls =
-  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#8b80ff] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
+  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
 const labelCls = "mb-2 block text-[14px] font-medium text-[#374151]";
 const cardCls = "rounded-[12px] border border-[#dbdee5] bg-white p-[25px] shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]";
 const cardTitleCls = "mb-5 text-[18px] font-semibold text-[#262626]";
@@ -68,7 +68,7 @@ function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: 
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+      className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
     >
       <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", checked ? "left-[21px]" : "left-[3px]")} />
     </button>
@@ -302,7 +302,7 @@ export function OrganizationSettings({ readOnly, orgName, logoUrl, initial, view
               onClick={() => goTo(t.id)}
               className={cn(
                 "whitespace-nowrap border-b-2 pb-2 text-[16px] leading-6 transition",
-                tab === t.id ? "border-[#5b4ee8] font-bold text-[#5b4ee8]" : "border-transparent font-semibold text-[#4a5565] hover:text-[#111827]",
+                tab === t.id ? "border-[#0F6B5C] font-bold text-[#0F6B5C]" : "border-transparent font-semibold text-[#4a5565] hover:text-[#111827]",
               )}
             >
               {t.label}
@@ -326,7 +326,7 @@ export function OrganizationSettings({ readOnly, orgName, logoUrl, initial, view
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={readOnly}
-                className="flex w-full items-center gap-4 rounded-lg border border-dashed border-[#d1d5db] bg-[#fafafa] px-4 py-3 text-left transition hover:border-[#a9a1f7] disabled:opacity-60"
+                className="flex w-full items-center gap-4 rounded-lg border border-dashed border-[#d1d5db] bg-[#fafafa] px-4 py-3 text-left transition hover:border-[#0F6B5C] disabled:opacity-60"
               >
                 {logo ? (
                   <img src={logo} alt="Company logo" className="size-12 rounded-md border border-[#e5e7eb] bg-white object-contain p-1" />
@@ -402,7 +402,7 @@ export function OrganizationSettings({ readOnly, orgName, logoUrl, initial, view
                   onClick={() => set("viewport", value)}
                   className={cn(
                     "flex items-center gap-2 rounded-md border px-3 py-2.5 text-[14px] transition",
-                    prefs.viewport === value ? "border-[#5b4ee8] bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "border-[#d1d5db] bg-white text-[#374151] hover:border-[#b9b1fb]",
+                    prefs.viewport === value ? "border-[#0F6B5C] bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "border-[#d1d5db] bg-white text-[#374151] hover:border-[#b9b1fb]",
                   )}
                 >
                   <CqaIcon name={icon} className="text-[20px]" />
@@ -586,7 +586,7 @@ export function OrganizationSettings({ readOnly, orgName, logoUrl, initial, view
             <ul className="divide-y divide-[#f0f1f3] rounded-lg border border-[#e5e7eb]">
               {proxies.map((p) => (
                 <li key={p.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="flex size-9 items-center justify-center rounded-md bg-[#f5f3ff] text-[#5b4ee8]"><CqaIcon name="vpn_lock" className="text-[19px]" /></span>
+                  <span className="flex size-9 items-center justify-center rounded-md bg-[#f5f3ff] text-[#0F6B5C]"><CqaIcon name="vpn_lock" className="text-[19px]" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13.5px] font-medium text-[#111827]">{p.name}</p>
                     <p className="truncate text-[12px] text-[#6b7280]">{p.url || `${p.host}:${p.port}`}{p.username ? ` · ${p.username}` : ""}</p>

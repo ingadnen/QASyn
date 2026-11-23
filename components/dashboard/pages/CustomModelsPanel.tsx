@@ -76,7 +76,7 @@ export function CustomModelsPanel({ readOnly }: { readOnly: boolean }) {
               <span className="font-semibold text-[#111827]">{model.name}</span>
               <span className="text-[#6b7280]">{model.provider} · {model.modelId}</span>
               <span className="ml-auto text-[10.5px] text-[#9ca3af]">{model.hasApiKey ? "key stored" : "workspace key"}</span>
-              <button type="button" disabled={readOnly || pending} onClick={() => { setEditing(model.id); setForm({ name: model.name, provider: model.provider, modelId: model.modelId, apiKey: "", role: model.role }); }} className="text-[11px] font-semibold text-[#5b4ee8] hover:underline">Edit</button>
+              <button type="button" disabled={readOnly || pending} onClick={() => { setEditing(model.id); setForm({ name: model.name, provider: model.provider, modelId: model.modelId, apiKey: "", role: model.role }); }} className="text-[11px] font-semibold text-[#0F6B5C] hover:underline">Edit</button>
               <button type="button" disabled={readOnly || pending} onClick={() => void remove(model.id)} className="text-[11px] font-semibold text-[#b42318] hover:underline">Remove</button>
             </li>
           ))}

@@ -336,13 +336,13 @@ export function CrawlTable({ rows, readOnly, actions }: { rows: CrawlRow[]; read
                       aria-label={`Select ${row.name}`}
                       checked={selected.has(row.id)}
                       onChange={() => toggleOne(row.id)}
-                      className="size-3.5 rounded border-[#d1d5db] accent-[#5b4ee8]"
+                      className="size-3.5 rounded border-[#d1d5db] accent-[#0F6B5C]"
                     />
                   </td>
                   {visible.name !== false && (
                     <td className="border-b border-[#f3f4f6] px-4 py-3">
                       <p className="text-[10px] font-medium text-[#9ca3af]">{row.code}</p>
-                      <Link href={`/dashboard/crawl/${row.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{row.name}</Link>
+                      <Link href={`/dashboard/crawl/${row.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{row.name}</Link>
                     </td>
                   )}
                   {visible.format !== false && (

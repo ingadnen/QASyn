@@ -79,7 +79,7 @@ function resultFor(plan: SuitePlanRow) {
 }
 
 const inputCls =
-  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#8b80ff] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
+  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
 const labelCls = "mb-2 block text-[14px] font-medium text-[#374151]";
 
 export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) {
@@ -248,7 +248,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
             onClick={() => setTab(t.id)}
             className={cn(
               "whitespace-nowrap border-b-2 pb-2.5 pt-1 text-[13.5px] transition",
-              tab === t.id ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+              tab === t.id ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
             )}
           >
             {t.label}
@@ -269,10 +269,10 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
                 onChange={(e) => { setQuery(e.target.value); setPage(1); }}
                 placeholder="Search"
                 aria-label="Search test cases"
-                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
               />
             </div>
-            <button type="button" onClick={() => setReorder((v) => !v)} aria-pressed={reorder} className={cn(cqaBtnGhost, "h-9 border bg-white px-2.5", reorder ? "border-[#a9a1f7] text-[#5b4ee8]" : "border-[#e5e7eb]")}>
+            <button type="button" onClick={() => setReorder((v) => !v)} aria-pressed={reorder} className={cn(cqaBtnGhost, "h-9 border bg-white px-2.5", reorder ? "border-[#0F6B5C] text-[#0F6B5C]" : "border-[#e5e7eb]")}>
               <CqaIcon name="swap_vert" className="text-[17px]" /> Reorder
             </button>
             <button type="button" onClick={() => setManageOpen(true)} disabled={readOnly} className={cn(cqaBtnGhost, "h-9 border border-[#e5e7eb] bg-white px-2.5")}>
@@ -288,7 +288,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
                 {["All", "Ready", "In Review", "Draft"].map((s) => <option key={s}>{s}</option>)}
               </select>
             )}
-            <button type="button" aria-label="Filter" aria-pressed={filterOpen} onClick={() => setFilterOpen((v) => !v)} className={cn(cqaIconBtn, "size-9 border bg-white", filterOpen ? "border-[#a9a1f7] text-[#5b4ee8]" : "border-[#e5e7eb]")}>
+            <button type="button" aria-label="Filter" aria-pressed={filterOpen} onClick={() => setFilterOpen((v) => !v)} className={cn(cqaIconBtn, "size-9 border bg-white", filterOpen ? "border-[#0F6B5C] text-[#0F6B5C]" : "border-[#e5e7eb]")}>
               <CqaIcon name="filter_alt" className="text-[18px]" />
             </button>
             <button type="button" aria-label="Refresh" onClick={() => router.refresh()} className={cn(cqaIconBtn, "size-9 border border-[#e5e7eb] bg-white")}>
@@ -328,7 +328,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
                         <td className="max-w-[520px] px-4 py-3">
                           <div className="flex items-start gap-2">
                             <span className="mt-0.5 shrink-0 text-[10.5px] font-medium text-[#9ca3af]">{c.code}</span>
-                            <Link href={`/dashboard/test-studio/${c.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{c.title}</Link>
+                            <Link href={`/dashboard/test-studio/${c.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{c.title}</Link>
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
@@ -409,7 +409,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
                         <td className="px-4 py-3">
                           <div className="flex items-start gap-2">
                             <span className="mt-0.5 shrink-0 text-[10.5px] font-medium text-[#9ca3af]">{p.code}</span>
-                            <Link href={`/dashboard/plans/test-plans/${p.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{p.name}</Link>
+                            <Link href={`/dashboard/plans/test-plans/${p.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{p.name}</Link>
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-[#4a5565]">{p.platform}</td>
@@ -418,7 +418,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#6b7280]">{fmtDate(p.lastRunAt)}</td>
                         <td className="whitespace-nowrap px-4 py-3">
-                          <Link href={`/dashboard/plans/test-plans/${p.id}`} className="font-medium text-[#5b4ee8] hover:underline">Open</Link>
+                          <Link href={`/dashboard/plans/test-plans/${p.id}`} className="font-medium text-[#0F6B5C] hover:underline">Open</Link>
                         </td>
                       </tr>
                     );
@@ -440,7 +440,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
           <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
             <div className={cn(cqaCard, "h-fit p-3")}>
               <button type="button" className="flex w-full items-start gap-2 rounded-md bg-[#f5f3ff] px-2.5 py-2.5 text-left">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-[#ddd6fe] bg-white text-[11.5px] font-semibold text-[#5b4ee8]">v1</span>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-[#ddd6fe] bg-white text-[11.5px] font-semibold text-[#0F6B5C]">v1</span>
                 <span>
                   <span className="block text-[13px] font-medium text-[#4f46e5]">Current</span>
                   <span className="mt-0.5 block text-[11.5px] text-[#6b7280]">{new Date(suite.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
@@ -525,7 +525,7 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
                       onClick={() => { setPlatform(value); setSaved(false); }}
                       className={cn(
                         "flex items-center justify-center gap-1.5 rounded-md border px-2 py-2.5 text-[13.5px] transition",
-                        platform === value ? "border-[#5b4ee8] bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "border-[#d1d5db] bg-white text-[#374151] hover:border-[#b9b1fb]",
+                        platform === value ? "border-[#0F6B5C] bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "border-[#d1d5db] bg-white text-[#374151] hover:border-[#b9b1fb]",
                       )}
                     >
                       <CqaIcon name={icon} className="text-[18px]" /> {value}
@@ -597,12 +597,12 @@ export function SuiteDetail({ suite, cases, plans, allCases, readOnly }: Props) 
         <div className="space-y-3">
           <div className="relative">
             <CqaIcon name="search" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9ca3af]" />
-            <input className="h-9 w-full rounded-lg border border-[#e5e7eb] pl-9 pr-3 text-[13px] outline-none focus:border-[#a9a1f7]" placeholder="Search test cases" value={manageQuery} onChange={(e) => setManageQuery(e.target.value)} />
+            <input className="h-9 w-full rounded-lg border border-[#e5e7eb] pl-9 pr-3 text-[13px] outline-none focus:border-[#0F6B5C]" placeholder="Search test cases" value={manageQuery} onChange={(e) => setManageQuery(e.target.value)} />
           </div>
           <div className="max-h-[360px] divide-y divide-[#f0f1f3] overflow-y-auto rounded-lg border border-[#e5e7eb]">
             {manageRows.map((c) => (
               <label key={c.id} className="flex cursor-pointer items-start gap-2.5 px-3 py-2.5 hover:bg-[#fafafa]">
-                <input type="checkbox" className="mt-1 size-4 accent-[#5b4ee8]" checked={selected.includes(c.id)} onChange={() => toggleManaged(c.id)} />
+                <input type="checkbox" className="mt-1 size-4 accent-[#0F6B5C]" checked={selected.includes(c.id)} onChange={() => toggleManaged(c.id)} />
                 <span className="min-w-0">
                   <span className="flex items-center gap-2 text-[13px] font-medium text-[#1f2937]"><span className="text-[10.5px] text-[#9ca3af]">{c.code}</span>{c.title}</span>
                   <span className="mt-0.5 block text-[11.5px] text-[#6b7280]">{c.module || "Unorganised"}</span>

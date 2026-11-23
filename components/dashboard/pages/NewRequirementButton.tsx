@@ -190,12 +190,12 @@ export function NewRequirementButton({ readOnly, defaultUrl }: { readOnly: boole
                   onClick={() => choose(option.key)}
                   className={cn(cqaCard, "group flex h-full flex-col p-4 text-left transition hover:border-[#b9b1fb] hover:shadow-[0_6px_20px_rgba(91,78,232,0.10)]")}
                 >
-                  <span className="inline-flex size-9 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#5b4ee8]">
+                  <span className="inline-flex size-9 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#0F6B5C]">
                     <CqaIcon name={option.icon} className="text-[21px]" />
                   </span>
                   <span className="mt-3 text-[13.5px] font-semibold text-[#111827]">{option.title}</span>
                   <span className="mt-1.5 flex-1 text-[12px] leading-5 text-[#6b7280]">{option.description}</span>
-                  <span className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-[#5b4ee8]">
+                  <span className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-[#0F6B5C]">
                     Get started <CqaIcon name="arrow_forward" className="text-[15px] transition group-hover:translate-x-0.5" />
                   </span>
                 </button>
@@ -248,8 +248,8 @@ export function NewRequirementButton({ readOnly, defaultUrl }: { readOnly: boole
 
               {method === "file" && (
                 <div className="space-y-3">
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#d1d5db] bg-[#fafafa] px-6 py-8 text-center transition hover:border-[#a9a1f7] hover:bg-[#faf9ff]">
-                    <CqaIcon name="cloud_upload" className="text-[28px] text-[#5b4ee8]" />
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#d1d5db] bg-[#fafafa] px-6 py-8 text-center transition hover:border-[#0F6B5C] hover:bg-[#faf9ff]">
+                    <CqaIcon name="cloud_upload" className="text-[28px] text-[#0F6B5C]" />
                     <span className="mt-2 text-[13px] font-medium text-[#374151]">{file || "Click to upload or drag and drop"}</span>
                     <span className="mt-1 text-[11.5px] text-[#9ca3af]">PDF, DOCX, XLSX, CSV or TXT · Max 20MB</span>
                     <input
@@ -276,7 +276,7 @@ export function NewRequirementButton({ readOnly, defaultUrl }: { readOnly: boole
                   <label className="block">
                     <span className={cqaLabel}>Explore prompt</span>
                     <textarea
-                      className="min-h-[80px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7]"
+                      className="min-h-[80px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C]"
                       value={explorePrompt}
                       onChange={(e) => setExplorePrompt(e.target.value)}
                       placeholder="e.g. Test the sign-in flow and primary navigation"
@@ -288,7 +288,7 @@ export function NewRequirementButton({ readOnly, defaultUrl }: { readOnly: boole
                     <input className={cqaInput} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Checkout journey" disabled={readOnly} />
                   </label>
                   <label className="flex items-start gap-2.5 rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3.5 py-3">
-                    <input type="checkbox" checked={requireApproval} onChange={(e) => setRequireApproval(e.target.checked)} className="mt-0.5 size-4 accent-[#5b4ee8]" disabled={readOnly} />
+                    <input type="checkbox" checked={requireApproval} onChange={(e) => setRequireApproval(e.target.checked)} className="mt-0.5 size-4 accent-[#0F6B5C]" disabled={readOnly} />
                     <span>
                       <span className="block text-[12.5px] font-medium text-[#374151]">Require Approval</span>
                       <span className="mt-0.5 block text-[11.5px] text-[#6b7280]">

@@ -20,3 +20,6 @@ contextqa-dump/*.png
 
 # Local commit dumps
 derniers-commits*.txt
+
+# Added by ML AI Code: build output and caches
+.env*.local

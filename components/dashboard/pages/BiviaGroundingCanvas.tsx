@@ -148,7 +148,7 @@ export function BiviaGroundingCanvas({
       {!compact && (
         <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#6b7280]">
           <span className="inline-flex min-w-0 items-center gap-1">
-            <CqaIcon name="my_location" className="text-[13px] text-[#5b4ee8]" />
+            <CqaIcon name="my_location" className="text-[13px] text-[#0F6B5C]" />
             <span className="truncate">{caption}</span>
           </span>
           <span className="text-[#9ca3af]">

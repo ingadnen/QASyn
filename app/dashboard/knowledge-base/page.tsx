@@ -28,7 +28,7 @@ export default async function KnowledgeBasePage({ searchParams }: { searchParams
             defaultValue={q}
             aria-label="Search knowledge base"
             placeholder="Search"
-            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
           />
         </form>
         <a href="/dashboard/knowledge-base" aria-label="Refresh" className={cqaBtnSecondary}>

@@ -27,7 +27,7 @@ export default async function UploadsPage({ searchParams }: { searchParams: Prom
             defaultValue={q}
             aria-label="Search uploads"
             placeholder="Search"
-            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
           />
         </form>
         <details className="relative">
@@ -38,7 +38,7 @@ export default async function UploadsPage({ searchParams }: { searchParams: Prom
             <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">Show columns</p>
             {["File Name", "Type", "Size", "Uploaded by", "Created"].map((c) => (
               <label key={c} className="flex items-center gap-2 py-0.5 text-[12.5px] text-[#374151]">
-                <input type="checkbox" defaultChecked className="size-3.5 accent-[#5b4ee8]" /> {c}
+                <input type="checkbox" defaultChecked className="size-3.5 accent-[#0F6B5C]" /> {c}
               </label>
             ))}
           </div>

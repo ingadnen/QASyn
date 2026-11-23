@@ -111,7 +111,7 @@ export function PullRequestRowActions({ row, readOnly }: { row: PullRequestRow; 
           </dl>
           <div className="rounded-lg border border-[#f0f1f3] px-3 py-2.5 text-[12.5px] leading-5 text-[#6b7280]">
             <p className="inline-flex items-center gap-1.5 font-medium text-[#374151]">
-              <CqaIcon name="account_tree" className="text-[16px] text-[#5b4ee8]" /> Impact analysis
+              <CqaIcon name="account_tree" className="text-[16px] text-[#0F6B5C]" /> Impact analysis
             </p>
             <p className="mt-1">
               {row.riskLevel === "high"

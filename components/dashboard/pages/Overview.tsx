@@ -209,7 +209,7 @@ function CoverageCard({
               }}
               className={cn(
                 "relative z-0 flex h-[25px] flex-none items-center justify-center whitespace-nowrap rounded-[8px] px-[14px] py-[3.5px] text-center text-[12px] leading-3 transition",
-                tab === value ? "bg-[#5b4ee8] font-medium text-white" : "font-normal text-[#64748b] hover:text-[#0f172a]",
+                tab === value ? "bg-[#0F6B5C] font-medium text-white" : "font-normal text-[#64748b] hover:text-[#0f172a]",
               )}
             >
               By {value}
@@ -222,7 +222,7 @@ function CoverageCard({
           <button
             type="button"
             onClick={() => setShowAll((value) => !value)}
-            className="shrink-0 text-[10.5px] font-semibold text-[#5b4ee8] transition hover:text-[#4338ca]"
+            className="shrink-0 text-[10.5px] font-semibold text-[#0F6B5C] transition hover:text-[#4338ca]"
           >
             {showAll ? "View less" : "View all"}
           </button>
@@ -256,7 +256,7 @@ function CoverageCard({
                   </div>
                   <div className="mt-[6px] block h-[5px] overflow-hidden rounded-full bg-[#f1f5f9]">
                     <span
-                      className="block h-full rounded-full bg-gradient-to-r from-[#5b4ee8] to-[#6366f1]"
+                      className="block h-full rounded-full bg-gradient-to-r from-[#0F6B5C] to-[#6366f1]"
                       style={{ width: `${Math.max(0, Math.min(100, row.percent))}%` }}
                     />
                   </div>
@@ -308,7 +308,7 @@ function QuickStrip({ prsChecked, integrations }: OverviewProps["strip"]) {
                 key={name}
                 href="/dashboard/integrations"
                 title={name}
-                className="inline-flex size-7 shrink-0 items-center justify-center rounded-[8px] border border-[#e5e7eb] bg-white text-[9px] font-bold uppercase text-[#64748b] transition hover:border-[#cbc6fb] hover:text-[#5b4ee8]"
+                className="inline-flex size-7 shrink-0 items-center justify-center rounded-[8px] border border-[#e5e7eb] bg-white text-[9px] font-bold uppercase text-[#64748b] transition hover:border-[#cbc6fb] hover:text-[#0F6B5C]"
               >
                 {name.slice(0, 3)}
               </Link>
@@ -318,7 +318,7 @@ function QuickStrip({ prsChecked, integrations }: OverviewProps["strip"]) {
             href="/dashboard/integrations"
             title="Add integration"
             aria-label="Add integration"
-            className="inline-flex size-7 shrink-0 items-center justify-center rounded-[8px] border border-dashed border-[#d6d9e4] text-[#9ca3af] transition hover:border-[#5b4ee8] hover:text-[#5b4ee8]"
+            className="inline-flex size-7 shrink-0 items-center justify-center rounded-[8px] border border-dashed border-[#d6d9e4] text-[#9ca3af] transition hover:border-[#0F6B5C] hover:text-[#0F6B5C]"
           >
             <CqaIcon name="add" className="text-[14px]" />
           </Link>
@@ -415,7 +415,7 @@ export function Overview(props: OverviewProps) {
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#c7d2fe] bg-gradient-to-r from-[#eef2ff] via-white to-[#faf5ff] px-4 py-3 shadow-[0_1px_3px_rgba(15,23,42,0.04)]" data-testid="autopilot-banner">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[13px] font-bold text-[#312e81]">
-            <CqaIcon name="rocket_launch" className="text-[17px] text-[#5b4ee8]" /> Quality Autopilot
+            <CqaIcon name="rocket_launch" className="text-[17px] text-[#0F6B5C]" /> Quality Autopilot
           </p>
           <p className="mt-0.5 text-[11.5px] leading-4 text-[#4b5563]">
             Crawl, Strix-scan, Graphify, author QASyn Vision-calibrated test cases and execute them in Studio - in one click.
@@ -494,13 +494,13 @@ export function Overview(props: OverviewProps) {
                   index > 0 && "border-t border-[#f1f5f9]",
                 )}
               >
-                <span className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#eef0ff] text-[#5b4ee8]">
+                <span className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#e3efec] text-[#0F6B5C]">
                   <CqaIcon name="fact_check" className="text-[16px]" />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="flex min-w-0 items-baseline gap-2">
                     <span className="min-w-0 truncate text-[12.5px] text-[#0f172a]">{recent.title}</span>
-                    <span className="shrink-0 rounded-full bg-[#eef0ff] px-[7px] py-px text-[9px] font-semibold text-[#5b4ee8]">Test Case</span>
+                    <span className="shrink-0 rounded-full bg-[#e3efec] px-[7px] py-px text-[9px] font-semibold text-[#0F6B5C]">Test Case</span>
                   </span>
                   <span className="mt-px block truncate text-[11px] text-[#64748b]">
                     baseline · {recent.steps} {recent.steps === 1 ? "step" : "steps"} · {recent.status}
@@ -515,7 +515,7 @@ export function Overview(props: OverviewProps) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   aria-hidden="true"
-                  className="mt-[3px] size-[14px] shrink-0 text-[#9ca3af] transition group-hover:text-[#5b4ee8]"
+                  className="mt-[3px] size-[14px] shrink-0 text-[#9ca3af] transition group-hover:text-[#0F6B5C]"
                 >
                   <path d="M7 17 17 7" />
                   <path d="M8 7h9v9" />

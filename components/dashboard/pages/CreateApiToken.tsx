@@ -12,7 +12,7 @@ interface Props {
 }
 
 const inputCls =
-  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#8b80ff] focus:ring-2 focus:ring-[#e4e1fd]";
+  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]";
 const labelCls = "mb-2 block text-[14px] font-medium text-[#374151]";
 const helpCls = "mt-1.5 block text-[12.5px] leading-5 text-[#6b7280]";
 const cardCls = "mt-5 rounded-[12px] border border-[#dbdee5] bg-white p-[25px] shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]";
@@ -96,7 +96,7 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
             </button>
           </div>
           <div className="mt-5 flex justify-end border-t border-[#f0f1f3] pt-4">
-            <Link href="/dashboard/settings/api-tokens" className="inline-flex h-9 items-center rounded-lg bg-[#5b4ee8] px-4 text-[13px] font-medium text-white hover:bg-[#6d61ff]">
+            <Link href="/dashboard/settings/api-tokens" className="inline-flex h-9 items-center rounded-lg bg-[#0F6B5C] px-4 text-[13px] font-medium text-white hover:bg-[#0c5a4d]">
               Done
             </Link>
           </div>
@@ -112,7 +112,7 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-full bg-[#f5f3ff] text-[#5b4ee8]"><CqaIcon name="key" className="text-[22px]" /></span>
+        <span className="flex size-10 items-center justify-center rounded-full bg-[#f5f3ff] text-[#0F6B5C]"><CqaIcon name="key" className="text-[22px]" /></span>
         <h1 className="text-[20px] font-bold leading-7 text-[#101828]">Create API token</h1>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[#6b7280]">
@@ -135,7 +135,7 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
 
       <section className={cardCls}>
         <div className="flex items-center gap-2">
-          <CqaIcon name="badge" className="text-[20px] text-[#5b4ee8]" />
+          <CqaIcon name="badge" className="text-[20px] text-[#0F6B5C]" />
           <h3 className="text-[17px] font-semibold text-[#262626]">Details</h3>
         </div>
         <p className="mt-1 text-[12.5px] text-[#6b7280]">The name is a label only — it never affects access.</p>
@@ -162,10 +162,10 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
 
       <section className={cardCls}>
         <div className="flex flex-wrap items-center gap-2">
-          <CqaIcon name="verified_user" className="text-[20px] text-[#5b4ee8]" />
+          <CqaIcon name="verified_user" className="text-[20px] text-[#0F6B5C]" />
           <h3 className="text-[17px] font-semibold text-[#262626]">Permissions</h3>
           <span className="ml-auto text-[12.5px] text-[#6b7280]">{selected.length === 0 ? "None selected" : `${selected.length} selected`}</span>
-          <button type="button" onClick={() => setSelected([])} disabled={readOnly || selected.length === 0} className="text-[12.5px] font-medium text-[#5b4ee8] hover:underline disabled:opacity-40">Clear all</button>
+          <button type="button" onClick={() => setSelected([])} disabled={readOnly || selected.length === 0} className="text-[12.5px] font-medium text-[#0F6B5C] hover:underline disabled:opacity-40">Clear all</button>
         </div>
         <p className="mt-1 text-[12.5px] text-[#6b7280]">At least one scope is required. Each scope maps to a fixed set of routes.</p>
 
@@ -174,7 +174,7 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
             const checked = selected.includes(scope.id);
             return (
               <label key={scope.id} className="flex cursor-pointer items-start gap-3 px-4 py-3 transition hover:bg-[#fafafa]">
-                <input type="checkbox" className="mt-1 size-4 rounded border-[#d1d5db] accent-[#5b4ee8]" checked={checked} onChange={() => toggleScope(scope.id)} disabled={readOnly} />
+                <input type="checkbox" className="mt-1 size-4 rounded border-[#d1d5db] accent-[#0F6B5C]" checked={checked} onChange={() => toggleScope(scope.id)} disabled={readOnly} />
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-[13.5px] font-medium text-[#262626]">{scope.label}</span>
@@ -184,7 +184,7 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
                       </span>
                     )}
                     {scope.risk === "broad" && (
-                      <span className="inline-flex items-center gap-1 rounded border border-[#ddd6fe] bg-[#f5f3ff] px-1.5 py-[1px] text-[10.5px] text-[#5b4ee8]">
+                      <span className="inline-flex items-center gap-1 rounded border border-[#ddd6fe] bg-[#f5f3ff] px-1.5 py-[1px] text-[10.5px] text-[#0F6B5C]">
                         <CqaIcon name="all_inclusive" className="text-[11px]" /> Broad
                       </span>
                     )}
@@ -200,7 +200,7 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
 
       <section className={cardCls}>
         <button type="button" onClick={() => setIpOpen((v) => !v)} className="flex w-full items-center gap-2 text-left">
-          <CqaIcon name="shield" className="text-[20px] text-[#5b4ee8]" />
+          <CqaIcon name="shield" className="text-[20px] text-[#0F6B5C]" />
           <span className="text-[17px] font-semibold text-[#262626]">Advanced — IP allowlist</span>
           <span className="ml-auto flex items-center gap-2 text-[12.5px] text-[#6b7280]">
             {ipList.length === 0 ? "Unrestricted" : `${ipList.length} rule${ipList.length === 1 ? "" : "s"}`}
@@ -233,7 +233,7 @@ export function CreateApiToken({ readOnly, existingNames }: Props) {
           type="button"
           onClick={create}
           disabled={!canCreate || pending === "create"}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#5b4ee8] px-3.5 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#6d61ff] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0F6B5C] px-3.5 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#0c5a4d] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CqaIcon name="key" className="text-[17px]" />
           {pending === "create" ? "Creating…" : "Create token"}

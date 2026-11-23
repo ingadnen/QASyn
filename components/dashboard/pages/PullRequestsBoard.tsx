@@ -293,7 +293,7 @@ function PrDetailDrawer({
                 href={row.externalUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#5b4ee8] hover:underline"
+                className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#0F6B5C] hover:underline"
               >
                 Open in provider <CqaIcon name="open_in_new" className="text-[14px]" />
               </a>
@@ -322,7 +322,7 @@ function PrDetailDrawer({
 
           <section>
             <h3 className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#111827]">
-              <CqaIcon name="account_tree" className="text-[16px] text-[#5b4ee8]" /> Blast radius
+              <CqaIcon name="account_tree" className="text-[16px] text-[#0F6B5C]" /> Blast radius
             </h3>
             <p className="mt-1 text-[12px] leading-5 text-[#6b7280]">
               {row.impact.blastRadius ? `${riskLabel(row.impact.blastRadius)} blast radius` : "Blast radius computed"} across{" "}
@@ -378,7 +378,7 @@ function PrDetailDrawer({
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <h3 className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#111827]">
-                  <CqaIcon name="rocket_launch" className="text-[16px] text-[#5b4ee8]" /> PR auto-regression
+                  <CqaIcon name="rocket_launch" className="text-[16px] text-[#0F6B5C]" /> PR auto-regression
                 </h3>
                 <p className="mt-1 text-[11.5px] leading-4 text-[#6b7280]">
                   Creates PR-specific smoke and regression cases, then runs them plus the impacted suite against the deployed URL with per-step screenshots.
@@ -423,7 +423,7 @@ function PrDetailDrawer({
             <label className="mt-2 flex items-center gap-2 text-[11.5px] text-[#4b5563]">
               <input
                 type="checkbox"
-                className="size-3.5 accent-[#5b4ee8]"
+                className="size-3.5 accent-[#0F6B5C]"
                 checked={autoCreate}
                 onChange={(event) => setAutoCreate(event.target.checked)}
                 disabled={readOnly || autoPending}
@@ -553,7 +553,7 @@ function PrDetailDrawer({
           )}
           {gateMeta && (
             <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#5b4ee8]">
+              <span className="rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#0F6B5C]">
                 🧠 QASyn Vision AI {gateMeta.bivia ? `${gateMeta.bivia.riskScore.toFixed(1)}/10 · ${gateMeta.bivia.probabilityPct.toFixed(1)}%` : "fallback"}
               </span>
               <span className="rounded-full bg-[#ecfdf3] px-2 py-0.5 text-[10.5px] font-semibold text-[#067647]">
@@ -744,7 +744,7 @@ function AnalysePrModal({
                           onClick={() => setSelected(pull)}
                           className={cn(
                             "w-full rounded-lg border px-3 py-2 text-left transition",
-                            active ? "border-[#a9a1f7] bg-[#f5f4ff]" : "border-transparent hover:border-[#e5e7eb] hover:bg-[#fafafa]",
+                            active ? "border-[#0F6B5C] bg-[#f5f4ff]" : "border-transparent hover:border-[#e5e7eb] hover:bg-[#fafafa]",
                           )}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -842,7 +842,7 @@ function AnalysePrModal({
         <button
           type="button"
           onClick={() => setManual((value) => !value)}
-          className="text-[12px] font-semibold text-[#5b4ee8] hover:underline"
+          className="text-[12px] font-semibold text-[#0F6B5C] hover:underline"
         >
           {manual ? "← Back to connected pull requests" : "Manual / Custom PR URL"}
         </button>
@@ -923,7 +923,7 @@ export function PullRequestsBoard({
           type="button"
           disabled={readOnly}
           onClick={() => setModalOpen(true)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#5b4ee8] px-3.5 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#6d61ff] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0F6B5C] px-3.5 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#0c5a4d] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CqaIcon name="add" className="text-[16px]" /> Analyse PR
         </button>
@@ -980,7 +980,7 @@ export function PullRequestsBoard({
                   <tr key={row.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
                     <td className="max-w-[380px] px-4 py-3">
                       <button type="button" onClick={() => setDetail(row)} className="max-w-full text-left">
-                        <span className="block truncate font-medium text-[#1f2937] hover:text-[#5b4ee8]">
+                        <span className="block truncate font-medium text-[#1f2937] hover:text-[#0F6B5C]">
                           #{row.prNumber} {row.title}
                         </span>
                       </button>

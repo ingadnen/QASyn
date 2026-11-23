@@ -75,7 +75,7 @@ function StepBadge({ index, label, state }: { index: number; label: string; stat
       <span
         className={cn(
           "flex size-6 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold",
-          state === "active" ? "bg-[#5b4ee8] text-white" : state === "done" ? "bg-[#ece9fd] text-[#5b4ee8]" : "bg-[#f3f4f6] text-[#9ca3af]",
+          state === "active" ? "bg-[#0F6B5C] text-white" : state === "done" ? "bg-[#ece9fd] text-[#0F6B5C]" : "bg-[#f3f4f6] text-[#9ca3af]",
         )}
       >
         {index}
@@ -104,7 +104,7 @@ function LabelInput({
     setDraft("");
   }
   return (
-    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-2 py-1 focus-within:border-[#a9a1f7]">
+    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-2 py-1 focus-within:border-[#0F6B5C]">
       {labels.map((label) => (
         <span key={label} className="inline-flex items-center gap-1 rounded bg-[#f3f4f6] px-1.5 py-[2px] text-[11.5px] text-[#374151]">
           {label}
@@ -162,7 +162,7 @@ function SwitchRow({
         aria-label={label}
         onClick={() => onChange(!checked)}
         disabled={disabled}
-        className={cn("relative mt-1 h-5 w-9 shrink-0 rounded-full transition", checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+        className={cn("relative mt-1 h-5 w-9 shrink-0 rounded-full transition", checked ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
       >
         <span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition-all", checked ? "left-[18px]" : "left-0.5")} />
       </button>
@@ -355,7 +355,7 @@ function SuiteWizard({ open, onClose, readOnly }: { open: boolean; onClose: () =
                   <label key={candidate.id} className="flex cursor-pointer items-start gap-2 border-b border-[#f3f4f6] px-3 py-2 last:border-0 hover:bg-[#fafafa]">
                     <input
                       type="checkbox"
-                      className="mt-0.5 size-3.5 accent-[#5b4ee8]"
+                      className="mt-0.5 size-3.5 accent-[#0F6B5C]"
                       checked={prerequisites.includes(candidate.id)}
                       onChange={() =>
                         setPrerequisites((prev) => (prev.includes(candidate.id) ? prev.filter((id) => id !== candidate.id) : [...prev, candidate.id]))
@@ -382,7 +382,7 @@ function SuiteWizard({ open, onClose, readOnly }: { open: boolean; onClose: () =
           <button
             type="button"
             onClick={() => setShowConfig((value) => !value)}
-            className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#5b4ee8] hover:underline"
+            className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#0F6B5C] hover:underline"
           >
             <CqaIcon name="tune" className="text-[15px]" />
             {showConfig ? "Hide Configuration Options" : "Show Configuration Options"}
@@ -402,7 +402,7 @@ function SuiteWizard({ open, onClose, readOnly }: { open: boolean; onClose: () =
                     key={option.value}
                     className={cn(
                       "flex cursor-pointer items-center gap-2 rounded-lg border bg-white px-3 py-2.5 text-[12.5px] transition",
-                      platform === option.value ? "border-[#5b4ee8] bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "border-[#e5e7eb] text-[#374151] hover:border-[#b9b1fb]",
+                      platform === option.value ? "border-[#0F6B5C] bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "border-[#e5e7eb] text-[#374151] hover:border-[#b9b1fb]",
                     )}
                   >
                     <input
@@ -425,7 +425,7 @@ function SuiteWizard({ open, onClose, readOnly }: { open: boolean; onClose: () =
           <label className="block">
             <span className={cqaLabel}>Description</span>
             <textarea
-              className="min-h-[90px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7]"
+              className="min-h-[90px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C]"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Explain what test suite does"
@@ -434,7 +434,7 @@ function SuiteWizard({ open, onClose, readOnly }: { open: boolean; onClose: () =
           </label>
 
           <div className="flex items-start gap-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-3.5 py-2.5 text-[12px] text-[#4b5563]">
-            <CqaIcon name="info" className="mt-0.5 text-[16px] text-[#5b4ee8]" />
+            <CqaIcon name="info" className="mt-0.5 text-[16px] text-[#0F6B5C]" />
             Next, you&apos;ll add test cases. You can also create the suite empty and add cases later.
           </div>
           {error && <p className="text-[12px] text-red-600">{error}</p>}
@@ -458,7 +458,7 @@ function SuiteWizard({ open, onClose, readOnly }: { open: boolean; onClose: () =
             <label className="inline-flex items-center gap-2 text-[12.5px] text-[#374151]">
               <input
                 type="checkbox"
-                className="size-3.5 accent-[#5b4ee8]"
+                className="size-3.5 accent-[#0F6B5C]"
                 checked={visibleCases.length > 0 && visibleCases.every((c) => selectedCaseIds.includes(c.id))}
                 onChange={(event) =>
                   setSelectedCaseIds((prev) =>
@@ -478,7 +478,7 @@ function SuiteWizard({ open, onClose, readOnly }: { open: boolean; onClose: () =
               <label key={candidate.id} className="flex cursor-pointer items-start gap-2.5 border-b border-[#f3f4f6] px-3.5 py-2.5 last:border-0 hover:bg-[#fafafa]">
                 <input
                   type="checkbox"
-                  className="mt-0.5 size-3.5 accent-[#5b4ee8]"
+                  className="mt-0.5 size-3.5 accent-[#0F6B5C]"
                   checked={selectedCaseIds.includes(candidate.id)}
                   onChange={() =>
                     setSelectedCaseIds((prev) => (prev.includes(candidate.id) ? prev.filter((id) => id !== candidate.id) : [...prev, candidate.id]))
@@ -748,7 +748,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
             <span className={cqaLabel}>Description (Optional)</span>
             <RichToolbar />
             <textarea
-              className="min-h-[90px] w-full rounded-b-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7]"
+              className="min-h-[90px] w-full rounded-b-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C]"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Describe what this plan covers"
@@ -786,7 +786,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                   key={option.value}
                   className={cn(
                     "flex cursor-pointer items-center gap-2 rounded-lg border bg-white px-3 py-2.5 text-[12.5px] transition",
-                    viewport === option.value ? "border-[#5b4ee8] bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "border-[#e5e7eb] text-[#374151] hover:border-[#b9b1fb]",
+                    viewport === option.value ? "border-[#0F6B5C] bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "border-[#e5e7eb] text-[#374151] hover:border-[#b9b1fb]",
                   )}
                 >
                   <input
@@ -836,7 +836,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                   <div className="space-y-2">
                     {MACHINE_PRESETS.filter((machine) => machines.includes(machine.id)).map((machine) => (
                       <div key={machine.id} className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3 py-2">
-                        <CqaIcon name={machine.icon} className="text-[17px] text-[#5b4ee8]" />
+                        <CqaIcon name={machine.icon} className="text-[17px] text-[#0F6B5C]" />
                         <span className="flex-1 text-[12.5px] text-[#374151]">{machine.label}</span>
                         <button
                           type="button"
@@ -865,7 +865,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                       >
                         <CqaIcon name={machine.icon} className="text-[16px] text-[#6b7280]" />
                         {machine.label}
-                        {machines.includes(machine.id) && <CqaIcon name="check" className="ml-auto text-[16px] text-[#5b4ee8]" />}
+                        {machines.includes(machine.id) && <CqaIcon name="check" className="ml-auto text-[16px] text-[#0F6B5C]" />}
                       </button>
                     ))}
                   </div>
@@ -889,7 +889,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                       .filter((suite) => suiteIds.includes(suite.id))
                       .map((suite) => (
                         <div key={suite.id} className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3 py-2">
-                          <CqaIcon name="folder_copy" className="text-[17px] text-[#5b4ee8]" />
+                          <CqaIcon name="folder_copy" className="text-[17px] text-[#0F6B5C]" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[12.5px] text-[#374151]">{suite.name}</span>
                             <span className="block text-[11px] text-[#9ca3af]">{suite.testCasesCount} cases</span>
@@ -913,7 +913,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                       <label key={suite.id} className="flex cursor-pointer items-start gap-2 border-b border-[#f3f4f6] px-3 py-2 last:border-0 hover:bg-[#fafafa]">
                         <input
                           type="checkbox"
-                          className="mt-0.5 size-3.5 accent-[#5b4ee8]"
+                          className="mt-0.5 size-3.5 accent-[#0F6B5C]"
                           checked={suiteIds.includes(suite.id)}
                           onChange={() => {
                             setSuiteIds((prev) => (prev.includes(suite.id) ? prev.filter((id) => id !== suite.id) : [...prev, suite.id]));
@@ -1008,7 +1008,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                     aria-checked={showScrollbars}
                     aria-label="Show scrollbars during test runs"
                     onClick={() => setShowScrollbars((value) => !value)}
-                    className={cn("relative h-5 w-9 rounded-full transition", showScrollbars ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+                    className={cn("relative h-5 w-9 rounded-full transition", showScrollbars ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
                   >
                     <span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition-all", showScrollbars ? "left-[18px]" : "left-0.5")} />
                   </button>
@@ -1026,7 +1026,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                     aria-checked={clickPressHold}
                     aria-label="Enable click press hold"
                     onClick={() => setClickPressHold((value) => !value)}
-                    className={cn("relative h-5 w-9 rounded-full transition", clickPressHold ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+                    className={cn("relative h-5 w-9 rounded-full transition", clickPressHold ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
                   >
                     <span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition-all", clickPressHold ? "left-[18px]" : "left-0.5")} />
                   </button>
@@ -1095,7 +1095,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                   placeholder="name@company.com"
                   className="h-6 min-w-[160px] flex-1 border-0 px-1 text-[12.5px] outline-none placeholder:text-[#9ca3af]"
                 />
-                <button type="button" aria-label="Add notification email" onClick={addEmail} className="text-[#5b4ee8] hover:text-[#4338ca]">
+                <button type="button" aria-label="Add notification email" onClick={addEmail} className="text-[#0F6B5C] hover:text-[#4338ca]">
                   <CqaIcon name="add" className="text-[17px]" />
                 </button>
               </div>
@@ -1126,7 +1126,7 @@ function PlanWizard({ open, onClose, readOnly, defaultEmail }: { open: boolean; 
                         <input
                           type="radio"
                           name={`plan-${key}`}
-                          className="size-4 accent-[#5b4ee8]"
+                          className="size-4 accent-[#0F6B5C]"
                           checked={recovery[key] === value}
                           onChange={() => setRecovery((prev) => ({ ...prev, [key]: value }))}
                         />

@@ -9,11 +9,12 @@
 }
 
 /*
- * Design system QASyn — tokens relevés sur les pages publiques (inspection craft-anything / HTML) :
- *  - site principal : indigo #3D2EE0 / #5B4EE8, encre #15151c, muted #6f7280, line #e8e8ef, navy #121226,
- *    Inter + Instrument Serif (accents italiques), rayons 10px / pill.
- *  - Ship : papier #f7f5f3, carte #eeeae6, ligne #d6d0c8, encre #262626, accent #f24100,
- *    serif "Caslon" + Public Sans, terminal #0e1218 / #191e26.
+ * Design system QASyn — "Precision Workspace" (design set 796cc4a1):
+ *  - fond chaud neutre #FAFAF7, texte #1C2A33, titres #12242E, accent teal #0F6B5C,
+ *    rayon 8px, hiérarchie sobre type dashboard (sans compact, chiffres tabulaires).
+ *  - Les échelles brand/quantum/cobalt/stitch sont remappées sur cette palette pour
+ *    que toutes les pages (marketing, auth, dashboard) héritent du même système.
+ *  - Ship conserve son thème papier historique; les terminaux restent sombres.
  */
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -22,9 +23,20 @@
   --font-caslon: var(--font-libre-caslon), Georgia, serif;
   --font-public: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
 
-  --color-ink: #15151c;
-  --color-muted: #6f7280;
-  --color-line: #e8e8ef;
+  --color-ink: #1C2A33;
+  --color-muted: #5b6b74;
+  --color-line: #e4e4dc;
+
+  /* Precision Workspace core tokens */
+  --color-pw-bg: #FAFAF7;
+  --color-pw-surface: #ffffff;
+  --color-pw-ink: #1C2A33;
+  --color-pw-heading: #12242E;
+  --color-pw-muted: #5b6b74;
+  --color-pw-line: #e2e2da;
+  --color-pw-accent: #0F6B5C;
+  --color-pw-accent-hover: #0c5a4d;
+  --color-pw-accent-soft: #e3efec;
 
   --color-navy-950: #0b0b18;
   --color-navy-900: #121226;
@@ -32,16 +44,16 @@
   --color-navy-700: #25254a;
   --color-navy-600: #34346a;
 
-  --color-brand-50: #f1f0fe;
-  --color-brand-100: #e4e1fd;
-  --color-brand-200: #cbc6fb;
-  --color-brand-300: #a9a1f7;
-  --color-brand-400: #756af2;
-  --color-brand-500: #5b4ee8;
-  --color-brand-600: #3d2ee0;
-  --color-brand-700: #3324c0;
-  --color-brand-800: #2a1e9b;
-  --color-brand-900: #231a7a;
+  --color-brand-50: #eef6f4;
+  --color-brand-100: #d8ece7;
+  --color-brand-200: #b2d8cf;
+  --color-brand-300: #85c1b4;
+  --color-brand-400: #4b9c8a;
+  --color-brand-500: #17806d;
+  --color-brand-600: #0F6B5C;
+  --color-brand-700: #0d584c;
+  --color-brand-800: #0b473e;
+  --color-brand-900: #093a33;
 
   /* Legacy warm paper palette (kept for compatibility) */
   --color-paper: #f7f5f3;
@@ -52,27 +64,27 @@
   --color-ember-500: #f24100;
   --color-ember-600: #bd4105;
 
-  /* Phase 11 — Obsidian Quantum Precision (marketing) */
-  --color-obsidian-950: #05070e;
-  --color-obsidian-900: #06080f;
-  --color-obsidian-850: #080c18;
-  --color-obsidian-800: #0b1120;
-  --color-obsidian-700: #111a2e;
-  --color-obsidian-line: #1e293b;
-  --color-quantum-300: #67e8f9;
-  --color-quantum-200: #a5f3fc;
-  --color-quantum-100: #cffafe;
-  --color-quantum-400: #22d3ee;
-  --color-quantum-500: #06b6d4;
-  --color-quantum-600: #0891b2;
+  /* Precision Workspace — marketing accent scales (remapped from Obsidian Quantum) */
+  --color-obsidian-950: #12242E;
+  --color-obsidian-900: #16262f;
+  --color-obsidian-850: #1a2c36;
+  --color-obsidian-800: #1e333e;
+  --color-obsidian-700: #243c48;
+  --color-obsidian-line: #d9ddd6;
+  --color-quantum-300: #6cc2b0;
+  --color-quantum-200: #a3d9cd;
+  --color-quantum-100: #cfeae3;
+  --color-quantum-400: #2fa08c;
+  --color-quantum-500: #12816f;
+  --color-quantum-600: #0F6B5C;
   --color-glow-400: #34d399;
   --color-glow-500: #10b981;
-  --color-cobalt-400: #6366f1;
-  --color-cobalt-300: #a5b4fc;
-  --color-cobalt-200: #c7d2fe;
-  --color-cobalt-500: #3b82f6;
-  --color-alabaster: #f8fafc;
-  --color-hairline: #e2e8f0;
+  --color-cobalt-400: #4f7d8d;
+  --color-cobalt-300: #8fb0bd;
+  --color-cobalt-200: #c2d5dc;
+  --color-cobalt-500: #41677a;
+  --color-alabaster: #FAFAF7;
+  --color-hairline: #e2e2da;
   --color-signal-amber: #f59e0b;
   --color-signal-rose: #f43f5e;
 
@@ -92,14 +104,14 @@
   --color-stitch-surface-highest: #e2e5ec;
   --color-stitch-outline: #dadde5;
   --color-stitch-outline-variant: #e7e9ef;
-  --color-stitch-primary: #3d2ee0;
-  --color-stitch-primary-hover: #5b4ee8;
-  --color-stitch-primary-container: #e9e6fd;
-  --color-stitch-on-primary-container: #2a1e9b;
-  --color-stitch-ink: #14161f;
-  --color-stitch-muted: #63677a;
+  --color-stitch-primary: #0F6B5C;
+  --color-stitch-primary-hover: #12816f;
+  --color-stitch-primary-container: #d8ece7;
+  --color-stitch-on-primary-container: #0b473e;
+  --color-stitch-ink: #1C2A33;
+  --color-stitch-muted: #5b6b74;
 
-  --radius-card: 10px;
+  --radius-card: 8px;
 
   --animate-shimmer: shimmer 1.4s linear infinite;
   --animate-float: float 7s ease-in-out infinite;
@@ -216,17 +228,17 @@
 /* Phase 11 — Obsidian Quantum Precision marketing utilities */
 .quantum-grid {
   background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    linear-gradient(to right, rgba(28, 42, 51, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(28, 42, 51, 0.05) 1px, transparent 1px);
   background-size: 56px 56px;
 }
 .obsidian-spotlight {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(6, 182, 212, 0.18), rgba(99, 102, 241, 0.08), transparent),
-    #06080f;
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(15, 107, 92, 0.14), rgba(31, 42, 51, 0.05), transparent),
+    #FAFAF7;
 }
 .quantum-text {
-  background: linear-gradient(92deg, #e2e8f0 0%, #67e8f9 38%, #818cf8 70%, #e2e8f0 100%);
+  background: linear-gradient(92deg, #12242E 0%, #0F6B5C 42%, #12816f 62%, #12242E 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

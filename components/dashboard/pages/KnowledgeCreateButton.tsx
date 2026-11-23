@@ -51,7 +51,7 @@ export function KnowledgeCreateButton({ readOnly }: { readOnly: boolean }) {
           <label className="block">
             <span className={cqaLabel}>Description *</span>
             <textarea
-              className="min-h-[100px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+              className="min-h-[100px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required

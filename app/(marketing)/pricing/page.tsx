@@ -39,13 +39,13 @@ const FAQS = [
 
 export default function PricingPage() {
   return (
-    <div className="bg-[#06080f] text-slate-100">
-      <section className="obsidian-spotlight relative overflow-hidden border-b border-white/5">
+    <div className="bg-[#FAFAF7] text-pw-ink">
+      <section className="obsidian-spotlight relative overflow-hidden border-b border-pw-line">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
         <div className="relative mx-auto max-w-[1440px] px-6 py-16 sm:px-8 lg:px-12">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-quantum-300">PRICING</p>
-          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">Autonomous quality engineering, priced for every stage.</h1>
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-400">Start with a 12-week free pilot, scale to a team plan, or run QASyn privately with enterprise governance.</p>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-brand-600">PRICING</p>
+          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-pw-heading sm:text-4xl">Autonomous quality engineering, priced for every stage.</h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-pw-muted">Start with a 12-week free pilot, scale to a team plan, or run QASyn privately with enterprise governance.</p>
         </div>
       </section>
 

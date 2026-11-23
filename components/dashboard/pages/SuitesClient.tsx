@@ -350,7 +350,7 @@ export function SuitesClient({
                 onClick={() => setOpenFolder((prev) => (prev === folder ? null : folder))}
                 className="flex w-full items-center gap-2 border-b border-[#f0f1f3] px-4 py-3 text-left"
               >
-                <CqaIcon name="folder" className="text-[18px] text-[#5b4ee8]" />
+                <CqaIcon name="folder" className="text-[18px] text-[#0F6B5C]" />
                 <span className="flex-1 text-[13px] font-semibold text-[#111827]">{folder}</span>
                 <span className="text-[11.5px] text-[#6b7280]">{rows.length} suites</span>
                 <CqaIcon name={openFolder === folder ? "expand_less" : "expand_more"} className="text-[18px] text-[#9ca3af]" />
@@ -360,7 +360,7 @@ export function SuitesClient({
                   {rows.map((suite) => (
                     <li key={suite.id} className="flex items-center gap-2 px-4 py-2.5">
                       <span className="min-w-0 flex-1">
-                        <Link href={`/dashboard/plans/suites/${suite.id}`} className="block truncate text-[12.5px] font-medium text-[#1f2937] hover:text-[#5b4ee8]">
+                        <Link href={`/dashboard/plans/suites/${suite.id}`} className="block truncate text-[12.5px] font-medium text-[#1f2937] hover:text-[#0F6B5C]">
                           {suite.name}
                         </Link>
                         <span className="mt-0.5 block text-[11px] text-[#9ca3af]">{suite.testCasesCount} cases · {suite.platform}</span>
@@ -411,13 +411,13 @@ export function SuitesClient({
                           aria-label={`Select ${suite.name}`}
                           checked={selected.has(suite.id)}
                           onChange={() => toggleOne(suite.id)}
-                          className="size-3.5 accent-[#5b4ee8]"
+                          className="size-3.5 accent-[#0F6B5C]"
                         />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-start gap-2">
                           <span className="mt-0.5 text-[10px] font-medium text-[#9ca3af]">TS-{filtered.length - ((currentPage - 1) * pageSize + index)}</span>
-                          <Link href={`/dashboard/plans/suites/${suite.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">
+                          <Link href={`/dashboard/plans/suites/${suite.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">
                             {suite.name}
                           </Link>
                         </div>

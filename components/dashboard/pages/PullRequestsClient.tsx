@@ -21,7 +21,7 @@ export function SimulatePrButton({ readOnly, nextNumber, hasRepo, compact }: { r
   return (
     <>
       {compact ? (
-        <button type="button" disabled={readOnly} onClick={() => setOpen(true)} className="inline-flex size-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#5b4ee8] hover:bg-[#f9fafb]" aria-label="Analyse a pull request" title="Analyse a pull request">
+        <button type="button" disabled={readOnly} onClick={() => setOpen(true)} className="inline-flex size-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white text-[#0F6B5C] hover:bg-[#f9fafb]" aria-label="Analyse a pull request" title="Analyse a pull request">
           <CqaIcon name="add" className="text-[18px]" />
         </button>
       ) : (

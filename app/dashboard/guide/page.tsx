@@ -54,7 +54,7 @@ export default function DashboardGuidePage() {
             <li key={step} className="rounded-lg bg-[#fafafa] px-3 py-2"><strong>{index + 1}.</strong> {step}</li>
           ))}
         </ol>
-        <Link href="/dashboard/learning" className="mt-4 inline-block text-[12.5px] font-semibold text-[#5b4ee8] hover:underline">Open the Learning Hub →</Link>
+        <Link href="/dashboard/learning" className="mt-4 inline-block text-[12.5px] font-semibold text-[#0F6B5C] hover:underline">Open the Learning Hub →</Link>
       </section>
     </div>
   );

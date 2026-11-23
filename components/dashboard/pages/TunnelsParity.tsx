@@ -190,7 +190,7 @@ export function Tunnels(props: TunnelsProps) {
                 aria-label="Send alerts"
                 disabled={readOnly}
                 onClick={() => void savePrefs({ ...prefs, sendAlerts: !prefs.sendAlerts })}
-                className={cn("relative h-[22px] w-[40px] rounded-full transition", prefs.sendAlerts ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+                className={cn("relative h-[22px] w-[40px] rounded-full transition", prefs.sendAlerts ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
               >
                 <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", prefs.sendAlerts ? "left-[21px]" : "left-[3px]")} />
               </button>
@@ -209,7 +209,7 @@ export function Tunnels(props: TunnelsProps) {
                           checked={prefs.delivery === value}
                           disabled={readOnly}
                           onChange={() => void savePrefs({ ...prefs, delivery: value as TunnelAlertPrefs["delivery"] })}
-                          className="size-3.5 accent-[#5b4ee8]"
+                          className="size-3.5 accent-[#0F6B5C]"
                         />
                         {label}
                       </label>
@@ -234,7 +234,7 @@ export function Tunnels(props: TunnelsProps) {
                 <span className="font-medium text-[#374151]">Slack channel</span>
                 <div className="flex items-center gap-2">
                   <span className="text-[#9ca3af]">{prefs.channel || "Not set"}</span>
-                  <button type="button" className="text-[12px] font-medium text-[#5b4ee8] hover:underline" onClick={() => void savePrefs({ ...prefs, channel: "#qa-alerts" })}>
+                  <button type="button" className="text-[12px] font-medium text-[#0F6B5C] hover:underline" onClick={() => void savePrefs({ ...prefs, channel: "#qa-alerts" })}>
                     choose
                   </button>
                 </div>
@@ -254,7 +254,7 @@ export function Tunnels(props: TunnelsProps) {
                 <p className="font-medium text-[#374151]">Recipients</p>
                 <p className="text-[12px] text-[#6b7280]">Tenant admins ({prefs.recipients.length})</p>
               </div>
-              <button type="button" onClick={() => { setRecipientError(null); setManageOpen(true); }} className="text-[12px] font-medium text-[#5b4ee8] hover:underline">manage</button>
+              <button type="button" onClick={() => { setRecipientError(null); setManageOpen(true); }} className="text-[12px] font-medium text-[#0F6B5C] hover:underline">manage</button>
             </div>
             <p className="mt-3 text-[11.5px] leading-4 text-[#6b7280]">
               A machine that stops answering for 10 minutes alerts, and so does a route that fails three checks in a row. Auth failures always alert. Recovery is sent when it comes back.
@@ -362,9 +362,9 @@ export function Tunnels(props: TunnelsProps) {
 
         <div className="flex flex-wrap items-center gap-2 border-t border-[#f0f1f3] pt-3 text-[12px] text-[#6b7280]">
           <span>Routes are checked every 2 min.</span>
-          <button type="button" className="font-medium text-[#5b4ee8] hover:underline" onClick={() => setInstallGuide(true)}>Install guide</button>
+          <button type="button" className="font-medium text-[#0F6B5C] hover:underline" onClick={() => setInstallGuide(true)}>Install guide</button>
           <span className="text-[#d1d5db]">·</span>
-          <button type="button" className="font-medium text-[#5b4ee8] hover:underline" onClick={() => setNetworkGuide(true)}>Network requirements</button>
+          <button type="button" className="font-medium text-[#0F6B5C] hover:underline" onClick={() => setNetworkGuide(true)}>Network requirements</button>
         </div>
       </section>
 
@@ -610,7 +610,7 @@ function AddMachineModal({
                 onClick={() => setOs(o.value)}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-[12px] transition",
-                  os === o.value ? "border-[#5b4ee8] bg-[#f5f3ff] text-[#4338ca]" : "border-[#e5e7eb] text-[#4b5563] hover:border-[#cbc6fb]",
+                  os === o.value ? "border-[#0F6B5C] bg-[#f5f3ff] text-[#4338ca]" : "border-[#e5e7eb] text-[#4b5563] hover:border-[#cbc6fb]",
                 )}
               >
                 <CqaIcon name={o.icon} className="text-[20px]" />
@@ -633,7 +633,7 @@ function AddMachineModal({
                 aria-checked={browserHost}
                 aria-label="Enable browser host"
                 onClick={() => setBrowserHost((v) => !v)}
-                className={cn("relative mt-0.5 h-[22px] w-[40px] shrink-0 rounded-full transition", browserHost ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+                className={cn("relative mt-0.5 h-[22px] w-[40px] shrink-0 rounded-full transition", browserHost ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
               >
                 <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", browserHost ? "left-[21px]" : "left-[3px]")} />
               </button>
@@ -682,10 +682,10 @@ function InstallCommandModal({
           Run this once on the machine, then keep the shell open. The one-time token expires in ten minutes; create a new command if it does.
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className={cn(cqaBtnSecondary, shell === "win" && "border-[#5b4ee8] text-[#4338ca]")} onClick={() => setShell("win")}>
+          <button type="button" className={cn(cqaBtnSecondary, shell === "win" && "border-[#0F6B5C] text-[#4338ca]")} onClick={() => setShell("win")}>
             Windows · PowerShell
           </button>
-          <button type="button" className={cn(cqaBtnSecondary, shell === "unix" && "border-[#5b4ee8] text-[#4338ca]")} onClick={() => setShell("unix")}>
+          <button type="button" className={cn(cqaBtnSecondary, shell === "unix" && "border-[#0F6B5C] text-[#4338ca]")} onClick={() => setShell("unix")}>
             macOS / Linux · Terminal
           </button>
         </div>

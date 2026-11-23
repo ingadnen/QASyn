@@ -840,7 +840,7 @@ export function McpConnect({
                 <span
                   className={cn(
                     "flex size-8 shrink-0 items-center justify-center rounded-md",
-                    activeClient === item.key ? "bg-[#f5f3ff] text-[#5b4ee8]" : "bg-white text-[#6b7280]",
+                    activeClient === item.key ? "bg-[#f5f3ff] text-[#0F6B5C]" : "bg-white text-[#6b7280]",
                   )}
                 >
                   <CqaIcon name={item.icon} className="text-[18px]" />
@@ -855,7 +855,7 @@ export function McpConnect({
 
           <div className="space-y-4 p-4 lg:p-5">
             <div className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#5b4ee8]">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#0F6B5C]">
                 <CqaIcon name={client.icon} className="text-[21px]" />
               </span>
               <div>
@@ -887,7 +887,7 @@ export function McpConnect({
                     {OPENCODE_MODELS.map((model) => (
                       <span
                         key={model}
-                        className="rounded-full border border-[#ddd6fe] bg-white px-2 py-0.5 font-mono text-[10.5px] text-[#5b4ee8]"
+                        className="rounded-full border border-[#ddd6fe] bg-white px-2 py-0.5 font-mono text-[10.5px] text-[#0F6B5C]"
                       >
                         {model}
                       </span>
@@ -925,7 +925,7 @@ export function McpConnect({
                 Five copyable prompts that drive the QASyn MCP tools end to end.
               </p>
             </div>
-            <span className="rounded-full bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#5b4ee8]">
+            <span className="rounded-full bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#0F6B5C]">
               Free models ready
             </span>
           </div>
@@ -936,7 +936,7 @@ export function McpConnect({
                 data-prompt={item.id}
                 className="flex items-start gap-2 rounded-lg border border-[#eef0f3] px-3 py-2"
               >
-                <CqaIcon name={item.icon} className="mt-0.5 text-[16px] text-[#5b4ee8]" />
+                <CqaIcon name={item.icon} className="mt-0.5 text-[16px] text-[#0F6B5C]" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[11.5px] font-semibold text-[#374151]">{item.title}</p>
                   <p className="mt-0.5 text-[11px] leading-4 text-[#6b7280]">{item.prompt}</p>
@@ -1003,7 +1003,7 @@ export function McpConnect({
                     onClick={() => void toggleSkill(skill)}
                     className={cn(
                       "relative h-5 w-9 shrink-0 rounded-full transition disabled:opacity-50",
-                      enabled ? "bg-[#5b4ee8]" : "bg-[#d1d5db]",
+                      enabled ? "bg-[#0F6B5C]" : "bg-[#d1d5db]",
                     )}
                   >
                     <span
@@ -1044,7 +1044,7 @@ export function McpConnect({
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[#111827]">
-              <CqaIcon name="menu_book" className="text-[18px] text-[#5b4ee8]" /> QASyn Framework Intelligence
+              <CqaIcon name="menu_book" className="text-[18px] text-[#0F6B5C]" /> QASyn Framework Intelligence
             </h2>
             <p className="mt-0.5 text-[12px] text-[#6b7280]">
               Resolve a QA task to versioned Playwright, Next.js, Tailwind, Prisma or TypeScript rules. The same rules
@@ -1114,7 +1114,7 @@ export function McpConnect({
                 href={contextResult.library.docsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] font-medium text-[#5b4ee8] hover:underline"
+                className="text-[11px] font-medium text-[#0F6B5C] hover:underline"
               >
                 {contextResult.source}
               </a>
@@ -1148,13 +1148,13 @@ export function McpConnect({
                 className={cn(
                   "flex w-full items-start gap-2 rounded-lg border px-3 py-2 text-left transition",
                   toolName === item.name
-                    ? "border-[#a9a1f7] bg-[#f5f4ff]"
+                    ? "border-[#0F6B5C] bg-[#f5f4ff]"
                     : "border-transparent hover:border-[#e5e7eb] hover:bg-[#fafafa]",
                 )}
               >
                 <CqaIcon
                   name={item.icon}
-                  className={cn("mt-0.5 text-[17px]", toolName === item.name ? "text-[#5b4ee8]" : "text-[#9ca3af]")}
+                  className={cn("mt-0.5 text-[17px]", toolName === item.name ? "text-[#0F6B5C]" : "text-[#9ca3af]")}
                 />
                 <span className="min-w-0">
                   <span className="block text-[12.5px] font-medium text-[#111827]">{item.label}</span>
@@ -1248,7 +1248,7 @@ export function McpConnect({
                 className={cn(
                   "rounded-full px-2.5 py-1 text-[11.5px] font-medium transition",
                   activeRole === item.key
-                    ? "bg-[#5b4ee8] text-white"
+                    ? "bg-[#0F6B5C] text-white"
                     : "bg-[#f3f4f6] text-[#4b5563] hover:bg-[#e9eaee]",
                 )}
               >
@@ -1261,7 +1261,7 @@ export function McpConnect({
         <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div className="rounded-lg border border-[#eef0f3] bg-[#fafafa] p-3">
             <div className="flex items-center gap-2">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-white text-[#5b4ee8] shadow-sm">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-white text-[#0F6B5C] shadow-sm">
                 <CqaIcon name={role.icon} className="text-[18px]" />
               </span>
               <div>

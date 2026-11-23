@@ -1241,7 +1241,7 @@ export function SuperAdminConsole() {
               onClick={() => setWebmailTab(tab.id)}
               className={
                 webmailTab === tab.id
-                  ? "rounded-full bg-[#5b4ee8] px-3 py-1.5 text-[11.5px] font-semibold text-white"
+                  ? "rounded-full bg-[#0F6B5C] px-3 py-1.5 text-[11.5px] font-semibold text-white"
                   : "rounded-full border border-[#d1d5db] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#4b5563] hover:bg-[#f9fafb]"
               }
             >
@@ -1256,7 +1256,7 @@ export function SuperAdminConsole() {
               const badge = lead.kind === "career" ? "Job Application" : lead.kind === "demo" ? "Demo Request" : "Contact";
               const badgeClass =
                 lead.kind === "career"
-                  ? "bg-violet-50 text-violet-700"
+                  ? "bg-pw-accent-soft text-pw-accent-hover"
                   : lead.kind === "demo"
                     ? "bg-sky-50 text-sky-700"
                     : "bg-slate-100 text-slate-600";
@@ -1296,7 +1296,7 @@ export function SuperAdminConsole() {
                     <button
                       type="button"
                       data-testid={`webmail-reply-${lead.id}`}
-                      className="rounded border border-[#5b4ee8] px-2 py-1 text-[10.5px] font-semibold text-[#5b4ee8] hover:bg-[#f5f3ff]"
+                      className="rounded border border-[#0F6B5C] px-2 py-1 text-[10.5px] font-semibold text-[#0F6B5C] hover:bg-[#f5f3ff]"
                       onClick={() => openLeadReply(lead)}
                     >
                       Reply by Email
@@ -1325,7 +1325,7 @@ export function SuperAdminConsole() {
                 href="https://mailserver.businessidentity.llc"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11.5px] font-semibold text-[#5b4ee8] hover:underline"
+                className="text-[11.5px] font-semibold text-[#0F6B5C] hover:underline"
               >
                 Open External Webmail (mailserver.businessidentity.llc) ↗
               </a>
@@ -1349,7 +1349,7 @@ export function SuperAdminConsole() {
                   <p className="mt-2 text-[12px] leading-5 text-[#374151]">{message.snippet || "No preview available."}</p>
                   <button
                     type="button"
-                    className="mt-2 rounded border border-[#5b4ee8] px-2 py-1 text-[10.5px] font-semibold text-[#5b4ee8] hover:bg-[#f5f3ff]"
+                    className="mt-2 rounded border border-[#0F6B5C] px-2 py-1 text-[10.5px] font-semibold text-[#0F6B5C] hover:bg-[#f5f3ff]"
                     onClick={() => openImapReply(message)}
                   >
                     Compose / Reply
@@ -1535,11 +1535,11 @@ export function SuperAdminConsole() {
           </div>
           <div className="flex flex-wrap gap-4 text-[12px] text-[#4b5563]">
             <label className="flex items-center gap-2">
-              <input type="checkbox" className="size-3.5 accent-[#5b4ee8]" checked={configureDraft.ssoEnabled} onChange={(e) => setConfigureDraft((current) => ({ ...current, ssoEnabled: e.target.checked }))} />
+              <input type="checkbox" className="size-3.5 accent-[#0F6B5C]" checked={configureDraft.ssoEnabled} onChange={(e) => setConfigureDraft((current) => ({ ...current, ssoEnabled: e.target.checked }))} />
               SSO enabled
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" className="size-3.5 accent-[#5b4ee8]" checked={configureDraft.slaEnabled} onChange={(e) => setConfigureDraft((current) => ({ ...current, slaEnabled: e.target.checked }))} />
+              <input type="checkbox" className="size-3.5 accent-[#0F6B5C]" checked={configureDraft.slaEnabled} onChange={(e) => setConfigureDraft((current) => ({ ...current, slaEnabled: e.target.checked }))} />
               SLA enabled
             </label>
           </div>

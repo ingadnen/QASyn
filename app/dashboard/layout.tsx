@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : [];
 
   return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
+    <div className="min-h-screen bg-pw-bg lg:flex">
       <DashboardSidebar
         orgName={ctx.org.name}
         logoUrl={ctx.org.logoUrl}
@@ -57,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             )}
           </div>
         )}
-        <main className="min-h-[calc(100vh-40px)] bg-[#f7f8fa] px-6 py-5 lg:px-8">{children}</main>
+        <main className="min-h-[calc(100vh-40px)] bg-pw-bg px-6 py-5 lg:px-8">{children}</main>
       </div>
       <FinQAWidget />
       <Toaster />

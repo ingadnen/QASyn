@@ -125,7 +125,7 @@ export function TeamTable({
               <tr key={member.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa]">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="flex size-7 items-center justify-center rounded-full bg-[#eef2ff] text-[10.5px] font-semibold text-[#5b4ee8]">{member.avatarInitials}</span>
+                    <span className="flex size-7 items-center justify-center rounded-full bg-[#eef2ff] text-[10.5px] font-semibold text-[#0F6B5C]">{member.avatarInitials}</span>
                     <span className="font-medium text-[#1f2937]">{member.name}</span>
                   </div>
                 </td>

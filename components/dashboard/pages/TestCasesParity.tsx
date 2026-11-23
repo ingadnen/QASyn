@@ -414,7 +414,7 @@ export function TestCasesParity({
               onClick={() => setTab(t.key)}
               className={cn(
                 "-mb-px border-b-2 pb-2.5 pt-1 text-[13px] transition",
-                tab === t.key ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+                tab === t.key ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
               )}
             >
               {t.label}
@@ -515,7 +515,7 @@ export function TestCasesParity({
               <div key={group.id} className={cn(cqaCard, "p-4")}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <CqaIcon name="folder_copy" className="text-[18px] text-[#5b4ee8]" />
+                    <CqaIcon name="folder_copy" className="text-[18px] text-[#0F6B5C]" />
                     <p className="text-[13px] font-semibold text-[#1f2937]">{group.name}</p>
                   </div>
                   <RowMenu
@@ -766,12 +766,12 @@ function CasesTable({
                       aria-label={`Select ${r.title}`}
                       checked={selected.has(r.id)}
                       onChange={() => onToggleOne(r.id)}
-                      className="size-3.5 accent-[#5b4ee8]"
+                      className="size-3.5 accent-[#0F6B5C]"
                     />
                   </td>
                   <td className="max-w-[360px] px-2.5 py-2.5">
                     <p className="text-[10px] font-medium text-[#9ca3af]">{r.code}</p>
-                    <Link href={`/dashboard/test-studio/${r.id}`} className="line-clamp-2 font-medium text-[#1f2937] hover:text-[#5b4ee8]">
+                    <Link href={`/dashboard/test-studio/${r.id}`} className="line-clamp-2 font-medium text-[#1f2937] hover:text-[#0F6B5C]">
                       {r.title}
                     </Link>
                   </td>
@@ -960,17 +960,17 @@ function ModularView({
             placeholder="Search folders"
             value={folderQ}
             onChange={(e) => setFolderQ(e.target.value)}
-            className="h-8 w-full rounded-md border border-[#e5e7eb] pl-8 pr-2 text-[12px] outline-none focus:border-[#a9a1f7]"
+            className="h-8 w-full rounded-md border border-[#e5e7eb] pl-8 pr-2 text-[12px] outline-none focus:border-[#0F6B5C]"
           />
         </div>
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9ca3af]">Organized</p>
-          <button type="button" onClick={onNewFolder} className="text-[11.5px] font-medium text-[#5b4ee8] hover:underline">+ New folder</button>
+          <button type="button" onClick={onNewFolder} className="text-[11.5px] font-medium text-[#0F6B5C] hover:underline">+ New folder</button>
         </div>
         <button
           type="button"
           onClick={() => setFolder("All")}
-          className={cn("mt-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[12.5px]", folder === "All" ? "bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "text-[#374151] hover:bg-[#f9fafb]")}
+          className={cn("mt-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[12.5px]", folder === "All" ? "bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "text-[#374151] hover:bg-[#f9fafb]")}
         >
           <CqaIcon name="folder" className="text-[17px]" /> All test cases
           <span className="ml-auto text-[11px] text-[#9ca3af]">{rows.length}</span>
@@ -981,7 +981,7 @@ function ModularView({
               <button
                 type="button"
                 onClick={() => setFolder(target.id)}
-                className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px]", folder === target.id ? "bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "text-[#374151] hover:bg-[#f9fafb]")}
+                className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px]", folder === target.id ? "bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "text-[#374151] hover:bg-[#f9fafb]")}
               >
                 <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: target.color }} />
                 <span className="truncate">{target.name}</span>
@@ -1003,7 +1003,7 @@ function ModularView({
           <button
             type="button"
             onClick={() => setFolder("unfiled")}
-            className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[12.5px]", folder === "unfiled" ? "bg-[#f5f3ff] font-medium text-[#5b4ee8]" : "text-[#374151] hover:bg-[#f9fafb]")}
+            className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[12.5px]", folder === "unfiled" ? "bg-[#f5f3ff] font-medium text-[#0F6B5C]" : "text-[#374151] hover:bg-[#f9fafb]")}
           >
             <CqaIcon name="folder_off" className="text-[17px] text-[#9ca3af]" /> Unfiled
             <span className="ml-auto text-[11px] text-[#9ca3af]">{unfiled}</span>
@@ -1120,10 +1120,10 @@ function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: 
                 aria-pressed={method === m.id}
                 className={cn(
                   "flex w-full items-start gap-3 rounded-lg border p-3.5 text-left transition",
-                  method === m.id ? "border-[#5b4ee8] bg-[#f5f3ff] ring-2 ring-[#e4e1fd]" : "border-[#e5e7eb] hover:border-[#cbc6fb]",
+                  method === m.id ? "border-[#0F6B5C] bg-[#f5f3ff] ring-2 ring-[#e4e1fd]" : "border-[#e5e7eb] hover:border-[#cbc6fb]",
                 )}
               >
-                <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", method === m.id ? "bg-[#5b4ee8] text-white" : "bg-[#f3f4f6] text-[#6b7280]")}>
+                <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", method === m.id ? "bg-[#0F6B5C] text-white" : "bg-[#f3f4f6] text-[#6b7280]")}>
                   <CqaIcon name={m.icon} className="text-[20px]" />
                 </span>
                 <span>
@@ -1156,7 +1156,7 @@ function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: 
                 <label className="block">
                   <span className={cqaLabel}>Prompt</span>
                   <textarea
-                    className="min-h-[88px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+                    className="min-h-[88px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     maxLength={500}
@@ -1173,7 +1173,7 @@ function NewTestCaseModal({ open, onClose, modules, readOnly, orgUrl }: { open: 
               <label className="block">
                 <span className={cqaLabel}>Paste CSV / JSON / Markdown requirements</span>
                 <textarea
-                  className="min-h-[120px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 font-mono text-[12px] outline-none focus:border-[#a9a1f7]"
+                  className="min-h-[120px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 font-mono text-[12px] outline-none focus:border-[#0F6B5C]"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder={"title,module\nReset password,Account Recovery\nSign in with SSO,User Sign-In"}
@@ -1337,7 +1337,7 @@ function StepEditorList({
           </select>
           <input
             aria-label={`Step ${index + 1} target`}
-            className="h-8 rounded-md border border-[#e5e7eb] px-2 text-[12px] outline-none focus:border-[#a9a1f7]"
+            className="h-8 rounded-md border border-[#e5e7eb] px-2 text-[12px] outline-none focus:border-[#0F6B5C]"
             placeholder="Button, field or URL"
             value={step.target}
             disabled={readOnly}
@@ -1345,7 +1345,7 @@ function StepEditorList({
           />
           <input
             aria-label={`Step ${index + 1} value`}
-            className="h-8 rounded-md border border-[#e5e7eb] px-2 text-[12px] outline-none focus:border-[#a9a1f7]"
+            className="h-8 rounded-md border border-[#e5e7eb] px-2 text-[12px] outline-none focus:border-[#0F6B5C]"
             placeholder="Optional value"
             value={step.value}
             disabled={readOnly}
@@ -1353,7 +1353,7 @@ function StepEditorList({
           />
           <input
             aria-label={`Step ${index + 1} selector`}
-            className="h-8 rounded-md border border-[#e5e7eb] px-2 font-mono text-[11.5px] outline-none focus:border-[#a9a1f7]"
+            className="h-8 rounded-md border border-[#e5e7eb] px-2 font-mono text-[11.5px] outline-none focus:border-[#0F6B5C]"
             placeholder="[data-testid=…]"
             value={step.selector}
             disabled={readOnly}
@@ -1436,7 +1436,7 @@ function StepGroupEditor({
         <label className="block">
           <span className={cqaLabel}>Description</span>
           <textarea
-            className="min-h-[72px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7]"
+            className="min-h-[72px] w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C]"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Optional description"
@@ -1475,13 +1475,13 @@ function FolderModal({
 }) {
   const { run, pending, error, setError } = useAction();
   const [name, setName] = useState("");
-  const [color, setColor] = useState("#5b4ee8");
+  const [color, setColor] = useState("#0F6B5C");
   const [target, setTarget] = useState("unfiled");
 
   useEffect(() => {
     if (!state) return;
     setName(state.folder?.name ?? "");
-    setColor(state.folder?.color ?? "#5b4ee8");
+    setColor(state.folder?.color ?? "#0F6B5C");
     setTarget("unfiled");
     setError(null);
   }, [state, setError]);
@@ -1553,7 +1553,7 @@ function FolderModal({
             disabled={readOnly || pending === "folder"}
             className={cn(
               "inline-flex h-9 items-center rounded-lg px-3 text-[13px] font-medium text-white disabled:opacity-60",
-              state.mode === "delete" ? "bg-[#dc2626] hover:bg-[#b91c1c]" : "bg-[#5b4ee8] hover:bg-[#4c3fd6]",
+              state.mode === "delete" ? "bg-[#dc2626] hover:bg-[#b91c1c]" : "bg-[#0F6B5C] hover:bg-[#4c3fd6]",
             )}
           >
             {pending === "folder"
@@ -1677,7 +1677,7 @@ function NewStepGroupModal({
         <button
           type="button"
           onClick={() => setAdvanced((value) => !value)}
-          className="inline-flex items-center gap-1 text-[12.5px] font-medium text-[#5b4ee8] hover:underline"
+          className="inline-flex items-center gap-1 text-[12.5px] font-medium text-[#0F6B5C] hover:underline"
         >
           {advanced ? "Hide Advanced Options" : "Show Advanced Options"}
           <CqaIcon name={advanced ? "expand_less" : "expand_more"} className="text-[16px]" />
@@ -1700,7 +1700,7 @@ function NewStepGroupModal({
                   <label key={candidate.id} className="flex cursor-pointer items-start gap-2 border-b border-[#f3f4f6] px-3 py-2 last:border-0 hover:bg-[#fafafa]">
                     <input
                       type="checkbox"
-                      className="mt-0.5 size-3.5 accent-[#5b4ee8]"
+                      className="mt-0.5 size-3.5 accent-[#0F6B5C]"
                       checked={selectedPrereqs.includes(candidate.id)}
                       onChange={() => setSelectedPrereqs((prev) => (prev.includes(candidate.id) ? prev.filter((id) => id !== candidate.id) : [...prev, candidate.id]))}
                     />
@@ -1739,11 +1739,11 @@ function NewStepGroupModal({
 
             <div className="flex flex-wrap items-center gap-6">
               <label className="inline-flex items-center gap-2 text-[12.5px] text-[#374151]">
-                <input type="checkbox" checked={mobileTesting} onChange={(e) => setMobileTesting(e.target.checked)} className="size-3.5 accent-[#5b4ee8]" />
+                <input type="checkbox" checked={mobileTesting} onChange={(e) => setMobileTesting(e.target.checked)} className="size-3.5 accent-[#0F6B5C]" />
                 Mobile Testing
               </label>
               <label className="inline-flex items-center gap-2 text-[12.5px] text-[#374151]">
-                <input type="checkbox" checked={extensionUse} onChange={(e) => setExtensionUse(e.target.checked)} className="size-3.5 accent-[#5b4ee8]" />
+                <input type="checkbox" checked={extensionUse} onChange={(e) => setExtensionUse(e.target.checked)} className="size-3.5 accent-[#0F6B5C]" />
                 Extension Use
               </label>
             </div>
@@ -1754,7 +1754,7 @@ function NewStepGroupModal({
           <span className={cqaLabel}>Description(Optional)</span>
           <RichToolbar />
           <textarea
-            className="min-h-[110px] w-full rounded-b-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#a9a1f7]"
+            className="min-h-[110px] w-full rounded-b-lg border border-[#e5e7eb] px-3 py-2 text-[13px] outline-none focus:border-[#0F6B5C]"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Enter a meaningful description for this Test Case."

@@ -522,7 +522,7 @@ export function Integrations({
               className={cn(
                 "-mb-px border-b-2 px-3 py-2.5 text-[12.5px] font-medium transition",
                 tab === name
-                  ? "border-[#5b4ee8] text-[#5b4ee8]"
+                  ? "border-[#0F6B5C] text-[#0F6B5C]"
                   : "border-transparent text-[#6b7280] hover:text-[#111827]",
               )}
             >
@@ -624,7 +624,7 @@ export function Integrations({
                   <button
                     type="button"
                     onClick={() => setActive(definition)}
-                    className="inline-flex h-7 items-center gap-1 rounded-md border border-[#e5e7eb] bg-white px-2.5 text-[11.5px] font-semibold text-[#5b4ee8] transition hover:bg-[#f5f4ff]"
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-[#e5e7eb] bg-white px-2.5 text-[11.5px] font-semibold text-[#0F6B5C] transition hover:bg-[#f5f4ff]"
                   >
                     <CqaIcon name={effectivelyConnected ? "settings" : "link"} className="text-[14px]" />
                     {effectivelyConnected ? "Configure" : "Connect"}

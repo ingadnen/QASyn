@@ -15,7 +15,7 @@ interface Props {
 }
 
 const inputCls =
-  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#8b80ff] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
+  "h-[41px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[14px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
 const labelCls = "mb-2 block text-[14px] font-medium text-[#374151]";
 const helpCls = "mt-1.5 block text-[12.5px] leading-5 text-[#6b7280]";
 const cardCls = "mt-6 rounded-[12px] border border-[#dbdee5] bg-white p-[25px] shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]";
@@ -29,7 +29,7 @@ function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: 
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#5b4ee8]" : "bg-[#d1d5db]")}
+      className={cn("relative h-[22px] w-[40px] shrink-0 rounded-full transition", checked ? "bg-[#0F6B5C]" : "bg-[#d1d5db]")}
     >
       <span className={cn("absolute top-[3px] size-4 rounded-full bg-white shadow transition", checked ? "left-[21px]" : "left-[3px]")} />
     </button>
@@ -39,7 +39,7 @@ function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 function CheckRow({ label, copy, checked, onChange }: { label: string; copy: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex cursor-pointer items-start gap-3 py-2.5">
-      <input type="checkbox" className="mt-0.5 size-4 rounded border-[#d1d5db] accent-[#5b4ee8]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <input type="checkbox" className="mt-0.5 size-4 rounded border-[#d1d5db] accent-[#0F6B5C]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>
         <span className="block text-[14px] font-medium text-[#374151]">{label}</span>
         <span className="mt-0.5 block text-[12.5px] text-[#6b7280]">{copy}</span>
@@ -161,12 +161,12 @@ export function BugReproductionSettingsForm({ readOnly, initial, environments, d
               onClick={() => set("triggerMode", option.value as BugReproductionSettings["triggerMode"])}
               className={cn(
                 "rounded-lg border p-4 text-left transition",
-                form.triggerMode === option.value ? "border-[#5b4ee8] bg-[#f7f5ff] ring-1 ring-[#dcd7ff]" : "border-[#e5e7eb] bg-white hover:border-[#c4bdfa]",
+                form.triggerMode === option.value ? "border-[#0F6B5C] bg-[#f7f5ff] ring-1 ring-[#dcd7ff]" : "border-[#e5e7eb] bg-white hover:border-[#c4bdfa]",
               )}
             >
               <span className="flex items-center gap-2">
-                <span className={cn("flex size-4 items-center justify-center rounded-full border", form.triggerMode === option.value ? "border-[#5b4ee8]" : "border-[#d1d5db]")}>
-                  {form.triggerMode === option.value && <span className="size-2 rounded-full bg-[#5b4ee8]" />}
+                <span className={cn("flex size-4 items-center justify-center rounded-full border", form.triggerMode === option.value ? "border-[#0F6B5C]" : "border-[#d1d5db]")}>
+                  {form.triggerMode === option.value && <span className="size-2 rounded-full bg-[#0F6B5C]" />}
                 </span>
                 <span className={cn("text-[14px] font-medium", form.triggerMode === option.value ? "text-[#4f46e5]" : "text-[#374151]")}>{option.title}</span>
               </span>
@@ -206,7 +206,7 @@ export function BugReproductionSettingsForm({ readOnly, initial, environments, d
             <p className="mt-2 flex flex-wrap items-center gap-2 text-[12.5px] text-[#6b7280]">
               <CqaIcon name="info" className="text-[15px]" />
               Connect Linear to choose from your workspace&apos;s labels. You can still type a label name.
-              <a href="/dashboard/integrations" className="font-medium text-[#5b4ee8] hover:underline">Try again</a>
+              <a href="/dashboard/integrations" className="font-medium text-[#0F6B5C] hover:underline">Try again</a>
             </p>
           )}
         </div>

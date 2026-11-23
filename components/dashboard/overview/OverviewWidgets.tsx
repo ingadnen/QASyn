@@ -90,9 +90,9 @@ export function OverviewTerminal({
 export function SlackBanner({ orgName, readOnly }: { orgName: string; readOnly: boolean }) {
   const { run, pending, error } = useAction();
   return (
-    <div className="rounded-xl border border-fuchsia-200 bg-gradient-to-r from-fuchsia-50 to-white p-4">
+    <div className="rounded-xl border border-[#0F6B5C]/30 bg-gradient-to-r from-pw-accent-soft to-white p-4">
       <div className="flex flex-wrap items-center gap-4">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-fuchsia-700 text-sm font-bold text-white">S</span>
+        <span className="flex size-10 items-center justify-center rounded-lg bg-pw-accent-hover text-sm font-bold text-white">S</span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-900">Join your {orgName} support channel</p>
           <p className="text-xs text-slate-500">A shared Slack channel with the QASyn team: questions, run alerts and onboarding help.</p>
@@ -152,7 +152,7 @@ export function CoverageTabs({ modules, criticality }: { modules: ModuleCoverage
   const rows = tab === "module" ? modules : criticality;
   return (
     <section className="stitch-card rounded-xl">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e7e9ef] px-5 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-pw-line px-5 py-3">
         <h2 className="text-sm font-semibold text-slate-900">Modules mapped &amp; coverage</h2>
         <div role="tablist" className="inline-flex rounded-full bg-[#f1f2f6] p-0.5 text-xs">
           {(["module", "criticality"] as const).map((t) => (

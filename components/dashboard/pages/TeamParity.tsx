@@ -89,7 +89,7 @@ export function InviteUserButton({ readOnly }: { readOnly: boolean }) {
                         type="checkbox"
                         checked={roles.includes(r)}
                         onChange={(e) => setRoles((prev) => (e.target.checked ? [...prev, r] : prev.filter((x) => x !== r)))}
-                        className="size-3.5 accent-[#5b4ee8]"
+                        className="size-3.5 accent-[#0F6B5C]"
                       />
                       {r}
                     </label>

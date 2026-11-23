@@ -122,7 +122,7 @@ export function StrixScanner({ readOnly = false, defaultTarget = "https://www.cg
             surface. One GET request, no exploit payload.
           </p>
         </div>
-        <span className="rounded-full border border-[#ddd6fe] bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#5b4ee8]">
+        <span className="rounded-full border border-[#ddd6fe] bg-[#f5f3ff] px-2.5 py-1 text-[10.5px] font-semibold text-[#0F6B5C]">
           Defensive · SSRF-safe
         </span>
       </div>

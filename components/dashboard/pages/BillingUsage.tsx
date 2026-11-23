@@ -121,7 +121,7 @@ const PLAN_CARDS = [
 ] as const;
 
 function Check() {
-  return <CqaIcon name="check" className="text-[15px] text-[#5b4ee8]" />;
+  return <CqaIcon name="check" className="text-[15px] text-[#0F6B5C]" />;
 }
 
 function StatCell({
@@ -198,7 +198,7 @@ export function BillingUsage(props: BillingUsageProps) {
           className={cn(
             "-mb-px border-b-2 px-3 py-2.5 text-[13px] font-medium transition",
             view === "billing"
-              ? "border-[#5b4ee8] text-[#5b4ee8]"
+              ? "border-[#0F6B5C] text-[#0F6B5C]"
               : "border-transparent text-[#6b7280] hover:text-[#111827]",
           )}
         >
@@ -209,7 +209,7 @@ export function BillingUsage(props: BillingUsageProps) {
           className={cn(
             "-mb-px border-b-2 px-3 py-2.5 text-[13px] font-medium transition",
             view === "usage"
-              ? "border-[#5b4ee8] text-[#5b4ee8]"
+              ? "border-[#0F6B5C] text-[#0F6B5C]"
               : "border-transparent text-[#6b7280] hover:text-[#111827]",
           )}
         >
@@ -388,7 +388,7 @@ function BillingView({
               </p>
               <p className="mt-1 text-[12px] text-[#9ca3af]">credits</p>
             </div>
-            <span className="flex size-9 items-center justify-center rounded-full bg-[#f5f3ff] text-[#5b4ee8]">
+            <span className="flex size-9 items-center justify-center rounded-full bg-[#f5f3ff] text-[#0F6B5C]">
               <CqaIcon name="account_balance_wallet" className="text-[20px]" />
             </span>
           </div>
@@ -419,7 +419,7 @@ function BillingView({
             <div>
               <p className="text-[12px] font-medium uppercase tracking-[0.05em] text-[#9ca3af]">Current plan</p>
               <div className="mt-2 flex items-center gap-2 text-[#111827]">
-                <CqaIcon name="schedule" className="text-[18px] text-[#5b4ee8]" />
+                <CqaIcon name="schedule" className="text-[18px] text-[#0F6B5C]" />
                 <p className="text-[15px] font-semibold">{planLabel}</p>
               </div>
               <p className="mt-1 text-[13px] text-[#374151]">{isTrial ? `${trialLength}-day free trial` : `${planName} plan`}</p>
@@ -431,7 +431,7 @@ function BillingView({
               </p>
             </div>
             <div className="rounded-lg bg-[#f5f3ff] px-3 py-2 text-center">
-              <p className="text-[20px] font-semibold leading-6 text-[#5b4ee8]">{daysLeft}</p>
+              <p className="text-[20px] font-semibold leading-6 text-[#0F6B5C]">{daysLeft}</p>
               <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#7c6ff0]">days</p>
             </div>
           </div>
@@ -475,7 +475,7 @@ function BillingView({
           <h2 className="text-[15px] font-semibold text-[#111827]">Plans</h2>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <article className={cn(cqaCard, "flex flex-col border-[#ddd6fe] p-4")}>
-              <span className="self-start rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#5b4ee8]">
+              <span className="self-start rounded-full bg-[#f5f3ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#0F6B5C]">
                 Current
               </span>
               <h3 className="mt-2 text-[15px] font-semibold text-[#111827]">{planName}</h3>
@@ -721,7 +721,7 @@ function UsageView({
       <div className="grid gap-3 md:grid-cols-3">
         <section className={cn(cqaCard, "p-4")}>
           <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-[#6b7280]">
-            <CqaIcon name="bolt" className="text-[15px] text-[#5b4ee8]" /> Available balance
+            <CqaIcon name="bolt" className="text-[15px] text-[#0F6B5C]" /> Available balance
           </div>
           <p className="mt-2 text-[26px] font-semibold leading-8 text-[#111827]">{available.toLocaleString("en-US")}</p>
           <p className="text-[11.5px] text-[#9ca3af]">credits</p>
@@ -760,7 +760,7 @@ function UsageView({
                 <span className="text-[10px] text-[#9ca3af]">{total ? `${MINUS}${total}` : ""}</span>
                 <div
                   title={`${label} · ${total ? `${MINUS}${total} credits` : "no credits used"}`}
-                  className={cn("w-full max-w-[36px] rounded-t-[4px]", total ? "bg-[#5b4ee8]" : "bg-[#e5e7eb]")}
+                  className={cn("w-full max-w-[36px] rounded-t-[4px]", total ? "bg-[#0F6B5C]" : "bg-[#e5e7eb]")}
                   style={{ height }}
                 />
                 <span className="text-[10px] text-[#9ca3af]">{label}</span>
@@ -784,7 +784,7 @@ function UsageView({
                 onClick={() => setMode(item)}
                 className={cn(
                   "rounded px-2.5 py-1 text-[11.5px] font-medium transition",
-                  mode === item ? "bg-[#f5f3ff] text-[#5b4ee8]" : "text-[#6b7280] hover:text-[#111827]",
+                  mode === item ? "bg-[#f5f3ff] text-[#0F6B5C]" : "text-[#6b7280] hover:text-[#111827]",
                 )}
               >
                 {item === "ledger" ? "Ledger" : "By action"}
@@ -876,7 +876,7 @@ function UsageView({
           <div className="space-y-2 px-4 pb-4 pt-2">
             {groups.map((group) => (
               <div key={group.action} className="flex items-center gap-3 rounded-lg border border-[#f0f1f3] px-3 py-2.5">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#5b4ee8]">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-[#f5f3ff] text-[#0F6B5C]">
                   <CqaIcon name={group.icon} className="text-[18px]" />
                 </span>
                 <div className="min-w-0 flex-1">

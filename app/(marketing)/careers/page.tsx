@@ -6,13 +6,13 @@ export const metadata: Metadata = { title: "Careers" };
 export default function CareersPage() {
   return (
     <div>
-      <section className="obsidian-spotlight relative overflow-hidden border-b border-white/5 bg-[#06080f]">
+      <section className="obsidian-spotlight relative overflow-hidden border-b border-pw-line">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
         <div className="relative mx-auto max-w-[1440px] px-6 py-16 sm:px-8 lg:px-12">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-quantum-300">CAREERS</p>
-          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">Build the autonomous quality engineering platform.</h1>
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-400">
-            We are a remote-first team of systems engineers, AI researchers and QA architects. Apply to any open role below and your application is sent directly to the <strong className="text-slate-200">QASyn hiring team</strong>.
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-brand-600">CAREERS</p>
+          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-pw-heading sm:text-4xl">Build the autonomous quality engineering platform.</h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-pw-muted">
+            We are a remote-first team of systems engineers, AI researchers and QA architects. Apply to any open role below and your application is sent directly to the <strong className="text-pw-heading">QASyn hiring team</strong>.
           </p>
         </div>
       </section>

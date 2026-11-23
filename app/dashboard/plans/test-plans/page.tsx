@@ -52,10 +52,10 @@ export default async function TestPlansPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="flex items-center gap-6 border-b border-[#e5e7eb]">
-        <a href="/dashboard/plans/test-plans" className={`-mb-px border-b-2 pb-2.5 pt-1 text-[13px] ${tab === "plans" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]"}`}>
+        <a href="/dashboard/plans/test-plans" className={`-mb-px border-b-2 pb-2.5 pt-1 text-[13px] ${tab === "plans" ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280]"}`}>
           Test Plans ({plans.length})
         </a>
-        <a href="/dashboard/plans/test-plans?tab=schedules" className={`-mb-px border-b-2 pb-2.5 pt-1 text-[13px] ${tab === "schedules" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]"}`}>
+        <a href="/dashboard/plans/test-plans?tab=schedules" className={`-mb-px border-b-2 pb-2.5 pt-1 text-[13px] ${tab === "schedules" ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280]"}`}>
           Schedules ({schedules.length})
         </a>
       </div>

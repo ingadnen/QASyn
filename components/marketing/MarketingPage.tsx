@@ -1,8 +1,8 @@
 /**
- * Shared marketing page renderer: dark-glass hero, capability bento, workflow
- * steps, FAQ and CTA — driven by a small typed content object.
+ * Shared marketing page renderer: light Precision Workspace hero, capability
+ * bento, workflow steps, FAQ and CTA — driven by a small typed content object.
  * Used by every /platform, /solutions, /integrations and company page, so the
- * Obsidian Quantum Precision palette propagates to every marketing subpage.
+ * Precision Workspace palette propagates to every marketing subpage.
  */
 import Link from "next/link";
 
@@ -58,66 +58,66 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
     { q: "How is evidence retained?", a: "Run evidence is stored with the test case and TestCaseRun history. Workspace roles and audits control who can inspect, export or delete it." },
   ];
   return (
-    <div className="bg-[#06080f] text-slate-100">
-      <section className="obsidian-spotlight relative overflow-hidden border-b border-white/5">
+    <div className="bg-[#FAFAF7] text-pw-ink">
+      <section className="obsidian-spotlight relative overflow-hidden border-b border-pw-line">
         <div className="quantum-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
         <div className="relative mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-16">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-quantum-300">{data.kicker}</p>
-          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">{data.title}</h1>
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-400">{data.lede}</p>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-brand-600">{data.kicker}</p>
+          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-pw-heading sm:text-4xl">{data.title}</h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-pw-muted">{data.lede}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/signup"
-              className="rounded-full bg-gradient-to-r from-quantum-500 via-cobalt-500 to-cobalt-400 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-quantum-500/20 hover:brightness-110"
+              className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-500"
             >
               Start free
             </Link>
-            <Link href="/contact-us" className="rounded-full border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/[0.08]">
+            <Link href="/contact-us" className="rounded-full border border-pw-line bg-white px-5 py-2.5 text-sm font-semibold text-pw-heading transition hover:border-brand-400 hover:text-brand-700">
               Book a demo
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="bg-alabaster py-16 text-[#0F172A]">
+      <section className="bg-[#FAFAF7] py-16 text-pw-ink">
         <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {detailedFeatures.map((f) => (
-              <article key={f.title} className="rounded-2xl border border-hairline bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-quantum-500/40 hover:shadow-lg hover:shadow-slate-900/5">
-                <span className="inline-flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-quantum-500/15 to-cobalt-500/10 text-sm text-quantum-600" aria-hidden="true">
+              <article key={f.title} className="rounded-lg border border-pw-line bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-lg hover:shadow-black/5">
+                <span className="inline-flex size-8 items-center justify-center rounded-lg bg-brand-50 text-sm text-brand-700" aria-hidden="true">
                   ✓
                 </span>
-                <h2 className="mt-3 text-sm font-semibold text-[#0F172A]">{f.title}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{f.body}</p>
+                <h2 className="mt-3 text-sm font-semibold text-pw-heading">{f.title}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-pw-muted">{f.body}</p>
               </article>
             ))}
           </div>
 
           {data.sections?.map((s) => (
             <section key={s.heading} className="mt-12">
-              <h2 className="text-xl font-semibold text-[#0F172A]">{s.heading}</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">{s.body}</p>
+              <h2 className="text-xl font-semibold text-pw-heading">{s.heading}</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-pw-muted">{s.body}</p>
             </section>
           ))}
 
           <section className="mt-14">
-            <h2 className="text-xl font-semibold text-[#0F172A]">Architecture &amp; workflow</h2>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">How QASyn executes {data.title.toLowerCase()} end-to-end.</p>
+            <h2 className="text-xl font-semibold text-pw-heading">Architecture &amp; workflow</h2>
+            <p className="mt-2 max-w-3xl text-sm text-pw-muted">How QASyn executes {data.title.toLowerCase()} end-to-end.</p>
             <ol className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {architecture.map((step, index) => (
-                <li key={step} className="rounded-2xl border border-hairline bg-white p-4">
-                  <span className="flex size-7 items-center justify-center rounded-full bg-quantum-600 text-xs font-semibold text-white">{index + 1}</span>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{step}</p>
+                <li key={step} className="rounded-lg border border-pw-line bg-white p-4">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">{index + 1}</span>
+                  <p className="mt-2 text-sm leading-relaxed text-pw-muted">{step}</p>
                 </li>
               ))}
             </ol>
           </section>
 
           <section className="mt-14">
-            <h2 className="text-xl font-semibold text-[#0F172A]">QASyn autonomous agents vs. legacy scripts and recorders</h2>
-            <div className="mt-4 overflow-x-auto rounded-2xl border border-hairline bg-white">
+            <h2 className="text-xl font-semibold text-pw-heading">QASyn autonomous agents vs. legacy scripts and recorders</h2>
+            <div className="mt-4 overflow-x-auto rounded-lg border border-pw-line bg-white">
               <table className="w-full min-w-[640px] text-left text-[12.5px]">
-                <thead className="bg-slate-50 text-[10.5px] uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Dimension</th><th className="px-3 py-2">QASyn autonomous agents</th><th className="px-3 py-2">Legacy scripts / recorders</th></tr></thead>
+                <thead className="bg-pw-bg text-[10.5px] uppercase tracking-wide text-pw-muted"><tr><th className="px-3 py-2">Dimension</th><th className="px-3 py-2">QASyn autonomous agents</th><th className="px-3 py-2">Legacy scripts / recorders</th></tr></thead>
                 <tbody>
                   {[
                     ["Authoring", "Crawl the live DOM and generate target-specific cases", "Hand-written selectors and brittle recordings"],
@@ -126,7 +126,7 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
                     ["Release decision", "Impact analysis, PR gate and calibrated risk score", "Pass/fail output with no blast-radius context"],
                     ["Governance", "Model, token and skill controls per workspace", "Shared credentials and no usage telemetry"],
                   ].map(([dimension, qasyn, legacy]) => (
-                    <tr key={dimension} className="border-t border-slate-100"><td className="px-3 py-2 font-semibold text-slate-800">{dimension}</td><td className="px-3 py-2 text-slate-700">✓ {qasyn}</td><td className="px-3 py-2 text-slate-500">{legacy}</td></tr>
+                    <tr key={dimension} className="border-t border-pw-line"><td className="px-3 py-2 font-semibold text-pw-heading">{dimension}</td><td className="px-3 py-2 text-[#3b4a53]">✓ {qasyn}</td><td className="px-3 py-2 text-pw-muted">{legacy}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -140,20 +140,20 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
               ["Faster triage", "4.2×"],
               ["Manual QA avoided", "$24.8K"],
             ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-hairline bg-white p-4">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-                <p className="mt-1 text-2xl font-semibold text-[#0F172A]">{value}</p>
+              <div key={label} className="rounded-lg border border-pw-line bg-white p-4">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-pw-muted">{label}</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-pw-heading">{value}</p>
               </div>
             ))}
           </section>
 
           <section className="mt-12">
-            <h2 className="text-xl font-semibold text-[#0F172A]">Frequently asked questions</h2>
+            <h2 className="text-xl font-semibold text-pw-heading">Frequently asked questions</h2>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               {faqs.map((f) => (
-                <li key={f.q} className="rounded-2xl border border-hairline bg-white p-4">
-                  <p className="text-sm font-semibold text-[#0F172A]">{f.q}</p>
-                  <p className="mt-1 text-sm text-slate-600">{f.a}</p>
+                <li key={f.q} className="rounded-lg border border-pw-line bg-white p-4">
+                  <p className="text-sm font-semibold text-pw-heading">{f.q}</p>
+                  <p className="mt-1 text-sm text-pw-muted">{f.a}</p>
                 </li>
               ))}
             </ul>
@@ -162,12 +162,12 @@ export function MarketingPage({ data }: { data: MarketingPageData }) {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 py-16">
-        <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-quantum-500/20 via-cobalt-500/15 to-transparent p-8">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_0%,rgba(6,182,212,0.18),transparent_70%)]" />
+        <div className="relative overflow-hidden rounded-lg border border-pw-line bg-obsidian-950 p-8">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_0%,rgba(15,107,92,0.35),transparent_70%)]" />
           <h2 className="relative text-xl font-semibold text-white">See QASyn test your application in 30 minutes</h2>
           <p className="relative mt-2 text-sm text-slate-300">Autonomous quality engineering, grounded in visual proof. Crawl, author, heal and gate every release.</p>
           <div className="relative mt-5 flex flex-wrap gap-3">
-            <Link href="/signup" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#0B1120] hover:bg-quantum-100">
+            <Link href="/signup" className="rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-400">
               Start free
             </Link>
             <Link href="/dashboard/overview" className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10">

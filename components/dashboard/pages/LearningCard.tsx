@@ -54,7 +54,7 @@ export function LearningCard({ mod, status, readOnly }: { mod: LearningModule; s
         <div className="space-y-4" data-testid="learning-tutorial-modal">
           <div className="flex flex-wrap gap-1.5">
             {TABS.map((label, index) => (
-              <button key={label} type="button" onClick={() => setTab(index)} className={cn("rounded-full px-2.5 py-1 text-[10.5px] font-semibold", tab === index ? "bg-[#5b4ee8] text-white" : "bg-[#f3f4f6] text-[#4b5563]")}>{label}</button>
+              <button key={label} type="button" onClick={() => setTab(index)} className={cn("rounded-full px-2.5 py-1 text-[10.5px] font-semibold", tab === index ? "bg-[#0F6B5C] text-white" : "bg-[#f3f4f6] text-[#4b5563]")}>{label}</button>
             ))}
           </div>
 
@@ -63,7 +63,7 @@ export function LearningCard({ mod, status, readOnly }: { mod: LearningModule; s
               <p><strong className="text-[#111827]">Concept.</strong> {mod.description}</p>
               <p><strong className="text-[#111827]">Architecture.</strong> QASyn connects {mod.section.toLowerCase()} capabilities to the shared quality graph: crawl evidence, generated cases, execution runs, QASyn Vision AI verification and audit records.</p>
               <div className="rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-3">
-                <p className="font-mono text-[11px] text-[#5b4ee8]">Crawl → Author → Execute → Heal → Gate → Report</p>
+                <p className="font-mono text-[11px] text-[#0F6B5C]">Crawl → Author → Execute → Heal → Gate → Report</p>
                 <p className="mt-1 text-[11px] text-[#6b7280]">Every artifact is persisted in SQLite and linked to the same workspace.</p>
               </div>
             </div>
@@ -91,7 +91,7 @@ qasyn gate --report release-quality`}</pre>
               <p className="text-[12.5px] text-[#4b5563]">Interactive check: which artifact proves this module ran successfully?</p>
               <div className="flex flex-wrap gap-2">
                 {["A real per-step PNG + run metadata", "A manual note", "A screenshot from another workspace"].map((option) => (
-                  <button key={option} type="button" onClick={() => setCheckAnswer(option)} className={cn("rounded-lg border px-3 py-2 text-[11.5px]", checkAnswer === option ? "border-[#5b4ee8] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#4b5563]")}>{option}</button>
+                  <button key={option} type="button" onClick={() => setCheckAnswer(option)} className={cn("rounded-lg border px-3 py-2 text-[11.5px]", checkAnswer === option ? "border-[#0F6B5C] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#4b5563]")}>{option}</button>
                 ))}
               </div>
               {checkAnswer && (

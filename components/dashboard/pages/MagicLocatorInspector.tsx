@@ -14,7 +14,7 @@ interface Props {
 const STRATEGY_STYLE: Record<LocatorCandidate["strategy"], string> = {
   Role: "bg-emerald-50 text-emerald-700 border-emerald-200",
   "Test ID": "bg-sky-50 text-sky-700 border-sky-200",
-  Label: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  Label: "bg-pw-accent-soft text-pw-accent-hover border-[#0F6B5C]/30",
   Text: "bg-amber-50 text-amber-700 border-amber-200",
   CSS: "bg-slate-50 text-slate-600 border-slate-200",
 };
@@ -66,14 +66,14 @@ export function MagicLocatorInspector({ step, readOnly, onApply }: Props) {
             {result ? `${result.component} · ${result.intent}` : "Scores accessible, stable locators for this step."}
           </p>
         </div>
-        <span className="rounded-full border border-[#ddd6fe] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#5b4ee8]">
+        <span className="rounded-full border border-[#ddd6fe] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#0F6B5C]">
           Magic-MCP
         </span>
       </div>
 
       {loading && (
         <div className="mt-3 flex items-center gap-2 text-[11.5px] text-[#6b7280]">
-          <span className="size-3.5 animate-spin rounded-full border-2 border-[#8b80ff] border-t-transparent" />
+          <span className="size-3.5 animate-spin rounded-full border-2 border-[#0F6B5C] border-t-transparent" />
           Scoring selectors…
         </div>
       )}
@@ -104,7 +104,7 @@ export function MagicLocatorInspector({ step, readOnly, onApply }: Props) {
                 <span className="flex items-center gap-1.5">
                   <span className="h-1.5 w-14 overflow-hidden rounded-full bg-[#eef0f3]">
                     <span
-                      className={cn("block h-full rounded-full", candidate.score >= 90 ? "bg-emerald-500" : candidate.score >= 75 ? "bg-indigo-500" : "bg-amber-500")}
+                      className={cn("block h-full rounded-full", candidate.score >= 90 ? "bg-emerald-500" : candidate.score >= 75 ? "bg-pw-accent-soft0" : "bg-amber-500")}
                       style={{ width: `${candidate.score}%` }}
                     />
                   </span>

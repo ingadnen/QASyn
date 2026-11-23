@@ -7,7 +7,7 @@ import { requireOrgContext } from "@/lib/tenant";
 export const metadata: Metadata = { title: "Projects" };
 export const dynamic = "force-dynamic";
 
-const TYPE_BADGE: Record<string, string> = { web: "bg-sky-50 text-sky-700", mobile: "bg-purple-50 text-purple-700", api: "bg-amber-50 text-amber-700" };
+const TYPE_BADGE: Record<string, string> = { web: "bg-sky-50 text-sky-700", mobile: "bg-pw-accent-soft text-pw-accent-hover", api: "bg-amber-50 text-amber-700" };
 
 export default async function ProjectsPage() {
   const ctx = await requireOrgContext();

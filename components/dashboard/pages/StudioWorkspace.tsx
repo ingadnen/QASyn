@@ -173,7 +173,7 @@ const ACTIONS: StudioStep["action"][] = [
 ];
 
 const inputCls =
-  "h-[38px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[13.5px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#8b80ff] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
+  "h-[38px] w-full rounded-md border border-[#d1d5db] bg-white px-3 text-[13.5px] text-[#0a0a0a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd] disabled:bg-[#f9fafb] disabled:text-[#6b7280]";
 const labelCls = "mb-1.5 block text-[13px] font-medium text-[#374151]";
 
 const PANELS: Array<{ id: Panel; label: string; icon: string }> = [
@@ -188,12 +188,12 @@ type StepTone = { icon: string; tone: string; label: string };
 /** Icon + colour per action type, matching the ContextQA step list. */
 function stepVisual(step: StudioStep): StepTone {
   const target = `${step.target} ${step.value}`.toLowerCase();
-  if (step.action === "AI Assertion") return { icon: "auto_awesome", tone: "bg-purple-50 text-purple-600", label: "AI Verification" };
+  if (step.action === "AI Assertion") return { icon: "auto_awesome", tone: "bg-pw-accent-soft text-pw-accent", label: "AI Verification" };
   if (step.action === "Navigate" || /url|navigate|page url/.test(target)) return { icon: "link", tone: "bg-rose-50 text-rose-500", label: "Navigate" };
   if (step.action === "Enter Text" || /enter|type|fill|password/.test(target)) return { icon: "keyboard", tone: "bg-emerald-50 text-emerald-600", label: "Enter" };
   if (step.action === "Click") return { icon: "ads_click", tone: "bg-sky-50 text-sky-600", label: "Click" };
   if (step.action === "Verify Element") return { icon: "fact_check", tone: "bg-sky-50 text-sky-600", label: "Verify" };
-  return { icon: "bolt", tone: "bg-indigo-50 text-indigo-600", label: step.action };
+  return { icon: "bolt", tone: "bg-pw-accent-soft text-pw-accent", label: step.action };
 }
 
 /** Splits a generated sentence into an action prefix and the highlighted target/assertion. */
@@ -340,7 +340,7 @@ function ToggleRow({ label, hint }: { label: string; hint?: string }) {
 function SectionTitle({ icon, title, open, onToggle }: { icon: string; title: string; open: boolean; onToggle: () => void }) {
   return (
     <button type="button" onClick={onToggle} className="flex w-full items-center gap-2 py-3 text-left">
-      <CqaIcon name={icon} className="text-[17px] text-[#5b4ee8]" />
+      <CqaIcon name={icon} className="text-[17px] text-[#0F6B5C]" />
       <span className="text-[12.5px] font-semibold text-[#374151]">{title}</span>
       <CqaIcon name="expand_more" className={cn("ml-auto text-[17px] text-[#9ca3af] transition", open && "rotate-180")} />
     </button>
@@ -912,7 +912,7 @@ export function StudioWorkspace({
                     key={value}
                     type="button"
                     onClick={() => void savePriority(value)}
-                    className={cn("flex w-full items-center px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f9fafb]", priority === value ? "font-medium text-[#5b4ee8]" : "text-[#374151]")}
+                    className={cn("flex w-full items-center px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f9fafb]", priority === value ? "font-medium text-[#0F6B5C]" : "text-[#374151]")}
                   >
                     {priorityLabel(value)}
                   </button>
@@ -981,7 +981,7 @@ export function StudioWorkspace({
         onClick={() => setPrereqOpen(true)}
         disabled={readOnly}
         data-testid="add-prerequisite-banner"
-        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/20 py-2.5 text-center text-sm font-medium text-indigo-600 transition hover:bg-indigo-50/50 disabled:opacity-50"
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#0F6B5C]/30 bg-pw-accent-soft/20 py-2.5 text-center text-sm font-medium text-pw-accent transition hover:bg-pw-accent-soft/50 disabled:opacity-50"
       >
         <CqaIcon name="add" className="text-[17px]" /> Add Prerequisite
       </button>
@@ -999,7 +999,7 @@ export function StudioWorkspace({
               onClick={() => setTab(item.id)}
               className={cn(
                 "inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 pb-2.5 pt-1 text-[13.5px] transition",
-                tab === item.id ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+                tab === item.id ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
               )}
             >
               <CqaIcon name={item.icon} className="text-[16px]" />
@@ -1016,7 +1016,7 @@ export function StudioWorkspace({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search Action Text"
               aria-label="Search Action Text"
-              className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+              className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
             />
           </div>
           <button
@@ -1025,7 +1025,7 @@ export function StudioWorkspace({
             aria-pressed={reorder}
             className={cn(
               "inline-flex h-9 items-center gap-1.5 rounded-lg border bg-white px-2.5 text-[12.5px] font-medium transition",
-              reorder ? "border-[#a9a1f7] text-[#5b4ee8]" : "border-[#e5e7eb] text-[#4a5565] hover:bg-[#f9fafb]",
+              reorder ? "border-[#0F6B5C] text-[#0F6B5C]" : "border-[#e5e7eb] text-[#4a5565] hover:bg-[#f9fafb]",
             )}
           >
             <CqaIcon name="drag_indicator" className="text-[18px]" /> Reorder
@@ -1094,12 +1094,12 @@ export function StudioWorkspace({
                             checked={selectedSteps.includes(step.id)}
                             onClick={(event) => event.stopPropagation()}
                             onChange={() => toggleStepSelection(step.id)}
-                            className="mt-1.5 size-4 shrink-0 rounded border-[#d1d5db] accent-[#5b4ee8]"
+                            className="mt-1.5 size-4 shrink-0 rounded border-[#d1d5db] accent-[#0F6B5C]"
                           />
                           {reorder && (
                             <CqaIcon name="drag_indicator" className="mt-1 shrink-0 cursor-grab text-[18px] text-[#9ca3af] active:cursor-grabbing" />
                           )}
-                          <span className="mt-1 flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#f5f3ff] text-[11px] font-semibold text-[#5b4ee8]">
+                          <span className="mt-1 flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#f5f3ff] text-[11px] font-semibold text-[#0F6B5C]">
                             {index + 1}
                           </span>
                           <span
@@ -1111,7 +1111,7 @@ export function StudioWorkspace({
                           </span>
                           <div className="min-w-0 flex-1">
                             {step.action === "AI Assertion" ? (
-                              <span className="mb-1 inline-flex items-center gap-1 rounded border border-[#ddd6fe] bg-[#f5f3ff] px-1.5 py-[1px] text-[10.5px] font-medium text-[#5b4ee8]">
+                              <span className="mb-1 inline-flex items-center gap-1 rounded border border-[#ddd6fe] bg-[#f5f3ff] px-1.5 py-[1px] text-[10.5px] font-medium text-[#0F6B5C]">
                                 <CqaIcon name="auto_awesome" className="text-[12px]" /> AI Verification
                               </span>
                             ) : null}
@@ -1128,7 +1128,7 @@ export function StudioWorkspace({
                               {step.action !== "AI Assertion" && (
                                 <span className="font-medium text-[#4a5565]">{stepParts(step, data.variables, orgUrl).prefix}</span>
                               )}
-                              <span className="inline-flex max-w-full items-center rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700">
+                              <span className="inline-flex max-w-full items-center rounded-md border border-[#0F6B5C]/30 bg-pw-accent-soft px-2 py-0.5 font-medium text-pw-accent-hover">
                                 <span className="truncate">{stepParts(step, data.variables, orgUrl).focus}</span>
                               </span>
                               {step.disabled && <span className="rounded bg-[#f3f4f6] px-1.5 py-[1px] text-[10px] font-medium text-[#6b7280]">Disabled</span>}
@@ -1144,7 +1144,7 @@ export function StudioWorkspace({
                                 event.stopPropagation();
                                 setDetailIndex(index);
                               }}
-                              className="font-medium text-[#5b4ee8] hover:underline"
+                              className="font-medium text-[#0F6B5C] hover:underline"
                             >
                               View Details ›
                             </button>
@@ -1160,7 +1160,7 @@ export function StudioWorkspace({
                     type="button"
                     onClick={() => setAddOpen(true)}
                     disabled={readOnly}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12.5px] font-medium text-[#5b4ee8] transition hover:bg-[#f5f3ff] disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12.5px] font-medium text-[#0F6B5C] transition hover:bg-[#f5f3ff] disabled:opacity-50"
                   >
                     <CqaIcon name="add" className="text-[17px]" /> Add Step
                   </button>
@@ -1177,7 +1177,7 @@ export function StudioWorkspace({
                   onClick={() => setRelationTab("plans")}
                   className={cn(
                     "border-b-2 pb-2.5 pt-1 text-[13px]",
-                    relationTab === "plans" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]",
+                    relationTab === "plans" ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280]",
                   )}
                 >
                   Test Plans ({data.plans.length})
@@ -1187,7 +1187,7 @@ export function StudioWorkspace({
                   onClick={() => setRelationTab("prereq")}
                   className={cn(
                     "border-b-2 pb-2.5 pt-1 text-[13px]",
-                    relationTab === "prereq" ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280]",
+                    relationTab === "prereq" ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280]",
                   )}
                 >
                   Used as Prerequisite in ({data.prerequisiteOf.length})
@@ -1216,7 +1216,7 @@ export function StudioWorkspace({
                             <td className="px-4 py-3">
                               <div className="flex items-start gap-2">
                                 <CqaIcon name="description" className="mt-0.5 text-[16px] text-[#9ca3af]" />
-                                <Link href={`/dashboard/plans/test-plans/${plan.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{plan.name}</Link>
+                                <Link href={`/dashboard/plans/test-plans/${plan.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{plan.name}</Link>
                               </div>
                             </td>
                             <td className="px-4 py-3">
@@ -1260,7 +1260,7 @@ export function StudioWorkspace({
                         visiblePrereqs.map((item) => (
                           <tr key={item.id} className="border-b border-[#f3f4f6] last:border-0 hover:bg-[#fafafa]">
                             <td className="px-4 py-3">
-                              <Link href={`/dashboard/test-studio/${item.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{item.title}</Link>
+                              <Link href={`/dashboard/test-studio/${item.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{item.title}</Link>
                             </td>
                             <td className="px-4 py-3">
                               <span className={cn("inline-flex items-center rounded border px-2 py-[2px] text-[11.5px]", statusTone(item.status))}>{item.status}</span>
@@ -1302,7 +1302,7 @@ export function StudioWorkspace({
                           version.version === selectedVersion?.version ? "bg-[#f5f3ff]" : "hover:bg-[#f9fafb]",
                         )}
                       >
-                        <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-md border text-[11px] font-semibold", version.version === selectedVersion?.version ? "border-[#ddd6fe] bg-white text-[#5b4ee8]" : "border-[#e5e7eb] bg-white text-[#6b7280]")}>
+                        <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-md border text-[11px] font-semibold", version.version === selectedVersion?.version ? "border-[#ddd6fe] bg-white text-[#0F6B5C]" : "border-[#e5e7eb] bg-white text-[#6b7280]")}>
                           v{version.version}
                         </span>
                         <span className="min-w-0 flex-1">
@@ -1426,7 +1426,7 @@ export function StudioWorkspace({
               <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 py-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-[13px] font-semibold text-[#262626]">Description</h2>
-                  <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center gap-1 text-[11.5px] font-medium text-[#5b4ee8] hover:underline">
+                  <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center gap-1 text-[11.5px] font-medium text-[#0F6B5C] hover:underline">
                     <CqaIcon name="edit" className="text-[14px]" /> Edit
                   </button>
                 </div>
@@ -1528,7 +1528,7 @@ export function StudioWorkspace({
               <div className="px-4 py-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-[13px] font-semibold text-[#262626]">Test Case Variables</h2>
-                  <button type="button" onClick={addVariableRow} aria-label="Add variable" className="text-[#5b4ee8] hover:text-[#4f46e5]">
+                  <button type="button" onClick={addVariableRow} aria-label="Add variable" className="text-[#0F6B5C] hover:text-[#4f46e5]">
                     <CqaIcon name="add" className="text-[18px]" />
                   </button>
                 </div>
@@ -1558,7 +1558,7 @@ export function StudioWorkspace({
                   {variables.length === 0 && <p className="py-6 text-center text-[12px] text-[#9ca3af]">No variables yet. Add a parameter to reuse values across steps.</p>}
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-[#f0f1f3] pt-3">
-                  <button type="button" onClick={addVariableRow} className="inline-flex items-center gap-1 text-[12px] font-medium text-[#5b4ee8] hover:underline">
+                  <button type="button" onClick={addVariableRow} className="inline-flex items-center gap-1 text-[12px] font-medium text-[#0F6B5C] hover:underline">
                     <CqaIcon name="add" className="text-[15px]" /> Add Variable
                   </button>
                   <button type="button" onClick={() => void saveVariables()} disabled={readOnly || pending === "vars"} className={cn(cqaBtnPrimary, "h-8 px-3 text-[12px]")}>
@@ -1580,7 +1580,7 @@ export function StudioWorkspace({
                     onChange={(event) => setUsedQuery(event.target.value)}
                     placeholder="Search"
                     aria-label="Search environment variables"
-                    className="h-8 w-full rounded-md border border-[#e5e7eb] pl-8 pr-2 text-[12px] outline-none focus:border-[#a9a1f7]"
+                    className="h-8 w-full rounded-md border border-[#e5e7eb] pl-8 pr-2 text-[12px] outline-none focus:border-[#0F6B5C]"
                   />
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 border-b border-[#f0f1f3] pb-2">
@@ -1599,7 +1599,7 @@ export function StudioWorkspace({
                     </div>
                   ))}
                 </div>
-                <Link href="/dashboard/environments" className="mt-3 inline-flex items-center gap-1 border-t border-[#f0f1f3] pt-3 text-[12px] font-medium text-[#5b4ee8] hover:underline">
+                <Link href="/dashboard/environments" className="mt-3 inline-flex items-center gap-1 border-t border-[#f0f1f3] pt-3 text-[12px] font-medium text-[#0F6B5C] hover:underline">
                   <CqaIcon name="chevron_right" className="text-[14px]" /> Manage in Environment &amp; Data Management
                 </Link>
               </div>
@@ -1686,7 +1686,7 @@ export function StudioWorkspace({
                           )}
                           <span
                             data-testid="run-history-mode"
-                            className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700"
+                            className="rounded-full bg-pw-accent-soft px-2 py-0.5 text-[10px] font-medium text-pw-accent-hover"
                             title={runItem.mode}
                           >
                             {planMode ? runItem.mode : "Standalone Run"}
@@ -1713,7 +1713,7 @@ export function StudioWorkspace({
             onChange={(event) => setTemplateQuery(event.target.value)}
             placeholder="Search"
             aria-label="Search templates"
-            className="h-9 w-full rounded-lg border border-[#e5e7eb] pl-9 pr-3 text-[13px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+            className="h-9 w-full rounded-lg border border-[#e5e7eb] pl-9 pr-3 text-[13px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
           />
         </div>
         <div className="mt-3 max-h-[430px] divide-y divide-[#f0f1f3] overflow-y-auto rounded-lg border border-[#e5e7eb]">
@@ -1736,10 +1736,10 @@ export function StudioWorkspace({
         {detailStep && detailIndex !== null && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="flex size-6 items-center justify-center rounded-full bg-[#f5f3ff] text-[11px] font-semibold text-[#5b4ee8]">{detailIndex + 1}</span>
+              <span className="flex size-6 items-center justify-center rounded-full bg-[#f5f3ff] text-[11px] font-semibold text-[#0F6B5C]">{detailIndex + 1}</span>
               <span className="text-[13px] font-medium text-[#374151]">{detailStep.action}</span>
               {detailStep.action === "AI Assertion" && (
-                <span className="inline-flex items-center gap-1 rounded border border-[#ddd6fe] bg-[#f5f3ff] px-1.5 py-[1px] text-[10.5px] font-medium text-[#5b4ee8]">
+                <span className="inline-flex items-center gap-1 rounded border border-[#ddd6fe] bg-[#f5f3ff] px-1.5 py-[1px] text-[10.5px] font-medium text-[#0F6B5C]">
                   <CqaIcon name="auto_awesome" className="text-[12px]" /> AI Verification
                 </span>
               )}
@@ -1890,7 +1890,7 @@ export function StudioWorkspace({
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#374151]">
-                    <CqaIcon name="my_location" className="text-[15px] text-[#5b4ee8]" /> QASyn Vision AI grounding
+                    <CqaIcon name="my_location" className="text-[15px] text-[#0F6B5C]" /> QASyn Vision AI grounding
                   </p>
                   <p className="mt-0.5 text-[11px] leading-4 text-[#6b7280]">
                     Grounds this step on the live page and returns a normalized 0–1000 bounding box.
@@ -1991,7 +1991,7 @@ export function StudioWorkspace({
                 {Object.entries(data.variables).length === 0 && <span className="text-[11.5px] text-[#9ca3af]">No variables</span>}
                 {Object.entries(data.variables).map(([key, value]) => (
                   <span key={key} className="inline-flex max-w-full items-center gap-1 truncate rounded border border-[#e5e7eb] bg-[#f9fafb] px-1.5 py-[2px] font-mono text-[10.5px] text-[#4a5565]">
-                    <span className="font-semibold text-[#5b4ee8]">{key}</span>=<span className="truncate">{value}</span>
+                    <span className="font-semibold text-[#0F6B5C]">{key}</span>=<span className="truncate">{value}</span>
                   </span>
                 ))}
               </div>
@@ -2033,7 +2033,7 @@ export function StudioWorkspace({
               onChange={(event) => setPrereqQuery(event.target.value)}
               placeholder="Search test cases"
               aria-label="Search test cases"
-              className="h-9 w-full rounded-lg border border-[#e5e7eb] pl-9 pr-3 text-[13px] outline-none focus:border-[#a9a1f7]"
+              className="h-9 w-full rounded-lg border border-[#e5e7eb] pl-9 pr-3 text-[13px] outline-none focus:border-[#0F6B5C]"
             />
           </div>
           <div className="max-h-[360px] divide-y divide-[#f0f1f3] overflow-y-auto rounded-lg border border-[#e5e7eb]">
@@ -2041,7 +2041,7 @@ export function StudioWorkspace({
               <label key={candidate.id} className="flex cursor-pointer items-start gap-2.5 px-3 py-2.5 hover:bg-[#fafafa]">
                 <input
                   type="checkbox"
-                  className="mt-1 size-4 accent-[#5b4ee8]"
+                  className="mt-1 size-4 accent-[#0F6B5C]"
                   checked={selectedPrereqs.includes(candidate.id)}
                   onChange={() => setSelectedPrereqs((prev) => (prev.includes(candidate.id) ? prev.filter((v) => v !== candidate.id) : [...prev, candidate.id]))}
                 />
@@ -2171,7 +2171,7 @@ export function StudioWorkspace({
           <div className="min-h-[320px] px-6 py-6">
             {runPhase === "preparing" ? (
               <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-[#cbd5e1]">
-                <span className="size-9 animate-spin rounded-full border-2 border-[#5b4ee8] border-t-transparent" />
+                <span className="size-9 animate-spin rounded-full border-2 border-[#0F6B5C] border-t-transparent" />
                 <p className="text-[13px]">Preparing simulator...</p>
               </div>
             ) : (
@@ -2223,7 +2223,7 @@ export function StudioWorkspace({
                   <button type="button" onClick={() => void executeRun(runAutoFix)} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#475569] px-3 text-[12px] font-medium text-[#e2e8f0] hover:bg-[#1e293b]">
                     <CqaIcon name="refresh" className="text-[15px]" /> Run again
                   </button>
-                  <button type="button" onClick={() => setRunOpen(false)} className="inline-flex h-8 items-center rounded-md bg-[#5b4ee8] px-3 text-[12px] font-medium text-white hover:bg-[#6d61ff]">
+                  <button type="button" onClick={() => setRunOpen(false)} className="inline-flex h-8 items-center rounded-md bg-[#0F6B5C] px-3 text-[12px] font-medium text-white hover:bg-[#0c5a4d]">
                     Close
                   </button>
                 </div>
@@ -2292,7 +2292,7 @@ export function StudioWorkspace({
                 onClick={() => setEvidenceCompare((current) => !current)}
                 className={cn(
                   "inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-[12px] font-medium transition",
-                  evidenceCompare ? "border-[#a9a1f7] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#4b5563] hover:bg-[#fafafa]",
+                  evidenceCompare ? "border-[#0F6B5C] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#4b5563] hover:bg-[#fafafa]",
                   !evidenceCompareData.previous && "cursor-not-allowed opacity-50",
                 )}
                 title={evidenceCompareData.previous ? "Compare the latest run with the previous run" : "Run the test twice to compare"}
@@ -2310,7 +2310,7 @@ export function StudioWorkspace({
                       value={evidenceOpacity}
                       data-testid="studio-evidence-opacity"
                       onChange={(event) => setEvidenceOpacity(Number(event.target.value))}
-                      className="h-1.5 w-32 accent-[#5b4ee8]"
+                      className="h-1.5 w-32 accent-[#0F6B5C]"
                     />
                     <span className="tabular-nums">{evidenceOpacity}%</span>
                   </label>

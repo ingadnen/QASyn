@@ -325,11 +325,11 @@ export function PlansList({ rows, readOnly, actions }: { rows: PlanRow[]; readOn
                         aria-label={`Select ${plan.name}`}
                         checked={selected.has(plan.id)}
                         onChange={() => toggleOne(plan.id)}
-                        className="size-3.5 accent-[#5b4ee8]"
+                        className="size-3.5 accent-[#0F6B5C]"
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/dashboard/plans/test-plans/${plan.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{plan.name}</Link>
+                      <Link href={`/dashboard/plans/test-plans/${plan.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{plan.name}</Link>
                       <p className="mt-0.5 text-[12px] text-[#6b7280]">{plan.module || "Unorganised"} · {plan.cases} cases</p>
                     </td>
                     {visible.suites && <td className="px-4 py-3 text-[#4b5563]">{plan.suites}</td>}

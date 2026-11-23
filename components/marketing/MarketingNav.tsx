@@ -163,35 +163,35 @@ function DesktopMenu({ menu, pathname }: { menu: Menu; pathname: string }) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition",
-          active || open ? "bg-white/10 text-white" : "text-slate-300 hover:text-white",
+          active || open ? "bg-brand-50 text-brand-700" : "text-[#3b4a53] hover:bg-brand-50 hover:text-brand-700",
         )}
       >
         {menu.label} ▾
       </button>
       {open && (
-        <div className="absolute left-1/2 top-full z-50 mt-2 w-[660px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#080c18]/95 p-6 shadow-2xl shadow-black/60 backdrop-blur-2xl">
+        <div className="absolute left-1/2 top-full z-50 mt-2 w-[660px] -translate-x-1/2 rounded-lg border border-pw-line bg-white p-6 shadow-xl shadow-black/5">
           <div className="grid grid-cols-[1fr_1fr_1fr_190px] gap-6">
             {menu.columns.map((col) => (
               <div key={col.title}>
-                <p className="text-[10.5px] font-semibold tracking-[0.18em] text-slate-500 uppercase">{col.title}</p>
+                <p className="text-[10.5px] font-semibold tracking-[0.18em] text-pw-muted uppercase">{col.title}</p>
                 <ul className="mt-3 space-y-2">
                   {col.links.map((l) => (
                     <li key={l.href + l.label}>
-                      <Link href={l.href} className="group inline-flex items-center gap-1.5 text-sm text-slate-300 transition hover:text-white">
-                        <span className="size-1 rounded-full bg-quantum-500/70 transition group-hover:bg-quantum-400" aria-hidden="true" />
+                      <Link href={l.href} className="group inline-flex items-center gap-1.5 text-sm text-[#3b4a53] transition hover:text-brand-700">
+                        <span className="size-1 rounded-full bg-brand-300 transition group-hover:bg-brand-500" aria-hidden="true" />
                         {l.label}
-                        {l.badge && <span className="ml-1 rounded-full border border-quantum-500/40 bg-quantum-500/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-quantum-300">{l.badge}</span>}
+                        {l.badge && <span className="ml-1 rounded-full border border-brand-200 bg-brand-50 px-1.5 py-0.5 text-[9.5px] font-semibold text-brand-700">{l.badge}</span>}
                       </Link>
                     </li>
                   ))}
                 </ul>
               </div>
             ))}
-            <div className="rounded-xl border border-white/10 bg-gradient-to-br from-quantum-500/15 via-cobalt-500/10 to-transparent p-4">
-              <p className="text-[10.5px] font-semibold tracking-[0.18em] text-quantum-300 uppercase">{menu.promo.kicker}</p>
-              <p className="mt-2 text-sm font-semibold text-white">{menu.promo.title}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">{menu.promo.body}</p>
-              <Link href={menu.promo.href} className="mt-3 inline-block rounded-full bg-gradient-to-r from-quantum-500 to-cobalt-400 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-quantum-500/20">
+            <div className="rounded-lg border border-pw-line bg-pw-bg p-4">
+              <p className="text-[10.5px] font-semibold tracking-[0.18em] text-brand-600 uppercase">{menu.promo.kicker}</p>
+              <p className="mt-2 text-sm font-semibold text-pw-heading">{menu.promo.title}</p>
+              <p className="mt-1 text-xs leading-5 text-pw-muted">{menu.promo.body}</p>
+              <Link href={menu.promo.href} className="mt-3 inline-block rounded-full bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-500">
                 {menu.promo.cta}
               </Link>
             </div>
@@ -210,10 +210,10 @@ export function MarketingNav() {
   useEffect(() => setOpen(false), [pathname]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#06080f]/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-pw-line bg-[#FAFAF7]/90 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 sm:px-8 lg:px-12">
         <Link href="/" aria-label="QASyn home" className="shrink-0">
-          <Logo inverted />
+          <Logo />
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1.5 xl:flex">
@@ -222,7 +222,7 @@ export function MarketingNav() {
           ))}
           <Link
             href="/pricing"
-            className={cn("whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition", pathname === "/pricing" ? "bg-white/10 text-white" : "text-slate-300 hover:text-white")}
+            className={cn("whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition", pathname === "/pricing" ? "bg-brand-50 text-brand-700" : "text-[#3b4a53] hover:bg-brand-50 hover:text-brand-700")}
           >
             Pricing
           </Link>
@@ -231,25 +231,25 @@ export function MarketingNav() {
             className={cn(
               "ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-semibold transition",
               pathname === "/qasyn"
-                ? "border-quantum-400/60 bg-quantum-500/15 text-quantum-200"
-                : "border-quantum-500/30 bg-quantum-500/5 text-quantum-300 hover:border-quantum-400/60 hover:text-white",
+                ? "border-brand-500 bg-brand-50 text-brand-700"
+                : "border-brand-200 bg-white text-brand-600 hover:border-brand-400 hover:text-brand-700",
             )}
           >
-            <span className="quantum-pulse size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" aria-hidden="true" />
+            <span className="quantum-pulse size-1.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(15,107,92,0.5)]" aria-hidden="true" />
             ⚡ QASyn Agent
           </Link>
         </nav>
 
         <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
-          <Link href="/dashboard/learning" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
+          <Link href="/dashboard/learning" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-[#3b4a53] transition hover:text-brand-700">
             Learning Hub
           </Link>
-          <Link href="/login" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-white">
+          <Link href="/login" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-[#3b4a53] transition hover:text-brand-700">
             Sign in
           </Link>
           <Link
             href="/signup"
-            className="whitespace-nowrap rounded-full bg-gradient-to-r from-quantum-500 via-cobalt-500 to-cobalt-400 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-quantum-500/25 transition hover:brightness-110"
+            className="whitespace-nowrap rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-500"
           >
             Start Free Trial →
           </Link>
@@ -257,7 +257,7 @@ export function MarketingNav() {
 
         <button
           type="button"
-          className="rounded-lg p-2 text-white xl:hidden"
+          className="rounded-lg p-2 text-[#1C2A33] xl:hidden"
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -270,22 +270,22 @@ export function MarketingNav() {
       </div>
 
       {open && (
-        <nav id="mobile-nav" aria-label="Mobile" className="max-h-[70vh] overflow-y-auto border-t border-white/10 bg-[#06080f] px-5 py-3 xl:hidden">
-          <Link href="/qasyn" className="flex items-center gap-2 rounded-lg border border-quantum-500/30 bg-quantum-500/10 px-3 py-2 text-sm font-semibold text-quantum-200">
-            <span className="quantum-pulse size-1.5 rounded-full bg-emerald-400" aria-hidden="true" /> ⚡ QASyn Agent
+        <nav id="mobile-nav" aria-label="Mobile" className="max-h-[70vh] overflow-y-auto border-t border-pw-line bg-white px-5 py-3 xl:hidden">
+          <Link href="/qasyn" className="flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-700">
+            <span className="quantum-pulse size-1.5 rounded-full bg-brand-500" aria-hidden="true" /> ⚡ QASyn Agent
           </Link>
           {MENUS.map((menu) => (
-            <div key={menu.label} className="border-b border-white/10 py-2">
-              <button type="button" className="flex w-full items-center justify-between py-2 text-sm font-semibold text-white" aria-expanded={mobileMenu === menu.label} onClick={() => setMobileMenu(mobileMenu === menu.label ? null : menu.label)}>
+            <div key={menu.label} className="border-b border-pw-line py-2">
+              <button type="button" className="flex w-full items-center justify-between py-2 text-sm font-semibold text-pw-heading" aria-expanded={mobileMenu === menu.label} onClick={() => setMobileMenu(mobileMenu === menu.label ? null : menu.label)}>
                 {menu.label} <span>{mobileMenu === menu.label ? "▾" : "▸"}</span>
               </button>
               {mobileMenu === menu.label && (
                 <div className="space-y-3 pb-2 pl-2">
                   {menu.columns.map((col) => (
                     <div key={col.title}>
-                      <p className="text-[10.5px] font-semibold tracking-[0.18em] text-slate-500 uppercase">{col.title}</p>
+                      <p className="text-[10.5px] font-semibold tracking-[0.18em] text-pw-muted uppercase">{col.title}</p>
                       {col.links.map((l) => (
-                        <Link key={l.href + l.label} href={l.href} className="block py-1 text-sm text-slate-300">
+                        <Link key={l.href + l.label} href={l.href} className="block py-1 text-sm text-[#3b4a53]">
                           {l.label}
                         </Link>
                       ))}
@@ -295,10 +295,10 @@ export function MarketingNav() {
               )}
             </div>
           ))}
-          <Link href="/pricing" className="block py-2 text-sm font-medium text-white">Pricing</Link>
-          <Link href="/dashboard/overview" className="block py-2 text-sm font-medium text-white">Open dashboard</Link>
-          <Link href="/login" className="mt-2 block py-2 text-sm font-medium text-white">Sign in</Link>
-          <Link href="/signup" className="mt-2 block rounded-full bg-gradient-to-r from-quantum-500 to-cobalt-400 px-4 py-2.5 text-center text-sm font-semibold text-white">Start Free Trial →</Link>
+          <Link href="/pricing" className="block py-2 text-sm font-medium text-pw-heading">Pricing</Link>
+          <Link href="/dashboard/overview" className="block py-2 text-sm font-medium text-pw-heading">Open dashboard</Link>
+          <Link href="/login" className="mt-2 block py-2 text-sm font-medium text-pw-heading">Sign in</Link>
+          <Link href="/signup" className="mt-2 block rounded-full bg-brand-600 px-4 py-2.5 text-center text-sm font-semibold text-white">Start Free Trial →</Link>
         </nav>
       )}
     </header>

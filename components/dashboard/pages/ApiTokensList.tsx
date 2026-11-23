@@ -77,14 +77,14 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search tokens"
             aria-label="Search tokens"
-            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
           />
         </div>
         <select
           aria-label="Filter by status"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="h-9 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[13px] text-[#374151] outline-none focus:border-[#a9a1f7]"
+          className="h-9 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[13px] text-[#374151] outline-none focus:border-[#0F6B5C]"
         >
           {["All statuses", "Active", "Expired"].map((s) => <option key={s}>{s}</option>)}
         </select>
@@ -129,7 +129,7 @@ export function ApiTokensList({ tokens, readOnly }: { tokens: ApiTokenRow[]; rea
                   <tr key={token.id} className="border-b border-[#f3f4f6] bg-white last:border-0 hover:bg-[#fafafa]">
                     <td className="px-4 py-3">
                       <p className="flex items-center gap-2 font-medium text-[#111827]">
-                        <CqaIcon name="key" className="text-[17px] text-[#5b4ee8]" />
+                        <CqaIcon name="key" className="text-[17px] text-[#0F6B5C]" />
                         {token.name}
                       </p>
                       <p className="mt-0.5 font-mono text-[11.5px] text-[#6b7280]">{token.prefix}…</p>

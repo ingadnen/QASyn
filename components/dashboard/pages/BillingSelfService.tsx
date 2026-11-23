@@ -274,7 +274,7 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
       >
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-2">
-            {CREDIT_PACKS.map((pack) => <button key={pack} type="button" onClick={() => { setCredits(pack); setCustomCredits(""); }} className={cn("rounded-lg border px-2 py-2 text-[12px] font-semibold", credits === pack && !customCredits ? "border-[#5b4ee8] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#4b5563]")}>+{pack.toLocaleString("en-US")}</button>)}
+            {CREDIT_PACKS.map((pack) => <button key={pack} type="button" onClick={() => { setCredits(pack); setCustomCredits(""); }} className={cn("rounded-lg border px-2 py-2 text-[12px] font-semibold", credits === pack && !customCredits ? "border-[#0F6B5C] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#4b5563]")}>+{pack.toLocaleString("en-US")}</button>)}
           </div>
           <label className="block"><span className={cqaLabel}>Custom amount</span><input className={cqaInput} type="number" min={1000} value={customCredits} onChange={(e) => setCustomCredits(e.target.value)} placeholder="e.g. 750000" /></label>
           <p className="text-[11px] text-[#6b7280]">Rate: $0.025 / credit · charged amount ${(((customCredits ? Number(customCredits) : credits) * 0.025)).toLocaleString("en-US", { maximumFractionDigits: 2 })}</p>
@@ -290,7 +290,7 @@ export function BillingSelfService({ readOnly, members, plan }: { readOnly: bool
       >
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
-            {PLAN_OPTIONS.map((option) => <button key={option.key} type="button" onClick={() => setPlanKey(option.key)} className={cn("rounded-lg border px-3 py-2 text-left text-[12px] font-semibold", planKey === option.key ? "border-[#5b4ee8] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#374151]")}>{option.label}</button>)}
+            {PLAN_OPTIONS.map((option) => <button key={option.key} type="button" onClick={() => setPlanKey(option.key)} className={cn("rounded-lg border px-3 py-2 text-left text-[12px] font-semibold", planKey === option.key ? "border-[#0F6B5C] bg-[#eef2ff] text-[#4f46e5]" : "border-[#e5e7eb] bg-white text-[#374151]")}>{option.label}</button>)}
           </div>
           {paymentFields}
         </div>

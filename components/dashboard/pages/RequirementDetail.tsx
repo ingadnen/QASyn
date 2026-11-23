@@ -177,7 +177,7 @@ export function RequirementDetail({
             onClick={() => setTab(t.id)}
             className={cn(
               "whitespace-nowrap border-b-2 pb-2.5 pt-1 text-[13.5px] transition",
-              tab === t.id ? "border-[#5b4ee8] font-medium text-[#5b4ee8]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
+              tab === t.id ? "border-[#0F6B5C] font-medium text-[#0F6B5C]" : "border-transparent text-[#6b7280] hover:text-[#111827]",
             )}
           >
             {t.label}
@@ -196,7 +196,7 @@ export function RequirementDetail({
                 onChange={(e) => { setQuery(e.target.value); setPage(1); }}
                 placeholder="Search"
                 aria-label="Search test cases"
-                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none focus:border-[#a9a1f7] focus:ring-2 focus:ring-[#e4e1fd]"
+                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white pl-9 pr-3 text-[13px] outline-none focus:border-[#0F6B5C] focus:ring-2 focus:ring-[#e4e1fd]"
               />
             </div>
             {filterOpen && (
@@ -210,7 +210,7 @@ export function RequirementDetail({
                 {TYPES.map((t) => <option key={t}>{t}</option>)}
               </select>
             )}
-            <button type="button" aria-label="Filter" aria-pressed={filterOpen} className={cn(cqaIconBtn, "size-9 border bg-white", filterOpen ? "border-[#a9a1f7] text-[#5b4ee8]" : "border-[#e5e7eb]")} onClick={() => setFilterOpen((v) => !v)}>
+            <button type="button" aria-label="Filter" aria-pressed={filterOpen} className={cn(cqaIconBtn, "size-9 border bg-white", filterOpen ? "border-[#0F6B5C] text-[#0F6B5C]" : "border-[#e5e7eb]")} onClick={() => setFilterOpen((v) => !v)}>
               <CqaIcon name="filter_alt" className="text-[18px]" />
             </button>
           </div>
@@ -245,13 +245,13 @@ export function RequirementDetail({
                         <div className="flex items-start gap-2">
                           <span className="mt-0.5 shrink-0 text-[10.5px] font-medium text-[#9ca3af]">{c.code}</span>
                           <div className="min-w-0">
-                            <Link href={`/dashboard/test-studio/${c.id}`} className="font-medium text-[#1f2937] hover:text-[#5b4ee8]">{c.title}</Link>
+                            <Link href={`/dashboard/test-studio/${c.id}`} className="font-medium text-[#1f2937] hover:text-[#0F6B5C]">{c.title}</Link>
                             <p className="mt-0.5 line-clamp-2 text-[11.5px] leading-4 text-[#6b7280]">{c.description}</p>
                           </div>
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-3 py-3">
-                        <span className="rounded border border-[#ddd6fe] bg-[#f5f3ff] px-2 py-[1px] text-[11px] font-medium text-[#5b4ee8]">Create</span>
+                        <span className="rounded border border-[#ddd6fe] bg-[#f5f3ff] px-2 py-[1px] text-[11px] font-medium text-[#0F6B5C]">Create</span>
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-[#4a5565]">{c.type}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-[#4a5565]">{c.priority}</td>
@@ -299,7 +299,7 @@ export function RequirementDetail({
       {tab === "requirement" && (
         <div className="mt-4">
           <div className="flex items-center gap-5 border-b border-[#e5e7eb]">
-            <span className="border-b-2 border-[#5b4ee8] pb-2.5 text-[13.5px] font-medium text-[#5b4ee8]">Sources &amp; Context</span>
+            <span className="border-b-2 border-[#0F6B5C] pb-2.5 text-[13.5px] font-medium text-[#0F6B5C]">Sources &amp; Context</span>
             <span className="pb-2.5 text-[13.5px] text-[#9ca3af]">AI Analysis (Coming soon)</span>
           </div>
           <div className={cn(cqaCard, "mt-4 px-6 py-14 text-center")}>

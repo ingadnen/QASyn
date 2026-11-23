@@ -86,7 +86,7 @@ export function SystemAuditsTable({ rows }: { rows: AuditRow[] }) {
           type="button"
           aria-label="Filter"
           aria-pressed={filterOpen}
-          className={cn(cqaBtnGhost, "size-9 border bg-white p-0", filterOpen ? "border-[#a9a1f7] text-[#5b4ee8]" : "border-[#e5e7eb]")}
+          className={cn(cqaBtnGhost, "size-9 border bg-white p-0", filterOpen ? "border-[#0F6B5C] text-[#0F6B5C]" : "border-[#e5e7eb]")}
           onClick={() => setFilterOpen((v) => !v)}
         >
           <CqaIcon name="filter_alt" className="text-[18px]" />
