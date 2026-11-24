@@ -13,6 +13,7 @@ import {
 } from "@/lib/integration-providers";
 import { audit } from "@/lib/tenant";
 import { guardPermission } from "@/lib/rbac-server";
+import { planAllowsIntegration } from "@/lib/entitlements";
 import { delay } from "@/lib/utils";
 import { testBiviaConnection } from "@/lib/bivia";
 
@@ -190,6 +191,12 @@ export async function POST(request: Request) {
   }
 
   if (action === "connect") {
+    if (!planAllowsIntegration(ctx.org.plan, provider)) {
+      return jsonError(
+        `The ${provider.replace(/_/g, " ")} integration is not included in your plan. Upgrade to connect it.`,
+        403,
+      );
+    }
     await delay(250);
     const detail = integrationDetail(provider, config);
     const integration = await prisma.integration.upsert({

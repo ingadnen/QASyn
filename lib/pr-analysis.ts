@@ -1,5 +1,4 @@
 import type { PullRequestCheck } from "@prisma/client";
-import { biviaScoreAndSet } from "./bivia";
 import { prisma } from "./db";
 import { buildStepsJson, runTestCases } from "./engine";
 import {
@@ -13,12 +12,6 @@ import { readSettings, type OrgContext } from "./tenant";
 import { normalizeWebsite } from "./utils";
 
 type Actor = Pick<OrgContext, "org" | "user">;
-
-const CRITICALITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-
-function rank(value: string) {
-  return CRITICALITY_RANK[value] ?? 4;
-}
 
 /**
  * Computes the blast radius of a pull request, executes the impacted test
@@ -38,51 +31,11 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
   const modules = impactedModules(files);
   const radius = blastRadius(files, modules);
 
-  const candidates = await prisma.testCase.findMany({
-    where: { organisationId: actor.org.id, module: { in: modules } },
-    select: { id: true, title: true, module: true, criticality: true, status: true, stepsCount: true },
-  });
-  const sorted = candidates.sort(
-    (a, b) => rank(a.criticality) - rank(b.criticality) || (a.status === "failing" ? -1 : 1),
-  );
-  let selected = sorted.slice(0, 10);
-  let biviaRisk: { riskScore: number; riskLevel: "low" | "medium" | "high"; probabilityPct: number; provider: string } | null =
-    null;
-
-  // Articul8 Bivia scores the PR and selects the exact impacted regression set.
-  const analysisCode = readSettings(actor.org).analysisCode ?? null;
-  if (analysisCode?.biviaPrRisk !== false && candidates.length > 0) {
-    const decision = await biviaScoreAndSet({
-      prTitle: pr.title,
-      changedFiles: files,
-      candidateTests: candidates.map((test) => ({
-        id: test.id,
-        title: test.title,
-        module: test.module,
-        criticality: test.criticality,
-        status: test.status,
-      })),
-      organisationId: actor.org.id,
-    });
-    if (decision.status === "answered" && decision.selectedTestIds.length > 0) {
-      const byId = new Map(candidates.map((test) => [test.id, test]));
-      const calibrated = decision.selectedTestIds
-        .map((id) => byId.get(id))
-        .filter((test): test is (typeof candidates)[number] => Boolean(test));
-      if (calibrated.length > 0) selected = calibrated.slice(0, 10);
-    }
-    biviaRisk = {
-      riskScore: Math.round(decision.riskScore * 10) / 10,
-      riskLevel: decision.riskLevel,
-      probabilityPct: Math.round(decision.probability * 1000) / 10,
-      provider: decision.provider,
-    };
-  }
-
-  // PR-specific test drafting. The workspace model (PR Review role) — or the
-  // calibrated local engine when no model is configured — drafts test cases
-  // from THIS PR's title and changed-file list. Drafts persist, so re-runs
-  // reuse them instead of duplicating.
+  // PR-specific test drafting only. The workspace model (PR Review role) — or
+  // the calibrated local engine when no model is configured — drafts test cases
+  // from THIS PR's title and changed-file list. Generic catalogue test cases are
+  // never mixed in: every executed test is drafted for this PR. Drafts persist,
+  // so re-runs reuse them instead of duplicating.
   const titlePrefix = prCaseTitlePrefix(pr.prNumber);
   let drafted = await prisma.testCase.findMany({
     where: { organisationId: actor.org.id, title: { startsWith: titlePrefix } },
@@ -150,7 +103,7 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
     }
   }
 
-  const executionInputIds = [...selected.map((test) => test.id), ...drafted.map((testCase) => testCase.id)];
+  const executionInputIds = drafted.map((testCase) => testCase.id);
   const execution =
     executionInputIds.length > 0
       ? await runTestCases(
@@ -167,39 +120,24 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
     status: result.status,
     aiDrafted: draftedIds.has(result.id),
   }));
-  const executedIds = new Set(executed.map((test) => test.id));
-  for (const test of selected) {
-    if (!executedIds.has(test.id)) {
-      executed.push({ id: test.id, title: test.title, status: test.status, aiDrafted: false });
-      executedIds.add(test.id);
-    }
-  }
 
   const failed = executed.filter((test) => test.status === "failing").length;
   const passed = executed.length - failed;
   const verdict: ImpactSummary["verdict"] = failed > 0 ? "regression_caught" : "passed_baseline";
-  const riskLevel =
-    biviaRisk?.riskLevel ?? (failed > 0 || files.length >= 25 ? "high" : files.length >= 8 ? "medium" : "low");
+  const riskLevel = failed > 0 || files.length >= 25 ? "high" : files.length >= 8 ? "medium" : "low";
 
   const impact = {
     files,
     modules,
     blastRadius: radius,
-    impacted: selected.map((test) => ({
-      id: test.id,
-      title: test.title,
-      module: test.module,
-      criticality: test.criticality,
-      status: test.status,
-    })),
+    impacted: [],
     executed,
     draft: draftMeta,
     passed,
     failed,
     total: executed.length,
-    testsSelected: selected.length,
+    testsSelected: drafted.length,
     verdict,
-    bivia: biviaRisk,
   };
 
   const comment = buildProviderComment({
@@ -211,14 +149,7 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
 
   const logs: Array<{ at: string; level: string; message: string }> = [
     { at: new Date().toISOString(), level: "info", message: `Blast radius: ${radius} — ${files.length} file(s) across ${modules.join(", ")}` },
-    { at: new Date().toISOString(), level: "info", message: `Selected ${selected.length} impacted test case(s) by criticality` },
-    ...(biviaRisk
-      ? [{
-          at: new Date().toISOString(),
-          level: "info",
-          message: `🧠 QASyn Vision AI risk ${biviaRisk.riskScore}/10 (${biviaRisk.riskLevel}) · ${biviaRisk.probabilityPct.toFixed(1)}% calibrated · ${selected.length} recommended test(s)`,
-        }]
-      : []),
+    { at: new Date().toISOString(), level: "info", message: `Drafted ${drafted.length} PR-specific test case(s) for #${pr.prNumber}` },
     ...executed.map((test, index) => ({
       at: new Date(Date.now() + index * 120).toISOString(),
       level: test.status === "passing" ? "pass" : "fail",

@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/rbac-server";
 import type { Metadata } from "next";
 import { SettingsSimpleForm } from "@/components/dashboard/pages/SettingsClients";
+import { NotificationRulesMatrix } from "@/components/dashboard/pages/NotificationRulesMatrix";
 import { Card, EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { formatEmail, formatSlackMessage, formatTeamsMessage } from "@/lib/notifications";
 import { prisma } from "@/lib/db";
@@ -16,6 +17,15 @@ export default async function NotificationsPage() {
     <div className="space-y-6">
       <PageHeader kicker="ADMIN" title="Notifications" description="Slack, Teams and email rules for test failures, regressions and crawl completion." />
       <Card title="New rule"><div className="px-5 py-4"><SettingsSimpleForm kind="notification" readOnly={ctx.readOnly || !can(ctx.user.role, "settingsManage")} /></div></Card>
+      <Card title="Event delivery matrix">
+        {rules.length === 0 ? (
+          <EmptyState title="No rules" description="Create a rule above, then pick the event types each channel receives." />
+        ) : (
+          <div className="px-5 py-4">
+            <NotificationRulesMatrix rules={rules} readOnly={ctx.readOnly || !can(ctx.user.role, "settingsManage")} />
+          </div>
+        )}
+      </Card>
       <Card title={`${rules.length} rules`}>
         {rules.length === 0 ? <EmptyState title="No rules" description="Create a rule above." /> : (
           <ul className="divide-y divide-slate-100">

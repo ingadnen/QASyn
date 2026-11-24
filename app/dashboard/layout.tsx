@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard/Sidebar";
 import { Toaster } from "@/components/dashboard/Toaster";
 import { FinQAWidget } from "@/components/sections/FinQAWidget";
+import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { LiveSyncBadge } from "@/components/dashboard/LiveSyncBadge";
 import { initialsOf } from "@/lib/auth";
 import { ensureWal, prisma } from "@/lib/db";
 import { settlePending } from "@/lib/engine";
@@ -43,6 +45,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         user={{ name: ctx.user.name, email: ctx.user.email, initials: ctx.user.avatarInitials || initialsOf(ctx.user.name, ctx.user.email) }}
       />
       <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-end gap-3 border-b border-slate-100 bg-white/60 px-6 py-2">
+          <LiveSyncBadge readOnly={ctx.readOnly} />
+          <NotificationBell readOnly={ctx.readOnly} />
+        </div>
         {ctx.readOnly && (
           <div className="flex flex-wrap items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-[11px] text-amber-900">
             <span>

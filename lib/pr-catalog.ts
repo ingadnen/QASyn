@@ -203,8 +203,74 @@ function hash(value: string): number {
   return h;
 }
 
-/** Open pull requests exposed for one connected repository. */
-export function openPullRequests(provider: string, repository: string): CatalogPullRequest[] {
+/**
+ * Live GitHub pull requests mapped to the shared catalogue shape. Uses the
+ * integration's stored token, falling back to the workspace GITHUB_TOKEN.
+ */
+export async function fromGitHub(
+  config: Record<string, string>,
+  repository: string,
+): Promise<CatalogPullRequest[]> {
+  const token =
+    config.token ?? config.apiToken ?? config.personalAccessToken ?? config.pat ?? process.env.GITHUB_TOKEN ?? "";
+  if (!token || !repository.includes("/")) return [];
+  const host = (config.url ?? config.baseUrl ?? config.host ?? "https://api.github.com").replace(/\/+$/, "");
+
+  async function github(path: string): Promise<unknown> {
+    const response = await fetch(`${host}${path}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error(`GitHub API ${response.status} for ${path}`);
+    return response.json();
+  }
+
+  const pulls = (await github(`/repos/${repository}/pulls?state=open&per_page=10`)) as Array<{
+    number: number;
+    title: string;
+    html_url: string;
+    user?: { login?: string };
+    head?: { ref?: string };
+    base?: { ref?: string };
+    created_at?: string;
+  }>;
+  const mapped: CatalogPullRequest[] = [];
+  for (const pull of pulls) {
+    let files: string[] = [];
+    let additions = 0;
+    let deletions = 0;
+    try {
+      const listing = (await github(`/repos/${repository}/pulls/${pull.number}/files?per_page=20`)) as Array<{
+        filename: string;
+        additions?: number;
+        deletions?: number;
+      }>;
+      files = listing.map((file) => file.filename);
+      additions = listing.reduce((total, file) => total + (file.additions ?? 0), 0);
+      deletions = listing.reduce((total, file) => total + (file.deletions ?? 0), 0);
+    } catch {
+      // File listing is best-effort; the PR can still be analysed by title.
+    }
+    mapped.push({
+      provider: "GITHUB",
+      repository,
+      number: pull.number,
+      title: pull.title,
+      branch: pull.head?.ref ?? `pr-${pull.number}`,
+      branchTarget: pull.base?.ref ?? "main",
+      author: pull.user?.login ?? "unknown",
+      openedAt: pull.created_at ?? new Date().toISOString(),
+      files,
+      additions,
+      deletions,
+      url: pull.html_url,
+    });
+  }
+  return mapped;
+}
+
+/** Open pull requests exposed for one connected repository (demo fallback only). */
+function openPullRequests(provider: string, repository: string): CatalogPullRequest[] {
   const base = 700 + (hash(`${provider}:${repository}`) % 60);
   const day = 86_400_000;
   return TEMPLATES.map((template, index) => {
@@ -251,8 +317,9 @@ export interface DiscoveredRepository extends SourceRepository {
 }
 
 /**
- * Async catalogue used by the Pull Requests modal. Azure DevOps is queried for
- * real repositories and PRs; other providers keep the deterministic catalogue.
+ * Async catalogue used by the Pull Requests modal. Azure DevOps and GitHub are
+ * queried live; other providers keep the deterministic catalogue. A provider
+ * that fails or is not configured reports an empty list rather than demo PRs.
  */
 export async function discoverPullRequests(integrations: SourceIntegrationLike[]): Promise<DiscoveredRepository[]> {
   const repositories = sourceRepositories(integrations);
@@ -269,8 +336,12 @@ export async function discoverPullRequests(integrations: SourceIntegrationLike[]
       } catch {
         pullRequests = [];
       }
-      if (pullRequests.length === 0) {
-        pullRequests = openPullRequests(source.provider, source.repository);
+    } else if (source.provider === "GITHUB") {
+      const integration = integrations.find((item) => item.provider === "GITHUB" && item.status === "CONNECTED");
+      try {
+        pullRequests = await fromGitHub(integration?.config ?? {}, source.repository);
+      } catch {
+        pullRequests = [];
       }
     } else {
       pullRequests = openPullRequests(source.provider, source.repository);

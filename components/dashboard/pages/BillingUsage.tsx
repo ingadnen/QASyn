@@ -377,6 +377,7 @@ function BillingView({
 
   return (
     <div className="space-y-4">
+      <EntitlementMatrix plan={plan} />
       <BillingSelfService readOnly={readOnly} members={members} plan={plan} />
       <div className="grid gap-4 xl:grid-cols-2">
         <section className={cn(cqaCard, "p-4")}>
@@ -936,5 +937,120 @@ function PaymentForm({ current, readOnly, onDone }: { current: string | null; re
         </button>
       </div>
     </form>
+  );
+}
+
+const ENTITLEMENT_PLAN_TIERS: Array<{ key: string; label: string }> = [
+  { key: "free", label: "Free" },
+  { key: "starter", label: "Starter" },
+  { key: "pro", label: "Pro" },
+  { key: "enterprise", label: "Enterprise" },
+];
+
+/** Phase 32 — plan entitlement matrix with upgrade CTAs, on the Billing page. */
+function EntitlementMatrix({ plan }: { plan: string }) {
+  const rows: Array<{ label: string; value: (tier: string) => string }> = [
+    { label: "Real-time sync", value: (tier) => (tier === "free" ? "Every 30s" : tier === "starter" ? "Every 10s" : "Every 1s") },
+    { label: "Seats", value: (tier) => (tier === "free" ? "3" : tier === "starter" ? "5" : tier === "pro" ? "15" : "Unlimited") },
+    { label: "Projects", value: (tier) => (tier === "free" ? "1" : tier === "starter" ? "3" : tier === "pro" ? "15" : "Unlimited") },
+    {
+      label: "Credits / month",
+      value: (tier) => (tier === "free" ? "200" : tier === "starter" ? "1,200" : tier === "pro" ? "6,000" : "Unlimited"),
+    },
+    {
+      label: "Integrations",
+      value: (tier) =>
+        tier === "free"
+          ? "GitHub, Jira, Slack"
+          : tier === "starter"
+            ? "GitHub, GitLab, Azure DevOps, Jira, Slack"
+            : "All 9 providers",
+    },
+    { label: "Chrome extension", value: (tier) => (tier === "free" ? "—" : "Included") },
+    { label: "Windows desktop agent", value: (tier) => (tier === "free" || tier === "starter" ? "—" : "Included") },
+    { label: "Autonomous Ship workflows", value: (tier) => (tier === "free" || tier === "starter" ? "—" : "Included") },
+  ];
+
+  return (
+    <section className={cn(cqaCard, "p-4")} data-testid="entitlement-matrix">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-[14px] font-semibold text-[#111827]">Plan entitlements</h2>
+          <p className="mt-1 text-[12px] text-[#6b7280]">
+            What your current plan ({plan.charAt(0).toUpperCase() + plan.slice(1)}) allows, next to every other tier.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[640px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-[#e5e7eb]">
+              <th className="py-2 pr-4 text-[11px] font-medium uppercase tracking-wide text-[#6b7280]">Capability</th>
+              {ENTITLEMENT_PLAN_TIERS.map((tier) => (
+                <th
+                  key={tier.key}
+                  className={cn(
+                    "py-2 px-3 text-[11px] font-medium uppercase tracking-wide",
+                    tier.key === plan ? "text-[#0F6B5C]" : "text-[#6b7280]",
+                  )}
+                >
+                  {tier.label}
+                  {tier.key === plan && (
+                    <span className="ml-1.5 rounded-full bg-[#0F6B5C] px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                      Current
+                    </span>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.label} className="border-b border-[#f3f4f6] last:border-0">
+                <td className="py-2 pr-4 text-[12.5px] font-medium text-[#374151]">{row.label}</td>
+                {ENTITLEMENT_PLAN_TIERS.map((tier) => (
+                  <td
+                    key={tier.key}
+                    className={cn(
+                      "py-2 px-3 text-[12.5px]",
+                      tier.key === plan ? "font-semibold text-[#111827]" : "text-[#6b7280]",
+                    )}
+                  >
+                    {row.value(tier.key)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <UpgradeCta plan={plan} />
+    </section>
+  );
+}
+
+/** Gated-feature upgrade CTA: nudges to the next plan when limits are structural. */
+function UpgradeCta({ plan }: { plan: string }) {
+  const nextTier = plan === "free" ? "Starter" : plan === "starter" ? "Pro" : plan === "pro" ? "Enterprise" : null;
+  const gated =
+    plan === "free"
+      ? "Real-time sync, the Chrome extension and Ship workflows are gated on this plan."
+      : plan === "starter"
+        ? "The desktop agent and Ship workflows are gated on this plan."
+        : plan === "pro"
+          ? "Unlimited seats, projects and credits need Enterprise."
+          : null;
+  if (!nextTier || !gated) return null;
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#f0fdf9] px-3 py-2.5">
+      <p className="text-[12.5px] text-[#134e4a]">{gated}</p>
+      <Link
+        href="/dashboard/billing?upgrade=1"
+        data-testid="upgrade-cta"
+        className="inline-flex h-8 items-center rounded-lg bg-[#0F6B5C] px-3 text-[12.5px] font-medium text-white transition hover:bg-[#0c5a4d]"
+      >
+        Upgrade to {nextTier}
+      </Link>
+    </div>
   );
 }

@@ -14,6 +14,7 @@ import {
 } from "@/components/dashboard/ui";
 import { RowMenu } from "@/components/contextqa/row-menu";
 import { AzureDevOpsSyncButton } from "@/components/dashboard/pages/AzureDevOpsSyncButton";
+import { GitHubSyncButton } from "@/components/dashboard/pages/GitHubSyncButton";
 import { ColumnFilter, ColumnSort, distinctColumnValues, matchesColumnFilters, nextTableSort, sortTableRows, type TableSortState } from "@/components/contextqa/table-ui";
 import { apiFetch, errorMessage } from "@/lib/api";
 import type { CatalogPullRequest } from "@/lib/pr-catalog";
@@ -927,6 +928,7 @@ export function PullRequestsBoard({
     <>
       <div className="flex flex-wrap justify-end gap-2">
         <AzureDevOpsSyncButton />
+        <GitHubSyncButton />
         <button
           type="button"
           disabled={readOnly}

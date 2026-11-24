@@ -106,6 +106,7 @@ model Organisation {
   visualBaselines VisualBaseline[]
   webhooks      Webhook[]
   notificationRules NotificationRule[]
+  notifications     Notification[]
   components    TestComponent[]
   exploratorySessions ExploratorySession[]
   personas      Persona[]
@@ -1044,6 +1045,27 @@ model NotificationRule {
   createdAt      DateTime     @default(now())
 
   @@index([organisationId])
+}
+
+/// In-app notification feed (integration sync, test failures, self-heal, billing).
+model Notification {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  /// pr.opened_or_updated | docs.confluence_updated | jira.issue_synced | test_run.failed_or_regression | self_heal.applied | autopilot.completed | billing.low_credits
+  eventType      String
+  provider       String?
+  title          String
+  body           String
+  linkUrl        String?
+  /// Unique per organisation; a repeated key is skipped instead of re-notifying.
+  dedupeKey      String?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([organisationId, dedupeKey])
+  @@index([organisationId, createdAt])
+  @@index([organisationId, readAt])
 }
 
 /// Reusable step group (Test Studio components).
