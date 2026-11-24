@@ -29,7 +29,7 @@ export default async function IntegrationsPage() {
     <Integrations
       integrations={integrations}
       readOnly={ctx.readOnly || !can(ctx.user.role, "integrationsManage")}
-      biviaReady={Boolean(process.env.BIVIA_API_KEY?.trim())}
+      biviaReady={Boolean(process.env.BIVIA_API_KEY?.trim()) || integrations.some((item) => item.provider === "BIVIA" && item.status === "CONNECTED")}
       biviaSummary={await getBiviaObservatory(ctx.org.id)}
     />
   );

@@ -628,7 +628,14 @@ function AnalysePrModal({
       .then((result) => {
         if (cancelled) return;
         setSources(result.sources);
-        setSourceKey(result.sources[0] ? `${result.sources[0].provider}|${result.sources[0].repositories[0]?.repository ?? ""}` : "");
+        // Default to the first repository that actually has open pull requests,
+        // so the modal never opens on an empty list when another provider has PRs.
+        const withPrs = result.sources.flatMap((source) =>
+          source.repositories.map((repository) => ({ source, repository })).filter((entry) => entry.repository.pullRequests.length > 0),
+        )[0];
+        const fallback = result.sources.flatMap((source) => source.repositories.map((repository) => ({ source, repository })))[0];
+        const chosen = withPrs ?? fallback;
+        setSourceKey(chosen ? `${chosen.source.provider}|${chosen.repository.repository}` : "");
       })
       .catch((caught) => !cancelled && setError(errorMessage(caught)));
     return () => {
@@ -928,7 +935,6 @@ export function PullRequestsBoard({
     <>
       <div className="flex flex-wrap justify-end gap-2">
         <AzureDevOpsSyncButton />
-        <GitHubSyncButton />
         <button
           type="button"
           disabled={readOnly}

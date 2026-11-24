@@ -3,10 +3,11 @@ import { z } from "zod";
 import { resolveOrgForMcp } from "@/lib/api-token-auth";
 import { biviaScoreAndSet } from "@/lib/bivia";
 import { prisma } from "@/lib/db";
-import { buildStepsJson, runTestCases } from "@/lib/engine";
+import { runTestCases } from "@/lib/engine";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { parseIntegrationConfig } from "@/lib/integration-providers";
 import { generatePrTests } from "@/lib/pr-test-gen";
+import { fetchPrDiffs } from "@/lib/pr-diff";
 import { buildPrGateMarkdown, type PrGateBivia, type PrGateImpact } from "@/lib/pr-gate";
 import { runStrixScan } from "@/lib/strix";
 import { audit, quotaErrorResponse, readSettings } from "@/lib/tenant";
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
     normalizeWebsite(input.previewUrl ?? "") ??
     normalizeWebsite(environment?.baseUrl ?? "") ??
     normalizeWebsite(organisation.website ?? "") ??
-    "https://www.cgi.com";
+    "";
 
   const tokens = moduleTokens(changedFiles);
   const candidatePool = await prisma.testCase.findMany({
@@ -173,6 +174,12 @@ export async function POST(request: Request) {
   });
   const createdTestCases: Array<{ id: string; title: string; testType: string; steps: number; aiMode: string }> = [];
   if (input.createTests !== false && existingPrCases.length === 0) {
+    const diffs = await fetchPrDiffs({
+      organisationId: organisation.id,
+      provider: pr.provider,
+      repository: pr.repository,
+      prNumber: input.prNumber,
+    });
     const generated = await generatePrTests({
       organisationId: organisation.id,
       prNumber: input.prNumber,
@@ -180,6 +187,8 @@ export async function POST(request: Request) {
       branch: input.branch,
       changedFiles,
       modules,
+      diffs,
+      siteUrl: targetUrl,
     });
     for (const definition of generated.definitions) {
       const created = await prisma.testCase.create({
@@ -191,13 +200,7 @@ export async function POST(request: Request) {
           status: "passing",
           stepsCount: definition.stepsCount,
           source: "ai-drafted",
-          stepsJson: buildStepsJson(
-            targetUrl,
-            definition.stepsCount,
-            definition.module,
-            definition.prefixedTitle,
-            definition.testType,
-          ),
+          stepsJson: JSON.stringify(definition.steps),
           variablesJson: JSON.stringify({
             url: targetUrl,
             _testType: definition.testType,
@@ -207,6 +210,7 @@ export async function POST(request: Request) {
             _source: "ci-webhook",
             _provider: generated.provider,
             _aiMode: generated.mode,
+            _diffFiles: diffs.map((diff) => diff.file),
             description: definition.description,
           }),
         },

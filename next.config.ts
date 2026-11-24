@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Keep a prod build in its own dist dir so the dev server (managed preview)
+  // cannot clobber .next while `next start` is serving from it.
+  distDir: process.env.QASYN_PROD_DIST_DIR ? ".next-prod" : ".next",
   allowedDevOrigins: ["*.vercel.run", "vercel.run", "127.0.0.1", "localhost"],
   reactStrictMode: true,
   poweredByHeader: false,

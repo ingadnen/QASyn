@@ -1,12 +1,13 @@
 import type { PullRequestCheck } from "@prisma/client";
 import { prisma } from "./db";
-import { buildStepsJson, runTestCases } from "./engine";
+import { runTestCases } from "./engine";
 import {
   blastRadius,
   buildProviderComment,
   impactedModules,
   type ImpactSummary,
 } from "./pr-catalog";
+import { fetchPrDiffs } from "./pr-diff";
 import { generatePrTests, prCaseTitlePrefix } from "./pr-test-gen";
 import { readSettings, type OrgContext } from "./tenant";
 import { normalizeWebsite } from "./utils";
@@ -43,6 +44,23 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
   let draftMeta: { provider: string; modelId: string | null; mode: "ai-model" | "calibrated"; count: number } | null =
     null;
   if (drafted.length === 0) {
+    // The tests run against the website under test — the organisation's site or
+    // the latest crawl target — never the PR's own GitHub/GitLab page.
+    const latestCrawl = await prisma.crawlSession.findFirst({
+      where: { organisationId: actor.org.id },
+      orderBy: { startedAt: "desc" },
+      select: { targetUrl: true },
+    });
+    const siteUrl =
+      normalizeWebsite(actor.org.website ?? "") ??
+      normalizeWebsite(latestCrawl?.targetUrl ?? "") ??
+      "";
+    const diffs = await fetchPrDiffs({
+      organisationId: actor.org.id,
+      provider: pr.provider,
+      repository: pr.repository,
+      prNumber: pr.prNumber,
+    });
     const generated = await generatePrTests({
       organisationId: actor.org.id,
       prNumber: pr.prNumber,
@@ -50,8 +68,9 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
       branch: pr.branch,
       changedFiles: files,
       modules,
+      diffs,
+      siteUrl,
     });
-    const targetUrl = normalizeWebsite(pr.externalUrl ?? "") ?? normalizeWebsite(actor.org.website ?? "") ?? "";
     const created = [];
     for (const definition of generated.definitions) {
       created.push(
@@ -64,18 +83,14 @@ export async function analyzePullRequest(pr: PullRequestCheck, actor: Actor) {
             status: "draft",
             stepsCount: definition.stepsCount,
             source: "ai-drafted",
-            stepsJson: buildStepsJson(
-              targetUrl,
-              definition.stepsCount,
-              definition.module,
-              definition.prefixedTitle,
-              definition.testType,
-            ),
+            stepsJson: JSON.stringify(definition.steps),
             variablesJson: JSON.stringify({
               _prId: pr.id,
               _prNumber: pr.prNumber,
               _provider: generated.provider,
               _aiMode: generated.mode,
+              _siteUrl: siteUrl,
+              _diffFiles: diffs.map((diff) => diff.file),
               description: definition.description,
             }),
           },

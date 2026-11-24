@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CqaIcon } from "@/components/dashboard/ui";
 import { apiFetch, errorMessage } from "@/lib/api";
+import { GitHubSyncButton } from "@/components/dashboard/pages/GitHubSyncButton";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -59,19 +60,22 @@ export function AzureDevOpsSyncButton({
   }
 
   return (
-    <button
-      type="button"
-      data-testid="ado-quick-sync-btn"
-      onClick={() => void sync()}
-      disabled={pending}
-      aria-label="Sync Azure DevOps"
-      className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-medium text-[#374151] transition hover:bg-[#f9fafb] disabled:cursor-not-allowed disabled:opacity-60",
-        className,
-      )}
-    >
-      <CqaIcon name={pending ? "progress_activity" : "sync"} className={cn("text-[16px] text-[#0078d4]", pending && "animate-spin")} />
-      {pending ? "Syncing…" : label}
-    </button>
+    <span className="inline-flex items-center gap-2">
+      <GitHubSyncButton className={className} />
+      <button
+        type="button"
+        data-testid="ado-quick-sync-btn"
+        onClick={() => void sync()}
+        disabled={pending}
+        aria-label="Sync Azure DevOps"
+        className={cn(
+          "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-medium text-[#374151] transition hover:bg-[#f9fafb] disabled:cursor-not-allowed disabled:opacity-60",
+          className,
+        )}
+      >
+        <CqaIcon name={pending ? "progress_activity" : "sync"} className={cn("text-[16px] text-[#0078d4]", pending && "animate-spin")} />
+        {pending ? "Syncing…" : label}
+      </button>
+    </span>
   );
 }

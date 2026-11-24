@@ -213,12 +213,15 @@ export async function fromGitHub(
 ): Promise<CatalogPullRequest[]> {
   const token =
     config.token ?? config.apiToken ?? config.personalAccessToken ?? config.pat ?? process.env.GITHUB_TOKEN ?? "";
-  if (!token || !repository.includes("/")) return [];
+  // Public repositories list open PRs without a token; only the repository is required.
+  if (!repository.includes("/")) return [];
   const host = (config.url ?? config.baseUrl ?? config.host ?? "https://api.github.com").replace(/\/+$/, "");
 
   async function github(path: string): Promise<unknown> {
     const response = await fetch(`${host}${path}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+      headers: token
+        ? { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" }
+        : { Accept: "application/vnd.github+json" },
       cache: "no-store",
     });
     if (!response.ok) throw new Error(`GitHub API ${response.status} for ${path}`);

@@ -95,11 +95,9 @@ export function MarketingFooter() {
             Autonomous quality engineering, grounded in visual proof. One platform to crawl, author, heal, execute and gate every release across web, mobile, API and AI agents.
           </p>
           <form className="mt-6 flex max-w-xs gap-2" action="/signup">
-            <label htmlFor="footer-email" className="sr-only">
-              Work email
-            </label>
             <input
               id="footer-email"
+              aria-label="Work email"
               type="email"
               placeholder="you@company.com"
               className="min-w-0 flex-1 rounded-full border border-pw-line bg-white px-4 py-2 text-sm text-pw-ink placeholder:text-[#8a979e] focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"

@@ -195,6 +195,11 @@ const WORKSPACES: Workspace[] = [
       },
       { provider: "JIRA", detail: "https://cgi.atlassian.net · DP", config: { siteUrl: "https://cgi.atlassian.net", projectKey: "DP" } },
       { provider: "SLACK", detail: "#qa-alerts", config: { channel: "#qa-alerts" } },
+      {
+        provider: "BIVIA",
+        detail: "fast mode · 0.35 threshold",
+        config: { defaultMode: "fast", abstentionThreshold: "0.35" },
+      },
     ],
   },
 ];

@@ -123,6 +123,7 @@ const MENUS: Menu[] = [
           { href: "/roi-calculator", label: "ROI Calculator" },
           { href: "/comparison", label: "Product Comparison" },
           { href: "/free-tools", label: "Free Tools" },
+          { href: "/downloads", label: "Downloads", badge: "New" },
         ],
       },
     ],

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { buildStepsJson, runTestCases } from "@/lib/engine";
+import { runTestCases } from "@/lib/engine";
 import { jsonError, readJson, validationError } from "@/lib/http";
 import { guardPermission } from "@/lib/rbac-server";
+import { fetchPrDiffs } from "@/lib/pr-diff";
 import { generatePrTests } from "@/lib/pr-test-gen";
 import { audit, quotaErrorResponse } from "@/lib/tenant";
 import { normalizeWebsite } from "@/lib/utils";
@@ -66,12 +67,20 @@ export async function POST(request: Request) {
         orderBy: { createdAt: "asc" },
       }));
 
+  // The tests always run against the website under test — the selected
+  // environment, the organisation's site or the latest crawl target — never the
+  // PR's own GitHub/GitLab page.
+  const latestCrawl = await prisma.crawlSession.findFirst({
+    where: { organisationId: ctx.org.id },
+    orderBy: { startedAt: "desc" },
+    select: { targetUrl: true },
+  });
   const targetUrl =
     normalizeWebsite(input.targetUrl ?? "") ??
     normalizeWebsite(environment?.baseUrl ?? "") ??
     normalizeWebsite(ctx.org.website ?? "") ??
-    normalizeWebsite(pr.externalUrl ?? "") ??
-    "https://www.cgi.com";
+    normalizeWebsite(latestCrawl?.targetUrl ?? "") ??
+    "";
 
   const impact = parseJson<ImpactShape>(pr.impactJson, {});
   const impacted = Array.isArray(impact.impacted) ? impact.impacted : [];
@@ -97,6 +106,12 @@ export async function POST(request: Request) {
   const createdTestCases: Array<{ id: string; title: string; testType: string; aiMode: string }> = [];
   if (input.createTests !== false && existingPrCases.length === 0) {
     const changedFiles = [...new Set((impact.files ?? []).filter(Boolean).map(String))];
+    const diffs = await fetchPrDiffs({
+      organisationId: ctx.org.id,
+      provider: pr.provider,
+      repository: pr.repository,
+      prNumber: pr.prNumber,
+    });
     const generated = await generatePrTests({
       organisationId: ctx.org.id,
       prNumber: pr.prNumber,
@@ -104,6 +119,8 @@ export async function POST(request: Request) {
       branch: pr.branch,
       changedFiles,
       modules,
+      diffs,
+      siteUrl: targetUrl,
     });
     for (const definition of generated.definitions) {
       const created = await prisma.testCase.create({
@@ -115,13 +132,7 @@ export async function POST(request: Request) {
           status: "passing",
           stepsCount: definition.stepsCount,
           source: "ai-drafted",
-          stepsJson: buildStepsJson(
-            targetUrl,
-            definition.stepsCount,
-            definition.module,
-            definition.prefixedTitle,
-            definition.testType,
-          ),
+          stepsJson: JSON.stringify(definition.steps),
           variablesJson: JSON.stringify({
             url: targetUrl,
             _testType: definition.testType,
@@ -130,6 +141,7 @@ export async function POST(request: Request) {
             _environmentId: environment?.id ?? null,
             _provider: generated.provider,
             _aiMode: generated.mode,
+            _diffFiles: diffs.map((diff) => diff.file),
             description: definition.description,
           }),
         },

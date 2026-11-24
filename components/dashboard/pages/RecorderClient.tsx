@@ -114,7 +114,9 @@ export function RecorderClient({
               Load page
             </button>
           </div>
-          <span className="mt-1 block text-[11px] text-slate-400">Recorded test cases and their steps use this exact URL.</span>
+          <span className="mt-1 block text-[11px] text-slate-400">
+            Recorded test cases and their steps use <span data-testid="recorder-target-url-text">{targetUrl}</span> exactly.
+          </span>
         </label>
         <div className="mb-3 flex items-center gap-2">
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">● REC</span>

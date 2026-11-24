@@ -77,19 +77,23 @@ export function buildCrawlLogs(targetUrl: string): CrawlLogLine[] {
     lines.push({ offsetMs: t, tag, message });
   };
 
-  push("INFO", `aqe crawl --target ${targetUrl} --depth 3`, 200);
+  push("INFO", `aqe crawl --target ${targetUrl} --depth 3 --agents architect,strategist,test-architect`, 200);
   push("INFO", `Resolving ${host} · sandboxed browser ready`, 900);
+  push("MAP", `🧭 Solution Architect · modelling ${host}: business domains, user roles, revenue-critical journeys`, 900);
   push("CRAWL", `GET ${targetUrl}/ · 200 · ${120 + (seed % 180)} ms`, 1400);
   pages.slice(1).forEach((page, i) => {
     const ms = 80 + ((seed >>> (i % 16)) % 260);
     push("CRAWL", `GET ${host}${page} · 200 · ${ms} ms`, 1700 + (i % 3) * 500);
+    if (i === 1) push("MAP", `🧭 Solution Architect · journey graph: entry points, decision nodes, dead ends flagged`, 900);
     if (i === 2) push("INFO", `Detected ${2 + (seed % 4)} forms and ${8 + (seed % 9)} interactive elements`, 900);
-    if (i === 4) push("WARN", `${host}${page} · slow LCP (${(2.4 + (seed % 9) / 10).toFixed(1)} s)`, 800);
+    if (i === 3) push("WARN", `🎯 QA Strategist · risk triage: auth, payments and data export ranked above content pages`, 800);
+    if (i === 4) push("WARN", `${host}${page} · slow LCP (${(2.4 + (seed % 9) / 10).toFixed(1)} s) — flagged to strategist for perf regression coverage`, 800);
   });
   flows.forEach((flow, i) => {
-    push("MAP", `Flow mapped · ${flow.name} (${flow.module}, ${flow.steps} steps)`, 2200 + (i % 2) * 700);
+    push("MAP", `🧪 Test Architect · designed ${flow.name} (${flow.module}, ${flow.steps} steps) · positive + negative + boundary variants`, 2200 + (i % 2) * 700);
   });
   push("INFO", `Building journey graph · ${pages.length} pages · ${flows.length} flows`, 1800);
+  push("INFO", "Coverage review: agents cross-checking traceability (journey → requirement → test) before publish", 2500);
   push("INFO", "Waiting for more pages… (crawl keeps running)", 2500);
   return lines;
 }

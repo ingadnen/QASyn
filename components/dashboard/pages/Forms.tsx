@@ -36,7 +36,12 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
   const [additionalContext, setAdditionalContext] = useState("");
   const [createSuite, setCreateSuite] = useState(true);
   const [createPlan, setCreatePlan] = useState(true);
-  const EXAMPLES = ["Test the sign-in flow", "Cover the primary navigation", "Validate forms and error states"];
+  const EXAMPLES = [
+    "Act as the business owner: cover the revenue-critical journeys (sign-up → purchase → invoice) end to end",
+    "Map the navigation and information architecture, then flag dead ends and orphaned pages",
+    "Probe forms like a hostile user: invalid emails, SQL/XSS payloads, boundary values, double submits",
+    "Prioritise coverage by business risk: payments, auth and data export before cosmetic pages",
+  ];
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-3">
@@ -47,8 +52,8 @@ export function CrawlForm({ defaultUrl, readOnly, onCancel }: { defaultUrl: stri
           </svg>
         </span>
         <div>
-          <p className="text-sm font-semibold text-slate-900">Robot QA · Autonomous Crawl</p>
-          <p className="text-xs text-slate-600">Map your application and generate reviewed test cases automatically.</p>
+          <p className="text-sm font-semibold text-slate-900">Robot QA · AI Solution Architect team</p>
+          <p className="text-xs text-slate-600">Three expert agents run every crawl: a <strong>Solution Architect</strong> maps your business domains and user journeys, a <strong>QA Strategist</strong> decides risk-based coverage (what to test, what to skip), and a <strong>Test Architect</strong> designs the cases — positive, negative, boundary and end-to-end — before they land in your suite.</p>
         </div>
       </div>
       <button type="button" onClick={() => setConfigOpen((v) => !v)} aria-expanded={configOpen} className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-700">

@@ -14,9 +14,10 @@ export interface CrawlCase {
 }
 
 const QUESTIONNAIRE = [
-  "Which credentials should the crawl use for login?",
-  "Should checkout be covered end-to-end or only up to payment?",
-  "Are there feature-flagged areas to skip?",
+  "Which roles and personas matter to the business (e.g. buyer, admin, auditor)? The Solution Architect weights journeys by revenue impact.",
+  "Which flows are revenue- or compliance-critical and must be covered end to end, including failure paths?",
+  "Are there feature-flagged, beta or legacy areas the QA Strategist should explicitly deprioritise or skip?",
+  "Which environments and test data can the Test Architect safely use (staging credentials, seed accounts, synthetic PII)?",
 ];
 
 export function CrawlDetailTabs({ cases, logs, running, crawlId, readOnly }: { cases: CrawlCase[]; logs: string; running: boolean; crawlId: string; readOnly: boolean }) {
