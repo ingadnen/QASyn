@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+  <title>QASyn</title>
+</head>
+<body>
+  <header class="head">
+    <img src="icon.png" alt="" width="20" height="20" />
+    <h1>QASyn</h1>
+    <span id="badge" class="badge" hidden></span>
+  </header>
+
+  <section class="pair" id="pair-section">
+    <label for="server">QASyn server</label>
+    <input id="server" type="url" placeholder="https://qasyn.com" />
+    <label for="token">API token (<code>cqa_…</code>)</label>
+    <input id="token" type="password" placeholder="cqa_…" autocomplete="off" />
+    <button id="save-pair" class="primary">Connect</button>
+    <p id="pair-state" class="state"></p>
+  </section>
+
+  <section class="actions" id="actions-section" hidden>
+    <button id="toggle-record" class="primary">● Start recording</button>
+    <button id="generate-ai">✨ Generate AI test from this page</button>
+    <button id="open-workspace">Open QASyn workspace</button>
+    <p id="record-state" class="state"></p>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

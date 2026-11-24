@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "QASyn — Agentic Quality Engineering",
+  "short_name": "QASyn",
+  "version": "1.0.0",
+  "description": "Record steps, capture the page and generate AI test cases in your QASyn workspace, with live notification badges.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs", "webNavigation"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "action": {
+    "default_title": "QASyn",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "128": "icon.png"
+  }
+}

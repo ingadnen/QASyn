@@ -1,0 +1,3 @@
+cd96a4a40b2211e07baa3642fdd57eaf8786a2da3fc1b860d60eff4e160a3c46  qasyn-chrome-extension.zip
+b910ff2ab8f51514d9af6ce02316edaa6a6a6c935a5081657578f76919f56e0a  qasyn-agent-win-x64.zip
+3c4da9602c86dae2d9f602054a9db69e1465624856e13fb6150da151c3d2268c  qasyn-agent-win-x86.zip
